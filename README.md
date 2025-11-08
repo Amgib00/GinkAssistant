@@ -1,0 +1,2 @@
+# GinkAssistant
+Help_Human
