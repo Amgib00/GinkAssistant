@@ -1,0 +1,29 @@
+[tool.briefcase]
+project_name = "GinkAssistant"
+bundle = "com.amgib"
+version = "0.1.0"
+url = "https://github.com/Amgib00/GinkAssistant"
+author = "Amgib"
+author_email = "your-email@example.com"
+
+[tool.briefcase.app.ginkassistant]
+formal_name = "GinkAssistant"
+description = "AI Voice Assistant powered by llama.cpp"
+sources = ["GinkAssistant", "main.py", "model_utils.py"]
+requires = [
+    "PyQt5",
+    "pyttsx3",
+    "speech_recognition",
+    "llama-cpp-python"
+]
+
+[tool.briefcase.app.ginkassistant.macOS]
+universal_build = true
+requires_device = ["microphone"]
+
+[tool.briefcase.app.ginkassistant.linux]
+requires = ["libgirepository1.0-dev"]
+
+[tool.briefcase.app.ginkassistant.android]
+# Android requires specific hardware permissions for voice
+permissions = ["RECORD_AUDIO"]
