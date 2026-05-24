@@ -1,19 +1,19 @@
 numpy==1.26.4; python_version < '3.10'
-numpy==2.2.6; python_version >= '3.10'
+numpy==2.4.6; python_version >= '3.10'
 
-certifi==2026.2.25
-charset-normalizer==3.4.4
+certifi==2026.5.20
+charset-normalizer==3.4.7
 diskcache==5.6.3
-huggingface_hub==0.23.0
-idna==3.11
+huggingface_hub==1.16.1
+idna==3.16
 Jinja2==3.1.6
-llama_cpp_python==0.3.16
+llama_cpp_python==0.3.23
 MarkupSafe==3.0.3
 pyttsx3==2.99
-requests==2.32.5
-SpeechRecognition==3.14.5
+requests==2.34.2
+SpeechRecognition==3.16.1
 typing_extensions==4.15.0
-urllib3==2.6.3
+urllib3==2.7.0
 
 pyobjc==12.1; platform_system == "Darwin"
 pyobjc-core==12.1; platform_system == "Darwin"
