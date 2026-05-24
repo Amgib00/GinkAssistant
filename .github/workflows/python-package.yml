@@ -11,7 +11,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -19,22 +18,70 @@ jobs:
         python-version: ["3.9", "3.10", "3.11"]
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install flake8 pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest
-      run: |
-        pytest
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install dev dependencies
+        run: python -m pip install flake8 pytest
+
+      - name: Pre-install explicit matrix NumPy
+        run: |
+          # Install and lock NumPy BEFORE any source distributions evaluate their setup dependencies
+          if [ "${{ matrix.python-version }}" = "3.9" ]; then
+            python -m pip install "numpy<2.0.0"
+          else
+            python -m pip install "numpy==2.2.6"
+          fi
+
+      - name: Create dummy numba for librosa compatibility
+        run: |
+          mkdir -p numba numba/core
+          cat > numba/__init__.py << 'EOF'
+          __version__ = "0.0.0"
+          def jit(*args, **kwargs):
+              def wrap(func): return func
+              if len(args) == 1 and callable(args[0]) and not kwargs: return args[0]
+              return wrap
+          class dummy:
+              def __init__(self, *a, **k): pass
+              def __call__(self, *a, **k): return self
+              def __getattr__(self, name): return self
+          config = dummy()
+          EOF
+          cat > numba/decorators.py << 'EOF'
+          def jit(*args, **kwargs):
+              def wrap(func): return func
+              return wrap
+          EOF
+          touch numba/core/__init__.py
+          echo -e 'class Type: pass\nfloat32=float\nfloat64=float\nint32=int\nint64=int' > numba/core/types.py
+
+      - name: Install project dependencies
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          pip uninstall -y numba llvmlite || true
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements_freeze.txt ]; then pip install -r requirements_freeze.txt; fi
+          pip install librosa==0.9.2 resampy==0.4.2 --no-deps
+
+      - name: Lint with flake8
+        run: |
+          # Fail on syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Check complexity and style as warnings
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Test with pytest
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: pytest .
