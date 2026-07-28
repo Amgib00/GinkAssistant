@@ -1,0 +1,27 @@
+
+# Ignore large build artifacts, models, and dependencies
+.briefcase/
+models/
+build/
+dist/
+
+
+# Virtual environments and build directories
+.venv/
+.venv310/
+build/
+dist/
+models/
+
+
+# Exclude all environments, builds, logs, and caches
+.venv/
+.venv310/
+build/
+dist/
+models/
+logs/
+**/logs/
+.idea/
+
+src/.env
