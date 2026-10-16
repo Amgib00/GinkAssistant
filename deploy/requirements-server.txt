@@ -1,7 +1,7 @@
-fastapi>=0.115.0
-uvicorn>=0.30
-PyJWT>=2.8
-httpx>=0.27
+fastapi>=0.143.0
+uvicorn>=0.54.0
+PyJWT>=2.15.1
+httpx>=0.28.1
 cryptography>=42  # Sign in with Apple (ES256 client secret)
-tzdata>=2024.1   # country detection from the device time zone (billing)
-python-multipart>=0.0.9  # form posts: CinetPay notifications, Sign in with Apple callback
+tzdata>=2026.5   # country detection from the device time zone (billing)
+python-multipart>=0.0.32  # form posts: CinetPay notifications, Sign in with Apple callback

@@ -28,7 +28,7 @@ std-nslog; sys_platform == "darwin"
 
 # --- the built-in server (services/backend_server.py) ---
 pydantic==2.13.4
-fastapi>=0.115.0
+fastapi>=0.143.0
 uvicorn
 python-multipart
 PyJWT
