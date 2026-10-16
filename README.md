@@ -1,23 +1,52 @@
-# 🌀 Gink Assistant: Think. Talk. Create.
+<p align="center"><img src="icons/ginkassistant-256.png" width="128" alt="Gink"></p>
+
+<h1 align="center">Gink</h1>
+<p align="center"><b>Think. Talk. Create.</b> -- an AI assistant for macOS, Windows, Linux, Android and iOS.</p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54" alt="Python">
-  <img src="https://img.shields.io/badge/PyQt5-%2341CD52.svg?style=for-the-badge&logo=qt&logoColor=white" alt="PyQt5">
-  <img src="https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite">
-  <img src="https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS">
+  <a href="../../actions/workflows/tests.yml"><img src="../../actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
+  <a href="../../actions/workflows/android.yml"><img src="../../actions/workflows/android.yml/badge.svg" alt="Android build"></a>
+  <a href="../../actions/workflows/ios.yml"><img src="../../actions/workflows/ios.yml/badge.svg" alt="iOS build"></a>
 </p>
 
-An intelligent, privacy-first desktop assistant built with a **Hybrid AI Engine**, Voice Interaction, and deep macOS integration. Seamlessly bridge the gap between local privacy and cloud performance.
+Built with Python and [BeeWare](https://beeware.org) (Toga + Briefcase).
 
----
+## What Gink does
+- **Chat** with streaming answers, chat history that saves itself, smart titles, drafts
+- **Voice**: natural voices, voice conversations, and **"Hey Gink"** (wake word detected on the device)
+- **Does things**: alarms, reminders, tasks, files (PDF, Word, Excel...), images, weather,
+  currency and maths; on desktop also apps, Finder, Terminal, music, volume, screenshots, notes
+- **Morning briefing** that picks up where you left off
+- **Sync** across devices, Gink Pro with local payment methods, light and dark themes
 
-## 🚀 Quick Start
-
-### 1. Environment Setup
+## Run it on your computer
 ```bash
-# Create and activate virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
+python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+cp .env.example .env    # then add your keys -- .env is never committed
+python -m ginkassistant
+```
+
+## Build the app
+Run Briefcase from this folder. Apps are built in `build/ginkassistant/<platform>/...`.
+```bash
+python -m briefcase create macOS && python -m briefcase build macOS && python -m briefcase run macOS
+```
+- **macOS 10.15 Catalina:** use Briefcase 0.3.15 (newer Briefcase makes apps that need macOS 11+);
+  `requirements.txt` picks the right version.
+- **Android** and **iOS** are built on GitHub (Actions tab) -- see `deploy/IOS_AND_WEB.md`.
+- Check your setup any time: `python tools/check_project.py` (`--fix` repairs it).
+- New icon: replace `icons/source-icon.png`, run `python tools/make_icons.py`.
+
+## Tests
+```bash
+pip install -r requirements-test.txt
+python -m pytest tests
+```
+
+## Server
+Gink's AI, voices, images, sync and payments go through your own server, so no keys are
+inside the app. Deploying it (Render, Docker) and its settings: `deploy/README.md`.
+
+## License
+MIT -- see `LICENSE`.

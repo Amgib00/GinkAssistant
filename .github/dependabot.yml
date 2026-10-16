@@ -1,16 +1,24 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-
+# Monthly, grouped dependency updates -- one pull request, not a stream of them.
+# Versions pinned on purpose are left alone (see the comments in pyproject.toml /
+# requirements.txt for why each one is pinned).
 version: 2
 updates:
-  - package-ecosystem: "pip" # Monitors your Python dependencies
+  - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "weekly" # Weekly keeps things up-to-date without daily PR fatigue
-    open-pull-requests-limit: 5
+      interval: "monthly"
+    open-pull-requests-limit: 2
     groups:
       python-dependencies:
-        patterns:
-          - "*" # Groups all weekly version bumps into a single PR
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "briefcase"      # 0.3.15 on macOS 10.15; 0.4.4 on Python 3.10
+      - dependency-name: "pydantic"       # 2.13.4 desktop server; 1.10.26 on phones
+      - dependency-name: "numba"          # Intel-Mac build pin
+      - dependency-name: "llvmlite"       # pairs with numba
+      - dependency-name: "numpy"          # librosa / numba need numpy 1.x
+      - dependency-name: "cryptography"   # 49+ has no Intel-Mac builds
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"

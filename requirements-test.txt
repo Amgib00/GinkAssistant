@@ -1,0 +1,30 @@
+# What the test suite needs (used by .github/workflows/tests.yml) -- checked by
+# running every test in clean Python 3.10 and 3.13 environments.
+# The full app installs more (requirements.txt); the tests don't need audio/AI engines.
+PyJWT
+SpeechRecognition
+certifi
+cryptography
+edge-tts
+fastapi>=0.115.0
+fpdf2
+groq
+httpx
+markdown
+openpyxl
+packaging
+pillow
+pydantic==2.13.4
+pygame
+pygments
+pypdf
+pytest
+python-dotenv
+python-multipart
+toga-core
+toga-dummy
+tzdata
+uvicorn
+numpy<2.0.0; python_version < "3.13"
+numpy; python_version >= "3.13"          # numpy 1.x has no builds for Python 3.13
+tomli; python_version < "3.11"

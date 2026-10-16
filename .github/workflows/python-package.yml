@@ -1,4 +1,4 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# This workflow will install Python dependencies, run tests and lint with Python 3.10
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
 name: Python package
@@ -12,19 +12,15 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.9", "3.10", "3.11"]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python 3.10
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.10"
           cache: 'pip'
 
       - name: Upgrade pip
@@ -33,14 +29,10 @@ jobs:
       - name: Install dev dependencies
         run: python -m pip install flake8 pytest
 
-      - name: Pre-install explicit matrix NumPy
+      - name: Pre-install explicit NumPy
         run: |
-          # Install and lock NumPy BEFORE any source distributions evaluate their setup dependencies
-          if [ "${{ matrix.python-version }}" = "3.9" ]; then
-            python -m pip install "numpy<2.0.0"
-          else
-            python -m pip install "numpy==2.2.6"
-          fi
+          # Install and lock NumPy for Python 3.10 compatibility
+          python -m pip install "numpy<2.0.0"
 
       - name: Create dummy numba for librosa compatibility
         run: |

@@ -1,0 +1,31 @@
+# Render.com blueprint for the Gink login server.
+# Render -> New -> Blueprint -> pick this repo. Then fill in the two
+# secret values it asks for (GMAIL_USER, GMAIL_APP_PASSWORD).
+services:
+  - type: web
+    name: gink-server
+    runtime: docker
+    dockerfilePath: ./deploy/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      - key: GROQ_API_KEY          # Gink Cloud AI -- the ONLY place the Groq key lives
+        sync: false
+      - key: GINK_PUBLIC_URL
+        sync: false
+      - key: GINK_FREE_DAILY
+        value: "30"
+      - key: GINK_PRO_DAILY
+        value: "500"
+      - key: GINK_SUPPORT_EMAIL     # shown in Settings -> Help
+        sync: false
+      - key: GINK_PRIVACY_URL       # Settings -> Privacy (required by app stores)
+        sync: false
+      - key: GINK_TERMS_URL
+        sync: false
+      - key: GINK_SECRET_KEY
+        generateValue: true

@@ -1,0 +1,508 @@
+"""The tools Gink's AI can call, and the code that runs them.
+
+TOOL_SPECS is sent to Groq (OpenAI-compatible function-calling format).
+ToolRunner.execute() runs one call, records it in the TaskStore so it shows on
+the Tasks screen, and returns a JSON-able result the model reads back.
+"""
+from __future__ import annotations
+
+import os
+
+import re
+from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
+
+from .device import DeviceActions, _dur
+from .task_store import TaskStore, from_iso
+
+
+def _fn(name, desc, props, required=()):
+    return {"type": "function", "function": {
+        "name": name, "description": desc,
+        "parameters": {"type": "object", "properties": props, "required": list(required)}}}
+
+
+S = {"type": "string"}
+_PLACE = {**S, "description": "city or place; leave out for the user's own location"}
+
+TOOL_SPECS = [
+    # ---- controlling this computer (services/actions/computer.py) ----
+    _fn("set_volume", "Change the computer's sound volume.",
+        {"level": {"type": "integer", "description": "0-100"}, "action": {**S, "description": "up | down | mute | unmute"}}, []),
+    _fn("media_control", "Control music playing in Spotify or Apple Music.",
+        {"action": {**S, "description": "play | pause | play_pause | next | previous"}}, ["action"]),
+    _fn("take_screenshot", "Take a screenshot of the screen and show it.", {}, []),
+    _fn("find_files", "Search the user's files by name (documents, photos, downloads...).",
+        {"query": {**S, "description": "words from the file name, e.g. 'cv' or 'budget'"}}, ["query"]),
+    _fn("open_file", "Open a file: a number or name from the last file search, or a full path.",
+        {"which": {**S, "description": "e.g. '1', 'CV.pdf' or a path"}}, ["which"]),
+    _fn("quit_app", "Quit an app that's open (it still asks to save unsaved work).", {"name": S}, ["name"]),
+    _fn("set_dark_mode", "Turn the computer's dark mode on or off.",
+        {"mode": {**S, "description": "on | off | toggle"}}, []),
+    _fn("lock_screen", "Lock the computer's screen.", {}, []),
+    _fn("create_note", "Make a note in Apple Notes (a text file elsewhere).", {"title": S, "body": S}, ["title"]),
+    _fn("copy_to_clipboard", "Copy text to the clipboard so the user can paste it.", {"text": S}, ["text"]),
+    _fn("system_status", "The computer's battery, Wi-Fi, free disk space and OS version.", {}, []),
+    _fn("open_folder", "Open a folder in Finder / the file manager: Downloads, Documents, Desktop, home, or any "
+        "folder by name (e.g. a project folder).", {"name": {**S, "description": "e.g. 'downloads' or 'GinkAssistant'"}}, ["name"]),
+    _fn("reveal_in_finder", "Show a file in Finder (a number or name from the last file list).", {"which": S}, []),
+    _fn("open_terminal", "Open a Terminal window, optionally in a folder. Never runs commands.",
+        {"folder": {**S, "description": "folder name or path; empty = home"}}, []),
+    _fn("open_settings_pane", "Open a settings page: wifi, bluetooth, sound, display, notifications, battery, "
+        "privacy, keyboard, trackpad, appearance, dock, software update...", {"pane": S}, ["pane"]),
+    _fn("sleep_computer", "Put the computer to sleep.", {}, []),
+    _fn("show_recent_files", "List documents the user changed recently (what they were working on).",
+        {"days": {"type": "integer", "description": "how many days back (default 3)"}}, []),
+    _fn("read_clipboard", "Read the text on the clipboard (to summarise, translate or use it).", {}, []),
+    _fn("search_in_browser", "Open a Google search in the user's browser.", {"query": S}, ["query"]),
+    _fn("create_file", "Make a real file the user can open and save: PDF, Word (docx), Excel (xlsx), CSV, Markdown, "
+        "HTML or text. Write the COMPLETE content yourself (Markdown: headings, lists, **bold**, tables). For "
+        "spreadsheets give rows (first row = headers).",
+        {"format": {**S, "description": "pdf | docx | xlsx | csv | md | html | txt"},
+         "title": {**S, "description": "short file title, e.g. 'Exam revision plan'"},
+         "content": {**S, "description": "full document text in Markdown (documents)"},
+         "rows": {"type": "array", "items": {"type": "array", "items": {"type": "string"}},
+                  "description": "spreadsheet rows, first row = headers"}}, ["format", "title"]),
+    _fn("create_image", "Create a new image from a description (pictures, illustrations, posters, logos, stickers).",
+        {"prompt": {**S, "description": "detailed description of the image"},
+         "aspect_ratio": {**S, "description": "1:1 | 16:9 | 9:16 | 4:3 | 3:4 (default 1:1)"}}, ["prompt"]),
+    _fn("find_video", "Find YouTube videos to SHOW the user: how-to / step-by-step tutorials, recipes, "
+        "repairs, exercises, explainers, or a live stream. The app shows them as playable cards.",
+        {"query": {**S, "description": "short YouTube search, e.g. 'how to change a car tyre'"},
+         "live": {"type": "boolean", "description": "true for live streams"}}, ["query"]),
+    _fn("get_time", "Current local time, or the time in another city/country.", {"place": _PLACE}, []),
+    _fn("get_date", "Today's date and weekday (or another day relative to today).",
+        {"offset_days": {"type": "integer", "description": "0 today, 1 tomorrow, -1 yesterday"}}, []),
+    _fn("days_until", "Count days until (or since) a date.",
+        {"date": {**S, "description": "YYYY-MM-DD"}, "label": S}, ["date"]),
+    _fn("get_weather", "Real weather: current conditions and forecast for up to 7 days.",
+        {"place": _PLACE, "day": {**S, "description": "now | today | tomorrow | week | a weekday | YYYY-MM-DD"}}, []),
+    _fn("get_air_quality", "Current air quality (AQI, PM2.5, dust).", {"place": _PLACE}, []),
+    _fn("get_sun_times", "Sunrise, sunset and daylight length.",
+        {"place": _PLACE, "day": {**S, "description": "today | tomorrow"}}, []),
+    _fn("get_prayer_times", "Islamic prayer times (Fajr..Isha) for a place.",
+        {"place": _PLACE, "day": {**S, "description": "today | tomorrow"}}, []),
+    _fn("convert_currency", "Convert money with live exchange rates (supports XOF/CFA, NGN, GHS, USD, EUR...).",
+        {"amount": {"type": "number"}, "from_currency": S, "to_currency": S},
+        ["amount", "from_currency", "to_currency"]),
+    _fn("get_crypto_price", "Live cryptocurrency price.",
+        {"coin": {**S, "description": "e.g. bitcoin, eth"}, "currency": {**S, "description": "default usd"}}, ["coin"]),
+    _fn("calculate", "Exact arithmetic (use for any non-trivial maths).",
+        {"expression": {**S, "description": "e.g. (1250*12)*0.18 or 15% of 80000"}}, ["expression"]),
+    _fn("remember", "Save a lasting fact the user asked you to remember about them "
+        "(preferences, important dates, people, routines). Write it as a short third-person sentence, "
+        "e.g. 'Exams start on 12 November 2026'.",
+        {"fact": S}, ["fact"]),
+    _fn("forget", "Forget something the user previously asked you to remember.",
+        {"what": {**S, "description": "words identifying the memory, e.g. 'exam date'"}}, ["what"]),
+    _fn("list_memories", "List everything the user asked Gink to remember.", {}, []),
+    _fn("set_alarm", "Set a real wake-up alarm. Use for 'wake me up', 'alarm at ...'.",
+        {"time": {**S, "description": "24h HH:MM"},
+         "label": S,
+         "date": {**S, "description": "YYYY-MM-DD, only if not the next occurrence"},
+         "repeat_days": {"type": "array", "items": S,
+                         "description": "e.g. ['mon','tue'] for repeating alarms"}},
+        ["time"]),
+    _fn("set_timer", "Start a countdown timer.",
+        {"seconds": {"type": "integer"}, "label": S}, ["seconds"]),
+    _fn("add_reminder", "Remind the user about something at a specific date and time.",
+        {"text": S, "when": {**S, "description": "YYYY-MM-DD HH:MM local time"}},
+        ["text", "when"]),
+    _fn("add_task", "Save a to-do. For goals or problems, first analyse them and pass the "
+        "concrete ordered steps you worked out in 'steps'.",
+        {"title": S, "notes": S,
+         "due": {**S, "description": "optional YYYY-MM-DD HH:MM"},
+         "steps": {"type": "array", "items": S}},
+        ["title"]),
+    _fn("list_items", "List the user's saved tasks, reminders, alarms or timers.",
+        {"kind": {"type": "string", "enum": ["task", "reminder", "alarm", "timer", "event", "all"]},
+         "include_done": {"type": "boolean"}}),
+    _fn("complete_item", "Mark a task/reminder done by id.", {"id": {"type": "integer"}}, ["id"]),
+    _fn("delete_item", "Delete a task/reminder/alarm by id.", {"id": {"type": "integer"}}, ["id"]),
+    _fn("open_app", "Open an app on this device by name.", {"name": S}, ["name"]),
+    _fn("open_url", "Open a website or link.", {"url": S}, ["url"]),
+    _fn("compose_message", "Prepare an SMS, WhatsApp or email draft for the user to send.",
+        {"channel": {"type": "string", "enum": ["sms", "whatsapp", "email"]},
+         "to": {**S, "description": "phone number with country code, or email address"},
+         "body": S, "subject": S},
+        ["channel", "body"]),
+    _fn("make_call", "Open the phone dialer with a number.", {"number": S}, ["number"]),
+    _fn("add_calendar_event", "Add an event to the user's calendar.",
+        {"title": S, "start": {**S, "description": "YYYY-MM-DD HH:MM"},
+         "end": {**S, "description": "YYYY-MM-DD HH:MM"}, "location": S, "notes": S},
+        ["title", "start"]),
+    _fn("web_search", "Look up current, factual information on the web.",
+        {"query": S}, ["query"]),
+]
+
+
+def _parse_time(s: str):
+    m = re.match(r"^\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*$", str(s or ""), re.I)
+    if not m:
+        return None
+    h, mnt, ap = int(m.group(1)), int(m.group(2) or 0), (m.group(3) or "").lower()
+    if ap == "pm" and h < 12:
+        h += 12
+    if ap == "am" and h == 12:
+        h = 0
+    if not (0 <= h < 24 and 0 <= mnt < 60):
+        return None
+    return h, mnt
+
+
+class ToolRunner:
+    def __init__(self, store: TaskStore, device: DeviceActions, http_client=None, memory=None):
+        self.store = store
+        self.device = device
+        self.memory = memory      # services/memory.py MemoryStore (optional)
+        from .computer import ComputerControl
+        self.computer = ComputerControl()
+        from ..live_info import LiveInfo
+        from ..video_search import VideoSearch
+        self.videos = VideoSearch(http_client=http_client)
+        self.live = LiveInfo(http_client=http_client)   # app sets live.city_fn (Settings -> Location)
+        self._http = http_client  # optional injected httpx.AsyncClient (tests)
+        self.on_change = None     # UI hook: called after the store changes
+
+    def _changed(self):
+        if self.on_change:
+            try:
+                self.on_change()
+            except Exception:
+                pass
+
+    async def execute(self, name: str, args: Dict[str, Any]) -> Dict[str, Any]:
+        fn = getattr(self, f"_t_{name}", None)
+        if not fn:
+            return {"ok": False, "message": f"Unknown tool {name}."}
+        try:
+            result = fn(**(args or {}))
+            if hasattr(result, "__await__"):
+                result = await result
+            return result
+        except TypeError as e:
+            return {"ok": False, "message": f"Bad arguments for {name}: {e}"}
+        except Exception as e:
+            return {"ok": False, "message": f"{name} failed: {e}"}
+
+    # ---------------- controlling this computer ----------------
+    def _pc(self):
+        self.computer.files_dir = self.files_dir
+        return self.computer
+
+    def _t_set_volume(self, level=None, action=""):
+        return self._pc().set_volume(level, action)
+
+    def _t_media_control(self, action):
+        return self._pc().media_control(action)
+
+    def _t_take_screenshot(self):
+        return self._pc().take_screenshot()
+
+    def _t_find_files(self, query):
+        return self._pc().find_files(query)
+
+    def _t_open_file(self, which):
+        path = self._pc().resolve_file(which)
+        if not path:
+            return {"ok": False, "message": "I couldn't find that file \u2014 search for it first (\u201cfind my ...\u201d)."}
+        r = self.device.open_file(path)
+        return {"ok": r.ok, "message": f"Opened {os.path.basename(path)}." if r.ok else r.message}
+
+    def _t_quit_app(self, name):
+        return self._pc().quit_app(name)
+
+    def _t_set_dark_mode(self, mode="toggle"):
+        return self._pc().set_dark_mode(mode)
+
+    def _t_lock_screen(self):
+        return self._pc().lock_screen()
+
+    def _t_create_note(self, title, body=""):
+        return self._pc().create_note(title, body)
+
+    def _t_copy_to_clipboard(self, text):
+        return self._pc().copy_to_clipboard(text)
+
+    def _t_system_status(self):
+        return self._pc().system_status()
+
+    def _t_open_folder(self, name="home"):
+        return self._pc().open_folder(name)
+
+    def _t_reveal_in_finder(self, which=""):
+        return self._pc().reveal_in_finder(which)
+
+    def _t_open_terminal(self, folder=""):
+        return self._pc().open_terminal(folder)
+
+    def _t_open_settings_pane(self, pane):
+        return self._pc().open_settings_pane(pane)
+
+    def _t_sleep_computer(self):
+        return self._pc().sleep_computer()
+
+    def _t_show_recent_files(self, days=3):
+        return self._pc().show_recent_files(days)
+
+    def _t_read_clipboard(self):
+        return self._pc().read_clipboard()
+
+    def _t_search_in_browser(self, query):
+        return self._pc().search_in_browser(query)
+
+    # ---------------- files & images ----------------
+    files_dir = None            # app sets: <data dir>/files
+    image_maker = None          # app sets: async (prompt, aspect) -> MadeFile (via Gink Cloud /media/image)
+
+    def _t_create_file(self, format, title, content="", rows=None):
+        from ..file_maker import FileMakerError, make_file
+        if not self.files_dir:
+            return {"ok": False, "message": "Files can't be created here."}
+        try:
+            made = make_file(self.files_dir, format, title, content or "", rows)
+        except FileMakerError as exc:
+            return {"ok": False, "message": str(exc)}
+        return {"ok": True, "file": made.name, "path": made.path,
+                "message": f"Here's your {made.kind.upper()} file:\n\n{made.card_markdown()}"}
+
+    async def _t_create_image(self, prompt, aspect_ratio="1:1"):
+        if self.image_maker is None:
+            return {"ok": False, "message": "Image creation isn't available here."}
+        try:
+            made = await self.image_maker(prompt, aspect_ratio or "1:1")
+        except Exception as exc:
+            return {"ok": False, "message": str(exc) or "The image couldn't be created."}
+        return {"ok": True, "file": made.name, "path": made.path,
+                "message": f"Here's your image:\n\n{made.card_markdown()}"}
+
+    # ---------------- videos ----------------
+    async def _t_find_video(self, query, live=False):
+        from ..video_search import video_markdown
+        try:
+            found = await self.videos.search(query, n=3, live=bool(live))
+        except Exception:
+            found = []
+        if not found:
+            return {"ok": False, "videos": [],
+                    "message": f"I couldn't find videos for \u201c{query}\u201d right now (check your connection)."}
+        return {"ok": True, "videos": found, "source": self.videos.last_source,
+                "message": f"Here {'is a live stream' if live else 'are some videos'} for **{query}** "
+                           f"\u2014 tap one to watch it next to our chat:\n\n" + video_markdown(found)}
+
+    # ---------------- live information ----------------
+    async def _t_get_time(self, place=None):
+        return await self._live(self.live.get_time(place))
+
+    def _t_get_date(self, offset_days=0):
+        return self.live.get_date(offset_days)
+
+    def _t_days_until(self, date, label=""):
+        return self.live.days_until(date, label)
+
+    async def _t_get_weather(self, place=None, day="now"):
+        return await self._live(self.live.get_weather(place, day))
+
+    async def _t_get_air_quality(self, place=None):
+        return await self._live(self.live.get_air_quality(place))
+
+    async def _t_get_sun_times(self, place=None, day="today"):
+        return await self._live(self.live.get_sun_times(place, day))
+
+    async def _t_get_prayer_times(self, place=None, day="today"):
+        return await self._live(self.live.get_prayer_times(place, day))
+
+    async def _t_convert_currency(self, amount, from_currency, to_currency):
+        return await self._live(self.live.convert_currency(amount, from_currency, to_currency))
+
+    async def _t_get_crypto_price(self, coin, currency="usd"):
+        return await self._live(self.live.get_crypto_price(coin, currency))
+
+    def _t_calculate(self, expression):
+        return self.live.calculate(expression)
+
+    @staticmethod
+    async def _live(coro):
+        try:
+            return await coro
+        except Exception as exc:
+            return {"ok": False, "message": "I couldn't reach the live data service right now "
+                                            f"({exc.__class__.__name__}). Check your internet connection."}
+
+    # ---------------- memory ----------------
+    def _t_remember(self, fact):
+        if not self.memory:
+            return {"ok": False, "message": "Memory isn't available."}
+        m = self.memory.add(fact)
+        return {"ok": True, "message": f"I'll remember that: {m['text']}."}
+
+    def _t_forget(self, what):
+        if not self.memory:
+            return {"ok": False, "message": "Memory isn't available."}
+        gone = self.memory.forget(what)
+        if not gone:
+            return {"ok": False, "message": f"I don't have anything saved about \u201c{what}\u201d."}
+        return {"ok": True, "message": "Forgotten: " + "; ".join(m["text"] for m in gone) + "."}
+
+    def _t_list_memories(self):
+        items = self.memory.list() if self.memory else []
+        if not items:
+            return {"ok": True, "message": "You haven't asked me to remember anything yet.", "memories": []}
+        return {"ok": True, "memories": [m["text"] for m in items],
+                "message": "Here's what I remember:\n" + "\n".join(f"- {m['text']}" for m in items)}
+
+    # ---------------- alarms / timers / reminders ----------------
+    def _t_set_alarm(self, time, label="Wake up", date=None, repeat_days=None):
+        hm = _parse_time(time)
+        if not hm:
+            return {"ok": False, "message": f"I couldn't read the time '{time}'."}
+        h, m = hm
+        when = None
+        if date:
+            d = from_iso(date)
+            if d:
+                when = d.replace(hour=h, minute=m, second=0)
+        when = when or self.device.next_occurrence(h, m)
+        item = self.store.add("alarm", label or "Wake up", due=when,
+                              notes=", ".join(repeat_days or []))
+        r = self.device.set_alarm(h, m, label or "Wake up", date=when if date else None,
+                                  repeat_days=repeat_days, item_id=item.id)
+        if r.by_system:
+            self._mark_system(item.id)
+            msg = r.message
+        else:
+            msg = (f"Alarm saved for {when:%a %d %b, %H:%M}. It will ring inside Gink — "
+                   f"keep Gink open (or running in the background). ({r.message})")
+        self._changed()
+        return {"ok": True, "id": item.id, "due": f"{when:%Y-%m-%d %H:%M}",
+                "message": msg, "by_system": r.by_system}
+
+    def _t_set_timer(self, seconds, label="Timer"):
+        seconds = int(seconds)
+        if seconds <= 0:
+            return {"ok": False, "message": "Timer length must be positive."}
+        due = datetime.now() + timedelta(seconds=seconds)
+        item = self.store.add("timer", label or "Timer", due=due)
+        r = self.device.set_timer(seconds, label)
+        if r.by_system:
+            self._mark_system(item.id)
+        self._changed()
+        msg = r.message if r.by_system else f"Timer running: {_dur(seconds)} (ends {due:%H:%M:%S})."
+        return {"ok": True, "id": item.id, "message": msg}
+
+    def _t_add_reminder(self, text, when):
+        due = from_iso(when)
+        if not due:
+            return {"ok": False, "message": f"I couldn't read the date/time '{when}'."}
+        if due < datetime.now() - timedelta(minutes=1):
+            return {"ok": False, "message": "That time is already in the past."}
+        item = self.store.add("reminder", text, due=due)
+        msg = f"I'll remind you at {due:%a %d %b, %H:%M}: {text}."
+        if self.device.platform in ("macos", "windows", "linux"):
+            from . import system_alarms
+            ok, _ = system_alarms.schedule(item.id, text, due, alarm=False)
+            if ok:
+                self._mark_system(item.id)
+                msg += " (also added to your system, so it shows even if Gink is closed)"
+        self._changed()
+        return {"ok": True, "id": item.id, "message": msg}
+
+    def _mark_system(self, item_id):
+        with self.store._lock:
+            self.store._db.execute("UPDATE items SET system_scheduled=1 WHERE id=?", (item_id,))
+            self.store._db.commit()
+
+    # ---------------- tasks ----------------
+    def _t_add_task(self, title, notes="", due=None, steps=None):
+        parent = self.store.add("task", title, notes=notes or "", due=from_iso(due) if due else None)
+        step_items = [self.store.add("task", s, parent_id=parent.id) for s in (steps or []) if str(s).strip()]
+        self._changed()
+        return {"ok": True, "id": parent.id, "steps": [s.title for s in step_items],
+                "message": f"Saved task '{title}'" + (f" with {len(step_items)} steps." if step_items else ".")}
+
+    def _t_list_items(self, kind="all", include_done=False):
+        k = None if kind in (None, "", "all") else kind
+        items = self.store.list(k, include_done=include_done, top_level_only=True)
+        out = []
+        for it in items[:40]:
+            d = it.to_dict()
+            kids = self.store.children(it.id)
+            if kids:
+                d["steps"] = [{"id": c.id, "title": c.title, "done": c.done} for c in kids]
+            out.append(d)
+        return {"ok": True, "count": len(out), "items": out}
+
+    def _t_complete_item(self, id):
+        it = self.store.set_done(int(id), True)
+        self._changed()
+        return {"ok": bool(it), "message": f"Done: {it.title}" if it else f"No item {id}."}
+
+    def _t_delete_item(self, id):
+        it = self.store.get(int(id))
+        if not it:
+            return {"ok": False, "message": f"No item {id}."}
+        if it.system_scheduled:
+            from . import system_alarms
+            system_alarms.cancel(it.id)
+        self.store.delete(it.id)
+        self._changed()
+        extra = " (Android Clock alarms must also be switched off in the Clock app.)" \
+            if it.system_scheduled and self.device.platform == "android" and it.kind == "alarm" else ""
+        return {"ok": True, "message": f"Deleted {it.kind} '{it.title}'.{extra}"}
+
+    # ---------------- device ----------------
+    def _t_open_app(self, name):
+        return self.device.open_app(name).to_dict()
+
+    def _t_open_url(self, url):
+        return self.device.open_url(url).to_dict()
+
+    def _t_compose_message(self, channel, body, to="", subject=""):
+        return self.device.compose_message(channel, to, body, subject).to_dict()
+
+    def _t_make_call(self, number):
+        return self.device.make_call(number).to_dict()
+
+    def _t_add_calendar_event(self, title, start, end=None, location="", notes=""):
+        s = from_iso(start)
+        if not s:
+            return {"ok": False, "message": f"I couldn't read the start time '{start}'."}
+        e = from_iso(end) if end else None
+        r = self.device.add_calendar_event(title, s, e, location, notes)
+        self.store.add("event", title, due=s, notes=location or notes or "",
+                       system_scheduled=r.ok)
+        self._changed()
+        return r.to_dict()
+
+    # ---------------- web ----------------
+    async def _t_web_search(self, query):
+        import httpx
+        client = self._http or httpx.AsyncClient(timeout=12, follow_redirects=True,
+                                                 headers={"User-Agent": "Gink/0.1"})
+        results = []
+        try:
+            r = await client.get("https://api.duckduckgo.com/",
+                                 params={"q": query, "format": "json", "no_html": 1})
+            if r.status_code == 200:
+                j = r.json()
+                if j.get("AbstractText"):
+                    results.append({"source": j.get("AbstractSource"), "text": j["AbstractText"],
+                                    "url": j.get("AbstractURL")})
+                if j.get("Answer"):
+                    results.append({"source": "DuckDuckGo", "text": str(j["Answer"])})
+            r = await client.get("https://en.wikipedia.org/w/api.php", params={
+                "action": "query", "list": "search", "srsearch": query,
+                "format": "json", "srlimit": 3})
+            if r.status_code == 200:
+                for hit in r.json().get("query", {}).get("search", []):
+                    snippet = re.sub(r"<[^>]+>", "", hit.get("snippet", ""))
+                    results.append({"source": "Wikipedia", "title": hit["title"], "text": snippet,
+                                    "url": "https://en.wikipedia.org/wiki/" + hit["title"].replace(" ", "_")})
+        except Exception as e:
+            return {"ok": False, "message": f"Web lookup failed: {e}"}
+        finally:
+            if self._http is None:
+                await client.aclose()
+        if not results:
+            return {"ok": False, "message": "No results found."}
+        return {"ok": True, "results": results[:5]}

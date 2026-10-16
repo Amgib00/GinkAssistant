@@ -1,0 +1,37 @@
+# Builds the Android app (a debug APK you can install on a phone for testing).
+# Run it: GitHub -> Actions -> "Android build" -> Run workflow (or push to main).
+# Result: the run's page -> Artifacts -> "Gink-Android" (app-debug.apk).
+# Store builds (signed .aab for Google Play) need a signing key -- a later step.
+name: Android build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["src/**", "pyproject.toml", "icons/**", ".github/workflows/android.yml"]
+
+jobs:
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install Briefcase
+        run: python -m pip install --upgrade pip briefcase
+      - name: Create the Android project  (build/ginkassistant/android/gradle)
+        run: briefcase create android --no-input
+      - name: Build the APK
+        run: briefcase build android --no-input
+      - name: Collect the APK
+        run: |
+          APK=$(find build/ginkassistant/android -name "*.apk" | head -1)
+          echo "Built: $APK"
+          cp "$APK" Gink-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Gink-Android
+          path: Gink-debug.apk
+          retention-days: 14

@@ -1,38 +1,25 @@
-# Security Policy for GinkAssistant
+# Security Policy
 
-## Supported Versions
+## Supported versions
+| Version | Supported |
+| ------- | --------- |
+| 0.1.x (main) | :white_check_mark: |
 
-GinkAssistant is currently in active development. Security updates are prioritized for the main branch and the most recent stable releases to ensure API keys and user data remain protected.
+## Reporting a vulnerability
+**Please don't report security problems in public issues.** Use GitHub's private reporting:
+the repository's **Security** tab -> **Report a vulnerability**. Include what you found, how to
+reproduce it, and what could happen if it were exploited.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+You'll get an acknowledgement within **48 hours**. Please give us time to release a fix
+before talking about it publicly.
 
-## Reporting a Vulnerability
+## How Gink keeps secrets out of the app and this repository
+- API keys (Groq, Google Gemini, payments, sign-in) live **only on the Gink server**, as
+  environment variables -- never in the app or in this repository. The app sends a session
+  token, not keys.
+- Local settings go in `.env`, which `.gitignore` blocks from being committed.
+- Chat history is stored on your device; protect your computer and phone with a password.
+- "Hey Gink" listens for the wake word **on the device**; no audio leaves it before the wake word.
 
-We take the security of GinkAssistant very seriously. If you discover a security vulnerability, we appreciate your help in disclosing it to us in a responsible manner.
-
-### How to report
-**Please do not report security vulnerabilities via public GitHub issues.**
-
-Instead, please send a detailed report to:
-**[Insert Your Email Here]**
-
-In your report, please include:
-*   **Description:** A detailed summary of the vulnerability.
-*   **Steps to Reproduce:** Proof-of-concept code, screenshots, or a clear list of steps.
-*   **Impact:** What could happen if this vulnerability is exploited (e.g., API key theft, history access).
-
-### Our Response Process
-*   **Acknowledgment:** You will receive an acknowledgment of your report within **48 hours**.
-*   **Investigation:** We will investigate the issue and may contact you for further details.
-*   **Resolution:** If the vulnerability is accepted, we will work on a fix and provide an estimated timeline for the update. We request that you do not disclose the issue publicly until a patch is released.
-
-## User Security Responsibilities
-
-To keep your GinkAssistant environment secure, please follow these best practices:
-
-1.  **Groq API Keys:** Do not hardcode your API keys in `worker.py`. Use environment variables or a secure `.env` file that is listed in your `.gitignore`.
-2.  **App Passwords:** When using the Gmail OTP feature, always use a **Google App Password** rather than your primary account password.
-3.  **Local History:** Be aware that chat history is stored locally. Ensure your computer's user account is password protected to prevent unauthorized access to your database.
+If a key is ever committed by mistake, **revoke it with the provider straight away** --
+deleting it from the code isn't enough, because git history and copies keep it.

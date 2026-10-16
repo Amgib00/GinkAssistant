@@ -1,29 +1,283 @@
-[tool.briefcase]
-project_name = "GinkAssistant"
-bundle = "com.amgib"
-version = "0.1.0"
-url = "https://github.com/Amgib00/GinkAssistant"
-author = "Amgib"
-author_email = "your-email@example.com"
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
 
-[tool.briefcase.app.ginkassistant]
-formal_name = "GinkAssistant"
-description = "AI Voice Assistant powered by llama.cpp"
-sources = ["GinkAssistant", "main.py", "model_utils.py"]
-requires = [
-    "PyQt5",
-    "pyttsx3",
-    "speech_recognition",
-    "llama-cpp-python"
+[project]
+# Must be a valid package name (letters, digits, "-", "_", "."; no spaces).
+# Briefcase 0.4.6+ reads this name, so "gink ai assistant" could break builds.
+name = "ginkassistant"
+version = "0.1.0"
+description = "AI Assistant powered to Help Humans"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Amgib00", email = "kargboi131ik667957@gmail.com" },
 ]
 
+[tool.briefcase]
+# Internal project name: must be a valid package name (Briefcase 0.4.6 warns that
+# "Gink Ai Assistant" will become an error). Users see formal_name ("Gink") below.
+project_name = "ginkassistant"
+bundle = "com.amgib"
+version = "0.1.0"
+url = "https://github.com/amgib00/ginkassistant"
+author = "Amgib00"
+author_email = "kargboi131ik667957@gmail.com"
+
+[tool.briefcase.app.ginkassistant]
+formal_name = "Gink"
+description = "AI Assistant powered to Help Humans"
+sources = ["src/ginkassistant"]
+test_sources = ["tests"]
+license = "MIT"
+# App icon for every platform. tools/make_icons.py builds all the sizes and formats
+# Briefcase asks for (icons/ginkassistant.icns / .ico / -<size>.png ...) from
+# icons/source-icon.png. A missing file makes Briefcase use BeeWare's default bee.
+icon = "icons/ginkassistant"
+
+# Installed on EVERY platform (macOS, Windows, Linux, Android, iOS) -- so only
+# packages that are pure Python or have iPhone/Android builds. This list is
+# cumulative: each platform section below ADDS to it.
+# Removed as unused (nothing imports them): nltk, aiofiles, requests, argon2-cffi,
+# passlib, sqlalchemy, opencv-python-headless, google-genai.
+requires = [
+    "certifi",          # TLS certificates for httpx
+    "fpdf2",            # PDFs Gink makes (services/file_maker.py)
+    "groq",             # the AI client (talks to Groq or to your Gink server)
+    "httpx",            # every network call
+    "markdown",         # chat formatting (services/markdown_render.py)
+    "openpyxl",         # Excel files Gink makes
+    "packaging",        # version checks (services/skills.py)
+    "pillow",           # images, photos, icons (has iPhone builds for Python 3.13+)
+    "pygments",         # code highlighting in chat
+    "pypdf",            # reading attached PDFs
+    "python-dotenv",    # .env settings
+    "tzdata",           # time zones where the system has none
+]
+
+
+# --- macOS ------------------------------------------------------------------
 [tool.briefcase.app.ginkassistant.macOS]
-universal_build = true
-requires_device = ["microphone"]
+# No min_os_version / LSMinimumSystemVersion on purpose: each Briefcase version then uses
+# the right minimum for its own Python package and launcher. Briefcase 0.3.13-0.3.15 make
+# apps that open on macOS 10.15 Catalina; 0.3.16+ (incl. 0.4.x) need macOS 11+, and
+# forcing 10.15 there either stops the build or makes an app that won't open on 10.15.
+requires = [
+    "toga-cocoa",
+    "std-nslog",            # app logging on macOS (Mac-only builds -- never add to the universal list)
+    # the built-in server (services/backend_server.py; started on desktop only)
+    "pydantic==2.13.4",
+    "fastapi>=0.115.0",
+    "uvicorn",
+    "python-multipart",     # form posts (payments, Apple sign-in)
+    "PyJWT",
+    "cryptography<49",      # Sign in with Apple (ES256) via PyJWT; 49+ has no Intel-Mac builds
+    # voice, wake word, music
+    "edge-tts",             # online voice fallback
+    "SpeechRecognition",    # speech to text
+    "pyaudio",              # microphone
+    "pygame",               # playing speech audio
+    "vosk",                 # offline "Hey Gink" wake word
+    "sounddevice",          # song recognition recording
+    "shazamio",             # song recognition
+    "numpy<2.0.0",
+    "librosa",              # offline song fingerprinting (services/shazam_engine.py)
+    "scipy",
+    "numba==0.62.1",        # newest numba with a ready-made Intel Mac build (0.63+ compiles and fails)
+    "llvmlite==0.45.1",     # pairs with numba 0.62.1
+    # other desktop features
+    "duckduckgo-search",    # web search
+    "psutil",               # system info
+    "llama-cpp-python",     # local offline AI (compiles from source: slow first install)
+    "pillow-heif",          # iPhone HEIC photos as attachments (has a macOS 10.15 Intel build)
+    # pyttsx3 deliberately NOT here: on a Mac it pulls in PyObjC, and Gink's Mac
+    # fallback voice uses the built-in `say` command instead.
+]
 
+[tool.briefcase.app.ginkassistant.macOS.permissions]
+microphone = "Gink uses the microphone for voice conversations, dictation and \u201cHey Gink\u201d."
+# No camera permission: nothing in Gink uses the camera (App Store reviewers check this).
+
+
+# --- Windows ----------------------------------------------------------------
+[tool.briefcase.app.ginkassistant.windows]
+console = false
+requires = [
+    "toga-winforms",
+    "pydantic==2.13.4",
+    "fastapi>=0.115.0",
+    "uvicorn",
+    "python-multipart",
+    "PyJWT",
+    "cryptography",         # PyJWT needs it for Sign in with Apple (ES256) on the built-in server
+    "edge-tts",
+    "SpeechRecognition",
+    "pyaudio",
+    "pygame",
+    "pyttsx3",              # offline fallback voice (Windows SAPI)
+    "vosk",
+    "sounddevice",
+    "shazamio",
+    "numpy<2.0.0",
+    "librosa",
+    "scipy",
+    "duckduckgo-search",
+    "psutil",
+    "tzlocal",              # time zone -> country detection on Windows (services/device_region.py)
+    "llama-cpp-python",     # needs a C++ build toolchain on Windows
+    "pillow-heif",
+]
+
+
+# --- Linux ------------------------------------------------------------------
 [tool.briefcase.app.ginkassistant.linux]
-requires = ["libgirepository1.0-dev"]
+requires = [
+    "toga-gtk",
+    "pydantic==2.13.4",
+    "fastapi>=0.115.0",
+    "uvicorn",
+    "python-multipart",
+    "PyJWT",
+    "cryptography",         # PyJWT needs it for Sign in with Apple (ES256) on the built-in server
+    "edge-tts",
+    "SpeechRecognition",
+    "pyaudio",
+    "pygame",
+    "pyttsx3",              # offline fallback voice (espeak)
+    "vosk",
+    "sounddevice",
+    "shazamio",
+    "numpy<2.0.0",
+    "librosa",
+    "scipy",
+    "duckduckgo-search",
+    "psutil",
+    "llama-cpp-python",     # compiles from source on every build (several minutes)
+    "pillow-heif",
+]
+# Build-time packages. libgirepository-2.0-dev is for Ubuntu 24.04+; on Ubuntu
+# 22.04 / Debian 12 use libgirepository1.0-dev instead. gir1.2-webkit2-4.1 is what
+# Gink's chat page (toga.WebView) needs (4.0 no longer exists on Ubuntu 24.04).
+system_requires = [
+    "pkg-config",
+    "python3-dev",
+    "libgirepository-2.0-dev",
+    "libcairo2-dev",
+    "gir1.2-gtk-3.0",
+    "gir1.2-webkit2-4.1",
+    "libpulse0",
+    "libasound2",
+    "libxcb-cursor0",
+    "libportaudio2",
+    "portaudio19-dev",
+    "flac",
+]
 
+[tool.briefcase.app.ginkassistant.linux.system.debian]
+system_runtime_requires = [
+    "libgl1",
+    "libgtk-3-0",
+    "libwebkit2gtk-4.1-0",
+    "libxcb-cursor0",
+    # explicit dependencies on recent Debian-based distros (not Ubuntu 22.04)
+    "libxcb-icccm4",
+    "libxcb-keysyms1",
+    "libxcb-shape0",
+    "libxkbcommon-x11-0",
+]
+
+[tool.briefcase.app.ginkassistant.linux.system.rhel]
+# Package names vary across RHEL/Fedora versions -- check against your target.
+system_runtime_requires = [
+    "gtk3",
+    "webkit2gtk3",
+]
+
+[tool.briefcase.app.ginkassistant.linux.system.suse]
+system_runtime_requires = [
+    "libgthread-2_0-0",
+    "libgtk-3-0",
+    "libwebkit2gtk3",
+]
+
+[tool.briefcase.app.ginkassistant.linux.system.arch]
+system_runtime_requires = [
+    "gtk3",
+    "webkit2gtk",
+]
+
+[tool.briefcase.app.ginkassistant.linux.appimage]
+manylinux = "manylinux_2_28"
+# What Briefcase's own template uses for a GTK app (AlmaLinux 8 build image)
+system_requires = [
+    "cairo-gobject-devel",          # to compile pycairo
+    "gobject-introspection-devel",  # to compile PyGObject
+    "gtk3-devel",                   # GTK
+    "libcanberra-gtk3",             # GTK looks for these at runtime;
+    "PackageKit-gtk3-module",       # linuxdeploy picks them up from the
+    "gvfs-client",                  # build environment
+]
+linuxdeploy_plugins = ["DEPLOY_GTK_VERSION=3 gtk"]
+
+[tool.briefcase.app.ginkassistant.linux.flatpak]
+# GNOME runtime: GTK + WebKitGTK (needed for Gink's chat page). The KDE runtime
+# used before was left over from the old PySide6/Qt version of the app.
+flatpak_runtime = "org.gnome.Platform"
+flatpak_runtime_version = "50"
+flatpak_sdk = "org.gnome.Sdk"
+
+
+# --- Android ----------------------------------------------------------------
 [tool.briefcase.app.ginkassistant.android]
-# Android requires specific hardware permissions for voice
-permissions = ["RECORD_AUDIO"]
+splash_background_color = "#151D23"     # the icon's dark colour; also the adaptive-icon background
+# Only what Gink's Android code uses. pydantic v1 is pure Python (v2 needs
+# pydantic-core, which has no real Android build); groq accepts pydantic>=1.9.
+# 1.10.26 (last 1.x): 1.10.12 crashes on Python 3.12.4+/3.13 (ForwardRef._evaluate).
+# Not here (no Android builds, or desktop-only features): shazamio, duckduckgo-search,
+# edge-tts, pyttsx3, numpy, pygame, pyaudio, vosk, std-nslog -- Gink's code skips
+# those features on phones (tests/test_android_startup.py checks it starts without them).
+requires = [
+    "toga-android",
+    "pydantic==1.10.26",
+    "psutil",               # Chaquopy provides an Android build
+]
+build_gradle_dependencies = [
+    "androidx.appcompat:appcompat:1.6.1",
+    "androidx.constraintlayout:constraintlayout:2.1.4",
+    "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0",
+    "androidx.webkit:webkit:1.15.0",    # with staticProxy below: WebView navigation events on Android
+]
+build_gradle_extra_content = """
+chaquopy.defaultConfig.staticProxy("toga_android.widgets.internal.webview")
+"""
+
+[tool.briefcase.app.ginkassistant.android.permissions]
+"android.permission.INTERNET" = "Required for AI processing."
+"android.permission.RECORD_AUDIO" = "Required for voice commands."
+"android.permission.MODIFY_AUDIO_SETTINGS" = "Required for playback control."
+"com.android.alarm.permission.SET_ALARM" = "Lets Gink set wake-up alarms and timers in your Clock app."
+
+
+# --- iOS --------------------------------------------------------------------
+# Build on macOS 15+ with Xcode 26 (see .github/workflows/ios.yml) and Python 3.13+.
+[tool.briefcase.app.ginkassistant.iOS]
+splash_background_color = "#151D23"
+# Only packages with iPhone builds (pure Python or published iOS wheels).
+# Not here: duckduckgo-search (its "primp" has no iOS build), numpy, psutil,
+# shazamio, PyAudio, vosk, std-nslog, desktop voice tools.
+requires = [
+    "toga-iOS",
+    "pydantic==1.10.26",
+]
+
+[tool.briefcase.app.ginkassistant.iOS.permissions]
+microphone = "Gink uses the microphone for voice conversations and dictation."
+
+
+# --- Web --------------------------------------------------------------------
+# Not supported: Toga's web backend is a proof of concept without the WebView
+# widget Gink's interface is built on. Gink on the web is served by the Gink
+# server instead (see deploy/IOS_AND_WEB.md).
+[tool.briefcase.app.ginkassistant.web]
+supported = false

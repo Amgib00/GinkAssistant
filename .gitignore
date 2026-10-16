@@ -1,27 +1,51 @@
+# --- secrets: NEVER commit these ---
+.env
+.env.*
+!.env.example
+*.pem
+*.p8
+*.p12
+*.key
+*.keystore
+*.jks
+*.mobileprovision
 
-# Ignore large build artifacts, models, and dependencies
-.briefcase/
-models/
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- virtual environments ---
+.venv*/
+venv*/
+env/
+
+# --- Briefcase / builds ---
 build/
 dist/
-
-
-# Virtual environments and build directories
-.venv/
-.venv310/
-build/
-dist/
-models/
-
-
-# Exclude all environments, builds, logs, and caches
-.venv/
-.venv310/
-build/
-dist/
-models/
 logs/
-**/logs/
-.idea/
+_old_builds/
+wheels/
+# leftovers from Briefcase <= 0.3.12 (built into the project root)
+/macOS/
+/macos/
+/iOS/
+/android/
+/windows/
+/linux/
 
-src/.env
+# --- big files: AI models, downloads ---
+*.gguf
+*.bin
+models/
+llama.cpp/
+llama_cpp/
+
+# --- editors / OS ---
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
