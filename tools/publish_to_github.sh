@@ -17,7 +17,7 @@ REPO="${GINK_REPO:-https://github.com/amgib00/ginkassistant.git}"
 BRANCH="${GINK_BRANCH:-main}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PUBLISH=(.github .gitignore .env.example README.md SECURITY.md INTEGRATION.md pyproject.toml
-         requirements.txt requirements-test.txt render.yaml src tests deploy tools icons)
+         requirements.txt requirements-test.txt render.yaml src tests deploy tools icons website)
 KEEP_FROM_REPO=(LICENSE .github/ISSUE_TEMPLATE)      # kept as they are on GitHub
 SECRET_RE='hf_[A-Za-z0-9]{30,}|gsk_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|sk-(proj-)?[A-Za-z0-9]{32,}|sk_live_[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_-]{35}|-----BEGIN [A-Z ]*PRIVATE KEY'
 
@@ -56,11 +56,29 @@ git ls-files | while read -r f; do
   [ $keep = 0 ] && git rm -q --cached -- "$f" && rm -f -- "$f"
 done
 find . -mindepth 1 -type d -empty -not -path "./.git*" -delete 2>/dev/null || true
-for p in "${PUBLISH[@]}"; do
-  mkdir -p "./$(dirname "$p")"
-  cp -R "$ROOT/$p" "./$(dirname "$p")/"
-done
-find . -path ./.git -prune -o \( -name "__pycache__" -o -name ".pytest_cache" \) -type d -print | xargs rm -rf
+MANIFEST="$ROOT/tools/MANIFEST.txt"
+if [ -f "$MANIFEST" ]; then
+  # Publish exactly the files of this version (unzipping an update never deletes old files,
+  # so a project folder can hold stale ones -- those must not go back to GitHub).
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    [ -f "$ROOT/$f" ] || { echo "Missing $f -- unzip the full package again."; exit 1; }
+    mkdir -p "./$(dirname "$f")"; cp "$ROOT/$f" "./$f"
+  done < "$MANIFEST"
+  STALE=$(cd "$ROOT" && for p in "${PUBLISH[@]}"; do [ -d "$p" ] && find "$p" -type f -not -path "*/__pycache__/*" \
+          -not -path "website/_site/*" -not -name ".DS_Store" -not -name "*.pyc" -not -path "*.dist-info/*"; done | sort | comm -23 - <(sort "$MANIFEST"))
+  if [ -n "$STALE" ]; then
+    echo; echo "Not published -- these files in your folder aren't part of this version (old leftovers?):"
+    echo "$STALE" | head -20 | sed 's/^/   - /'
+    echo "   (they're left alone; delete them from your folder if they're old)"
+  fi
+else
+  for p in "${PUBLISH[@]}"; do
+    mkdir -p "./$(dirname "$p")"
+    cp -R "$ROOT/$p" "./$(dirname "$p")/"
+  done
+fi
+find . -path ./.git -prune -o \( -name "__pycache__" -o -name ".pytest_cache" -o -name "*.dist-info" \) -type d -print | xargs rm -rf
 find . -path ./.git -prune -o -name ".DS_Store" -type f -print | xargs rm -f
 git add -A
 

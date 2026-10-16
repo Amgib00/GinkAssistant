@@ -518,3 +518,21 @@ New services/live_info.py (all free, no API keys):
   1.10.26; cryptography missing on desktop (Sign in with Apple via PyJWT) -> added,
   <49 on Intel Macs (49+ has no Intel-Mac builds); tests used tomllib (3.11+) ->
   tomli fallback on 3.10; iOS startup test made Python-3.13-safe.
+
+## Latest: the website (website/) + publishing only this version's files
+- 13 pages from one shared layout (tools/build_website.py): home, features,
+  pricing, demo, download, blog, community, contact, vision, privacy, terms,
+  delete-account (needed for Google Play), 404. The hero is the app's own
+  animated snowflake (logo_svg.py). No web fonts, cookies or third-party requests.
+- Facts come from the code: plan limits (server defaults), payment methods per
+  country (billing_catalog), prepaid / no auto-renew, what account deletion
+  erases and keeps, scrypt passwords, every outside service the app uses.
+- Prices hidden until PRICES_CONFIRMED = true in website/assets/pricing.js
+  (the catalog's prices are placeholders). No refund policy or governing law
+  invented -- owner's decisions.
+- Checked in Chromium 141: 13 pages, phone (390 px) and desktop, no errors, no
+  sideways scrolling; demo: real maths, text-only rendering (HTML can't run).
+- .github/workflows/website.yml publishes to GitHub Pages.
+- FIX: publish_to_github.sh now publishes exactly tools/MANIFEST.txt (stale files
+  in the project folder -- old workflow, *.dist-info, media_engine.py -- had been
+  pushed) and lists leftovers it skips; *.dist-info added to .gitignore.

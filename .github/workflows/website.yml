@@ -1,0 +1,43 @@
+# Builds the website (tools/build_website.py) and publishes it on GitHub Pages.
+# One-time setup: GitHub -> Settings -> Pages -> Source: "GitHub Actions".
+# The site appears at https://amgib00.github.io/ginkassistant/ (or your own domain).
+name: Website
+
+on:
+  push:
+    branches: [main]
+    paths: ["website/**", "tools/build_website.py", "src/ginkassistant/ui/logo_svg.py", ".github/workflows/website.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build the website
+        run: python tools/build_website.py
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: website/_site
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

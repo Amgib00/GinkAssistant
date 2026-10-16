@@ -44,6 +44,11 @@ pip install -r requirements-test.txt
 python -m pytest tests
 ```
 
+## Website
+The site lives in `website/` (one shared layout in `tools/build_website.py`). Preview it with
+`python tools/build_website.py` and open `website/_site/index.html`. It's published on GitHub
+Pages automatically. To show Gink Pro prices, set them in `website/assets/pricing.js`.
+
 ## Server
 Gink's AI, voices, images, sync and payments go through your own server, so no keys are
 inside the app. Deploying it (Render, Docker) and its settings: `deploy/README.md`.

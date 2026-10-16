@@ -1,0 +1,59 @@
+<!--
+title: Download
+description: Download Gink for Mac, Windows, Linux, Android and iPhone. Gink is in beta; test builds are published on GitHub.
+-->
+<section class="page-head">
+  <div class="wrap">
+    <h1>Download Gink</h1>
+    <p>Gink is in beta. Test builds are published on GitHub as they're ready, and everything you need to run it yourself is there too.</p>
+  </div>
+</section>
+
+<section style="padding-top:8px">
+  <div class="wrap">
+    <div class="downloads">
+      <div class="download">
+        <h2>Mac</h2>
+        <p>macOS 10.15 Catalina or later. Includes &ldquo;Hey Gink&rdquo; and computer control.</p>
+        <span class="status status-beta">Beta</span>
+      </div>
+      <div class="download">
+        <h2>Android</h2>
+        <p>Android 7 or later. Test builds (APK) come from the Android build on GitHub.</p>
+        <span class="status status-beta">Beta</span>
+      </div>
+      <div class="download">
+        <h2>Windows</h2>
+        <p>Windows 10 or 11. Runs today from source; an installer is on the way.</p>
+        <span class="status status-soon">Coming soon</span>
+      </div>
+      <div class="download">
+        <h2>Linux</h2>
+        <p>Ubuntu 22.04 or later and other modern distributions. Runs from source today.</p>
+        <span class="status status-soon">Coming soon</span>
+      </div>
+      <div class="download">
+        <h2>iPhone and iPad</h2>
+        <p>Being prepared for TestFlight, Apple's beta testing app.</p>
+        <span class="status status-soon">Coming soon</span>
+      </div>
+    </div>
+    <div class="actions">
+      <a class="button" href="{{REPO}}/releases">Get test builds on GitHub</a>
+      <a class="button button-quiet" href="mailto:contact@ginkai.com?subject=Gink%20beta">Join the beta</a>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <h2>Run Gink from source</h2>
+    <p class="muted">For developers, on any computer with Python 3.10 or later.</p>
+<pre><code>git clone {{REPO}}.git
+cd ginkassistant
+python -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements.txt
+python -m ginkassistant</code></pre>
+    <p class="muted">Setup notes for each platform are in the <a href="{{REPO}}#readme">README</a>.</p>
+  </div>
+</section>
