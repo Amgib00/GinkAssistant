@@ -48,7 +48,7 @@ jobs:
           APP=$(find build/ginkassistant/ios -name "*.app" -path "*iphonesimulator*" | head -1)
           echo "Built: $APP"
           ditto -c -k --keepParent "$APP" Gink-iOS-Simulator.zip
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Gink-iOS-Simulator
           path: Gink-iOS-Simulator.zip
