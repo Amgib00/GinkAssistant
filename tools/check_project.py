@@ -44,14 +44,16 @@ def _walk_apps(folder, depth=3):
 
 
 def _real_name(root, name):
-    """The folder's name as actually stored on disk (e.g. 'macOS' when asked about 'macos')."""
+    """The folder's name as actually stored on disk (e.g. 'macOS' when asked about 'macos').
+    Prefers the real folder over a shortcut (symlink) pointing to it, whatever order the
+    system lists them in."""
     try:
-        for entry in os.listdir(root):
-            if entry.lower() == name.lower() and os.path.samefile(os.path.join(root, entry), os.path.join(root, name)):
-                return entry
+        matches = [e for e in os.listdir(root)
+                   if e.lower() == name.lower() and os.path.samefile(os.path.join(root, e), os.path.join(root, name))]
     except OSError:
-        pass
-    return name
+        return name
+    real = [e for e in matches if not os.path.islink(os.path.join(root, e))]
+    return sorted(real or matches or [name])[0]
 
 
 def _version_tuple(text):

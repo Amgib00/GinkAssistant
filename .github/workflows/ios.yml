@@ -19,8 +19,8 @@ jobs:
     # Fast check on Linux first: every module imports with ONLY the iOS packages
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
       - run: python -m pip install toga-core toga-dummy pytest httpx groq "pydantic==1.10.26" pillow fpdf2 openpyxl pypdf markdown pygments python-dotenv requests tzdata aiofiles
@@ -31,8 +31,8 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"       # Pillow publishes iPhone builds for Python 3.13+
       - name: Show Xcode
@@ -48,7 +48,7 @@ jobs:
           APP=$(find build/ginkassistant/ios -name "*.app" -path "*iphonesimulator*" | head -1)
           echo "Built: $APP"
           ditto -c -k --keepParent "$APP" Gink-iOS-Simulator.zip
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Gink-iOS-Simulator
           path: Gink-iOS-Simulator.zip

@@ -536,3 +536,13 @@ New services/live_info.py (all free, no API keys):
 - FIX: publish_to_github.sh now publishes exactly tools/MANIFEST.txt (stale files
   in the project folder -- old workflow, *.dist-info, media_engine.py -- had been
   pushed) and lists leftovers it skips; *.dist-info added to .gitignore.
+
+## Latest: GitHub fixes
+- FIX: tests/test_check_project failed on GitHub -- check_project reported a
+  shortcut's name (./macos) instead of the real folder (./macOS) when the system
+  listed the shortcut first. _real_name now prefers the real folder; tested in
+  both listing orders.
+- Workflows updated to the latest action versions (all run on Node.js 24, so the
+  "Node.js 20 is deprecated" warnings go): checkout v7, setup-python v7,
+  upload-artifact v7, configure-pages v6, upload-pages-artifact v5, deploy-pages v5.
+  Checked each version still supports every option the workflows use.

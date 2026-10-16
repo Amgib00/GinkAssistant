@@ -135,3 +135,20 @@ def test_newer_macs_keep_04x(monkeypatch):
     _fake_env(monkeypatch, cp, "0.4.4", os.path.join(os.path.dirname(sys.executable), "briefcase"), "0.4.4")
     lines = []
     assert cp.check_briefcase(lines.append) == 0
+
+
+
+def test_real_name_ignores_listing_order(tmp_path, monkeypatch):
+    """GitHub's Linux machines listed the shortcut first -- the real folder must still win."""
+    import check_project as cp
+    proj = make_messy_copy(tmp_path)
+    (proj / "macos").symlink_to(proj / "macOS", target_is_directory=True)
+    (proj / "MacOS").symlink_to(proj / "macOS", target_is_directory=True)
+    real_listdir = os.listdir
+    for order in (sorted, lambda xs: sorted(xs, reverse=True)):
+        monkeypatch.setattr(cp.os, "listdir", lambda p, order=order: order(real_listdir(p)))
+        assert cp._real_name(str(proj), "macos") == "macOS"
+        lines = []
+        cp.check(str(proj), fix=False, out=lines.append, briefcase_check=False)
+        stray = [l for l in lines if "leftover build folder" in l]
+        assert len(stray) == 1 and "./macOS/" in stray[0]
