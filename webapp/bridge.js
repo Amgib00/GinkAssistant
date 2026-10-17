@@ -57,6 +57,7 @@
     start();
   }
   function wireSignIn() {
+    socialButtons();
     $("ws-tab-login").onclick = function () { tab("login"); };
     $("ws-tab-signup").onclick = function () { tab("signup"); };
     $("ws-login").onsubmit = function (e) {
@@ -80,6 +81,49 @@
         return r.ok ? r.json().then(signedIn) : errorText(r).then(function (t) { $("ws-err").textContent = t; });
       }).catch(function () { $("ws-err").textContent = "Can't reach the Gink server."; }).then(function () { busyForm(f, false); });
     };
+  }
+  // ---- Google / GitHub / Microsoft / Apple: the server's own sign-in flow
+  //      (begin -> provider page in a pop-up -> the page asks /auth/poll until it's done)
+  function socialButtons() {
+    api("/auth/providers", undefined, { noLogout: true }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (all) {
+      var box = $("ws-social"); box.innerHTML = "";
+      Object.keys(all || {}).forEach(function (key) {
+        if (!all[key].enabled) return;
+        var b = document.createElement("button"); b.type = "button";
+        b.textContent = "Continue with " + all[key].label;
+        b.onclick = function () { socialSignIn(key, b); };
+        box.appendChild(b);
+      });
+      $("ws-social-wrap").hidden = !box.children.length;
+    }).catch(function () {});
+  }
+  function socialSignIn(provider, btn) {
+    var bytes = new Uint8Array(24); crypto.getRandomValues(bytes);
+    var state = Array.prototype.map.call(bytes, function (x) { return ("0" + x.toString(16)).slice(-2); }).join("");
+    // open the window NOW (inside the click), so pop-up blockers allow it
+    var win = window.open("", "gink_signin", "width=520,height=700");
+    if (!win) { $("ws-err").textContent = "Allow pop-ups for this page, then try again."; return; }
+    btn.disabled = true; $("ws-err").textContent = "Finish signing in in the window that opened\u2026";
+    api("/auth/" + provider + "/begin", { state: state }, { noLogout: true }).then(function (r) {
+      if (!r.ok) return errorText(r).then(function (t) { throw new Error(t); });
+      win.location.href = "/auth/" + provider + "/start?state=" + encodeURIComponent(state);
+      var started = Date.now();
+      return new Promise(function (resolve, reject) {
+        (function check() {
+          if (Date.now() - started > 5 * 60 * 1000) return reject(new Error("Sign-in timed out. Try again."));
+          api("/auth/poll?state=" + state, undefined, { noLogout: true }).then(function (r) {
+            if (r.status === 200) return r.json().then(function (j) { j.status === "pending" ? setTimeout(check, 1500) : resolve(j); });
+            return errorText(r).then(function (t) { reject(new Error(t)); });
+          }).catch(function () { setTimeout(check, 3000); });
+        })();
+      });
+    }).then(function (res) {
+      try { win.close(); } catch (e) {}
+      $("ws-err").textContent = ""; signedIn(res);
+    }).catch(function (e) {
+      try { win.close(); } catch (x) {}
+      $("ws-err").textContent = (e && e.message) || "Sign-in didn't finish. Try again.";
+    }).then(function () { btn.disabled = false; });
   }
   function signOut(message) {
     W.token = ""; LS.removeItem("gink_token");

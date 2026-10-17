@@ -564,3 +564,15 @@ New services/live_info.py (all free, no API keys):
   log out, wrong password, log in). Docker layout checked (/app + /render).
 - Deploy: Dockerfile copies markdown_render.py + web_app/; server needs markdown, pygments.
   GINK_GROQ_BASE (tests only) overrides the Groq address.
+
+## Latest: phones use the online server; web sign-in with Google/GitHub/Microsoft/Apple
+- server_config.ONLINE_SERVER = https://gink-server.onrender.com: phones/tablets default
+  to it (Android defaulted to 10.0.2.2, which only works in the emulator; iOS to
+  127.0.0.1). Desktop keeps its built-in server; app.default_base_url now shares
+  server_config.platform_default.
+- Web sign-in with providers: buttons for providers enabled on the server
+  (/auth/providers); pop-up opened inside the click (pop-up blockers), /begin ->
+  /start -> /auth/poll; closes the pop-up, shows the provider's error on refusal.
+  Provider apps need the callback {GINK_PUBLIC_URL}/auth/<provider>/callback.
+- Tested in Chromium with the server in-process: buttons only for configured
+  providers, pop-up, sign-in + close, refused sign-in message.

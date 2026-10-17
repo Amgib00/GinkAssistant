@@ -61,10 +61,17 @@ def save_url(app, url: str) -> str:
     return url
 
 
+# Gink's online server (Render). Phones and tablets use it by default: a real phone can't
+# reach a server on your Mac. Change it here if the server moves (or set GINK_API_URL).
+ONLINE_SERVER = "https://gink-server.onrender.com"
+
+
 def platform_default() -> str:
-    from .platform_utils import is_android
-    if is_android():
-        return "http://10.0.2.2:8000"
+    """Phones/tablets -> the online server. Desktop -> its own built-in server on this computer
+    (switch it in Settings -> Advanced -> Login server to share accounts and chats online)."""
+    from .platform_utils import is_mobile
+    if is_mobile():
+        return ONLINE_SERVER
     return "http://127.0.0.1:8000"
 
 

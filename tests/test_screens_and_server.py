@@ -298,3 +298,12 @@ def test_social_sign_in_survives_a_slow_browser(tmp_path, monkeypatch):
         await c.handle({"type": "oauth", "value": "google"})
     asyncio.run(go())
     assert errors == [] and done == ["slow@example.com"] and len(polls) >= 2
+
+
+def test_phones_default_to_the_online_server(monkeypatch):
+    """A real phone can't reach a server on the Mac (10.0.2.2 only works in the emulator)."""
+    from ginkassistant.services import server_config as sc, platform_utils as pu
+    monkeypatch.setattr(pu, "is_mobile", lambda: True)
+    assert sc.platform_default() == sc.ONLINE_SERVER and sc.ONLINE_SERVER.startswith("https://")
+    monkeypatch.setattr(pu, "is_mobile", lambda: False)
+    assert sc.platform_default() == "http://127.0.0.1:8000"

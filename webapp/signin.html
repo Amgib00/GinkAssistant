@@ -19,6 +19,13 @@
   .ws-card .ws-go[disabled] { opacity: 0.6; cursor: default; }
   .ws-err { color: #C42B1C; font-size: 14px; min-height: 20px; margin: 4px 0 0; }
   .ws-note { color: var(--text-muted); font-size: 13px; margin-top: 18px; }
+  .ws-or { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 13px; margin: 18px 0 12px; }
+  .ws-or::before, .ws-or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .ws-social { display: grid; gap: 8px; }
+  .ws-social button { padding: 11px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg);
+    color: var(--text-main); font: inherit; font-weight: 600; font-size: 15px; cursor: pointer; }
+  .ws-social button:hover { background: var(--elevated); }
+  .ws-social button[disabled] { opacity: 0.6; cursor: default; }
   .ws-note a { color: inherit; }
 </style>
 <div id="web-signin" role="dialog" aria-modal="true" aria-labelledby="ws-title">
@@ -51,7 +58,10 @@
       <input id="ws-codein" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required>
       <button class="ws-go" type="submit">Verify</button>
     </form>
+    <div id="ws-social-wrap" hidden>
+      <div class="ws-or">or</div>
+      <div class="ws-social" id="ws-social"></div>
+    </div>
     <p class="ws-err" id="ws-err" role="alert"></p>
-    <p class="ws-note">Signed up with Google, GitHub, Microsoft or Apple? Use the Gink app for now, or set a password there.</p>
   </div>
 </div>

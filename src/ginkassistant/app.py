@@ -112,20 +112,13 @@ def _start_backend_if_needed(app: toga.App):
 
 
 def default_base_url() -> str:
-    """
-    Best-guess backend URL per platform -- override with GINK_API_URL for
-    anything else. "127.0.0.1" means "this device", not "my dev machine":
-    it works for desktop and the iOS Simulator (shares the Mac's network
-    stack), needs 10.0.2.2 for the Android emulator, and needs a real LAN
-    IP or deployed URL for any physical device or a Toga-web build.
-    """
+    """GINK_API_URL if set, else the same default as Settings shows (services/server_config.py):
+    phones -> the online server, desktop -> the built-in server on this computer."""
     override = os.environ.get("GINK_API_URL")
     if override:
         return override
-    from .services.platform_utils import is_android
-    if is_android():
-        return "http://10.0.2.2:8000"
-    return "http://127.0.0.1:8000"
+    from .services.server_config import platform_default
+    return platform_default()
 
 
 class AppState:
