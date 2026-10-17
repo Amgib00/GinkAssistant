@@ -586,3 +586,15 @@ New services/live_info.py (all free, no API keys):
   requests go to a vision model Groq still offers (qwen/qwen3.6-27b first); short GPT-OSS
   requests get low reasoning effort + room. tests/test_model_upgrade.py.
 - Web app: model picker shows chat models only.
+
+## Latest: Mac app built on GitHub (.github/workflows/macos.yml)
+- Apple Silicon (macos-15, macOS 12+) and Intel (macos-15-intel, macOS 11+), Python 3.12
+  (numpy<2 has no 3.13 builds), Briefcase latest with -C universal_build=false,
+  min_os_version and requirement_installer_args --find-links wheels/.
+- Checked here with pip's binary-only resolver: every other macOS requirement has wheels
+  (Intel macOS 11: 91 packages; Apple Silicon needs macOS 12 -- scipy).
+- Source-only packages built first: PortAudio v19.7.0 from source as a static library
+  (libportaudio.a on macOS) linked into pyaudio (otool check: no outside libportaudio),
+  llama-cpp-python with GGML_NATIVE=OFF, srt. A step rejects wheels for a newer macOS.
+- Ad-hoc signed, not notarized (needs an Apple Developer account): right-click -> Open.
+- Not run yet on GitHub's Macs: the first run may need a fix from its log.

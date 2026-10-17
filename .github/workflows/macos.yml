@@ -1,0 +1,111 @@
+# Builds Gink for Mac (a .dmg) on GitHub's Macs: Apple Silicon (macOS 12+) and Intel (macOS 11+).
+# Run it: GitHub -> Actions -> "Mac app" -> Run workflow. Result: the run's page -> Artifacts.
+#
+# Why the extra steps: Briefcase only installs ready-made packages ("wheels"), and three of
+# Gink's are published only as source -- so they're built here first, for the app's minimum macOS:
+#   * pyaudio  -- with PortAudio built from source as a static library, so it travels inside
+#                 pyaudio (Homebrew's copy only runs on the build machine's own, newer macOS)
+#   * llama-cpp-python -- with GGML_NATIVE off, so it doesn't use CPU features older Macs lack
+#   * srt      -- plain Python
+# Python 3.12: numpy<2 (needed by the audio libraries) has no builds for Python 3.13.
+# Apple Silicon needs macOS 12+: scipy's Apple Silicon builds start there.
+# The app is ad-hoc signed, not notarized (that needs an Apple Developer account), so the first
+# time people open it: right-click Gink -> Open -> Open.
+name: Mac app
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  mac:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Apple Silicon
+            runner: macos-15
+            arch: arm64
+            min_os: "12.0"
+            metal: "ON"
+          - name: Intel
+            runner: macos-15-intel
+            arch: x86_64
+            min_os: "11.0"
+            metal: "OFF"
+    name: Mac app (${{ matrix.name }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    env:
+      MACOSX_DEPLOYMENT_TARGET: ${{ matrix.min_os }}
+      WHEELS: ${{ github.workspace }}/wheels
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Build PortAudio (static, for macOS ${{ matrix.min_os }})
+        run: |
+          git clone --depth 1 --branch v19.7.0 https://github.com/PortAudio/portaudio "$RUNNER_TEMP/portaudio"
+          cmake -S "$RUNNER_TEMP/portaudio" -B "$RUNNER_TEMP/pa-build" -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/pa" -DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET" \
+            -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DPA_BUILD_SHARED=OFF -DPA_BUILD_STATIC=ON
+          cmake --build "$RUNNER_TEMP/pa-build" --config Release -j 4
+          cmake --install "$RUNNER_TEMP/pa-build"
+          rm -f "$RUNNER_TEMP"/pa/lib/*.dylib          # make sure pyaudio links the static library
+          ls -l "$RUNNER_TEMP/pa/lib"
+
+      - name: Build the source-only packages into wheels
+        run: |
+          python -m pip install --upgrade pip wheel setuptools packaging cmake scikit-build-core
+          mkdir -p "$WHEELS"
+          python -m pip wheel --no-deps -w "$WHEELS" srt
+          CFLAGS="-I$RUNNER_TEMP/pa/include" \
+          LDFLAGS="-L$RUNNER_TEMP/pa/lib -framework CoreAudio -framework AudioToolbox -framework AudioUnit -framework CoreFoundation -framework CoreServices" \
+            python -m pip wheel --no-deps --no-binary pyaudio -w "$WHEELS" "pyaudio==0.2.14"
+          CMAKE_ARGS="-DGGML_NATIVE=OFF -DGGML_METAL=${{ matrix.metal }} -DCMAKE_OSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET" \
+            python -m pip wheel --no-deps -w "$WHEELS" llama-cpp-python
+          ls -l "$WHEELS"
+
+      - name: Check the wheels (macOS ${{ matrix.min_os }}, PortAudio inside pyaudio)
+        run: |
+          python - <<'EOF'
+          import glob, os
+          from packaging.tags import mac_platforms
+          from packaging.utils import parse_wheel_filename
+          major, minor = (int(x) for x in os.environ["MACOSX_DEPLOYMENT_TARGET"].split("."))
+          ok = set(mac_platforms((major, minor), "${{ matrix.arch }}")) | {"any"}
+          bad = []
+          for w in glob.glob(os.path.join(os.environ["WHEELS"], "*.whl")):
+              plats = {t.platform for t in parse_wheel_filename(os.path.basename(w))[3]}
+              print(("OK   " if plats & ok else "BAD  ") + os.path.basename(w))
+              if not plats & ok:
+                  bad.append(w)
+          if bad:
+              raise SystemExit(f"These wheels won't install on macOS {major}.{minor} ${{ matrix.arch }}: {bad}")
+          EOF
+          python -m pip install --no-index --find-links "$WHEELS" pyaudio
+          python -c "import pyaudio; print('pyaudio works:', pyaudio.get_portaudio_version_text())"
+          so=$(python -c "import pyaudio._portaudio as p; print(p.__file__)")
+          otool -L "$so"
+          if otool -L "$so" | grep -qi "libportaudio"; then echo "pyaudio still needs an outside libportaudio"; exit 1; fi
+
+      - name: Build the app with Briefcase
+        run: |
+          python -m pip install briefcase
+          OVERRIDES=(-C "universal_build=false" -C "min_os_version=\"$MACOSX_DEPLOYMENT_TARGET\""
+                     -C "requirement_installer_args=[\"--find-links\", \"$WHEELS\"]")
+          briefcase create macOS app --no-input "${OVERRIDES[@]}"
+          briefcase build macOS app --no-input "${OVERRIDES[@]}"
+          briefcase package macOS app --adhoc-sign --no-input "${OVERRIDES[@]}"
+          ls -l dist
+          DMG=$(ls dist/*.dmg | head -1)
+          cp "$DMG" "Gink-mac-${{ matrix.arch }}.dmg"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Gink-mac-${{ matrix.arch }}
+          path: Gink-mac-${{ matrix.arch }}.dmg
+          retention-days: 14
