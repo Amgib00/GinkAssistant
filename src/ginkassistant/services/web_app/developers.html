@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gink for developers</title>
+<meta name="theme-color" content="#151D23">
+<style>
+  :root { --bg: #F7F8F5; --card: #FFFFFF; --text: #151D23; --muted: #5D6B64; --line: #E1E5E0; --lime: #A8F03C; --accent: #3F7D12; --code: #0F161B; --codetext: #E9EFEA; --danger: #C42B1C; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #151D23; --card: #1C262D; --text: #E9EFEA; --muted: #9AABA3; --line: rgba(233,239,234,.12); --accent: #A8F03C; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 32px 22px 64px; }
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+  header b { font-size: 20px; } header span { color: var(--muted); }
+  header a { margin-left: auto; color: var(--accent); }
+  h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.1; margin: 0 0 10px; }
+  h2 { font-size: 22px; margin: 36px 0 12px; }
+  p { max-width: 68ch; }
+  .muted { color: var(--muted); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+  button, .btn { font: inherit; font-weight: 650; border: 0; border-radius: 999px; padding: 10px 18px; cursor: pointer; background: var(--text); color: var(--bg); text-decoration: none; display: inline-block; }
+  button.quiet { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1.5px var(--line); }
+  button.danger { background: transparent; color: var(--danger); box-shadow: inset 0 0 0 1.5px var(--line); padding: 6px 14px; }
+  input { font: inherit; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--text); min-width: 0; flex: 1; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 10px 8px; border-top: 1px solid var(--line); vertical-align: middle; font-size: 15px; }
+  th { color: var(--muted); font-weight: 600; font-size: 14px; }
+  .scroll { overflow-x: auto; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.92em; }
+  pre { background: var(--code); color: var(--codetext); padding: 16px 18px; border-radius: 12px; overflow-x: auto; margin: 10px 0 0; }
+  .newkey { margin-top: 14px; padding: 14px; border-radius: 12px; border: 2px solid var(--accent); }
+  .newkey code { word-break: break-all; display: block; margin: 8px 0; font-size: 15px; }
+  .tabs { display: flex; gap: 6px; margin-top: 14px; }
+  .tabs button { padding: 7px 14px; background: transparent; color: var(--muted); box-shadow: inset 0 0 0 1.5px var(--line); }
+  .tabs button[aria-pressed="true"] { background: var(--text); color: var(--bg); box-shadow: none; }
+  .err { color: var(--danger); min-height: 22px; margin: 8px 0 0; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><b>Gink</b><span>for developers</span><a href="/app">Open Gink</a></header>
+  <h1>Build with Gink</h1>
+  <p class="muted">Use Gink's AI from your own apps and scripts. The API works like OpenAI's, so the official OpenAI libraries work: change the address and the key.</p>
+
+  <div id="signed-out" class="card" hidden>
+    <p style="margin-top:0">Sign in to create API keys.</p>
+    <a class="btn" href="/app">Sign in to Gink</a>
+    <p class="muted" style="margin-bottom:0">Then come back to this page.</p>
+  </div>
+
+  <section id="keys-section" hidden>
+    <h2>Your API keys</h2>
+    <div class="card">
+      <form id="create" class="row" autocomplete="off">
+        <input id="key-name" aria-label="Key name" placeholder="Name, e.g. My website" maxlength="60">
+        <button type="submit">Create key</button>
+      </form>
+      <p class="err" id="err" role="alert"></p>
+      <div id="newkey" class="newkey" hidden>
+        <strong>Copy your new key now. It won't be shown again.</strong>
+        <code id="newkey-value"></code>
+        <button type="button" class="quiet" id="copy-key">Copy</button>
+      </div>
+      <div class="scroll"><table>
+        <thead><tr><th>Name</th><th>Key</th><th>Created</th><th>Last used</th><th>Requests</th><th></th></tr></thead>
+        <tbody id="keys"></tbody>
+      </table></div>
+      <p class="muted" id="nokeys" hidden style="margin-bottom:0">No keys yet.</p>
+    </div>
+    <p class="muted">Keep keys secret: anyone with a key can use your account's allowance. Never put one in a public website or app; call Gink from your own server. Revoke a key straight away if it leaks.</p>
+  </section>
+
+  <h2>Quick start</h2>
+  <div class="tabs" role="group" aria-label="Language">
+    <button type="button" data-lang="python" aria-pressed="true">Python</button>
+    <button type="button" data-lang="js" aria-pressed="false">JavaScript</button>
+    <button type="button" data-lang="curl" aria-pressed="false">curl</button>
+  </div>
+<pre data-code="python"><code>pip install openai
+
+from openai import OpenAI
+client = OpenAI(base_url="__BASE__", api_key="YOUR_GINK_KEY")
+
+reply = client.chat.completions.create(
+    model="openai/gpt-oss-120b",
+    messages=[{"role": "user", "content": "Write a haiku about Dakar"}],
+)
+print(reply.choices[0].message.content)</code></pre>
+<pre data-code="js" hidden><code>// npm install openai
+import OpenAI from "openai";
+const client = new OpenAI({ baseURL: "__BASE__", apiKey: process.env.GINK_KEY });
+
+const reply = await client.chat.completions.create({
+  model: "openai/gpt-oss-120b",
+  messages: [{ role: "user", content: "Write a haiku about Dakar" }],
+});
+console.log(reply.choices[0].message.content);</code></pre>
+<pre data-code="curl" hidden><code>curl __BASE__/chat/completions \
+  -H "Authorization: Bearer $GINK_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "openai/gpt-oss-120b",
+       "messages": [{"role": "user", "content": "Write a haiku about Dakar"}]}'</code></pre>
+
+  <h2>Endpoints</h2>
+  <div class="scroll"><table>
+    <tbody>
+      <tr><td><code>POST /v1/chat/completions</code></td><td>Chat, with <code>stream: true</code> for word-by-word answers. Photos (image parts) need Gink Pro.</td></tr>
+      <tr><td><code>GET /v1/models</code></td><td>The models you can use right now: GPT-OSS and other fast models, plus Claude models with Gink Pro.</td></tr>
+      <tr><td><code>POST /v1/images/generations</code></td><td><code>{"prompt": "..."}</code> &rarr; <code>data[0].b64_json</code> (a PNG).</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Limits</h2>
+  <p>API calls share your account's daily allowance: <strong>Free</strong> 30 messages and 3 images a day, <strong>Gink Pro</strong> 500 messages and 50 images. Each key can also make up to <strong id="per-min">30</strong> requests a minute. Over a limit, you get HTTP 429 with a message (and <code>Retry-After</code> for the per-minute limit).</p>
+  <p class="muted">If you ask for a model that's no longer available, Gink uses the best current one instead, so your code keeps working.</p>
+</div>
+<script>
+(function () {
+  "use strict";
+  var token = "";
+  try { token = localStorage.getItem("gink_token") || ""; } catch (e) {}
+  var base = location.origin + "/v1";
+  document.querySelectorAll("pre code").forEach(function (c) { c.textContent = c.textContent.split("__BASE__").join(base); });
+  document.querySelectorAll(".tabs button").forEach(function (b) {
+    b.onclick = function () {
+      document.querySelectorAll(".tabs button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      document.querySelectorAll("pre[data-code]").forEach(function (p) { p.hidden = p.getAttribute("data-code") !== b.getAttribute("data-lang"); });
+    };
+  });
+  function api(method, path, body) {
+    return fetch(path, { method: method, headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
+                         body: body ? JSON.stringify(body) : undefined });
+  }
+  function when(t) { return t ? new Date(t * 1000).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "never"; }
+  function cell(row, text) { var td = document.createElement("td"); td.textContent = text; row.appendChild(td); return td; }
+  function show(signedIn) { document.getElementById("signed-out").hidden = signedIn; document.getElementById("keys-section").hidden = !signedIn; }
+  function load() {
+    if (!token) return show(false);
+    api("GET", "/account/api-keys").then(function (r) {
+      if (r.status === 401) { show(false); return null; }
+      return r.json();
+    }).then(function (j) {
+      if (!j) return;
+      show(true);
+      document.getElementById("per-min").textContent = j.per_minute;
+      var body = document.getElementById("keys"); body.innerHTML = "";
+      document.getElementById("nokeys").hidden = j.keys.length > 0;
+      j.keys.forEach(function (k) {
+        var tr = document.createElement("tr");
+        cell(tr, k.name); cell(tr, "").appendChild(Object.assign(document.createElement("code"), { textContent: k.hint }));
+        cell(tr, when(k.created)); cell(tr, when(k.last_used)); cell(tr, String(k.requests || 0));
+        var b = document.createElement("button"); b.className = "danger"; b.type = "button"; b.textContent = "Revoke";
+        b.onclick = function () {
+          if (!confirm("Revoke \u201c" + k.name + "\u201d? Apps using it will stop working straight away.")) return;
+          api("DELETE", "/account/api-keys/" + encodeURIComponent(k.id)).then(load);
+        };
+        cell(tr, "").appendChild(b);
+        body.appendChild(tr);
+      });
+    }).catch(function () { document.getElementById("err").textContent = "Can't reach the Gink server."; });
+  }
+  document.getElementById("create").onsubmit = function (e) {
+    e.preventDefault();
+    var err = document.getElementById("err"); err.textContent = "";
+    api("POST", "/account/api-keys", { name: document.getElementById("key-name").value }).then(function (r) {
+      return r.json().then(function (j) { if (!r.ok) throw new Error(j.detail || "Couldn't create the key."); return j; });
+    }).then(function (j) {
+      document.getElementById("newkey-value").textContent = j.key;
+      document.getElementById("newkey").hidden = false;
+      document.getElementById("key-name").value = "";
+      load();
+    }).catch(function (x) { err.textContent = x.message; });
+  };
+  document.getElementById("copy-key").onclick = function () {
+    var v = document.getElementById("newkey-value").textContent, b = this;
+    (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(function () {
+      b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1500);
+    }).catch(function () { b.textContent = "Select and copy the key above"; });
+  };
+  load();
+})();
+</script>
+</body>
+</html>

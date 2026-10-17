@@ -37,6 +37,7 @@ FOOTER = [
     ("Product", [("features.html", "Features"), ("pricing.html", "Pricing"), ("demo.html", "Try the demo"),
                  ("download.html", "Download")]),
     ("Gink", [("vision.html", "Vision and mission"), ("blog.html", "Blog"), ("community.html", "Community"),
+              ("https://gink-server.onrender.com/developers", "Developers API"),
               ("contact.html", "Contact")]),
     ("Legal", [("privacy.html", "Privacy policy"), ("terms.html", "Terms of service"),
                ("delete-account.html", "Delete your account")]),

@@ -51,6 +51,13 @@ browser bridge (`webapp/`), built with `python tools/build_web_app.py`: sign in,
 images, natural voices, dictation, and chats that sync with the desktop app.
 Alarms, tasks and computer control stay in the app.
 
+## Developer API
+OpenAI-compatible, so the official OpenAI libraries work: `base_url="https://<server>/v1"`,
+`api_key="gink_live_..."`. Keys are created on `/developers` (shown once, stored hashed).
+`POST /v1/chat/completions` (streaming too), `GET /v1/models`, `POST /v1/images/generations`.
+Calls share the account's daily allowance; each key also has a per-minute limit
+(`GINK_API_PER_MINUTE`, default 30).
+
 ## Website
 The site lives in `website/` (one shared layout in `tools/build_website.py`). Preview it with
 `python tools/build_website.py` and open `website/_site/index.html`. It's published on GitHub

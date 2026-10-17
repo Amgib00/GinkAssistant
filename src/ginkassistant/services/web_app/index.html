@@ -3019,7 +3019,9 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
   }
 
   // ---------------------------------------------------------------- talking to the AI
-  function niceModel(id) {             // "openai/gpt-oss-120b" -> "GPT-OSS 120B"
+  function niceModel(id) {             // "openai/gpt-oss-120b" -> "GPT-OSS 120B", "claude-sonnet-5-5" -> "Claude Sonnet 5.5"
+    var c = /^claude-([a-z]+)-(\d+)-(\d+)$/.exec(String(id));
+    if (c) return "Claude " + c[1].charAt(0).toUpperCase() + c[1].slice(1) + " " + c[2] + "." + c[3] + " (Pro)";
     var n = String(id).split("/").pop().replace(/[-_]/g, " ");
     n = n.replace(/\b(\d+(?:\.\d+)?)([bkm])\b/gi, function (m, a, b) { return a + b.toUpperCase(); })
          .replace(/\bgpt oss\b/i, "GPT-OSS").replace(/\b(gpt|llm|ai)\b/gi, function (m) { return m.toUpperCase(); })

@@ -748,6 +748,9 @@ def _sync_db():
 
 
 def _email_from_auth(request: Request) -> str:
+    api_email = getattr(request.state, "gink_api_email", None)      # set only after an API key was verified
+    if api_email:
+        return api_email
     auth = request.headers.get("authorization", "")
     if not auth.lower().startswith("bearer "):
         raise HTTPException(status_code=401, detail="Sign in again to sync.")
@@ -1279,7 +1282,10 @@ async def ai_models(request: Request):
         r = await c.get(f"{GROQ_BASE}/models", headers={"Authorization": f"Bearer {_env('GROQ_API_KEY')}"})
     if r.status_code != 200:
         return _ai_error(502, "Couldn't list AI models right now.", "upstream")
-    _models_cache.update(at=time.time(), data=r.json())
+    data = r.json()
+    data["data"] = list(data.get("data", [])) + [{"id": m, "object": "model", "owned_by": "anthropic"}
+                                                  for m in sorted(await _live_claude_models())]
+    _models_cache.update(at=time.time(), data=data)
     return _models_cache["data"]
 
 
@@ -1345,6 +1351,69 @@ def _fit_reasoning(body: dict, cap: int):
         body["max_tokens"] = min(max(int(body.get("max_tokens") or 0) + 256, 300), cap)
 
 
+# ---- Claude (Anthropic), through Anthropic's OpenAI-compatible endpoint, so the same request
+# and streaming code serves both providers. Pro only (Claude costs much more than Groq), with
+# its own daily allowance (GINK_PRO_CLAUDE_DAILY). No ANTHROPIC_API_KEY -> Groq answers instead.
+ANTHROPIC_BASE = os.environ.get("GINK_ANTHROPIC_BASE", "https://api.anthropic.com/v1")
+CLAUDE_MODELS_BEST_FIRST = ("claude-sonnet-5-5", "claude-opus-5-5", "claude-haiku-5-5", "claude-fable-5-1")
+_claude_models = {"ids": set(), "at": 0.0}
+
+
+async def _live_claude_models() -> set:
+    if not _env("ANTHROPIC_API_KEY"):
+        return set()
+    if time.time() - _claude_models["at"] < 3600 and _claude_models["ids"]:
+        return _claude_models["ids"]
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(f"{ANTHROPIC_BASE}/models", params={"limit": 100},
+                                 headers={"x-api-key": _env("ANTHROPIC_API_KEY"), "anthropic-version": "2023-06-01"})
+        if r.status_code == 200:
+            ids = {m["id"] for m in r.json().get("data", []) if str(m.get("id", "")).startswith("claude-")}
+            if ids:
+                _claude_models.update(ids=ids, at=time.time())
+    except Exception:
+        pass
+    return _claude_models["ids"] or set(CLAUDE_MODELS_BEST_FIRST)
+
+
+async def _current_claude_model(requested: str) -> str:
+    live = await _live_claude_models()
+    if requested in live:
+        return requested
+    for m in CLAUDE_MODELS_BEST_FIRST:
+        if m in live:
+            return m
+    return sorted(live)[0] if live else CLAUDE_MODELS_BEST_FIRST[0]
+
+
+def _count_claude(email: str, turn: str = ""):
+    """Pro's daily Claude allowance (one question = one, however many calls it takes)."""
+    limit = int(os.environ.get("GINK_PRO_CLAUDE_DAILY", "50"))
+    day = _today()
+    with _db_lock:
+        con = _usage_db()
+        try:
+            con.execute("CREATE TABLE IF NOT EXISTS claude_usage (email TEXT, day TEXT, n INTEGER, PRIMARY KEY (email, day))")
+            con.execute("CREATE TABLE IF NOT EXISTS claude_turns (email TEXT, turn TEXT, day TEXT, PRIMARY KEY (email, turn))")
+            if turn and con.execute("SELECT 1 FROM claude_turns WHERE email=? AND turn=?", (email, turn)).fetchone():
+                return None                                   # same question, already counted
+            row = con.execute("SELECT n FROM claude_usage WHERE email=? AND day=?", (email, day)).fetchone()
+            used = row[0] if row else 0
+            if used >= limit:
+                return _ai_error(429, f"You've used today's {limit} Claude messages. Other Gink models still work, "
+                                      "and Claude is back tomorrow.", "daily_limit")
+            con.execute("INSERT INTO claude_usage (email, day, n) VALUES (?, ?, 1) ON CONFLICT(email, day) DO UPDATE SET n = n + 1",
+                        (email, day))
+            if turn:
+                con.execute("INSERT OR IGNORE INTO claude_turns (email, turn, day) VALUES (?, ?, ?)", (email, turn, day))
+            con.commit()
+        finally:
+            con.close()
+    return None
+
+
 @app.post("/ai/openai/v1/chat/completions")
 async def ai_chat(request: Request):
     email = _email_from_auth(request)
@@ -1361,19 +1430,38 @@ async def ai_chat(request: Request):
     plan = _plan_status(email)["plan"]
     if _has_images(body["messages"]) and plan != "pro":
         return _ai_error(403, "Looking at photos is part of Gink Pro.", "pro_required")
-    blocked = _count_call(email, request.headers.get("x-gink-turn", ""), plan)
+    # the app groups one question's calls under X-Gink-Turn; API callers can't (every API call counts)
+    turn = "" if getattr(request.state, "gink_api_email", None) else request.headers.get("x-gink-turn", "")
+    # Claude (Anthropic) or Groq: decided once, here
+    wants_claude = str(body["model"]).startswith("claude-")
+    if wants_claude and not _env("ANTHROPIC_API_KEY"):
+        wants_claude, body["model"] = False, TEXT_MODELS_BEST_FIRST[0]   # no Anthropic key here: Groq instead
+    if wants_claude and plan != "pro":
+        return _ai_error(403, "Claude models are part of Gink Pro.", "pro_required")
+    blocked = _count_call(email, turn, plan)
     if blocked is not None:
         return blocked
+    if wants_claude:
+        blocked = _count_claude(email, turn)
+        if blocked is not None:
+            return blocked
     body["max_tokens"] = min(int(body.get("max_tokens") or MAX_TOKENS[plan]), MAX_TOKENS[plan])
-    body["model"] = await _current_model(str(body["model"]), _has_images(body["messages"]))
-    _fit_reasoning(body, MAX_TOKENS[plan])
-    body["user"] = hashlib.sha256(email.encode()).hexdigest()[:32]       # abuse tracing without sharing the email
-    headers = {"Authorization": f"Bearer {_env('GROQ_API_KEY')}", "Content-Type": "application/json"}
+    if wants_claude:
+        body["model"] = await _current_claude_model(str(body["model"]))
+        body.pop("reasoning_effort", None)
+        body.pop("user", None)
+        base, key = ANTHROPIC_BASE, _env("ANTHROPIC_API_KEY")
+    else:
+        body["model"] = await _current_model(str(body["model"]), _has_images(body["messages"]))
+        _fit_reasoning(body, MAX_TOKENS[plan])
+        body["user"] = hashlib.sha256(email.encode()).hexdigest()[:32]   # abuse tracing without sharing the email
+        base, key = GROQ_BASE, _env("GROQ_API_KEY")
+    headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
     import httpx
     from fastapi.responses import JSONResponse, StreamingResponse
     if body.get("stream"):
         client = httpx.AsyncClient(timeout=httpx.Timeout(120, connect=15))
-        req = client.build_request("POST", f"{GROQ_BASE}/chat/completions", json=body, headers=headers)
+        req = client.build_request("POST", f"{base}/chat/completions", json=body, headers=headers)
         upstream = await client.send(req, stream=True)
         if upstream.status_code != 200:
             text = await upstream.aread()
@@ -1395,7 +1483,7 @@ async def ai_chat(request: Request):
                 await client.aclose()
         return StreamingResponse(relay(), media_type="text/event-stream")
     async with httpx.AsyncClient(timeout=120) as client:
-        r = await client.post(f"{GROQ_BASE}/chat/completions", json=body, headers=headers)
+        r = await client.post(f"{base}/chat/completions", json=body, headers=headers)
     try:
         return JSONResponse(status_code=r.status_code, content=r.json())
     except ValueError:
@@ -1444,7 +1532,10 @@ def delete_account(request: Request, data: dict = Body(...)):
             _sync_db().close()                     # make sure every table exists
             con.execute("CREATE TABLE IF NOT EXISTS sync_docs (email TEXT, kind TEXT, doc_id TEXT, payload TEXT,"
                         " updated REAL, deleted INTEGER, server_ts REAL, PRIMARY KEY (email, kind, doc_id))")
-            for table in ("users", "sync_docs", "ai_usage", "ai_turns"):
+            con.execute(_API_KEYS_TABLE)
+            con.execute("CREATE TABLE IF NOT EXISTS claude_usage (email TEXT, day TEXT, n INTEGER, PRIMARY KEY (email, day))")
+            con.execute("CREATE TABLE IF NOT EXISTS claude_turns (email TEXT, turn TEXT, day TEXT, PRIMARY KEY (email, turn))")
+            for table in ("users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns"):
                 con.execute(f"DELETE FROM {table} WHERE email=?", (email,))
             con.execute("UPDATE payments SET email=? WHERE email=?", (anon, email))
             con.execute("CREATE TABLE IF NOT EXISTS deleted_accounts (email TEXT PRIMARY KEY, at REAL NOT NULL)")
@@ -1845,6 +1936,14 @@ def web_app_page():
         return HTMLResponse(f.read(), headers=_WEB_HEADERS)
 
 
+@app.get("/developers", response_class=HTMLResponse)
+def developers_page():
+    """API keys + quick start (web_app/developers.html). Uses the web app's sign-in (same site)."""
+    path = os.path.join(WEB_APP_DIR, "developers.html")
+    with open(path, encoding="utf-8") as f:
+        return HTMLResponse(f.read(), headers=_WEB_HEADERS)
+
+
 def _renderer():
     try:
         from .markdown_render import render_markdown_body
@@ -1863,3 +1962,184 @@ def render_markdown(request: Request, data: dict = Body(...)):
         items = [str(x or "")[:100_000] for x in data["items"][:200]]
         return {"html": [render(x) for x in items]}
     return {"html": render(str(data.get("markdown") or "")[:100_000])}
+
+
+
+# =====================================================================
+# Gink Developer API -- OpenAI-compatible, so the official OpenAI libraries work:
+#     base_url = "https://<server>/v1",  api_key = "gink_live_..."
+#   POST /v1/chat/completions   GET /v1/models   POST /v1/images/generations
+# Keys: created / listed / revoked by the signed-in user (/account/api-keys);
+# shown once, stored only as a SHA-256 fingerprint. API calls share the account's
+# daily allowance (same plan rules as the app) + a per-key per-minute limit.
+# =====================================================================
+_API_KEYS_TABLE = ("CREATE TABLE IF NOT EXISTS api_keys (id TEXT PRIMARY KEY, email TEXT NOT NULL, name TEXT,"
+                   " key_hash TEXT UNIQUE NOT NULL, hint TEXT, created REAL, last_used REAL,"
+                   " requests INTEGER DEFAULT 0, revoked INTEGER DEFAULT 0)")
+API_KEY_PREFIX = "gink_live_"
+API_MAX_KEYS = 10
+API_PER_MINUTE = int(os.environ.get("GINK_API_PER_MINUTE", "30"))
+_api_recent = {}                                    # key id -> recent request times (per-minute limit)
+
+
+def _keys_db():
+    con = _db()
+    con.execute(_API_KEYS_TABLE)
+    return con
+
+
+def _key_hash(key: str) -> str:
+    return hashlib.sha256(key.encode()).hexdigest()
+
+
+def _api_error(status: int, message: str, code: str, headers: dict = None):
+    from fastapi.responses import JSONResponse
+    return JSONResponse(status_code=status, headers=headers or {},
+                        content={"error": {"message": message, "type": "invalid_request_error" if status < 500 else "server_error",
+                                           "code": code}})
+
+
+def _api_key_owner(request: Request):
+    """(email, key_id) for a valid, unrevoked key, or an error response."""
+    auth = request.headers.get("authorization", "")
+    key = auth[7:].strip() if auth.lower().startswith("bearer ") else ""
+    if not key.startswith(API_KEY_PREFIX):
+        return None, _api_error(401, "Missing or invalid API key. Create one on the Developers page.", "invalid_api_key")
+    with _db_lock:
+        con = _keys_db()
+        try:
+            row = con.execute("SELECT id, email FROM api_keys WHERE key_hash=? AND revoked=0", (_key_hash(key),)).fetchone()
+            if row:
+                con.execute("UPDATE api_keys SET last_used=?, requests=requests+1 WHERE id=?", (time.time(), row[0]))
+                con.commit()
+        finally:
+            con.close()
+    if not row:
+        return None, _api_error(401, "This API key is invalid or was revoked.", "invalid_api_key")
+    now = time.time()
+    recent = [t for t in _api_recent.get(row[0], []) if now - t < 60]
+    if len(recent) >= API_PER_MINUTE:
+        wait = int(60 - (now - recent[0])) + 1
+        return None, _api_error(429, f"Too many requests: {API_PER_MINUTE} per minute per key. Try again in {wait} s.",
+                                "rate_limit", {"Retry-After": str(wait)})
+    _api_recent[row[0]] = recent + [now]
+    return (row[1], row[0]), None
+
+
+@app.post("/v1/chat/completions")
+async def api_chat(request: Request):
+    owner, err = _api_key_owner(request)
+    if err:
+        return err
+    request.state.gink_api_email = owner[0]
+    return await ai_chat(request)
+
+
+@app.get("/v1/models")
+async def api_models(request: Request):
+    owner, err = _api_key_owner(request)
+    if err:
+        return err
+    live = await _live_groq_models()
+    chat = sorted(m for m in (live or set(TEXT_MODELS_BEST_FIRST))
+                  if not any(x in m for x in ("whisper", "tts", "guard", "embed", "orpheus", "compound", "allam", "playai")))
+    chat += sorted(await _live_claude_models())
+    return {"object": "list", "data": [{"id": m, "object": "model", "owned_by": "gink"} for m in chat]}
+
+
+@app.post("/v1/images/generations")
+async def api_images(request: Request):
+    """OpenAI-style: {"prompt": "..."} -> {"created", "data": [{"b64_json": "..."}]}."""
+    owner, err = _api_key_owner(request)
+    if err:
+        return err
+    request.state.gink_api_email = owner[0]
+    result = await media_image(request)
+    if not isinstance(result, dict):
+        return result                                  # an error response, already explained
+    return {"created": int(time.time()), "data": [{"b64_json": result["image_b64"]}],
+            "mime_type": result.get("mime_type", "image/png")}
+
+
+# ---- key management (signed in with the app / web app session) ----
+@app.get("/account/api-keys")
+def api_keys_list(request: Request):
+    email = _email_from_auth(request)
+    with _db_lock:
+        con = _keys_db()
+        try:
+            rows = con.execute("SELECT id, name, hint, created, last_used, requests FROM api_keys"
+                               " WHERE email=? AND revoked=0 ORDER BY created DESC", (email,)).fetchall()
+        finally:
+            con.close()
+    return {"keys": [{"id": r[0], "name": r[1], "hint": r[2], "created": r[3], "last_used": r[4], "requests": r[5]}
+                     for r in rows], "per_minute": API_PER_MINUTE}
+
+
+@app.post("/account/api-keys")
+def api_keys_create(request: Request, data: dict = Body(default={})):
+    email = _email_from_auth(request)
+    name = " ".join(str((data or {}).get("name") or "My key").split())[:60] or "My key"
+    key = API_KEY_PREFIX + secrets.token_urlsafe(32)
+    key_id = secrets.token_hex(8)
+    with _db_lock:
+        con = _keys_db()
+        try:
+            n = con.execute("SELECT COUNT(*) FROM api_keys WHERE email=? AND revoked=0", (email,)).fetchone()[0]
+            if n >= API_MAX_KEYS:
+                raise HTTPException(status_code=400, detail=f"You can have up to {API_MAX_KEYS} keys. Revoke one first.")
+            con.execute("INSERT INTO api_keys (id, email, name, key_hash, hint, created) VALUES (?, ?, ?, ?, ?, ?)",
+                        (key_id, email, name, _key_hash(key), key[:14] + "\u2026" + key[-4:], time.time()))
+            con.commit()
+        finally:
+            con.close()
+    return {"id": key_id, "name": name, "key": key, "note": "Copy this key now: it won't be shown again."}
+
+
+@app.delete("/account/api-keys/{key_id}")
+def api_keys_revoke(key_id: str, request: Request):
+    email = _email_from_auth(request)
+    with _db_lock:
+        con = _keys_db()
+        try:
+            n = con.execute("UPDATE api_keys SET revoked=1 WHERE id=? AND email=? AND revoked=0", (key_id, email)).rowcount
+            con.commit()
+        finally:
+            con.close()
+    if not n:
+        raise HTTPException(status_code=404, detail="That key doesn't exist.")
+    _api_recent.pop(key_id, None)
+    return {"revoked": key_id}
+
+
+
+# ---- Owner only: give an existing account Gink Pro (testing, gifts, support).
+#   POST /admin/grant-pro  header x-admin-key: <GINK_ADMIN_KEY>  {"email": "...", "days": 30}
+# Adds the days to the end of any current Pro time, like a payment. tools/grant_pro.py calls it.
+@app.post("/admin/grant-pro")
+def admin_grant_pro(request: Request, data: dict = Body(...)):
+    key = _env("GINK_ADMIN_KEY")
+    if len(key) < 24:
+        raise HTTPException(status_code=403, detail="Set GINK_ADMIN_KEY on the server (at least 24 random characters).")
+    if not hmac.compare_digest(request.headers.get("x-admin-key", ""), key):
+        raise HTTPException(status_code=403, detail="Owner only.")
+    email = str(data.get("email") or "").strip().lower()
+    try:
+        days = int(data.get("days") or 30)
+    except (TypeError, ValueError):
+        days = 0
+    if not 1 <= days <= 366:
+        raise HTTPException(status_code=422, detail="Days must be between 1 and 366.")
+    with _db_lock:
+        con = _billing_db()
+        try:
+            row = con.execute("SELECT pro_until FROM users WHERE email=?", (email,)).fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="No account with that email on this server.")
+            until = max(time.time(), row[0] or 0) + days * 86400
+            con.execute("UPDATE users SET pro_until=? WHERE email=?", (until, email))
+            con.commit()
+        finally:
+            con.close()
+    print(f"[Gink] ADMIN: gave {email} {days} days of Gink Pro (until {time.strftime('%Y-%m-%d', time.gmtime(until))})", flush=True)
+    return {"email": email, "pro_until": until, "pro_until_date": time.strftime("%Y-%m-%d", time.gmtime(until))}

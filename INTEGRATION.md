@@ -598,3 +598,39 @@ New services/live_info.py (all free, no API keys):
   llama-cpp-python with GGML_NATIVE=OFF, srt. A step rejects wheels for a newer macOS.
 - Ad-hoc signed, not notarized (needs an Apple Developer account): right-click -> Open.
 - Not run yet on GitHub's Macs: the first run may need a fix from its log.
+
+## Latest: Gink Developer API
+- OpenAI-compatible: POST /v1/chat/completions (stream too), GET /v1/models (chat models
+  only), POST /v1/images/generations (OpenAI response shape). Verified with the official
+  openai Python library: models, chat, streaming, AuthenticationError on a wrong key.
+- Keys: /account/api-keys (session-authenticated) list/create/revoke; gink_live_ + 32
+  random bytes, shown once, stored as SHA-256 only; max 10 per account; deleted with the
+  account. After a key is verified, request.state.gink_api_email lets the existing
+  endpoints run unchanged (plans, daily allowance, model swap, photo rule).
+- Limits: account's daily allowance (shared with the app) + GINK_API_PER_MINUTE per key
+  (429 + Retry-After). X-Gink-Turn ignored for API calls (no grouping to bypass limits).
+- /developers: keys (shown once, copy, revoke) + quick start with this server's address.
+- tests/test_developer_api.py (9): fingerprint-only storage, wrong/revoked keys, session
+  token != API key and API key can't open the account, cross-user revoke refused,
+  per-minute + daily limits, OpenAI shapes, deletion removes keys, page headers.
+
+## Latest: Claude (Anthropic) models
+- Through Anthropic's OpenAI-compatible endpoint (https://api.anthropic.com/v1/), so the
+  same request + streaming code serves Groq and Claude. ai_chat decides the provider once:
+  claude-* -> ANTHROPIC_BASE with ANTHROPIC_API_KEY (no "user"/"reasoning_effort"); others
+  -> Groq. Keys never cross providers.
+- Pro only; own allowance GINK_PRO_CLAUDE_DAILY (default 50; one question = one, via
+  X-Gink-Turn); no ANTHROPIC_API_KEY -> Groq answers instead; unknown/old claude ids ->
+  best current (live list from Anthropic /v1/models, cached 1 h; static fallback).
+- Model lists (app /ai/openai/v1/models and developer /v1/models) include Claude when the
+  key is set. Names: "Claude Sonnet 5.5 (Pro)". Account deletion clears claude_usage/turns.
+- Privacy policy lists Anthropic. render.yaml: ANTHROPIC_API_KEY (optional), GINK_PRO_CLAUDE_DAILY.
+- Later: the native Claude API adds prompt caching, PDFs, citations, visible thinking.
+- tests/test_claude.py (7).
+
+## Latest: owner-only "give Pro" (testing, gifts, support)
+- POST /admin/grant-pro (x-admin-key = GINK_ADMIN_KEY, >= 24 chars, constant-time compare):
+  existing accounts only, 1-366 days added to the end of current Pro like a payment, logged.
+- tools/grant_pro.py: asks for the key hidden (not in shell history), email, days.
+- render.yaml: GINK_ADMIN_KEY generateValue. Tested: no/short/wrong key refused, unknown
+  email 404, bad days 422, grant + extension; the script end to end.

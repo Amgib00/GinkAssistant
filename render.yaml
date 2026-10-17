@@ -25,6 +25,8 @@ services:
         sync: false
       - key: GEMINI_API_KEY        # images + natural voices (aistudio.google.com/apikey)
         sync: false
+      - key: ANTHROPIC_API_KEY     # optional: Claude models for Gink Pro (platform.claude.com) -- empty = Groq only
+        sync: false
       - key: GMAIL_USER            # sends sign-up / login codes (a Gmail address)
         sync: false
       - key: GMAIL_APP_PASSWORD    # a Gmail "app password", not your normal password
@@ -32,6 +34,8 @@ services:
       - key: GINK_PUBLIC_URL       # this server's address, e.g. https://gink-server.onrender.com
         sync: false
       - key: GINK_SECRET_KEY       # signs sign-in sessions; Render makes a random one
+        generateValue: true
+      - key: GINK_ADMIN_KEY        # owner tools (tools/grant_pro.py); Render makes a random one
         generateValue: true
       # --- for real users: keep the database on the disk above ---
       # - key: GINK_DB_PATH
@@ -41,6 +45,8 @@ services:
         value: "30"
       - key: GINK_PRO_DAILY
         value: "500"
+      - key: GINK_PRO_CLAUDE_DAILY  # Claude messages per Pro user per day (Claude costs more than Groq)
+        value: "50"
       - key: GINK_SUPPORT_EMAIL     # shown in Settings -> Help
         value: contact@ginkai.com
       - key: GINK_PRIVACY_URL       # Settings -> Privacy (required by app stores)
