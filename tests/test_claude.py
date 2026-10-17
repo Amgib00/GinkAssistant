@@ -111,3 +111,18 @@ def test_owner_can_grant_pro_and_nobody_else_can(tmp_path, monkeypatch):
     assert r.status_code == 200 and b._plan_status("me@x.co")["plan"] == "pro"
     first = r.json()["pro_until"]
     assert grant("k" * 40).json()["pro_until"] > first + 29 * 86400          # adds to the end, like a payment
+
+
+def test_gink_names_reach_the_right_claude_model(srv):
+    b, c, h, calls = srv
+    for name, model in (("gink-flurry", "claude-haiku-5-5"), ("gink-frost", "claude-sonnet-5-5"), ("Gink-Glacier", "claude-opus-5-5")):
+        assert ask(c, h("pro@x.co"), name).status_code == 200
+        assert calls[-1]["provider"] == "anthropic" and calls[-1]["body"]["model"] == model
+    assert ask(c, h("free@x.co"), "gink-frost").status_code == 403          # still Pro only
+
+
+def test_gink_names_for_the_free_models_reach_groq(srv):
+    b, c, h, calls = srv
+    for name, model in (("gink-flake", "openai/gpt-oss-20b"), ("gink-crystal", "openai/gpt-oss-120b")):
+        assert ask(c, h("free@x.co"), name).status_code == 200
+        assert calls[-1]["provider"] == "groq" and calls[-1]["body"]["model"] == model

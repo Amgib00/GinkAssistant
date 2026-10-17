@@ -3020,8 +3020,14 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 
   // ---------------------------------------------------------------- talking to the AI
   function niceModel(id) {             // "openai/gpt-oss-120b" -> "GPT-OSS 120B", "claude-sonnet-5-5" -> "Claude Sonnet 5.5"
+    var GINK = { "openai/gpt-oss-20b": "Gink Flake \u00b7 Free \u00b7 GPT-OSS",            // Gink's names
+                 "openai/gpt-oss-120b": "Gink Crystal \u00b7 Free \u00b7 GPT-OSS",
+                 "qwen/qwen3.6-27b": "Gink Prism \u00b7 Free \u00b7 Qwen",
+                 "claude-haiku-5-5": "Gink Flurry \u00b7 Pro \u00b7 Claude", "claude-sonnet-5-5": "Gink Frost \u00b7 Pro \u00b7 Claude",
+                 "claude-opus-5-5": "Gink Glacier \u00b7 Pro \u00b7 Claude", "claude-fable-5-1": "Gink Aurora \u00b7 Pro \u00b7 Claude" };
+    if (GINK[id]) return GINK[id];
     var c = /^claude-([a-z]+)-(\d+)-(\d+)$/.exec(String(id));
-    if (c) return "Claude " + c[1].charAt(0).toUpperCase() + c[1].slice(1) + " " + c[2] + "." + c[3] + " (Pro)";
+    if (c) return "Claude " + c[1].charAt(0).toUpperCase() + c[1].slice(1) + " " + c[2] + "." + c[3] + " \u00b7 Pro";
     var n = String(id).split("/").pop().replace(/[-_]/g, " ");
     n = n.replace(/\b(\d+(?:\.\d+)?)([bkm])\b/gi, function (m, a, b) { return a + b.toUpperCase(); })
          .replace(/\bgpt oss\b/i, "GPT-OSS").replace(/\b(gpt|llm|ai)\b/gi, function (m) { return m.toUpperCase(); })

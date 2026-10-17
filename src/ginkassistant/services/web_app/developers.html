@@ -85,7 +85,7 @@ from openai import OpenAI
 client = OpenAI(base_url="__BASE__", api_key="YOUR_GINK_KEY")
 
 reply = client.chat.completions.create(
-    model="openai/gpt-oss-120b",
+    model="gink-crystal",
     messages=[{"role": "user", "content": "Write a haiku about Dakar"}],
 )
 print(reply.choices[0].message.content)</code></pre>
@@ -94,21 +94,21 @@ import OpenAI from "openai";
 const client = new OpenAI({ baseURL: "__BASE__", apiKey: process.env.GINK_KEY });
 
 const reply = await client.chat.completions.create({
-  model: "openai/gpt-oss-120b",
+  model: "gink-crystal",
   messages: [{ role: "user", content: "Write a haiku about Dakar" }],
 });
 console.log(reply.choices[0].message.content);</code></pre>
 <pre data-code="curl" hidden><code>curl __BASE__/chat/completions \
   -H "Authorization: Bearer $GINK_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"model": "openai/gpt-oss-120b",
+  -d '{"model": "gink-crystal",
        "messages": [{"role": "user", "content": "Write a haiku about Dakar"}]}'</code></pre>
 
   <h2>Endpoints</h2>
   <div class="scroll"><table>
     <tbody>
       <tr><td><code>POST /v1/chat/completions</code></td><td>Chat, with <code>stream: true</code> for word-by-word answers. Photos (image parts) need Gink Pro.</td></tr>
-      <tr><td><code>GET /v1/models</code></td><td>The models you can use right now: GPT-OSS and other fast models, plus Claude models with Gink Pro.</td></tr>
+      <tr><td><code>GET /v1/models</code></td><td>The models you can use right now: GPT-OSS and other fast models, plus Claude models with Gink Pro, Every model also has a Gink name you can use: <code>gink-flake</code> (GPT-OSS 20B), <code>gink-crystal</code> (GPT-OSS 120B), <code>gink-prism</code> (Qwen 3.6, photos), and with Pro <code>gink-flurry</code> (Claude Haiku), <code>gink-frost</code> (Claude Sonnet), <code>gink-glacier</code> (Claude Opus), <code>gink-aurora</code> (Claude Fable).</td></tr>
       <tr><td><code>POST /v1/images/generations</code></td><td><code>{"prompt": "..."}</code> &rarr; <code>data[0].b64_json</code> (a PNG).</td></tr>
     </tbody>
   </table></div>

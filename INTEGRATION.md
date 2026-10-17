@@ -634,3 +634,13 @@ New services/live_info.py (all free, no API keys):
 - tools/grant_pro.py: asks for the key hidden (not in shell history), email, days.
 - render.yaml: GINK_ADMIN_KEY generateValue. Tested: no/short/wrong key refused, unknown
   email 404, bad days 422, grant + extension; the script end to end.
+
+## Latest: Gink names for the Claude models
+- Gink Flurry (Haiku 5.5), Gink Frost (Sonnet 5.5), Gink Glacier (Opus 5.5), Gink Aurora
+  (Fable 5.1). Pickers show "<name> · Pro · Claude" (transparent about the provider).
+- Server: GINK_MODEL_NAMES aliases (gink-frost -> claude-sonnet-5-5 ...), case-insensitive,
+  for the app, web and developer API; Pro rule unchanged. Change names in GINK_MODEL_NAMES,
+  ui/main_screen.py (desktop picker) and webapp/bridge.js (web picker).
+- All models named: Gink Flake (GPT-OSS 20B), Gink Crystal (GPT-OSS 120B), Gink Prism
+  (Qwen 3.6) -- Free; Flurry/Frost/Glacier/Aurora -- Pro (Claude). Developer quick-start
+  examples use model="gink-crystal".

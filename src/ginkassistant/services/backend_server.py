@@ -1356,6 +1356,12 @@ def _fit_reasoning(body: dict, cap: int):
 # its own daily allowance (GINK_PRO_CLAUDE_DAILY). No ANTHROPIC_API_KEY -> Groq answers instead.
 ANTHROPIC_BASE = os.environ.get("GINK_ANTHROPIC_BASE", "https://api.anthropic.com/v1")
 CLAUDE_MODELS_BEST_FIRST = ("claude-sonnet-5-5", "claude-opus-5-5", "claude-haiku-5-5", "claude-fable-5-1")
+# Gink's own names for the Claude models (fastest -> most capable). Apps and developers may use
+# either; the server translates. Change a name here and in the apps' pickers.
+GINK_MODEL_NAMES = {"gink-flake": "openai/gpt-oss-20b", "gink-crystal": "openai/gpt-oss-120b",      # Free (Groq)
+                    "gink-prism": "qwen/qwen3.6-27b",
+                    "gink-flurry": "claude-haiku-5-5", "gink-frost": "claude-sonnet-5-5",           # Pro (Claude)
+                    "gink-glacier": "claude-opus-5-5", "gink-aurora": "claude-fable-5-1"}
 _claude_models = {"ids": set(), "at": 0.0}
 
 
@@ -1433,6 +1439,7 @@ async def ai_chat(request: Request):
     # the app groups one question's calls under X-Gink-Turn; API callers can't (every API call counts)
     turn = "" if getattr(request.state, "gink_api_email", None) else request.headers.get("x-gink-turn", "")
     # Claude (Anthropic) or Groq: decided once, here
+    body["model"] = GINK_MODEL_NAMES.get(str(body["model"]).lower(), body["model"])   # "gink-frost" -> Claude Sonnet
     wants_claude = str(body["model"]).startswith("claude-")
     if wants_claude and not _env("ANTHROPIC_API_KEY"):
         wants_claude, body["model"] = False, TEXT_MODELS_BEST_FIRST[0]   # no Anthropic key here: Groq instead
