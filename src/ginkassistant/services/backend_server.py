@@ -1420,6 +1420,229 @@ def _count_claude(email: str, turn: str = ""):
     return None
 
 
+# ---- Claude through the NATIVE Messages API (default), with automatic prompt caching:
+# the repeated start of every request (instructions, tools, earlier messages) is read from
+# Anthropic's cache at 0.1x the input price. Apps keep speaking the OpenAI format; these
+# functions translate requests, answers, tool calls and the live stream both ways.
+# GINK_CLAUDE_MODE=compat switches back to Anthropic's OpenAI-compatible endpoint.
+_FINISH = {"end_turn": "stop", "stop_sequence": "stop", "max_tokens": "length", "tool_use": "tool_calls",
+           "pause_turn": "stop", "refusal": "content_filter"}
+
+
+def _text_of(content) -> str:
+    if isinstance(content, str):
+        return content
+    return "".join(p.get("text", "") for p in (content or []) if isinstance(p, dict) and p.get("type") == "text")
+
+
+def _claude_parts(content) -> list:
+    """OpenAI message content -> Claude content blocks (text and images)."""
+    if isinstance(content, str):
+        return [{"type": "text", "text": content}] if content else []
+    out = []
+    for part in content or []:
+        if not isinstance(part, dict):
+            continue
+        if part.get("type") == "text" and part.get("text"):
+            out.append({"type": "text", "text": part["text"]})
+        elif part.get("type") == "image_url":
+            url = (part.get("image_url") or {}).get("url", "")
+            if url.startswith("data:") and ";base64," in url:
+                media, data = url[5:].split(";base64,", 1)
+                out.append({"type": "image", "source": {"type": "base64", "media_type": media, "data": data}})
+            elif url.startswith("https://"):
+                out.append({"type": "image", "source": {"type": "url", "url": url}})
+    return out
+
+
+def _to_claude(body: dict) -> dict:
+    """OpenAI chat request -> Claude Messages request (+ automatic prompt caching)."""
+    system, messages = [], []
+
+    def add(role, blocks):
+        if not blocks:
+            return
+        if messages and messages[-1]["role"] == role:          # Claude wants alternating turns
+            messages[-1]["content"].extend(blocks)
+        else:
+            messages.append({"role": role, "content": list(blocks)})
+
+    for m in body.get("messages") or []:
+        role = m.get("role")
+        if role in ("system", "developer"):
+            t = _text_of(m.get("content"))
+            if t:
+                system.append(t)
+        elif role == "user":
+            add("user", _claude_parts(m.get("content")))
+        elif role == "assistant":
+            blocks = _claude_parts(m.get("content"))
+            for call in m.get("tool_calls") or []:
+                fn = call.get("function") or {}
+                try:
+                    args = _json.loads(fn.get("arguments") or "{}")
+                except ValueError:
+                    args = {}
+                blocks.append({"type": "tool_use", "id": call.get("id") or "call_" + secrets.token_hex(6),
+                               "name": fn.get("name", ""), "input": args if isinstance(args, dict) else {"value": args}})
+            add("assistant", blocks)
+        elif role == "tool":
+            add("user", [{"type": "tool_result", "tool_use_id": m.get("tool_call_id", ""),
+                          "content": _text_of(m.get("content")) or "(no output)"}])
+    out = {"model": body["model"], "max_tokens": int(body.get("max_tokens") or 1024), "messages": messages,
+           "cache_control": {"type": "ephemeral"}}
+    if system:
+        out["system"] = "\n\n".join(system)
+    if body.get("temperature") is not None:
+        out["temperature"] = max(0.0, min(1.0, float(body["temperature"])))
+    stop = body.get("stop")
+    if stop:
+        out["stop_sequences"] = [stop] if isinstance(stop, str) else list(stop)[:4]
+    tools = [t.get("function") or {} for t in body.get("tools") or [] if t.get("type", "function") == "function"]
+    if tools:
+        out["tools"] = [{"name": f.get("name", ""), "description": f.get("description", ""),
+                         "input_schema": f.get("parameters") or {"type": "object", "properties": {}}} for f in tools]
+        choice = body.get("tool_choice", "auto")
+        if choice == "none":
+            out["tool_choice"] = {"type": "none"}
+        elif choice == "required":
+            out["tool_choice"] = {"type": "any"}
+        elif isinstance(choice, dict) and (choice.get("function") or {}).get("name"):
+            out["tool_choice"] = {"type": "tool", "name": choice["function"]["name"]}
+        else:
+            out["tool_choice"] = {"type": "auto"}
+    if body.get("stream"):
+        out["stream"] = True
+    return out
+
+
+def _usage_from_claude(u: dict) -> dict:
+    u = u or {}
+    cached, written = u.get("cache_read_input_tokens") or 0, u.get("cache_creation_input_tokens") or 0
+    prompt = (u.get("input_tokens") or 0) + cached + written
+    return {"prompt_tokens": prompt, "completion_tokens": u.get("output_tokens") or 0,
+            "total_tokens": prompt + (u.get("output_tokens") or 0), "prompt_tokens_details": {"cached_tokens": cached}}
+
+
+def _from_claude(resp: dict, model: str) -> dict:
+    """Claude Messages answer -> OpenAI chat completion."""
+    text, calls = [], []
+    for block in resp.get("content") or []:
+        if block.get("type") == "text":
+            text.append(block.get("text", ""))
+        elif block.get("type") == "tool_use":
+            calls.append({"id": block.get("id"), "type": "function",
+                          "function": {"name": block.get("name"), "arguments": _json.dumps(block.get("input") or {})}})
+    message = {"role": "assistant", "content": "".join(text) or (None if calls else "")}
+    if calls:
+        message["tool_calls"] = calls
+    return {"id": resp.get("id", "chatcmpl-claude"), "object": "chat.completion", "created": int(time.time()),
+            "model": model, "choices": [{"index": 0, "message": message,
+                                         "finish_reason": _FINISH.get(resp.get("stop_reason"), "stop")}],
+            "usage": _usage_from_claude(resp.get("usage"))}
+
+
+class _ClaudeStream:
+    """Claude's stream events -> OpenAI 'chat.completion.chunk' lines (text and tool calls)."""
+
+    def __init__(self, model: str):
+        self.model, self.id, self.tool_index, self.blocks = model, "chatcmpl-claude", -1, {}
+
+    def _chunk(self, delta: dict, finish=None) -> bytes:
+        c = {"id": self.id, "object": "chat.completion.chunk", "created": int(time.time()), "model": self.model,
+             "choices": [{"index": 0, "delta": delta, "finish_reason": finish}]}
+        return ("data: " + _json.dumps(c) + "\n\n").encode()
+
+    def event(self, ev: dict) -> list:
+        kind = ev.get("type")
+        if kind == "message_start":
+            self.id = (ev.get("message") or {}).get("id", self.id)
+            return [self._chunk({"role": "assistant", "content": ""})]
+        if kind == "content_block_start":
+            block = ev.get("content_block") or {}
+            if block.get("type") == "tool_use":
+                self.tool_index += 1
+                self.blocks[ev.get("index")] = self.tool_index
+                return [self._chunk({"tool_calls": [{"index": self.tool_index, "id": block.get("id"), "type": "function",
+                                                     "function": {"name": block.get("name"), "arguments": ""}}]})]
+            return []
+        if kind == "content_block_delta":
+            d = ev.get("delta") or {}
+            if d.get("type") == "text_delta":
+                return [self._chunk({"content": d.get("text", "")})]
+            if d.get("type") == "input_json_delta" and ev.get("index") in self.blocks:
+                return [self._chunk({"tool_calls": [{"index": self.blocks[ev["index"]],
+                                                     "function": {"arguments": d.get("partial_json", "")}}]})]
+            return []
+        if kind == "message_delta":
+            reason = (ev.get("delta") or {}).get("stop_reason")
+            return [self._chunk({}, _FINISH.get(reason, "stop"))] if reason else []
+        if kind == "message_stop":
+            return [b"data: [DONE]\n\n"]
+        if kind == "error":
+            err = ev.get("error") or {}
+            msg = "The AI service is busy. Please try again." if err.get("type") == "overloaded_error" else \
+                  "The AI service had a problem. Please try again."
+            return [("data: " + _json.dumps({"error": {"message": msg, "type": "gink_upstream", "code": "upstream"}}) + "\n\n").encode(),
+                    b"data: [DONE]\n\n"]
+        return []
+
+
+async def _claude_native(body: dict):
+    """Send an OpenAI-format request to Claude's Messages API; answer in OpenAI format."""
+    import httpx
+    from fastapi.responses import JSONResponse, StreamingResponse
+    req = _to_claude(body)
+    headers = {"x-api-key": _env("ANTHROPIC_API_KEY"), "anthropic-version": "2023-06-01", "content-type": "application/json"}
+    url = f"{ANTHROPIC_BASE}/messages"
+
+    def upstream_error(status, raw):
+        try:
+            err = _json.loads(raw).get("error") or {}
+        except Exception:
+            err = {}
+        if status == 400 and err.get("message"):
+            return _ai_error(400, "Claude couldn't use this request: " + str(err["message"])[:300], "bad_request")
+        if status in (429, 529):
+            return _ai_error(503, "Claude is busy right now. Please try again in a moment, or pick another model.", "upstream")
+        return _ai_error(502, "The AI service had a problem. Please try again.", "upstream")
+
+    if not req.get("stream"):
+        async with httpx.AsyncClient(timeout=httpx.Timeout(120, connect=15)) as client:
+            r = await client.post(url, json=req, headers=headers)
+        if r.status_code != 200:
+            return upstream_error(r.status_code, r.text)
+        return JSONResponse(_from_claude(r.json(), body["model"]))
+
+    client = httpx.AsyncClient(timeout=httpx.Timeout(120, connect=15))
+    upstream = await client.send(client.build_request("POST", url, json=req, headers=headers), stream=True)
+    if upstream.status_code != 200:
+        raw = await upstream.aread()
+        await upstream.aclose(); await client.aclose()
+        return upstream_error(upstream.status_code, raw.decode("utf-8", "replace"))
+    translator = _ClaudeStream(body["model"])
+
+    async def relay():
+        buf = ""
+        try:
+            async for piece in upstream.aiter_text():
+                buf += piece
+                while "\n\n" in buf:
+                    frame, buf = buf.split("\n\n", 1)
+                    data = "".join(line[5:].strip() for line in frame.splitlines() if line.startswith("data:"))
+                    if not data:
+                        continue
+                    try:
+                        ev = _json.loads(data)
+                    except ValueError:
+                        continue
+                    for out in translator.event(ev):
+                        yield out
+        finally:
+            await upstream.aclose(); await client.aclose()
+    return StreamingResponse(relay(), media_type="text/event-stream")
+
+
 @app.post("/ai/openai/v1/chat/completions")
 async def ai_chat(request: Request):
     email = _email_from_auth(request)
@@ -1463,6 +1686,8 @@ async def ai_chat(request: Request):
         _fit_reasoning(body, MAX_TOKENS[plan])
         body["user"] = hashlib.sha256(email.encode()).hexdigest()[:32]   # abuse tracing without sharing the email
         base, key = GROQ_BASE, _env("GROQ_API_KEY")
+    if wants_claude and os.environ.get("GINK_CLAUDE_MODE", "native") != "compat":
+        return await _claude_native(body)                 # native Messages API + prompt caching
     headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
     import httpx
     from fastapi.responses import JSONResponse, StreamingResponse

@@ -653,3 +653,16 @@ New services/live_info.py (all free, no API keys):
   Gink-android.apk + install notes (gh release create).
 - Website Download page: buttons to /releases/latest/download/<file> (always the newest),
   plus Web (Open Gink). The links work once the first release exists.
+
+## Latest: Claude through the native Messages API with prompt caching
+- Default for claude-* models (GINK_CLAUDE_MODE=compat switches back to Anthropic's
+  OpenAI-compatible endpoint). Automatic prompt caching: top-level
+  cache_control {"type": "ephemeral"} on every request (cache reads 0.1x input price).
+- Translator in backend_server.py: _to_claude (system/developer merged; same-role turns
+  merged; images base64/url; assistant tool_calls -> tool_use; tool -> tool_result; tools +
+  tool_choice; temperature clamped to 1; stop -> stop_sequences), _from_claude (text,
+  tool_calls, finish reasons, usage incl. cached_tokens), _ClaudeStream (text + tool-call
+  deltas, finish, [DONE], friendly errors), _claude_native (x-api-key, anthropic-version
+  2023-06-01; 400 explained, 429/529 -> "Claude is busy").
+- Verified: tests/test_claude_native.py (6) and the official openai library end to end
+  (streaming; tool round trip with matching ids; cached tokens reported).

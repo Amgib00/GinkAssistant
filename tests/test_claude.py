@@ -17,7 +17,9 @@ def srv(tmp_path, monkeypatch):
         if request.url.path.endswith("/models"):
             ids = ["claude-sonnet-5-5", "claude-opus-5-5", "claude-haiku-5-5"] if "anthropic" in host else ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]
             return httpx.Response(200, json={"data": [{"id": i} for i in ids]})
-        calls.append({"provider": "anthropic" if "anthropic" in host else "groq", "auth": request.headers.get("authorization"),
+        key = request.headers.get("x-api-key")                     # the native Claude API sends its key this way
+        calls.append({"provider": "anthropic" if "anthropic" in host else "groq",
+                      "auth": ("Bearer " + key) if key else request.headers.get("authorization"),
                       "body": json.loads(request.content)})
         return httpx.Response(200, json={"choices": [{"message": {"role": "assistant", "content": "ok"}}]})
     real = httpx.AsyncClient

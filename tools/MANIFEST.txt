@@ -145,6 +145,7 @@ tests/test_billing.py
 tests/test_chat_extras.py
 tests/test_check_project.py
 tests/test_claude.py
+tests/test_claude_native.py
 tests/test_computer_actions.py
 tests/test_dark_theme.py
 tests/test_developer_api.py
