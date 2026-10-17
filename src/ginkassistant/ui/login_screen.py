@@ -696,7 +696,11 @@ class LoginController:
         except KeyError:
             await self.call("error", "Something was missing \u2014 please try again.")
         except Exception as exc:
-            await self.call("error", f"Couldn't reach the server at {self.app.state.base_url}. ({exc.__class__.__name__})")
+            import httpx
+            if isinstance(exc, httpx.TimeoutException):
+                await self.call("error", server_config.WAKING_UP)
+            else:
+                await self.call("error", f"Couldn't reach the server at {self.app.state.base_url}. Check your connection and try again.")
 
     async def start_oauth(self, provider: str):
         label = {"google": "Google", "apple": "Apple", "microsoft": "Microsoft", "github": "GitHub"}.get(provider, "SSO")

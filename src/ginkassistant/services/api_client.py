@@ -42,9 +42,10 @@ class Session:
 
 
 class ApiClient:
-    def __init__(self, base_url: str, timeout: float = 15.0):
+    def __init__(self, base_url: str, timeout: float = None):
         self.base_url = base_url.rstrip("/")
-        self.timeout = timeout
+        from .server_config import wait_for
+        self.timeout = timeout or wait_for(base_url)   # online servers may need ~60 s to wake
 
     async def send_otp(self, email: str) -> None:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -108,7 +109,7 @@ class ApiClient:
     async def providers(self) -> dict:
         """{"google": {"enabled": bool, "label": "Google"}, ...}; {} if offline."""
         try:
-            async with httpx.AsyncClient(timeout=6) as client:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
                 resp = await client.get(f"{self.base_url}/auth/providers")
             return resp.json() if resp.status_code == 200 else {}
         except Exception:

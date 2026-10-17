@@ -79,9 +79,24 @@ def resolve_base_url(app) -> str:
     return os.environ.get("GINK_API_URL") or saved_url(app) or platform_default()
 
 
-async def check_server(url: str, timeout: float = 8.0) -> Tuple[bool, str]:
+WAKING_UP = ("The server didn\u2019t answer in time. If it\u2019s on Render\u2019s free plan, it sleeps after "
+             "15 minutes without visitors and takes up to a minute to wake \u2014 try again shortly.")
+
+
+def is_local(url: str) -> bool:
+    return any(h in (url or "") for h in ("://127.0.0.1", "://localhost", "://10.0.2.2", "://0.0.0.0"))
+
+
+def wait_for(url: str) -> float:
+    """Seconds to wait for an answer: a sleeping online server (Render free plan) needs up to ~60 s
+    to wake; a server on this computer that slow really is a problem."""
+    return 12.0 if is_local(url) else 75.0
+
+
+async def check_server(url: str, timeout: float = None) -> Tuple[bool, str]:
     """(ok, human message). Uses /health, which backend_server.py serves."""
     url = normalise(url)
+    timeout = timeout or wait_for(url)
     if not url:
         return False, "Enter a server address first."
     try:
@@ -93,6 +108,6 @@ async def check_server(url: str, timeout: float = 8.0) -> Tuple[bool, str]:
     except httpx.ConnectError:
         return False, "Can't reach that address. Check it and your connection."
     except httpx.TimeoutException:
-        return False, "That server took too long to answer."
+        return False, WAKING_UP
     except Exception as exc:
         return False, f"Couldn't connect: {exc}"

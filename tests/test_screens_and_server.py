@@ -307,3 +307,25 @@ def test_phones_default_to_the_online_server(monkeypatch):
     assert sc.platform_default() == sc.ONLINE_SERVER and sc.ONLINE_SERVER.startswith("https://")
     monkeypatch.setattr(pu, "is_mobile", lambda: False)
     assert sc.platform_default() == "http://127.0.0.1:8000"
+
+
+def test_online_servers_get_time_to_wake_up():
+    """Render's free plan sleeps; waking takes up to ~60 s. 8-15 s limits gave 'ReadTimeout'."""
+    from ginkassistant.services import server_config as sc
+    from ginkassistant.services.api_client import ApiClient
+    assert ApiClient("https://gink-server.onrender.com").timeout >= 60
+    assert ApiClient("http://127.0.0.1:8000").timeout <= 15
+    assert "wake" in sc.WAKING_UP
+
+
+def test_check_server_explains_a_timeout(monkeypatch):
+    import asyncio, httpx
+    from ginkassistant.services import server_config as sc
+    class Slow:
+        def __init__(self, *a, **k): pass
+        async def __aenter__(self): return self
+        async def __aexit__(self, *a): return False
+        async def get(self, url): raise httpx.ReadTimeout("slow")
+    monkeypatch.setattr(httpx, "AsyncClient", Slow)
+    ok, msg = asyncio.run(sc.check_server("https://gink-server.onrender.com"))
+    assert not ok and msg == sc.WAKING_UP
