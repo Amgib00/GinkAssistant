@@ -125,7 +125,7 @@ class GroqBrain:
         # _cloud_reply() before. resolve_model() still falls back through
         # DEFAULT_FALLBACKS/PREFERRED_CASCADE if this particular model
         # isn't actually live on Groq's account right now.
-        self.preferred_model: str = "llama-3.3-70b-versatile"
+        self.preferred_model: str = "openai/gpt-oss-120b"
 
         self.cloud = False
         if AsyncGroq and self.api_key:
@@ -206,7 +206,15 @@ class GroqBrain:
         return system_prompt + live_context(city) + (extra or "")
 
     last_turn = None
-    TITLE_MODELS = ("llama-3.1-8b-instant", "llama-3.3-70b-versatile")
+    TITLE_MODELS = ("openai/gpt-oss-20b", "openai/gpt-oss-120b", "llama-3.1-8b-instant")   # small + fast first
+
+    @staticmethod
+    def _short_answer_args(model: str, max_tokens: int) -> dict:
+        """GPT-OSS reasons first and that counts toward max_tokens: ask for low effort and
+        leave room, or a 24-token title comes back empty."""
+        if model.startswith("openai/gpt-oss"):
+            return {"max_tokens": max_tokens + 256, "extra_body": {"reasoning_effort": "low"}}
+        return {"max_tokens": max_tokens}
 
     async def generate_title(self, user_text: str, reply: str) -> str:
         """A short chat title (2-6 words) for the sidebar. Uses a small fast model
@@ -221,7 +229,7 @@ class GroqBrain:
         headers = {"X-Gink-Turn": self.last_turn} if self.last_turn else {}
         try:
             r = await self.client.chat.completions.create(
-                model=model, max_tokens=24, temperature=0.3, extra_headers=headers,
+                model=model, temperature=0.3, extra_headers=headers, **self._short_answer_args(model, 24),
                 messages=[{"role": "system", "content": "Write a short title of 2 to 6 words for this conversation. "
                            "Reply with the title only: no quotes, no full stop, no emoji. Use the language the user wrote in."},
                           {"role": "user", "content": f"User: {user_text[:600]}\nAssistant: {reply[:600]}"}])
@@ -240,7 +248,7 @@ class GroqBrain:
         model = next((m for m in self.TITLE_MODELS if m in (models or [])), None) or await self.resolve_model(self.preferred_model)
         try:
             r = await self.client.chat.completions.create(
-                model=model, max_tokens=max_tokens, temperature=0.6,
+                model=model, temperature=0.6, **self._short_answer_args(model, max_tokens),
                 messages=[{"role": "system", "content": system}, {"role": "user", "content": user}])
             return (r.choices[0].message.content or "").strip()
         except Exception:

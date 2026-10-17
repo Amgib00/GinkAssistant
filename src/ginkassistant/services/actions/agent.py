@@ -27,7 +27,7 @@ GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 class GinkLimit(Exception):
     """Gink Cloud said no (daily limit, Pro-only feature...): show the message, don't fall back."""
-DEFAULT_MODEL = "llama-3.3-70b-versatile"
+DEFAULT_MODEL = "openai/gpt-oss-120b"     # llama-3.3-70b-versatile was retired by Groq on 16 Aug 2026
 MAX_ROUNDS = 6
 
 _ACTION_WORDS = re.compile(

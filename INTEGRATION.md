@@ -576,3 +576,13 @@ New services/live_info.py (all free, no API keys):
   Provider apps need the callback {GINK_PUBLIC_URL}/auth/<provider>/callback.
 - Tested in Chromium with the server in-process: buttons only for configured
   providers, pop-up, sign-in + close, refused sign-in message.
+
+## Latest: Groq model upgrade (llama-3.3-70b-versatile + llama-3.1-8b-instant retired 16 Aug 2026)
+- Actions agent defaulted to llama-3.3-70b-versatile and chat titles to the two retired
+  models: actions failed, titles silently stopped. Agent -> openai/gpt-oss-120b; titles ->
+  gpt-oss-20b first, with reasoning_effort "low" + room (reasoning counts toward max_tokens).
+- Server (/ai/openai/v1/chat/completions): swaps any model Groq no longer lists (live list,
+  cached 1 h) for the best current one -- protects app builds already installed; photo
+  requests go to a vision model Groq still offers (qwen/qwen3.6-27b first); short GPT-OSS
+  requests get low reasoning effort + room. tests/test_model_upgrade.py.
+- Web app: model picker shows chat models only.

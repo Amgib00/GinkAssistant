@@ -805,6 +805,7 @@ def build_main_screen(app: toga.App, email: str):
         "llama-3.3-70b-versatile": ("Llama 3.3 70B", "Smart"),
         "llama-3.1-8b-instant": ("Llama 3.1 8B", "Fast"),
         "openai/gpt-oss-120b": ("GPT-OSS 120B", "Deep"),
+        "qwen/qwen3.6-27b": ("Qwen 3.6 27B", "Balanced"),
         "openai/gpt-oss-20b": ("GPT-OSS 20B", "Balanced"),
         "qwen/qwen3-32b": ("Qwen3 32B", "Balanced"),
         "moonshotai/kimi-k2-instruct": ("Kimi K2", "Deep"),

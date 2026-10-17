@@ -1283,6 +1283,68 @@ async def ai_models(request: Request):
     return _models_cache["data"]
 
 
+# ---- Groq retires models (llama-3.3-70b-versatile and llama-3.1-8b-instant on 16 Aug 2026).
+# Apps already installed keep asking for old names, so the server swaps any model Groq no
+# longer lists for the best current one -- checked against Groq's live list (cached 1 hour).
+RETIRED_MODELS = {
+    "llama-3.1-8b-instant": "openai/gpt-oss-20b", "llama3-8b-8192": "openai/gpt-oss-20b",
+    "llama-3.3-70b-versatile": "openai/gpt-oss-120b", "llama3-70b-8192": "openai/gpt-oss-120b",
+    "mixtral-8x7b-32768": "openai/gpt-oss-120b", "deepseek-r1-distill-llama-70b": "openai/gpt-oss-120b",
+    "moonshotai/kimi-k2-instruct": "openai/gpt-oss-120b", "qwen/qwen3-32b": "openai/gpt-oss-120b",
+}
+TEXT_MODELS_BEST_FIRST = ("openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b")
+VISION_MODELS_BEST_FIRST = ("qwen/qwen3.6-27b", "meta-llama/llama-4-scout-17b-16e-instruct",
+                            "meta-llama/llama-4-maverick-17b-128e-instruct")
+_groq_models = {"ids": set(), "at": 0.0}
+
+
+async def _live_groq_models() -> set:
+    if time.time() - _groq_models["at"] < 3600 and _groq_models["ids"]:
+        return _groq_models["ids"]
+    import httpx
+    key = _env("GROQ_API_KEY")
+    if not key:
+        return set()
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(f"{GROQ_BASE}/models", headers={"Authorization": f"Bearer {key}"})
+        if r.status_code == 200:
+            _groq_models.update(ids={m["id"] for m in r.json().get("data", [])}, at=time.time())
+    except Exception:
+        pass
+    return _groq_models["ids"]
+
+
+async def _current_model(requested: str, needs_vision: bool = False) -> str:
+    live = await _live_groq_models()
+    if not live:                                       # can't check: at least fix the known retirements
+        return RETIRED_MODELS.get(requested, requested)
+    if requested in live and not (needs_vision and requested not in VISION_MODELS_BEST_FIRST):
+        return requested
+    if needs_vision:
+        for m in VISION_MODELS_BEST_FIRST:
+            if m in live:
+                return m
+    swap = RETIRED_MODELS.get(requested)
+    if swap in live:
+        return swap
+    for m in TEXT_MODELS_BEST_FIRST:
+        if m in live:
+            return m
+    return requested
+
+
+def _fit_reasoning(body: dict, cap: int):
+    """GPT-OSS reasons before answering, and the reasoning counts toward max_tokens. A short
+    limit (old apps ask 24 tokens for a chat title) would be spent on reasoning, leaving an
+    empty answer: ask for little reasoning and leave room for it."""
+    if not str(body.get("model", "")).startswith("openai/gpt-oss"):
+        return
+    if (body.get("max_tokens") or 0) <= 300 and "reasoning_effort" not in body:
+        body["reasoning_effort"] = "low"
+        body["max_tokens"] = min(max(int(body.get("max_tokens") or 0) + 256, 300), cap)
+
+
 @app.post("/ai/openai/v1/chat/completions")
 async def ai_chat(request: Request):
     email = _email_from_auth(request)
@@ -1303,6 +1365,8 @@ async def ai_chat(request: Request):
     if blocked is not None:
         return blocked
     body["max_tokens"] = min(int(body.get("max_tokens") or MAX_TOKENS[plan]), MAX_TOKENS[plan])
+    body["model"] = await _current_model(str(body["model"]), _has_images(body["messages"]))
+    _fit_reasoning(body, MAX_TOKENS[plan])
     body["user"] = hashlib.sha256(email.encode()).hexdigest()[:32]       # abuse tracing without sharing the email
     headers = {"Authorization": f"Bearer {_env('GROQ_API_KEY')}", "Content-Type": "application/json"}
     import httpx

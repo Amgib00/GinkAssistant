@@ -3271,7 +3271,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     applyAppearance();
     api("/ai/usage").then(function (r) { return r.ok ? r.json() : null; }).then(function (u) { if (u) W.plan = u.plan; }).catch(function () {});
     api("/ai/openai/v1/models").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-      var ids = ((j && j.data) || []).map(function (m) { return m.id; }).filter(function (id) { return !/whisper|tts|guard|embed/i.test(id); });
+      var ids = ((j && j.data) || []).map(function (m) { return m.id; }).filter(function (id) { return !/whisper|tts|guard|embed|orpheus|compound|allam|playai/i.test(id); });   // chat models only
       W.models = ids.map(function (id) { return { id: id, name: niceModel(id), tier: "" }; });
       if (!W.model || ids.indexOf(W.model) < 0) W.model = ids[0] || "";
       setModels(W.models, W.model);
