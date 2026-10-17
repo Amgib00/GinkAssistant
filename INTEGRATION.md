@@ -682,3 +682,19 @@ New services/live_info.py (all free, no API keys):
 - Verified in Chromium against the real server: text + PDF contents reach the AI, history
   names only, unreadable file, photo Pro rule, 11 voices, connecting -> listening ->
   thinking -> speaking -> listening, caption without Markdown. tests: /attachments/read.
+
+## Latest: the Gink dataset (tools/gink_dataset/) -- first step to Gink's own model
+- generate.py: 11 actions with Gink's real tools (alarm, timer, reminder, currency, weather,
+  calculate, media, volume, open_app, remember, create_file), English + French; each example
+  states its own random "now" and the arguments are computed from it. Hand-written identity
+  (honest: an AI built on open models) and voice-style examples. Native-speaker sheets for
+  Wolof/Krio/Pidgin (languages/*.csv; only approved=yes rows used; nothing machine-written).
+  Seeded and reproducible; 5% held out (eval.jsonl). out/ is generated, not committed.
+- validate.py: structure, real tools, required/unknown/typed arguments, formats (HH:MM,
+  YYYY-MM-DD HH:MM, allowed values), every call answered, reminders not before "now",
+  privacy (emails/phones/cards; dates excluded), duplicates. 683/683 pass; injected problems caught.
+- evaluate.py: tool-call accuracy of any OpenAI-style model on eval.jsonl (baseline: gink-crystal
+  via the Developer API). Verified exact against a stand-in (12/34 -> 12/34).
+- Rules: no training on users' chats without consent; no Claude-generated training data
+  (Anthropic's terms); Apache-2.0 base (Qwen / GPT-OSS) for a "Gink" name.
+- tests/test_gink_dataset.py.

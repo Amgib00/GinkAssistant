@@ -151,6 +151,7 @@ tests/test_dark_theme.py
 tests/test_developer_api.py
 tests/test_formatting_security.py
 tests/test_gink_cloud.py
+tests/test_gink_dataset.py
 tests/test_ios_startup.py
 tests/test_live_info.py
 tests/test_main_screen.py
@@ -170,6 +171,16 @@ tools/MANIFEST.txt
 tools/build_web_app.py
 tools/build_website.py
 tools/check_project.py
+tools/gink_dataset/README.md
+tools/gink_dataset/evaluate.py
+tools/gink_dataset/examples_identity.jsonl
+tools/gink_dataset/examples_voice.jsonl
+tools/gink_dataset/generate.py
+tools/gink_dataset/languages/README.md
+tools/gink_dataset/languages/krio.csv
+tools/gink_dataset/languages/pidgin.csv
+tools/gink_dataset/languages/wolof.csv
+tools/gink_dataset/validate.py
 tools/grant_pro.py
 tools/make_icons.py
 tools/publish_to_github.sh
