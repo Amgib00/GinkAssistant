@@ -162,6 +162,7 @@ table.methods th { color: var(--muted); font-weight: 600; font-size: 0.95rem; }
 .download:last-child { border-bottom: 1px solid var(--line); }
 .download h2 { font-size: 1.35rem; margin: 0; }
 .download p { margin: 0; color: var(--muted); }
+.dl-buttons { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .status { font-weight: 700; font-size: 0.92rem; padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
 .status-beta { background: rgba(168, 240, 60, 0.14); color: var(--lime); }
 .status-soon { background: var(--raised); color: var(--muted); }

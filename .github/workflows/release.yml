@@ -1,0 +1,68 @@
+# Publishes a GitHub Release with the Mac and Android installers.
+# Run it: GitHub -> Actions -> "Release" -> Run workflow -> type a version (e.g. v0.1.0).
+# The files keep fixed names, so these links always point to the NEWEST release (the website uses them):
+#   https://github.com/<owner>/<repo>/releases/latest/download/Gink-mac-arm64.dmg
+#   https://github.com/<owner>/<repo>/releases/latest/download/Gink-mac-x86_64.dmg
+#   https://github.com/<owner>/<repo>/releases/latest/download/Gink-android.apk
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version, like v0.1.0"
+        required: true
+
+permissions:
+  contents: write        # create the release and its tag
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check the version looks like v1.2.3
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version must look like v0.1.0 (got: $VERSION)"; exit 1
+          fi
+  mac:
+    needs: check
+    uses: ./.github/workflows/macos.yml
+  android:
+    needs: check
+    uses: ./.github/workflows/android.yml
+  publish:
+    needs: [mac, android]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Name the files
+        run: |
+          mv dist/Gink-debug.apk dist/Gink-android.apk
+          ls -l dist
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          cat > notes.md <<'NOTES'
+          ## Download Gink
+
+          | | File | Needs |
+          |---|---|---|
+          | **Mac (Apple Silicon: M1 to M4)** | `Gink-mac-arm64.dmg` | macOS 12 or later |
+          | **Mac (Intel)** | `Gink-mac-x86_64.dmg` | macOS 11 or later |
+          | **Android** | `Gink-android.apk` | Android 7 or later |
+
+          **Mac:** open the .dmg and drag Gink to Applications. The first time, **right-click Gink and choose Open**
+          (the app isn't notarized by Apple yet).
+          **Android:** open the .apk on your phone and allow installing apps from this source when asked.
+          This is a test build.
+          NOTES
+          gh release create "$VERSION" dist/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "Gink $VERSION" --notes-file notes.md

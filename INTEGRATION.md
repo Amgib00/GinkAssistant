@@ -644,3 +644,12 @@ New services/live_info.py (all free, no API keys):
 - All models named: Gink Flake (GPT-OSS 20B), Gink Crystal (GPT-OSS 120B), Gink Prism
   (Qwen 3.6) -- Free; Flurry/Frost/Glacier/Aurora -- Pro (Claude). Developer quick-start
   examples use model="gink-crystal".
+
+## Latest: GitHub Releases + real download links
+- .github/workflows/release.yml (Run workflow, version vX.Y.Z, checked by regex): calls
+  macos.yml + android.yml (now workflow_call; macos.yml no longer triggers on tags, so it
+  doesn't build twice), downloads their artifacts (download-artifact v8, merge-multiple),
+  publishes "Gink vX.Y.Z" with fixed names Gink-mac-arm64.dmg, Gink-mac-x86_64.dmg,
+  Gink-android.apk + install notes (gh release create).
+- Website Download page: buttons to /releases/latest/download/<file> (always the newest),
+  plus Web (Open Gink). The links work once the first release exists.

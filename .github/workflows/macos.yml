@@ -15,8 +15,7 @@ name: Mac app
 
 on:
   workflow_dispatch:
-  push:
-    tags: ["v*"]
+  workflow_call:          # used by release.yml
 
 jobs:
   mac:
