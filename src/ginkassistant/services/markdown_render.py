@@ -127,11 +127,22 @@ def _strip_filename_line(language: str, content: str):
     return remaining, filename
 
 
+# Narrow / thin spaces (U+202F, U+2009, U+200A, U+2006, U+2005, U+2007) -- GPT-OSS models
+# often write "2:23\u202fPM" or "Saturday,\u202fOctober". They're only ~1/5 of a normal space,
+# so words look glued together ("Saturday,October17"). Shown as normal spaces instead.
+_NARROW_SPACES = dict.fromkeys(map(ord, "\u202f\u2009\u200a\u2006\u2005\u2007"), " ")
+
+
+def _normal_spaces(text: str) -> str:
+    return text.translate(_NARROW_SPACES)
+
+
 def render_markdown_body(text: str) -> str:
     """Full markdown -> HTML. Fenced code blocks get a header bar with a
     detected filename (or the language, as a fallback) plus Copy and
     Download actions; ```document blocks render as copyable/downloadable
     prose instead of code."""
+    text = _normal_spaces(text or "")
     doc_placeholders = {}
 
     def _stash_document(match: re.Match) -> str:

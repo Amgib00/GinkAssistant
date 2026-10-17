@@ -24,3 +24,9 @@ def test_normal_formatting_still_works():
     out = render("**bold** [site](https://example.com) [f](gink://file/A.pdf) `x < y`\n\n```python\nprint('<b>')\n```")
     assert "<strong>bold</strong>" in out and 'href="https://example.com"' in out and "gink://file/A.pdf" in out
     assert "x &lt; y" in out and "code-block" in out
+
+
+def test_narrow_spaces_show_as_normal_spaces():
+    """GPT-OSS writes '2:23\\u202fPM' / 'Saturday,\\u202fOctober' -- narrow spaces made words look glued."""
+    out = render("It\u2019s **2:23\u202fPM** on **Saturday,\u202fOctober\u2009\u202f17**")
+    assert "2:23 PM" in out and "Saturday, October" in out and "\u202f" not in out and "\u2009" not in out

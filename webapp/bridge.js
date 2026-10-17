@@ -130,11 +130,22 @@
   }
 
   // ---------------------------------------------------------------- talking to the AI
+  function niceModel(id) {             // "openai/gpt-oss-120b" -> "GPT-OSS 120B"
+    var n = String(id).split("/").pop().replace(/[-_]/g, " ");
+    n = n.replace(/\b(\d+(?:\.\d+)?)([bkm])\b/gi, function (m, a, b) { return a + b.toUpperCase(); })
+         .replace(/\bgpt oss\b/i, "GPT-OSS").replace(/\b(gpt|llm|ai)\b/gi, function (m) { return m.toUpperCase(); })
+         .replace(/\b([a-z])/g, function (m) { return m.toUpperCase(); });
+    return n;
+  }
+  function narrow(t) { return String(t).replace(/[\u202f\u2009\u200a\u2006\u2005\u2007]/g, " "); }
   function systemPrompt() {
     var lang = W.prefs.reply_language && W.prefs.reply_language !== "auto" ? " Always answer in this language: " + W.prefs.reply_language + "." : "";
     var who = W.name ? " The user's name is " + W.name.split(" ")[0] + "." : "";
     return "You are Gink, a warm, capable AI assistant. Answer clearly and helpfully, using Markdown for structure when it helps. " +
-           "Today is " + new Date().toDateString() + "." + who + lang +
+           "It is now " + new Date().toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric",
+           hour: "2-digit", minute: "2-digit" }) + " in the user's time zone (" +
+           (Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown") + "). Use this for any question about the time or date." +
+           who + lang +
            " You're running in a web browser: you can't set alarms, reminders or tasks or control the user's computer here; " +
            "if asked, say that the Gink app can do it.";
   }
@@ -182,7 +193,7 @@
             if (!data || data === "[DONE]") return;
             try {
               var d = JSON.parse(data), piece = d.choices && d.choices[0] && d.choices[0].delta && d.choices[0].delta.content;
-              if (piece) { text += piece; setPlainText(aid, text); }
+              if (piece) { text += piece; setPlainText(aid, narrow(text)); }
             } catch (e) {}
           });
           return pump();
@@ -372,7 +383,7 @@
     api("/ai/usage").then(function (r) { return r.ok ? r.json() : null; }).then(function (u) { if (u) W.plan = u.plan; }).catch(function () {});
     api("/ai/openai/v1/models").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
       var ids = ((j && j.data) || []).map(function (m) { return m.id; }).filter(function (id) { return !/whisper|tts|guard|embed/i.test(id); });
-      W.models = ids.map(function (id) { return { id: id, name: id.replace(/[-_]/g, " ").replace(/\b\w/g, function (c) { return c.toUpperCase(); }), tier: "" }; });
+      W.models = ids.map(function (id) { return { id: id, name: niceModel(id), tier: "" }; });
       if (!W.model || ids.indexOf(W.model) < 0) W.model = ids[0] || "";
       setModels(W.models, W.model);
     }).catch(function () {});
