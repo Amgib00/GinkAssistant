@@ -9,6 +9,7 @@
   .ws-tabs button { flex: 1; border: 0; background: none; padding: 9px; border-radius: 999px; font: inherit; font-weight: 600; color: var(--text-muted); cursor: pointer; }
   .ws-tabs button[aria-selected="true"] { background: var(--bg); color: var(--text-main); box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
   .ws-card form { display: grid; gap: 10px; text-align: left; }
+  .ws-card form[hidden] { display: none; }          /* the page's display:grid would otherwise override `hidden` */
   .ws-card label { font-size: 13px; color: var(--text-muted); font-weight: 600; }
   .ws-card input { width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border);
     background: var(--bg); color: var(--text-main); font: inherit; font-size: 15px; }

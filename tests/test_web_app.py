@@ -40,3 +40,12 @@ def test_render_needs_sign_in_and_is_safe(client):
     assert "<strong>hi</strong>" in r and "<script" not in r and "javascript:" not in r
     batch = c.post("/render", json={"items": ["**a**", "`b`"]}, headers=h).json()["html"]
     assert len(batch) == 2 and "<strong>a</strong>" in batch[0]
+
+
+def test_inactive_sign_in_forms_stay_hidden():
+    """Regression: `.ws-card form {display:grid}` overrode the `hidden` attribute, so the
+    Log in, Create account and code forms all showed at once on the live server."""
+    css = open(os.path.join(ROOT, "webapp", "signin.html"), encoding="utf-8").read()
+    assert ".ws-card form[hidden] { display: none; }" in css
+    html = open(os.path.join(ROOT, "webapp", "signin.html"), encoding="utf-8").read()
+    assert '<form id="ws-signup" hidden>' in html and '<form id="ws-code" hidden>' in html
