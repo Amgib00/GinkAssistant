@@ -51,7 +51,8 @@ jobs:
           git clone --depth 1 --branch v19.7.0 https://github.com/PortAudio/portaudio "$RUNNER_TEMP/portaudio"
           cmake -S "$RUNNER_TEMP/portaudio" -B "$RUNNER_TEMP/pa-build" -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/pa" -DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET" \
-            -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DPA_BUILD_SHARED=OFF -DPA_BUILD_STATIC=ON
+            -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DPA_BUILD_SHARED=OFF -DPA_BUILD_STATIC=ON \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5      # PortAudio 19.7 asks for CMake 3.1; CMake 4 needs >= 3.5
           cmake --build "$RUNNER_TEMP/pa-build" --config Release -j 4
           cmake --install "$RUNNER_TEMP/pa-build"
           rm -f "$RUNNER_TEMP"/pa/lib/*.dylib          # make sure pyaudio links the static library
