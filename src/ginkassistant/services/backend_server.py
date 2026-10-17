@@ -529,8 +529,34 @@ def _sso_endpoints() -> tuple:
     return conf["authorization_endpoint"], conf["token_endpoint"]
 
 
+_LOCAL_HOSTS = ("://localhost", "://127.0.0.1", "://0.0.0.0", "://10.0.2.2", "://[::1]")
+_public_url_warned = False
+
+
+def _request_base(request: Request) -> str:
+    """This server's address as the visitor reached it. Behind Render's proxy the connection
+    is plain http inside, so the proxy's X-Forwarded-Proto says whether it was https."""
+    proto = (request.headers.get("x-forwarded-proto") or request.url.scheme or "http").split(",")[0].strip()
+    host = request.headers.get("host") or request.url.netloc
+    return f"{proto}://{host}"
+
+
 def _public_base(request: Request) -> str:
-    return (_env("GINK_PUBLIC_URL") or str(request.base_url)).rstrip("/")
+    """Where sign-in providers and payments send people back. GINK_PUBLIC_URL wins -- unless it
+    points at this computer (localhost...) while the request came from the internet: then it
+    was copied from a local .env by mistake, and the provider would send people to *their own*
+    computer ("sign-in link expired" on localhost). Use the real address and say so in the logs."""
+    global _public_url_warned
+    configured = _env("GINK_PUBLIC_URL").rstrip("/")
+    real = _request_base(request).rstrip("/")
+    is_local = lambda u: any(h in u for h in _LOCAL_HOSTS)
+    if configured and (not is_local(configured) or is_local(real)):
+        return configured
+    if configured and not _public_url_warned:
+        _public_url_warned = True
+        print(f"[Gink] WARNING: GINK_PUBLIC_URL is {configured}, but this server is reached at {real}. "
+              f"Using {real}. Set GINK_PUBLIC_URL={real} in your hosting settings.", flush=True)
+    return real
 
 
 def _sweep_states():

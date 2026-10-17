@@ -329,3 +329,22 @@ def test_check_server_explains_a_timeout(monkeypatch):
     monkeypatch.setattr(httpx, "AsyncClient", Slow)
     ok, msg = asyncio.run(sc.check_server("https://gink-server.onrender.com"))
     assert not ok and msg == sc.WAKING_UP
+
+
+def _req(host, proto=None):
+    from starlette.requests import Request
+    h = [(b"host", host.encode())] + ([(b"x-forwarded-proto", proto.encode())] if proto else [])
+    return Request({"type": "http", "scheme": "http", "server": (host, 80), "path": "/", "headers": h, "query_string": b""})
+
+
+def test_public_address_survives_a_localhost_setting_on_render(monkeypatch):
+    """GINK_PUBLIC_URL=http://localhost:8000 copied to Render sent sign-ins back to the user's own
+    computer ('This sign-in link expired' on localhost)."""
+    from ginkassistant.services import backend_server as b
+    monkeypatch.setenv("GINK_PUBLIC_URL", "http://localhost:8000")
+    assert b._public_base(_req("gink-server.onrender.com", "https")) == "https://gink-server.onrender.com"
+    assert b._public_base(_req("localhost:8000")) == "http://localhost:8000"            # on the Mac it's right
+    monkeypatch.setenv("GINK_PUBLIC_URL", "https://gink.example.com")                   # a real setting wins
+    assert b._public_base(_req("gink-server.onrender.com", "https")) == "https://gink.example.com"
+    monkeypatch.setenv("GINK_PUBLIC_URL", "")
+    assert b._public_base(_req("gink-server.onrender.com", "https")) == "https://gink-server.onrender.com"
