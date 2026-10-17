@@ -1,0 +1,56 @@
+<style>
+  #web-signin { position: fixed; inset: 0; z-index: 200; background: var(--bg); display: none; align-items: center; justify-content: center; padding: 20px; }
+  #web-signin.open { display: flex; }
+  .ws-card { width: 100%; max-width: 380px; text-align: center; }
+  .ws-card img { width: 64px; height: 64px; border-radius: 16px; }
+  .ws-card h1 { font-size: 26px; margin: 16px 0 6px; }
+  .ws-card p.ws-sub { color: var(--text-muted); margin: 0 0 22px; font-size: 15px; }
+  .ws-tabs { display: flex; background: var(--elevated); border-radius: 999px; padding: 4px; margin-bottom: 18px; }
+  .ws-tabs button { flex: 1; border: 0; background: none; padding: 9px; border-radius: 999px; font: inherit; font-weight: 600; color: var(--text-muted); cursor: pointer; }
+  .ws-tabs button[aria-selected="true"] { background: var(--bg); color: var(--text-main); box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+  .ws-card form { display: grid; gap: 10px; text-align: left; }
+  .ws-card label { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+  .ws-card input { width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text-main); font: inherit; font-size: 15px; }
+  .ws-card input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .ws-card .ws-go { margin-top: 6px; padding: 12px; border: 0; border-radius: 999px; background: #121412; color: #fff; font: inherit; font-weight: 700; font-size: 15px; cursor: pointer; }
+  body.theme-dark .ws-card .ws-go { background: #EDEFEA; color: #121412; }
+  .ws-card .ws-go[disabled] { opacity: 0.6; cursor: default; }
+  .ws-err { color: #C42B1C; font-size: 14px; min-height: 20px; margin: 4px 0 0; }
+  .ws-note { color: var(--text-muted); font-size: 13px; margin-top: 18px; }
+  .ws-note a { color: inherit; }
+</style>
+<div id="web-signin" role="dialog" aria-modal="true" aria-labelledby="ws-title">
+  <div class="ws-card">
+    <img src="__ICON__" alt="">
+    <h1 id="ws-title">Gink</h1>
+    <p class="ws-sub">Think. Talk. Create.</p>
+    <div class="ws-tabs" role="tablist">
+      <button type="button" role="tab" id="ws-tab-login" aria-selected="true">Log in</button>
+      <button type="button" role="tab" id="ws-tab-signup" aria-selected="false">Create account</button>
+    </div>
+    <form id="ws-login" autocomplete="on">
+      <label for="ws-email">Email</label>
+      <input id="ws-email" type="email" autocomplete="username" required>
+      <label for="ws-pass">Password</label>
+      <input id="ws-pass" type="password" autocomplete="current-password" required>
+      <button class="ws-go" type="submit">Log in</button>
+    </form>
+    <form id="ws-signup" hidden>
+      <label for="ws-name">Your name</label>
+      <input id="ws-name" type="text" autocomplete="name">
+      <label for="ws-semail">Email</label>
+      <input id="ws-semail" type="email" autocomplete="email" required>
+      <label for="ws-spass">Password (at least 8 characters)</label>
+      <input id="ws-spass" type="password" autocomplete="new-password" minlength="8" required>
+      <button class="ws-go" type="submit">Create account</button>
+    </form>
+    <form id="ws-code" hidden>
+      <label for="ws-codein">We emailed you a 6-digit code</label>
+      <input id="ws-codein" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required>
+      <button class="ws-go" type="submit">Verify</button>
+    </form>
+    <p class="ws-err" id="ws-err" role="alert"></p>
+    <p class="ws-note">Signed up with Google, GitHub, Microsoft or Apple? Use the Gink app for now, or set a password there.</p>
+  </div>
+</div>

@@ -1134,7 +1134,7 @@ def billing_return(ref: str = ""):
 # Photos are a Pro feature. Answer length is capped per plan.
 # Server env: GROQ_API_KEY.
 # =====================================================================
-GROQ_BASE = "https://api.groq.com/openai/v1"
+GROQ_BASE = os.environ.get("GINK_GROQ_BASE", "https://api.groq.com/openai/v1")   # override only for testing
 MAX_CALLS_PER_TURN = 10
 MAX_TOKENS = {"free": 1024, "pro": 4096}
 _models_cache = {"at": 0.0, "data": None}
@@ -1723,3 +1723,53 @@ async def voice_speak(request: Request):
         refund()
         return _ai_error(502, "No audio came back.", "upstream")
     return {"audio_b64": b64, "mime_type": mime or "audio/wav", "voice": voice, "used": used + n, "limit": limit}
+
+
+
+# =====================================================================
+# Gink on the web:  GET /app  (the web app)   POST /render  (formatting)
+# The web app is the app's own chat page plus a browser "bridge"
+# (webapp/bridge.js), pre-built by tools/build_web_app.py into web_app/.
+# It talks only to THIS server (Content-Security-Policy connect-src 'self').
+# =====================================================================
+WEB_APP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web_app")
+_WEB_HEADERS = {
+    "Content-Security-Policy": ("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
+                                "img-src 'self' data: blob: https:; media-src 'self' data: blob:; connect-src 'self'; "
+                                "font-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"),
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+    "X-Frame-Options": "DENY",
+    "Permissions-Policy": "microphone=(self), camera=()",
+    "Cache-Control": "no-cache",
+}
+
+
+@app.get("/app", response_class=HTMLResponse)
+@app.get("/app/", response_class=HTMLResponse)
+def web_app_page():
+    path = os.path.join(WEB_APP_DIR, "index.html")
+    if not os.path.isfile(path):
+        return HTMLResponse("Gink on the web isn't built yet: run  python tools/build_web_app.py", status_code=503)
+    with open(path, encoding="utf-8") as f:
+        return HTMLResponse(f.read(), headers=_WEB_HEADERS)
+
+
+def _renderer():
+    try:
+        from .markdown_render import render_markdown_body
+    except ImportError:                       # Docker: modules sit side by side
+        from markdown_render import render_markdown_body
+    return render_markdown_body
+
+
+@app.post("/render")
+def render_markdown(request: Request, data: dict = Body(...)):
+    """Markdown -> safe HTML with the app's own formatter (raw HTML and javascript:
+    links are neutralised). {"markdown": "..."} or {"items": ["...", ...]} (max 200)."""
+    _email_from_auth(request)
+    render = _renderer()
+    if isinstance(data.get("items"), list):
+        items = [str(x or "")[:100_000] for x in data["items"][:200]]
+        return {"html": [render(x) for x in items]}
+    return {"html": render(str(data.get("markdown") or "")[:100_000])}

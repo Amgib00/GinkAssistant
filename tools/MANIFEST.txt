@@ -111,6 +111,7 @@ src/ginkassistant/services/video_search.py
 src/ginkassistant/services/voice_bridge.py
 src/ginkassistant/services/voice_profiles.py
 src/ginkassistant/services/wake_word.py
+src/ginkassistant/services/web_app/index.html
 src/ginkassistant/ui/__init__.py
 src/ginkassistant/ui/branding.py
 src/ginkassistant/ui/chat_extras.py
@@ -142,6 +143,7 @@ tests/test_chat_extras.py
 tests/test_check_project.py
 tests/test_computer_actions.py
 tests/test_dark_theme.py
+tests/test_formatting_security.py
 tests/test_gink_cloud.py
 tests/test_ios_startup.py
 tests/test_live_info.py
@@ -156,11 +158,15 @@ tests/test_ui.py
 tests/test_video_and_live_tv.py
 tests/test_voice_and_stop.py
 tests/test_wake_word.py
+tests/test_web_app.py
 tools/MANIFEST.txt
+tools/build_web_app.py
 tools/build_website.py
 tools/check_project.py
 tools/make_icons.py
 tools/publish_to_github.sh
+webapp/bridge.js
+webapp/signin.html
 website/assets/demo.js
 website/assets/icon-180.png
 website/assets/icon-192.png

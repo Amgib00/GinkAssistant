@@ -1,31 +1,49 @@
-# Render.com blueprint for the Gink login server.
-# Render -> New -> Blueprint -> pick this repo. Then fill in the two
-# secret values it asks for (GMAIL_USER, GMAIL_APP_PASSWORD).
+# Render.com blueprint for the Gink server (sign-in, AI, sync, payments, images,
+# voices, and Gink on the web at /app).
+# Render -> New -> Blueprint -> pick this repository, then fill in the values it asks for.
+#
+# FREE PLAN (for trying it out): the server sleeps after ~15 minutes without visitors
+# (the next visit takes about a minute to wake it), and ITS DATA IS ERASED on every
+# restart or redeploy -- accounts, chats and payments. Fine for testing; not for users.
+# FOR REAL USERS: set plan to "starter" and uncomment the `disk:` block and GINK_DB_PATH
+# below, so the database lives on a disk that survives restarts.
 services:
   - type: web
     name: gink-server
     runtime: docker
+    plan: free
     dockerfilePath: ./deploy/Dockerfile
     dockerContext: .
     healthCheckPath: /health
+    # disk:                       # needs a paid plan (e.g. starter)
+    #   name: gink-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
     envVars:
-      - key: GMAIL_USER
+      # --- secrets: Render asks you for these (never put them in this file) ---
+      - key: GROQ_API_KEY          # the AI (console.groq.com) -- only ever stored here, never in the app
         sync: false
-      - key: GMAIL_APP_PASSWORD
+      - key: GEMINI_API_KEY        # images + natural voices (aistudio.google.com/apikey)
         sync: false
-      - key: GROQ_API_KEY          # Gink Cloud AI -- the ONLY place the Groq key lives
+      - key: GMAIL_USER            # sends sign-up / login codes (a Gmail address)
         sync: false
-      - key: GINK_PUBLIC_URL
+      - key: GMAIL_APP_PASSWORD    # a Gmail "app password", not your normal password
         sync: false
+      - key: GINK_PUBLIC_URL       # this server's address, e.g. https://gink-server.onrender.com
+        sync: false
+      - key: GINK_SECRET_KEY       # signs sign-in sessions; Render makes a random one
+        generateValue: true
+      # --- for real users: keep the database on the disk above ---
+      # - key: GINK_DB_PATH
+      #   value: /var/data/gink.db
+      # --- plain settings ---
       - key: GINK_FREE_DAILY
         value: "30"
       - key: GINK_PRO_DAILY
         value: "500"
       - key: GINK_SUPPORT_EMAIL     # shown in Settings -> Help
-        sync: false
+        value: contact@ginkai.com
       - key: GINK_PRIVACY_URL       # Settings -> Privacy (required by app stores)
-        sync: false
+        value: https://amgib00.github.io/GinkAssistant/privacy.html
       - key: GINK_TERMS_URL
-        sync: false
-      - key: GINK_SECRET_KEY
-        generateValue: true
+        value: https://amgib00.github.io/GinkAssistant/terms.html

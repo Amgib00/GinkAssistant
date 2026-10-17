@@ -546,3 +546,21 @@ New services/live_info.py (all free, no API keys):
   "Node.js 20 is deprecated" warnings go): checkout v7, setup-python v7,
   upload-artifact v7, configure-pages v6, upload-pages-artifact v5, deploy-pages v5.
   Checked each version still supports every option the workflows use.
+
+## Latest: SECURITY fix + Gink on the web
+- SECURITY (desktop app too): the formatter passed raw HTML through (<script>,
+  <img onerror>) and allowed javascript: links -- text from the AI, web pages or
+  synced chats could run code inside Gink's window. markdown_render now drops
+  Markdown's raw-HTML handling and allows only http(s)/mailto/tel/gink links and
+  http(s)/data:image sources. tests/test_formatting_security.py.
+- Gink on the web: GET /app (the chat page + webapp/bridge.js + webapp/signin.html,
+  pre-built by tools/build_web_app.py into services/web_app/index.html), POST /render
+  (signed-in only; the safe formatter). CSP: connect-src 'self', frame-ancestors 'none'.
+  Sign up / log in (email code), streaming chat, images, natural voice (browser voice
+  fallback), dictation, chats in the desktop sync format (both directions), settings
+  subset, export, branch, rename / pin / delete. Desktop-only features say so.
+- Tested end to end: real server + stand-in Groq + Chromium (sign-up with the printed
+  code, streaming, injection attempt shown as text, sync both ways, reload, dark theme,
+  log out, wrong password, log in). Docker layout checked (/app + /render).
+- Deploy: Dockerfile copies markdown_render.py + web_app/; server needs markdown, pygments.
+  GINK_GROQ_BASE (tests only) overrides the Groq address.

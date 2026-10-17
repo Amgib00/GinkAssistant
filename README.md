@@ -44,6 +44,13 @@ pip install -r requirements-test.txt
 python -m pytest tests
 ```
 
+## Gink on the web
+The Gink server also serves a web version at `/app` -- on your computer,
+`http://localhost:8000/app` while Gink is running. It's the app's own chat page plus a
+browser bridge (`webapp/`), built with `python tools/build_web_app.py`: sign in, chat,
+images, natural voices, dictation, and chats that sync with the desktop app.
+Alarms, tasks and computer control stay in the app.
+
 ## Website
 The site lives in `website/` (one shared layout in `tools/build_website.py`). Preview it with
 `python tools/build_website.py` and open `website/_site/index.html`. It's published on GitHub

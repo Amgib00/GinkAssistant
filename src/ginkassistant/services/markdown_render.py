@@ -40,6 +40,8 @@ import re
 import uuid
 
 import markdown
+import markdown.extensions
+import markdown.treeprocessors
 from pygments.formatters import HtmlFormatter
 
 PYGMENTS_CSS = HtmlFormatter(style="monokai").get_style_defs(".codehilite")
@@ -51,9 +53,45 @@ _CODEHILITE_DIV_RE = re.compile(r'<div class="codehilite">')
 _MD_EXTENSIONS = ["fenced_code", "codehilite", "tables", "nl2br"]
 _MD_EXTENSION_CONFIGS = {"codehilite": {"css_class": "codehilite", "guess_lang": False}}
 
+class _NoRawHtml(markdown.extensions.Extension):
+    """SECURITY: show raw HTML in text as text. Chat text can come from the AI, from
+    web pages it read, or from synced chats; HTML in it (<script>, <img onerror=...>)
+    must never run inside Gink's window. Removes Markdown's raw-HTML block and inline
+    handlers, so '<' and '>' are escaped like any other character."""
+
+    def extendMarkdown(self, md):
+        md.preprocessors.deregister("html_block")
+        md.inlinePatterns.deregister("html")
+        md.treeprocessors.register(_SafeLinks(md), "gink_safe_links", 0)
+
+
+_SAFE_LINK = ("http://", "https://", "mailto:", "tel:", "gink://", "#")
+_SAFE_IMG = ("http://", "https://", "data:image/png", "data:image/jpeg", "data:image/gif", "data:image/webp")
+
+
+class _SafeLinks(markdown.treeprocessors.Treeprocessor):
+    """SECURITY: only safe link / image targets. '[x](javascript:...)' must not run code."""
+
+    def run(self, root):
+        for el in root.iter():
+            for attr, allowed in (("href", _SAFE_LINK), ("src", _SAFE_IMG)):
+                v = el.get(attr)
+                if v is None:
+                    continue
+                clean = "".join(ch for ch in v if ch > " ").lower()     # no tricks like 'java\tscript:'
+                if not clean.startswith(allowed) and ":" in clean.split("/")[0]:
+                    el.set(attr, "#")
+        return root
+
+
+def _to_html(text: str) -> str:
+    return markdown.markdown(text, extensions=list(_MD_EXTENSIONS) + [_NoRawHtml()],
+                             extension_configs=_MD_EXTENSION_CONFIGS)
+
+
 
 def _render_document_block(raw_text: str) -> str:
-    inner_html = markdown.markdown(raw_text, extensions=_MD_EXTENSIONS, extension_configs=_MD_EXTENSION_CONFIGS)
+    inner_html = _to_html(raw_text)
     # Copy/Download (ui/web_chat_view.py's copyDocBlock/downloadDocBlock)
     # read this body's rendered innerText at click time, not a stored raw
     # markdown source -- that way **bold**/# headings/etc. come out as
@@ -114,7 +152,7 @@ def render_markdown_body(text: str) -> str:
 
     text = _FENCE_RE.sub(_strip_fence, text)
 
-    html_out = markdown.markdown(text, extensions=_MD_EXTENSIONS, extension_configs=_MD_EXTENSION_CONFIGS)
+    html_out = _to_html(text)
 
     code_block_iter = iter(code_block_info)
 
