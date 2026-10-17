@@ -2375,3 +2375,28 @@ def admin_grant_pro(request: Request, data: dict = Body(...)):
             con.close()
     print(f"[Gink] ADMIN: gave {email} {days} days of Gink Pro (until {time.strftime('%Y-%m-%d', time.gmtime(until))})", flush=True)
     return {"email": email, "pro_until": until, "pro_until_date": time.strftime("%Y-%m-%d", time.gmtime(until))}
+
+
+
+# ---- Gink on the web: reading attached documents (PDF, Word, text, code...) with the
+# desktop app's own reader (services/attachments.py). Photos stay in the browser.
+@app.post("/attachments/read")
+def attachments_read(request: Request, data: dict = Body(...)):
+    _email_from_auth(request)
+    try:
+        from .attachments import load_data_url, AttachmentError
+    except ImportError:                                   # Docker: modules side by side
+        from attachments import load_data_url, AttachmentError
+    name = str(data.get("name") or "file")[:200]
+    url = str(data.get("data") or "")
+    if not url.startswith("data:") or len(url) > 28_000_000:
+        raise HTTPException(status_code=422, detail="That file is empty or over 20 MB.")
+    try:
+        att = load_data_url(url, name)
+    except AttachmentError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=422, detail=f"Gink can't read {name}.")
+    if att.kind != "text":
+        raise HTTPException(status_code=422, detail="Send photos straight from the chat.")
+    return {"name": att.name, "kind": "text", "text": att.text, "note": att.chip().get("note", "")}

@@ -10,6 +10,7 @@ COPY src/ginkassistant/services/backend_server.py ./backend_server.py
 COPY src/ginkassistant/services/billing_catalog.py ./billing_catalog.py
 # Gink on the web (/app): the safe formatter and the pre-built web app (tools/build_web_app.py)
 COPY src/ginkassistant/services/markdown_render.py ./markdown_render.py
+COPY src/ginkassistant/services/attachments.py ./attachments.py
 COPY src/ginkassistant/services/web_app ./web_app
 ENV PORT=8000
 EXPOSE 8000

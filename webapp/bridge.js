@@ -190,7 +190,7 @@
     return n;
   }
   function narrow(t) { return String(t).replace(/[\u202f\u2009\u200a\u2006\u2005\u2007]/g, " "); }
-  function systemPrompt() {
+  function systemPrompt(voice) {
     var lang = W.prefs.reply_language && W.prefs.reply_language !== "auto" ? " Always answer in this language: " + W.prefs.reply_language + "." : "";
     var who = W.name ? " The user's name is " + W.name.split(" ")[0] + "." : "";
     return "You are Gink, a warm, capable AI assistant. Answer clearly and helpfully, using Markdown for structure when it helps. " +
@@ -199,36 +199,70 @@
            (Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown") + "). Use this for any question about the time or date." +
            who + lang +
            " You're running in a web browser: you can't set alarms, reminders or tasks or control the user's computer here; " +
-           "if asked, say that the Gink app can do it.";
+           "if asked, say that the Gink app can do it." +
+           (voice ? " You're in a live voice conversation: reply in one to three short, natural spoken sentences, " +
+                    "with no lists, headings, code, links or emojis." : "");
   }
   var IMAGE_RE = /^\s*(please\s+)?(create|make|draw|generate|paint|design)\s+(me\s+)?(an?\s+)?(image|picture|photo|drawing|illustration|logo|poster)\b/i;
 
-  function send(text) {
+  // ---- attachments: photos stay in the browser; documents are read by the server
+  W.atts = [];
+  function chipOf(a) { return { name: a.name, kind: a.kind, thumb: a.thumb || "", note: a.note || "", loading: !!a.loading }; }
+  function showAtts() { setAttachments(W.atts.map(chipOf)); }
+  function historyText(msg, atts) {             // synced history keeps file NAMES, never contents
+    return atts.length ? (msg ? msg + "\n\n" : "") + "\uD83D\uDCCE " + atts.map(function (a) { return a.name; }).join(", ") : msg;
+  }
+  function buildContent(msg, atts) {             // what the AI receives (same format as the desktop app)
+    var docs = atts.filter(function (a) { return a.kind === "text"; }), imgs = atts.filter(function (a) { return a.kind === "image"; });
+    var t = msg;
+    if (docs.length) {
+      t = docs.map(function (a) {
+        return '<attached_file name="' + a.name.replace(/"/g, "'") + '"' + (a.note ? " (" + a.note + ")" : "") + ">\n" + a.text + "\n</attached_file>";
+      }).join("\n\n") + "\n\n" + (msg || "Please read the attached file(s) and summarise the important points.");
+    }
+    if (!imgs.length) return t;
+    return [{ type: "text", text: t || "What's in this picture?" }].concat(imgs.map(function (a) {
+      return { type: "image_url", image_url: { url: a.data_url } };
+    }));
+  }
+
+  function send(text, opts) {
+    opts = opts || {};
     text = (text || "").trim();
-    if (!text || W.busy) return;
+    var atts = opts.voice ? [] : W.atts.slice();
+    if ((!text && !atts.length) || W.busy) return Promise.resolve("");
+    if (atts.some(function (a) { return a.loading; })) {
+      setStatus("Wait a moment: a file is still loading."); setTimeout(function () { setStatus(""); }, 3000);
+      return Promise.resolve("");
+    }
     if (!W.current) {
       W.current = uid();
       W.sessions[W.current] = { id: W.current, messages: [], title: "", pinned: false, deleted: false, updated: now() };
       save("gink_draft_new", "");
     }
     var s = W.sessions[W.current];
-    hideWelcome(); addUserMessage(text);
-    s.messages.push({ role: "user", content: text, ts: stamp() }); touch(s.id); refreshSidebar();
+    hideWelcome(); addUserMessage(text, atts.map(chipOf));
+    s.messages.push({ role: "user", content: historyText(text, atts), ts: stamp() }); touch(s.id); refreshSidebar();
+    var content = buildContent(text, atts);
+    W.atts = []; showAtts();
     var drafts = load("gink_drafts", {}); delete drafts[s.id]; save("gink_drafts", drafts);
     var aid = "a" + uid().slice(0, 12);
     addAssistantMessage(aid, "Thinking\u2026");
     setComposerBusy(true);
-    (IMAGE_RE.test(text) ? makeImage(text, aid) : chat(s, aid)).then(function (reply) {
+    var job = IMAGE_RE.test(text) && !atts.length ? makeImage(text, aid) : chat(s, aid, { voice: opts.voice, last: content });
+    return job.then(function (reply) {
       if (reply) { s.messages.push({ role: "assistant", content: reply, ts: stamp() }); touch(s.id); }
-    }).then(function () {
       W.busy = null; setComposerBusy(false); refreshSidebar(); sync();
+      return reply;
     });
   }
 
-  function chat(s, aid) {
+  function chat(s, aid, opts) {
+    opts = opts || {};
     var ctrl = new AbortController(); W.busy = ctrl;
     var history = s.messages.slice(-24).map(function (m) { return { role: m.role, content: m.content }; });
-    var body = { model: W.model || undefined, stream: true, messages: [{ role: "system", content: systemPrompt() }].concat(history) };
+    if (opts.last !== undefined && history.length) history[history.length - 1].content = opts.last;   // files + photos
+    var body = { model: W.model || undefined, stream: true, messages: [{ role: "system", content: systemPrompt(opts.voice) }].concat(history) };
     var text = "";
     return api("/ai/openai/v1/chat/completions", body, { signal: ctrl.signal }).then(function (r) {
       if (!r.ok) return errorText(r).then(function (t) { setPlainText(aid, t); return ""; });
@@ -244,7 +278,9 @@
             var data = line.slice(5).trim();
             if (!data || data === "[DONE]") return;
             try {
-              var d = JSON.parse(data), piece = d.choices && d.choices[0] && d.choices[0].delta && d.choices[0].delta.content;
+              var d = JSON.parse(data);
+              if (d.error) { text += (text ? "\n\n" : "") + (d.error.message || "The AI service had a problem."); setPlainText(aid, text); return; }
+              var piece = d.choices && d.choices[0] && d.choices[0].delta && d.choices[0].delta.content;
               if (piece) { text += piece; setPlainText(aid, narrow(text)); }
             } catch (e) {}
           });
@@ -282,23 +318,30 @@
 
   // ---------------------------------------------------------------- voice in the browser
   var audio = null;
-  function readAloud(text) {
+  function plainForSpeech(text) {
+    return String(text).replace(/```[\s\S]*?```/g, " ").replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+                       .replace(/[*_#>`|~]/g, "").replace(/\s+/g, " ").trim().slice(0, 1400);
+  }
+  function speakThen(text, done, persona) {
+    done = done || function () {};
     if (audio) { audio.pause(); audio = null; }
     if ("speechSynthesis" in window) speechSynthesis.cancel();
-    var plain = String(text).replace(/```[\s\S]*?```/g, " ").replace(/[*_#>`|]/g, "").slice(0, 1400);
-    api("/voice/speak", { text: plain, persona: W.prefs.voice || "Female (Jenny)" }).then(function (r) {
+    var plain = plainForSpeech(text), finished = false;
+    function end() { if (!finished) { finished = true; setSpeaking(false); done(); } }
+    api("/voice/speak", { text: plain, persona: persona || W.prefs.voice || "Female (Jenny)" }).then(function (r) {
       if (!r.ok) throw new Error("voice");
       return r.json();
     }).then(function (j) {
       audio = new Audio("data:" + (j.mime_type || "audio/wav") + ";base64," + j.audio_b64);
-      setSpeaking(true); audio.onended = function () { setSpeaking(false); }; audio.play();
+      setSpeaking(true); audio.onended = end; audio.onerror = end; return audio.play();
     }).catch(function () {
       if ("speechSynthesis" in window) {                        // the browser's own voice instead
-        var u = new SpeechSynthesisUtterance(plain); u.onend = function () { setSpeaking(false); };
+        var u = new SpeechSynthesisUtterance(plain); u.onend = end; u.onerror = end;
         setSpeaking(true); speechSynthesis.speak(u);
-      }
+      } else end();
     });
   }
+  function readAloud(text) { speakThen(text); }
   function stopSpeaking() {
     if (audio) { audio.pause(); audio = null; }
     if ("speechSynthesis" in window) speechSynthesis.cancel();
@@ -318,8 +361,46 @@
     rec.onerror = function () { rec = null; setDictating(false); };
     rec.start();
   }
-  // full voice conversations are an app feature for now
-  window.voiceButton = function () { setStatus("Voice conversations are in the Gink app. Here, use the microphone to dictate."); setTimeout(function () { setStatus(""); }, 3500); };
+  // ---- voice conversations in the browser: listen -> think -> speak -> listen again
+  var V = { on: false, muted: false, rec: null, heard: "" };
+  function voiceList() { return window.GINK_VOICES || []; }
+  function vListen() {
+    if (!V.on || V.muted || W.busy) return;
+    if (!Rec) { voiceUiState("error", "Voice conversations need Chrome, Edge or Safari."); return; }
+    V.heard = "";
+    var r = new Rec(); V.rec = r; r.lang = navigator.language || "en-US"; r.interimResults = true; r.continuous = false;
+    r.onresult = function (e) {
+      var t = "";
+      for (var i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+      voiceUiCaption(t, "");
+      if (e.results[e.results.length - 1].isFinal) V.heard = t.trim();
+    };
+    r.onerror = function (e) {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        V.on = false; voiceUiState("error", "Allow microphone access for this page, then try again.");
+      }
+    };
+    r.onend = function () {
+      V.rec = null;
+      if (!V.on || V.muted) return;
+      if (V.heard) vRespond(V.heard); else setTimeout(vListen, 250);            // silence: keep listening
+    };
+    try { r.start(); voiceUiState("listening"); } catch (e) { setTimeout(vListen, 500); }
+  }
+  function vRespond(text) {
+    voiceUiState("thinking");
+    send(text, { voice: true }).then(function (reply) {
+      if (!V.on) return;
+      if (!reply) { voiceUiState("error", "Something went wrong. Say that again?"); setTimeout(vListen, 1500); return; }
+      voiceUiCaption(null, plainForSpeech(reply)); voiceUiState("speaking");
+      speakThen(reply, function () { if (V.on && !V.muted) vListen(); else if (V.on) voiceUiState("muted"); });
+    });
+  }
+  function vStop() {
+    V.on = false;
+    if (V.rec) { try { V.rec.abort(); } catch (e) {} V.rec = null; }
+    stopSpeaking();
+  }
 
   // ---------------------------------------------------------------- sync with the desktop app
   function sync() {
@@ -417,11 +498,40 @@
       if (name === "log_out" || name === "logout") return signOut("");
       settingsToast(DESKTOP_ONLY);
     },
-    attach_data: function () { setStatus("Attachments are in the Gink app for now."); setTimeout(function () { setStatus(""); }, 3000); }
+    attach_data: function (v) {
+      if (!v || !v.data) return;
+      var name = String(v.name || "file");
+      if (/^data:image\//.test(v.data)) { W.atts.push({ name: name, kind: "image", thumb: v.data, data_url: v.data }); showAtts(); return; }
+      var slot = { name: name, kind: "text", loading: true }; W.atts.push(slot); showAtts();
+      api("/attachments/read", { name: name, data: v.data }).then(function (r) {
+        return r.ok ? r.json() : errorText(r).then(function (t) { throw new Error(t); });
+      }).then(function (j) {
+        slot.loading = false; slot.text = j.text; slot.note = j.note || ""; showAtts();
+      }).catch(function (e) {
+        var i = W.atts.indexOf(slot); if (i >= 0) W.atts.splice(i, 1); showAtts();
+        setStatus((e && e.message && e.message !== "signed out") ? e.message : "Gink can't read " + name + ".");
+        setTimeout(function () { setStatus(""); }, 4500);
+      });
+    },
+    remove_attachment: function (i) { W.atts.splice(Number(i), 1); showAtts(); },
+    voice_start: function (v) {
+      if (v && v.voice) { W.prefs.voice = v.voice; save("gink_prefs", W.prefs); }
+      V.on = true; V.muted = false; vListen();
+    },
+    voice_end: vStop,
+    voice_mute: function (v) {
+      V.muted = !!(v && v.muted);
+      if (V.muted) { if (V.rec) { try { V.rec.abort(); } catch (e) {} } stopSpeaking(); voiceUiState("muted"); }
+      else vListen();
+    },
+    voice_intro_seen: function () { W.prefs.voice_intro_seen = true; save("gink_prefs", W.prefs); setVoiceConfig({ intro_seen: true }); },
+    voice_preview: function (v) {
+      var key = v && v.key, p = voiceList().filter(function (x) { return x.key === key; })[0];
+      speakThen("Hi, I'm " + (p ? p.name : "Gink") + ". " + (p ? p.desc : "") + ".", null, key);
+    },
+    voice_preview_stop: stopSpeaking
   };
-  ["voice_start", "voice_end", "voice_mute", "voice_preview", "voice_preview_stop", "voice_intro_seen", "remove_attachment", "file_thumb"].forEach(function (k) {
-    HANDLERS[k] = function () {};
-  });
+  HANDLERS.file_thumb = function () {};
   window.ginkEmit = function (type, value) {
     var h = HANDLERS[type];
     if (h) { try { h(value); } catch (e) { console.error("Gink web:", type, e); } }
@@ -429,6 +539,7 @@
 
   // ---------------------------------------------------------------- start
   function start() {
+    setVoiceConfig({ voices: voiceList(), voice: W.prefs.voice || "Female (Jenny)", intro_seen: !!W.prefs.voice_intro_seen });
     var first = (W.name || W.email || "Gink").split(/[\s@]/)[0];
     setUser(W.name || W.email || "Gink user", "", first);
     applyAppearance();

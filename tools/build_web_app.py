@@ -25,6 +25,10 @@ def build_html():
         open(os.path.join(ROOT, "icons", "ginkassistant-128.png"), "rb").read()).decode()
     signin = open(os.path.join(ROOT, "webapp", "signin.html"), encoding="utf-8").read().replace("__ICON__", icon)
     bridge = open(os.path.join(ROOT, "webapp", "bridge.js"), encoding="utf-8").read()
+    import json
+    from ginkassistant.services.voice_profiles import VOICE_PROFILES          # the voice picker's voices
+    voices = [{k: v[k] for k in ("key", "name", "desc", "colors")} for v in VOICE_PROFILES]
+    bridge = "window.GINK_VOICES = " + json.dumps(voices) + ";\n" + bridge
     head = ('<meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>Gink</title><link rel="icon" href="{icon}"><meta name="theme-color" content="#151D23">')
     page = page.replace("<head>", "<head>" + head, 1) if "<head>" in page else head + page

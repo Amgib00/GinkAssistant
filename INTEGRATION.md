@@ -666,3 +666,19 @@ New services/live_info.py (all free, no API keys):
   2023-06-01; 400 explained, 429/529 -> "Claude is busy").
 - Verified: tests/test_claude_native.py (6) and the official openai library end to end
   (streaming; tool round trip with matching ids; cached tokens reported).
+
+## Latest: web app attachments + voice conversations
+- Attachments: photos stay in the browser (page shrinks them to 1600 px; sent as image_url,
+  Pro rule on the server); documents go to POST /attachments/read (signed in), which runs
+  the desktop's own reader (services/attachments.py: PDF via pypdf, Word, text/code) and
+  returns text. The AI gets the desktop's <attached_file> format; synced history keeps
+  only "📎 names". Unreadable types refused with a clear message. Docker copies
+  attachments.py; requirements-server adds pypdf.
+- Voice conversations: listen (browser SpeechRecognition, interim captions) -> think
+  (streamed answer, voice instructions: short spoken sentences) -> speak (/voice/speak,
+  natural voice; browser voice fallback) -> listen again; mute/end; picker previews;
+  chosen voice remembered; exchanges saved in the chat. GINK_VOICES injected at build time
+  from voice_profiles.py.
+- Verified in Chromium against the real server: text + PDF contents reach the AI, history
+  names only, unreadable file, photo Pro rule, 11 voices, connecting -> listening ->
+  thinking -> speaking -> listening, caption without Markdown. tests: /attachments/read.

@@ -49,3 +49,23 @@ def test_inactive_sign_in_forms_stay_hidden():
     assert ".ws-card form[hidden] { display: none; }" in css
     html = open(os.path.join(ROOT, "webapp", "signin.html"), encoding="utf-8").read()
     assert '<form id="ws-signup" hidden>' in html and '<form id="ws-code" hidden>' in html
+
+
+def test_reading_attached_documents_for_the_web_app(client):
+    import base64
+    b, c, h = client
+    as_url = lambda mime, raw: f"data:{mime};base64," + base64.b64encode(raw).decode()
+    assert c.post("/attachments/read", json={"name": "a.txt", "data": as_url("text/plain", b"hi")}).status_code == 401
+    r = c.post("/attachments/read", headers=h, json={"name": "notes.txt", "data": as_url("text/plain", b"Launch on Friday.")})
+    assert r.status_code == 200 and r.json()["text"].strip() == "Launch on Friday."
+    from fpdf import FPDF
+    pdf = FPDF(); pdf.add_page(); pdf.set_font("Helvetica", size=12); pdf.cell(0, 10, "Revenue grew 40 percent.")
+    r = c.post("/attachments/read", headers=h, json={"name": "report.pdf", "data": as_url("application/pdf", bytes(pdf.output()))})
+    assert r.status_code == 200 and "Revenue grew 40 percent." in r.json()["text"]
+    r = c.post("/attachments/read", headers=h, json={"name": "x.exe", "data": as_url("application/octet-stream", b"MZ")})
+    assert r.status_code == 422 and "can't read" in r.json()["detail"]
+    from PIL import Image
+    import io
+    buf = io.BytesIO(); Image.new("RGB", (8, 8)).save(buf, "PNG")
+    r = c.post("/attachments/read", headers=h, json={"name": "p.png", "data": as_url("image/png", buf.getvalue())})
+    assert r.status_code == 422                                              # photos stay in the browser
