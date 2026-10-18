@@ -49,7 +49,6 @@ jobs:
           merge-multiple: true
       - name: Name the files
         run: |
-          mv dist/Gink-debug.apk dist/Gink-android.apk
           ls -l dist
       - name: Publish the release
         env:
@@ -63,13 +62,15 @@ jobs:
           |---|---|---|
           | **Mac (Apple Silicon: M1 to M4)** | `Gink-mac-arm64.dmg` | macOS 12 or later |
           | **Mac (Intel)** | `Gink-mac-x86_64.dmg` | macOS 11 or later |
-          | **Android** | `Gink-android.apk` | Android 7 or later |
+          | **Android** | `Gink-android.apk` | Android 7 or later, 64-bit (most phones) |
+          | **Android (32-bit)** | `Gink-android-32bit.apk` | 32-bit phones such as TECNO POP and itel |
           | **Windows** | `Gink-windows-x64.msi` | Windows 10 or 11 (64-bit) |
           | **Linux** | `Gink-linux-amd64.deb` | Ubuntu 24.04+ or Debian 13+ (64-bit) |
 
           **Mac:** open the .dmg and drag Gink to Applications. The first time, **right-click Gink and choose Open**
           (the app isn't notarized by Apple yet).
           **Android:** open the .apk on your phone and allow installing apps from this source when asked.
+          If it says the app isn't compatible with your phone, use the 32-bit version.
           **Windows:** if SmartScreen warns you, choose **More info**, then **Run anyway** (the installer isn't signed yet).
           **Linux:** `sudo apt install ./Gink-linux-amd64.deb` (installs what Gink needs automatically).
           This is a test build.

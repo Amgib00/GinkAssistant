@@ -1,7 +1,10 @@
-# Builds the Android app (a debug APK you can install on a phone for testing).
-# Run it: GitHub -> Actions -> "Android build" -> Run workflow (or push to main).
-# Result: the run's page -> Artifacts -> "Gink-Android" (app-debug.apk).
-# Store builds (signed .aab for Google Play) need a signing key -- a later step.
+# Builds Gink for Android in two editions:
+#   64-bit  (Gink-android.apk)       Python 3.13 -- most phones
+#   32-bit  (Gink-android-32bit.apk) Python 3.11 -- phones like TECNO POP / itel, whose system is
+#           32-bit (armeabi-v7a). Chaquopy supports 32-bit only up to Python 3.11, and Pillow,
+#           psutil and fpdf2 have no 32-bit builds there, so this edition leaves them out
+#           (Gink falls back: photos as the page prepared them, a built-in PDF writer...).
+# Run it: Actions -> "Android build" -> Run workflow. Result: the run's page -> Artifacts.
 name: Android build
 
 on:
@@ -13,26 +16,55 @@ on:
 
 jobs:
   android:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - edition: 64-bit
+            python: "3.13"
+            apk: Gink-android.apk
+            lite: "no"
+          - edition: 32-bit
+            python: "3.11"
+            apk: Gink-android-32bit.apk
+            lite: "yes"
+    name: Android (${{ matrix.edition }})
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.13"
+          python-version: ${{ matrix.python }}
       - name: Install Briefcase
         run: python -m pip install --upgrade pip briefcase
-      - name: Create the Android project  (build/ginkassistant/android/gradle)
-        run: briefcase create android --no-input
-      - name: Build the APK
-        run: briefcase build android --no-input
-      - name: Collect the APK
+      - name: Settings for the ${{ matrix.edition }} edition
+        env:
+          LITE: ${{ matrix.lite }}
         run: |
+          python - <<'PY' > overrides.txt
+          import json, os, tomllib
+          if os.environ["LITE"] == "yes":
+              app = tomllib.load(open("pyproject.toml", "rb"))["tool"]["briefcase"]["app"]["ginkassistant"]
+              skip = ("pillow", "psutil", "fpdf2")
+              reqs = [r for r in app.get("requires", []) + app["android"].get("requires", [])
+                      if not r.lower().replace(" ", "").startswith(skip)]
+              print("requires=" + json.dumps(reqs))
+              print('android_abis=["armeabi-v7a"]')
+          PY
+          cat overrides.txt
+      - name: Create and build the APK
+        run: |
+          ARGS=()
+          while IFS= read -r line; do [ -n "$line" ] && ARGS+=(-C "$line"); done < overrides.txt
+          briefcase create android --no-input "${ARGS[@]}"
+          briefcase build android --no-input "${ARGS[@]}"
           APK=$(find build/ginkassistant/android -name "*.apk" | head -1)
           echo "Built: $APK"
-          cp "$APK" Gink-debug.apk
+          cp "$APK" "${{ matrix.apk }}"
+          unzip -l "${{ matrix.apk }}" | grep -oE "lib/[^/]+/" | sort -u
       - uses: actions/upload-artifact@v7
         with:
-          name: Gink-Android
-          path: Gink-debug.apk
+          name: Gink-Android-${{ matrix.edition }}
+          path: ${{ matrix.apk }}
           retention-days: 14

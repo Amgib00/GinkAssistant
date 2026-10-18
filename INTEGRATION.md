@@ -772,3 +772,18 @@ New services/live_info.py (all free, no API keys):
   launcher + menu entry present; started under Xvfb: built-in server healthy, sign-in screen
   rendered (WebView works thanks to gir1.2-webkit2-4.1), no errors from Gink.
 - CHANGELOG.md now in the package + publish list. Update it with each release.
+
+## Latest: a 32-bit Android edition (TECNO POP / itel phones)
+- The test phone, TECNO BF6 (Android 12), is 32-bit only (armeabi-v7a): the APK failed with
+  INSTALL_FAILED_NO_MATCHING_ABIS (it had arm64-v8a + x86_64 only).
+- Chaquopy supports armeabi-v7a only up to Python 3.11; Pillow's 32-bit Android wheels stop at
+  cp310 (9.2.0) and fpdf2 excludes Pillow 9.2.* -- so the 32-bit edition (Python 3.11) leaves out
+  Pillow, psutil and fpdf2. Verified with pip: every other package (incl. toga-android) is pure.
+- Fallbacks: photos attach as the chat page prepared them (attachments._image_without_pillow),
+  generated images shown as files, profile photo -> friendly message, PDFs via a built-in writer
+  (file_maker._simple_pdf: title, headings, bullets, wrapping, pages; checked with pypdf).
+- android.yml: matrix 64-bit (3.13, pyproject as is) + 32-bit (3.11, -C requires=<pyproject minus
+  the three> -C android_abis=["armeabi-v7a"], computed from pyproject). Overrides verified with
+  Briefcase's own parser. Release + website: Gink-android-32bit.apk. Update notice picks it when
+  platform.machine() has no "64" (armv7l, armv8l).
+- tests/test_android_32bit.py + a 32-bit import test in test_android_startup.py.

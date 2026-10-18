@@ -99,7 +99,10 @@ class ProfileStore:
         else:
             if len(raw) > MAX_PHOTO_BYTES:
                 raise ValueError("That photo is over 10 MB.")
-            from PIL import Image, ImageOps
+            try:
+                from PIL import Image, ImageOps
+            except ImportError:                 # 32-bit Android edition
+                raise ValueError("Profile photos can't be changed on this device yet.")
             try:
                 im = ImageOps.exif_transpose(Image.open(io.BytesIO(raw))).convert("RGB")
             except Exception:

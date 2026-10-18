@@ -50,11 +50,27 @@ class Attachment:
                 "note": f"{self.pages} pages" if self.pages else self.note}
 
 
+_IMAGE_MAGIC = ((b"\xff\xd8\xff", "image/jpeg"), (b"\x89PNG\r\n\x1a\n", "image/png"), (b"GIF8", "image/gif"))
+
+
+def _image_without_pillow(raw: bytes, name: str) -> Attachment:
+    """No Pillow: the chat page already shrank the photo to a compact JPEG, so send it as it is."""
+    mime = next((m for magic, m in _IMAGE_MAGIC if raw.startswith(magic)), None)
+    if raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
+        mime = "image/webp"
+    if not mime:
+        raise AttachmentError("Gink can't read this photo on this device. Try a JPEG or PNG.")
+    if len(raw) > 6 * 1024 * 1024:
+        raise AttachmentError("That photo is too large for this device. Try a smaller one.")
+    url = f"data:{mime};base64," + base64.b64encode(raw).decode()
+    return Attachment(name=name, kind="image", data_url=url, thumb=url)
+
+
 def _image_from_bytes(raw: bytes, name: str) -> Attachment:
     try:
         from PIL import Image, ImageOps
-    except ImportError:
-        raise AttachmentError("Photos need the Pillow package.")
+    except ImportError:                         # e.g. the 32-bit Android edition (no Pillow there)
+        return _image_without_pillow(raw, name)
     if name.lower().endswith((".heic", ".heif")):
         try:
             import pillow_heif

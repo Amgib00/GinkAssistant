@@ -146,6 +146,7 @@ src/ginkassistant/ui/wake_ui.py
 src/ginkassistant/ui/web_chat_view.py
 tests/test_actions.py
 tests/test_actions_briefing_mic.py
+tests/test_android_32bit.py
 tests/test_android_startup.py
 tests/test_app_icons.py
 tests/test_billing.py

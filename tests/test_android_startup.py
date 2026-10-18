@@ -47,3 +47,10 @@ SCRIPT = textwrap.dedent(f"""
 def test_every_module_imports_on_android():
     out = subprocess.run([sys.executable, "-c", SCRIPT], capture_output=True, text=True, timeout=120)
     assert "ALL_OK" in out.stdout, out.stdout[-3000:] + out.stderr[-3000:]
+
+
+def test_every_module_imports_on_32bit_android():
+    """The 32-bit edition (TECNO POP, itel...) has no Pillow, psutil or fpdf2."""
+    script = SCRIPT.replace(repr(DESKTOP_ONLY), repr(DESKTOP_ONLY + ["PIL", "psutil", "fpdf"]))
+    out = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, timeout=120)
+    assert "ALL_OK" in out.stdout, out.stdout[-3000:] + out.stderr[-3000:]

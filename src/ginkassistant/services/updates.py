@@ -25,7 +25,9 @@ def version_tuple(v) -> tuple:
 def asset_name() -> Optional[str]:
     from .platform_utils import is_android
     if is_android():
-        return "Gink-android.apk"
+        # 64-bit systems report aarch64 / x86_64. Anything else (armv7l, or armv8l = a 32-bit
+        # system on a 64-bit chip, e.g. TECNO POP, itel) needs the 32-bit edition.
+        return "Gink-android.apk" if "64" in platform.machine() else "Gink-android-32bit.apk"
     if sys.platform == "darwin":
         if os.environ.get("GINK_FAKE_IOS") or platform.system() == "iOS" or sys.platform == "ios":
             return None

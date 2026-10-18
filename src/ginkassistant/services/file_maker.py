@@ -127,8 +127,73 @@ def _find_font() -> Optional[str]:
     return None
 
 
+def _simple_pdf(path: str, title: str, md: str) -> None:
+    """A plain PDF without fpdf2 (the 32-bit Android edition): title, headings, bullets,
+    wrapped text and page breaks, in the built-in Helvetica fonts (Latin-1 text)."""
+    import re, textwrap
+    W, H, M = 595, 842, 56                                     # A4 in points, margins
+    lines = []                                                  # (font, size, text)
+    if title:
+        lines += [("F2", 20, title), ("F1", 11, "")]
+    for raw in (md or "").splitlines():
+        t = re.sub(r"\*\*(.+?)\*\*|__(.+?)__", lambda m: m.group(1) or m.group(2), raw.rstrip())
+        t = re.sub(r"`([^`]*)`", r"\1", t)
+        t = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"\1 (\2)", t)
+        h = re.match(r"^(#{1,6})\s+(.*)", t)
+        if h:
+            size = {1: 17, 2: 14}.get(len(h.group(1)), 12)
+            lines += [("F1", 6, ""), ("F2", size, h.group(2))]
+            continue
+        b = re.match(r"^\s*([-*+]|\d+[.)])\s+(.*)", t)
+        body, lead = (("\u2022 " if b.group(1) in "-*+" else b.group(1) + " ") + b.group(2), "   ") if b else (t, "")
+        if not body.strip():
+            lines.append(("F1", 11, "")); continue
+        width = 92 if not lead else 88
+        for i, part in enumerate(textwrap.wrap(body, width) or [""]):
+            lines.append(("F1", 11, (lead if i else "") + part))
+    pages, page, y = [], [], H - M
+    for font, size, text in lines:
+        step = size * 1.35
+        if y - step < M:
+            pages.append(page); page, y = [], H - M
+        y -= step
+        page.append((font, size, M, y, text))
+    pages.append(page)
+
+    def esc(s):
+        s = s.replace("\u2022", "\x95").encode("latin-1", "replace").decode("latin-1")
+        return s.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+    objs = ["<< /Type /Catalog /Pages 2 0 R >>", None,
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>"]
+    kids = []
+    for pg in pages:
+        stream = "BT\n" + "".join(f"/{f} {s} Tf 1 0 0 1 {x:.1f} {yy:.1f} Tm ({esc(t)}) Tj\n" for f, s, x, yy, t in pg) + "ET"
+        data = stream.encode("latin-1", "replace")
+        objs.append(f"<< /Length {len(data)} >>\nstream\n" + data.decode("latin-1") + "\nendstream")
+        objs.append(f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {W} {H}] /Contents {len(objs)} 0 R "
+                    f"/Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> >>")
+        kids.append(f"{len(objs)} 0 R")
+    objs[1] = f"<< /Type /Pages /Kids [{' '.join(kids)}] /Count {len(kids)} >>"
+    info = f"<< /Title ({esc(title or 'Gink document')}) /Creator (Gink Assistant) >>"
+    objs.append(info)
+    out, offsets = bytearray(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n"), []
+    for i, o in enumerate(objs, 1):
+        offsets.append(len(out))
+        out += f"{i} 0 obj\n{o}\nendobj\n".encode("latin-1", "replace")
+    xref = len(out)
+    out += f"xref\n0 {len(objs) + 1}\n0000000000 65535 f \n".encode()
+    out += "".join(f"{o:010d} 00000 n \n" for o in offsets).encode()
+    out += f"trailer\n<< /Size {len(objs) + 1} /Root 1 0 R /Info {len(objs)} 0 R >>\nstartxref\n{xref}\n%%EOF\n".encode()
+    with open(path, "wb") as f:
+        f.write(out)
+
+
 def make_pdf(path: str, title: str, md: str) -> None:
-    from fpdf import FPDF
+    try:
+        from fpdf import FPDF
+    except ImportError:                         # 32-bit Android edition: no fpdf2 (it needs Pillow)
+        return _simple_pdf(path, title, md)
     pdf = FPDF(format="A4")
     pdf.set_margins(18, 18, 18)
     pdf.set_auto_page_break(True, margin=18)
