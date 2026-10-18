@@ -699,8 +699,11 @@ class LoginController:
             import httpx
             if isinstance(exc, httpx.TimeoutException):
                 await self.call("error", server_config.WAKING_UP)
+            elif isinstance(exc, httpx.HTTPError):
+                from ..services.api_client import unreachable
+                await self.call("error", str(unreachable(exc)))       # says why, and what to do
             else:
-                await self.call("error", f"Couldn't reach the server at {self.app.state.base_url}. Check your connection and try again.")
+                await self.call("error", f"Something went wrong ({type(exc).__name__}: {str(exc)[:120]}). Please try again.")
 
     async def start_oauth(self, provider: str):
         label = {"google": "Google", "apple": "Apple", "microsoft": "Microsoft", "github": "GitHub"}.get(provider, "SSO")

@@ -41,6 +41,29 @@ class Session:
     name: str = ""
 
 
+def unreachable(exc: Exception) -> "ApiError":
+    """Say WHY the server couldn't be reached, and what to do -- plus a short technical
+    detail, so one screenshot is enough to fix a problem on someone's phone."""
+    detail = f"{type(exc).__name__}: {exc}".strip().rstrip(":")[:160]
+    low = detail.lower()
+    if isinstance(exc, httpx.TimeoutException):
+        msg = ("The Gink server didn't answer in time. If it was asleep it can take up to a minute "
+               "to wake up, so please try again.")
+    elif "certificate" in low or "ssl" in low:
+        msg = ("Gink couldn't make a secure connection to the server. Check that your phone's date and "
+               "time are set automatically (Settings > Date & time), then try again.")
+    elif any(k in low for k in ("name or service not known", "nodename nor servname", "getaddrinfo",
+                                "no address associated", "name resolution", "errno -2", "errno 7")):
+        msg = "Gink couldn't find its server on the internet. Check that Wi-Fi or mobile data is on."
+    elif "network is unreachable" in low or "no route to host" in low:
+        msg = "There's no internet connection. Check your Wi-Fi or mobile data."
+    elif "connection refused" in low:
+        msg = "The Gink server refused the connection. It may be restarting, so try again in a minute."
+    else:
+        msg = "Can't reach the Gink server. Check your connection."
+    return ApiError(f"{msg} (Details: {detail})")
+
+
 class ApiClient:
     def __init__(self, base_url: str, timeout: float = None):
         self.base_url = base_url.rstrip("/")
@@ -69,8 +92,8 @@ class ApiClient:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 resp = await client.post(f"{self.base_url}{path}", json=payload)
-        except httpx.HTTPError:
-            raise ApiError("Can't reach the Gink server. Check your connection.")
+        except httpx.HTTPError as e:
+            raise unreachable(e)
         data = self._json(resp)
         if resp.status_code != 200:
             detail = data.get("detail", default_error)
@@ -142,8 +165,8 @@ class ApiClient:
             async with httpx.AsyncClient(timeout=25) as client:
                 resp = await client.request(method, f"{self.base_url}{path}",
                                             headers={"Authorization": f"Bearer {token}"}, **kw)
-        except httpx.HTTPError:
-            raise ApiError("Can't reach the Gink server. Check your connection.")
+        except httpx.HTTPError as e:
+            raise unreachable(e)
         data = self._json(resp)
         if resp.status_code == 401:
             raise ApiError("Please sign out and sign in again.")
@@ -188,8 +211,8 @@ class ApiClient:
             async with httpx.AsyncClient(timeout=200) as client:
                 resp = await client.post(f"{self.base_url}/media/image", headers={"Authorization": f"Bearer {token}"},
                                          json={"prompt": prompt, "aspect_ratio": aspect_ratio, "style": style})
-        except httpx.HTTPError:
-            raise ApiError("Can't reach the Gink server. Check your connection.")
+        except httpx.HTTPError as e:
+            raise unreachable(e)
         data = self._json(resp)
         if resp.status_code != 200:
             err = data.get("error") if isinstance(data.get("error"), dict) else {}

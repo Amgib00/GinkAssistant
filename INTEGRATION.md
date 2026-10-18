@@ -800,3 +800,19 @@ New services/live_info.py (all free, no API keys):
 - release.yml "check" job (seconds, before any build): vX.Y.Z format; must equal pyproject's
   version (apps compare their own version with the release's); must not already be released
   (gh release view); warns if CHANGELOG.md lacks the section.
+- publish_to_github.sh: the "Not published" list no longer includes files kept from GitHub
+  (.github/ISSUE_TEMPLATE) or generated data (tools/gink_dataset/out/).
+
+## Latest (0.1.2): Android permissions + connection errors that say why
+- Inspected the real v0.1.1 32-bit APK: INTERNET present, server https://gink-server.onrender.com,
+  httpx/certifi bundled -- but RECORD_AUDIO, MODIFY_AUDIO_SETTINGS and SET_ALARM were MISSING:
+  pyproject used [android.permissions]; Briefcase 0.4 reads [android.permission] (singular).
+  Renamed; checked with Briefcase's own permissions_context (all five now present).
+- api_client.unreachable(exc): timeout (asleep), certificate (phone date/time), name lookup
+  (Wi-Fi/data), no route, refused -- plus "(Details: ExcName: ...)". Used by every API call and
+  by the sign-in screen's fallback. tests/test_unreachable.py.
+- version 0.1.2 + CHANGELOG.
+- FIX publish_to_github.sh: the leftovers filter ended with `[ $keep = 0 ] && echo`, which
+  fails under `set -euo pipefail` when the LAST file is a kept one -> the script stopped silently
+  after "Secrets:" (0.1.2 never pushed). Now `if ...; then echo; fi; done || true`. Tested: only
+  kept files / kept + leftover / nothing extra.

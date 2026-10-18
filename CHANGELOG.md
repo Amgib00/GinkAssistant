@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2 (October 2026)
+
+- Android: Gink now asks for the microphone (voice, "Hey Gink") and can set alarms
+- When Gink can't reach its server, it says why and what to do (for example, check the
+  phone's date and time, or Wi-Fi and mobile data)
+
 ## 0.1.1 (October 2026)
 
 - A 32-bit Android edition for phones such as TECNO POP and itel

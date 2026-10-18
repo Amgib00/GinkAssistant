@@ -65,8 +65,12 @@ if [ -f "$MANIFEST" ]; then
     [ -f "$ROOT/$f" ] || { echo "Missing $f -- unzip the full package again."; exit 1; }
     mkdir -p "./$(dirname "$f")"; cp "$ROOT/$f" "./$f"
   done < "$MANIFEST"
+  # Not leftovers: files kept from GitHub (KEEP_FROM_REPO) and generated folders that are never published.
   STALE=$(cd "$ROOT" && for p in "${PUBLISH[@]}"; do [ -d "$p" ] && find "$p" -type f -not -path "*/__pycache__/*" \
-          -not -path "website/_site/*" -not -name ".DS_Store" -not -name "*.pyc" -not -path "*.dist-info/*"; done | sort | comm -23 - <(sort "$MANIFEST"))
+          -not -path "website/_site/*" -not -path "tools/gink_dataset/out/*" -not -name ".DS_Store" -not -name "*.pyc" \
+          -not -path "*.dist-info/*"; done | sort | comm -23 - <(sort "$MANIFEST") | while IFS= read -r f; do
+            keep=0; for k in "${KEEP_FROM_REPO[@]}"; do case "$f" in "$k"|"$k"/*) keep=1;; esac; done
+            if [ "$keep" = 0 ]; then echo "$f"; fi; done || true)
   if [ -n "$STALE" ]; then
     echo; echo "Not published -- these files in your folder aren't part of this version (old leftovers?):"
     echo "$STALE" | head -20 | sed 's/^/   - /'

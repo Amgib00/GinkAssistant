@@ -172,6 +172,7 @@ tests/test_settings_and_account.py
 tests/test_signin_name_and_history.py
 tests/test_sync_attach_memory_briefing.py
 tests/test_ui.py
+tests/test_unreachable.py
 tests/test_updates.py
 tests/test_video_and_live_tv.py
 tests/test_voice_and_stop.py
