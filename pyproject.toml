@@ -28,6 +28,12 @@ author = "Amgib00"
 author_email = "kargboi131ik667957@gmail.com"
 
 [tool.briefcase.app.ginkassistant]
+long_description = """Gink is an AI assistant that listens, answers out loud and gets things done.
+
+Chat with streaming answers, talk to Gink with natural voices or say "Hey Gink", and let it
+set alarms, timers and reminders, make PDF, Word and Excel files, create images, search the
+web with sources, and brief you every morning. Your chats sync across your devices.
+"""
 formal_name = "Gink"
 description = "AI Assistant powered to Help Humans"
 sources = ["src/ginkassistant"]

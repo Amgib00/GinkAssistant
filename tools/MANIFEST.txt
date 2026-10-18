@@ -9,6 +9,7 @@
 .github/workflows/website.yml
 .github/workflows/windows.yml
 .gitignore
+CHANGELOG.md
 INTEGRATION.md
 LICENSE
 README.md

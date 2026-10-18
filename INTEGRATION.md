@@ -762,3 +762,13 @@ New services/live_info.py (all free, no API keys):
   settings with no warnings. LICENSE (from the GitHub repo) now in the package + publish list.
 - Local Android with Python 3.10: Chaquopy has no Pillow for 3.10 -> use the cloud build
   (Python 3.13) or a Python 3.13 environment.
+
+## Latest: Linux package built and run for real (Ubuntu 24.04 sandbox = GitHub's runner)
+- Reproduced the Linux workflow with system Python 3.12 + Briefcase 0.4.6. Fixes:
+  CHANGELOG.md (Debian packages require a changelog; "Installing changelog... errored"),
+  long_description in pyproject (Debian requires it), --adhoc-sign in linux.yml (unsigned on
+  purpose). Result: ginkassistant_0.1.0-1~ubuntu-noble_amd64.deb (176 MB).
+- Installed with apt like a user (dependencies resolved, incl. libgtk-3-0 via libgtk-3-0t64),
+  launcher + menu entry present; started under Xvfb: built-in server healthy, sign-in screen
+  rendered (WebView works thanks to gir1.2-webkit2-4.1), no errors from Gink.
+- CHANGELOG.md now in the package + publish list. Update it with each release.
