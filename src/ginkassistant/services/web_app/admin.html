@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Gink owner dashboard</title>
+<style>
+  :root { --bg: #F4F6F2; --card: #FFFFFF; --text: #151D23; --muted: #5D6B64; --line: #E1E5E0; --lime: #A8F03C; --accent: #3F7D12;
+          --warn-bg: #FFF4E5; --warn: #8A4B00; --c1: #3F7D12; --c2: #C26A00; --c3: #2F6FB3; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #11181D; --card: #1A242B; --text: #E9EFEA; --muted: #9AABA3; --line: rgba(233,239,234,.12);
+          --accent: #A8F03C; --warn-bg: #3A2A12; --warn: #FFC879; --c1: #A8F03C; --c2: #FFB547; --c3: #7DB7FF; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  header h1 { font-size: 22px; margin: 0; }
+  header .when { color: var(--muted); font-size: 13px; }
+  header .spacer { flex: 1; }
+  button { font: inherit; font-weight: 650; border: 0; border-radius: 999px; padding: 8px 16px; cursor: pointer; background: var(--text); color: var(--bg); }
+  button.quiet { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1.5px var(--line); }
+  input { font: inherit; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+  h2 { font-size: 16px; margin: 28px 0 10px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .card .label { color: var(--muted); font-size: 13px; }
+  .card .big { font-size: 28px; font-weight: 750; line-height: 1.2; margin-top: 2px; }
+  .card .sub { color: var(--muted); font-size: 13px; }
+  .warn { background: var(--warn-bg); color: var(--warn); border-radius: 12px; padding: 10px 14px; margin: 8px 0; font-weight: 600; }
+  .services { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill { border-radius: 999px; padding: 4px 12px; font-size: 13px; font-weight: 650; background: var(--card); border: 1px solid var(--line); }
+  .pill.on::before { content: "\25CF  "; color: var(--c1); } .pill.off::before { content: "\25CB  "; color: var(--muted); }
+  .two { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; }
+  @media (max-width: 820px) { .two { grid-template-columns: 1fr; } }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 7px 6px; border-top: 1px solid var(--line); font-size: 14px; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .legend { display: flex; gap: 14px; font-size: 13px; color: var(--muted); margin-bottom: 6px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  svg text { fill: var(--muted); font-size: 11px; }
+  .rates input { width: 110px; text-align: right; }
+  .rates td { padding: 5px 6px; }
+  .note { color: var(--muted); font-size: 13px; }
+  #login { max-width: 420px; margin: 12vh auto; }
+  #login form { display: flex; gap: 8px; } #login input { flex: 1; }
+  .err { color: #C42B1C; min-height: 22px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div id="login" class="card" hidden>
+  <h1 style="font-size:20px;margin:0 0 6px">Gink owner dashboard</h1>
+  <p class="note">Enter GINK_ADMIN_KEY (Render: gink-server, Environment). It's kept only until you close this tab.</p>
+  <form id="login-form"><input id="key" type="password" autocomplete="off" aria-label="Admin key" placeholder="Admin key"><button>Open</button></form>
+  <p class="err" id="login-err" role="alert"></p>
+</div>
+
+<div id="dash" class="wrap" hidden>
+  <header>
+    <h1>Gink owner dashboard</h1><span class="when" id="when"></span><span class="spacer"></span>
+    <button class="quiet" id="refresh">Refresh</button><button class="quiet" id="lock">Lock</button>
+  </header>
+  <div id="warnings"></div>
+  <div class="services" id="services"></div>
+
+  <h2>People</h2>
+  <div class="grid" id="people"></div>
+
+  <h2>Usage today <span class="note">(last 7 days in small print)</span></h2>
+  <div class="grid" id="usage"></div>
+
+  <div class="two" style="margin-top:12px">
+    <div class="card">
+      <strong>Last 14 days</strong>
+      <div class="legend"><span><i style="background:var(--c1)"></i>Messages</span><span><i style="background:var(--c2)"></i>Claude</span><span><i style="background:var(--c3)"></i>Web searches</span></div>
+      <svg id="chart" viewBox="0 0 640 220" width="100%" role="img" aria-label="Daily usage over the last 14 days"></svg>
+    </div>
+    <div class="card">
+      <strong>Payments received, last 30 days</strong>
+      <table><thead><tr><th>Currency</th><th class="num">Amount</th><th class="num">Payments</th></tr></thead><tbody id="revenue"></tbody></table>
+      <p class="note" id="norevenue" hidden>No payments yet.</p>
+    </div>
+  </div>
+
+  <div class="two" style="margin-top:12px">
+    <div class="card">
+      <strong>Estimated costs</strong>
+      <p class="note">Enter your real prices from your Groq, Anthropic and Google bills (in US dollars). They're saved in this browser only.</p>
+      <table class="rates"><tbody id="rates"></tbody></table>
+      <p id="costs" style="font-weight:650;margin:10px 0 0"></p>
+    </div>
+    <div class="card">
+      <strong>Feedback, last 7 days</strong>
+      <p id="fb"></p>
+      <table><thead><tr><th>Top reasons for thumbs down</th><th class="num">Times</th></tr></thead><tbody id="reasons"></tbody></table>
+    </div>
+  </div>
+  <h2>Limits on this server</h2>
+  <p class="note" id="limits"></p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var key = ""; try { key = sessionStorage.getItem("gink_admin_key") || ""; } catch (e) {}
+  var data = null, timer = null;
+  var RATES = [["calls", "AI calls (Groq), per 1,000", 1000], ["claude", "Claude messages, each", 1], ["searches", "Web searches, per 1,000", 1000],
+               ["images", "Images, each", 1], ["voice_chars", "Natural voice, per 1,000 characters", 1000]];
+  function fmt(n) { return Number(n || 0).toLocaleString(); }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function card(host, label, big, sub) {
+    var c = el("div", "card"); c.appendChild(el("div", "label", label)); c.appendChild(el("div", "big", big));
+    if (sub) c.appendChild(el("div", "sub", sub)); host.appendChild(c);
+  }
+  function show(loggedIn) { $("login").hidden = loggedIn; $("dash").hidden = !loggedIn; }
+  function load() {
+    return fetch("/admin/stats", { headers: { "x-admin-key": key } }).then(function (r) {
+      if (r.status === 403 || r.status === 429) return r.json().then(function (j) { throw new Error(j.detail || "Owner only."); });
+      if (!r.ok) throw new Error("The server had a problem (" + r.status + ").");
+      return r.json();
+    }).then(function (j) { data = j; show(true); render(); })
+      .catch(function (e) { key = ""; try { sessionStorage.removeItem("gink_admin_key"); } catch (x) {} show(false); $("login-err").textContent = e.message; });
+  }
+  function render() {
+    var d = data, s = d.services;
+    $("when").textContent = "Updated " + new Date(d.generated * 1000).toLocaleTimeString();
+    var w = $("warnings"); w.innerHTML = "";
+    if (s.storage !== "disk") w.appendChild(el("div", "warn", "Data is stored temporarily (Render free plan): accounts, keys and payments are erased on every update. Upgrade to Starter + disk."));
+    if (!s.email) w.appendChild(el("div", "warn", "Email isn't set up: sign-up codes only appear in Render's logs."));
+    var sv = $("services"); sv.innerHTML = "";
+    [["groq", "Groq AI"], ["anthropic", "Claude"], ["gemini", "Images + voices"], ["email", "Email codes"]].forEach(function (p) {
+      sv.appendChild(el("span", "pill " + (s[p[0]] ? "on" : "off"), p[1] + (s[p[0]] ? "" : ": not set")));
+    });
+    var u = d.users, pp = $("people"); pp.innerHTML = "";
+    card(pp, "Users", fmt(u.total), "+" + fmt(u.new_7d) + " this week, +" + fmt(u.new_today) + " today");
+    card(pp, "Gink Pro (active)", fmt(u.pro_active), u.total ? Math.round(100 * u.pro_active / u.total) + "% of users" : "");
+    card(pp, "API keys", fmt(u.api_keys_active), "active");
+    card(pp, "Active today", fmt(d.today.active_users), "people who chatted");
+    var t = d.today, l = d.last7, us = $("usage"); us.innerHTML = "";
+    card(us, "Messages", fmt(t.messages), fmt(l.messages) + " in 7 days");
+    card(us, "AI calls", fmt(t.calls), fmt(l.calls) + " in 7 days");
+    card(us, "Claude", fmt(t.claude), fmt(l.claude) + " in 7 days");
+    card(us, "Web searches", fmt(t.searches), fmt(l.searches) + " in 7 days");
+    card(us, "Images", fmt(t.images), fmt(l.images) + " in 7 days");
+    card(us, "Voice characters", fmt(t.voice_chars), fmt(l.voice_chars) + " in 7 days");
+    chart(d.daily);
+    var rv = $("revenue"); rv.innerHTML = "";
+    $("norevenue").hidden = d.revenue_30d.length > 0;
+    d.revenue_30d.forEach(function (r) {
+      var tr = el("tr"); tr.appendChild(el("td", "", r.currency)); tr.appendChild(el("td", "num", fmt(r.amount)));
+      tr.appendChild(el("td", "num", fmt(r.payments))); rv.appendChild(tr);
+    });
+    var f = d.feedback_7d, total = f.up + f.down;
+    $("fb").textContent = total ? ("\uD83D\uDC4D " + fmt(f.up) + "   \uD83D\uDC4E " + fmt(f.down) + "   (" + Math.round(100 * f.up / total) + "% positive)") : "No feedback yet.";
+    var rs = $("reasons"); rs.innerHTML = "";
+    f.top_reasons.forEach(function (r) { var tr = el("tr"); tr.appendChild(el("td", "", r.reason)); tr.appendChild(el("td", "num", fmt(r.count))); rs.appendChild(tr); });
+    var lm = d.limits;
+    $("limits").textContent = "Free: " + lm.free_daily + " messages and " + lm.free_search_daily + " web searches a day. Pro: " + lm.pro_daily +
+      " messages, " + lm.pro_claude_daily + " Claude messages and " + lm.pro_search_daily + " web searches a day. Change these in Render (Environment).";
+    rates();
+  }
+  function chart(days) {
+    var svg = $("chart"), W = 640, H = 220, pad = 28, n = days.length;
+    var max = Math.max(1, Math.max.apply(null, days.map(function (x) { return Math.max(x.messages, x.claude, x.searches); })));
+    var bw = (W - pad * 2) / n, parts = [];
+    days.forEach(function (x, i) {
+      var x0 = pad + i * bw;
+      [["messages", "var(--c1)"], ["claude", "var(--c2)"], ["searches", "var(--c3)"]].forEach(function (k, j) {
+        var h = (H - pad * 2) * (x[k[0]] / max), w = bw / 3.6;
+        parts.push('<rect x="' + (x0 + 3 + j * (w + 1)).toFixed(1) + '" y="' + (H - pad - h).toFixed(1) + '" width="' + w.toFixed(1) +
+                   '" height="' + Math.max(h, 0).toFixed(1) + '" rx="2" fill="' + k[1] + '"><title>' + x.day + ": " + x[k[0]] + " " + k[0] + "</title></rect>");
+      });
+      if (i % 2 === 0) parts.push('<text x="' + (x0 + bw / 2).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + x.day.slice(5) + "</text>");
+    });
+    parts.push('<text x="' + pad + '" y="14">' + max + "</text>");
+    parts.push('<line x1="' + pad + '" x2="' + (W - pad) + '" y1="' + (H - pad) + '" y2="' + (H - pad) + '" stroke="var(--line)"/>');
+    svg.innerHTML = parts.join("");                            // numbers and dates only (from our own server)
+  }
+  function savedRates() { try { return JSON.parse(localStorage.getItem("gink_cost_rates")) || {}; } catch (e) { return {}; } }
+  function rates() {
+    var saved = savedRates(), body = $("rates");
+    if (!body.children.length) {
+      RATES.forEach(function (r) {
+        var tr = el("tr"); tr.appendChild(el("td", "", r[1]));
+        var td = el("td", "num"), inp = el("input"); inp.type = "number"; inp.min = "0"; inp.step = "any"; inp.placeholder = "0.00";
+        inp.setAttribute("aria-label", r[1]); inp.value = saved[r[0]] != null ? saved[r[0]] : "";
+        inp.oninput = function () { var s = savedRates(); s[r[0]] = inp.value; try { localStorage.setItem("gink_cost_rates", JSON.stringify(s)); } catch (e) {} costs(); };
+        td.appendChild(inp); tr.appendChild(td); body.appendChild(tr);
+      });
+    }
+    costs();
+  }
+  function costs() {
+    var s = savedRates(), l = data.last7, week = 0, any = false;
+    RATES.forEach(function (r) { var v = parseFloat(s[r[0]]); if (v > 0) { any = true; week += (l[r[0]] || 0) / r[2] * v; } });
+    $("costs").textContent = any ? ("About $" + week.toFixed(2) + " in the last 7 days, so roughly $" + (week / 7 * 30).toFixed(2) + " a month at this pace.")
+                                 : "Enter at least one price to see estimates.";
+  }
+  $("login-form").onsubmit = function (e) {
+    e.preventDefault(); key = $("key").value.trim(); $("login-err").textContent = "";
+    try { sessionStorage.setItem("gink_admin_key", key); } catch (x) {}
+    load();
+  };
+  $("refresh").onclick = load;
+  $("lock").onclick = function () { key = ""; try { sessionStorage.removeItem("gink_admin_key"); } catch (e) {} clearInterval(timer); $("key").value = ""; show(false); };
+  if (key) load(); else show(false);
+  timer = setInterval(function () { if (key && document.visibilityState === "visible") load(); }, 60000);
+})();
+</script>
+</body>
+</html>

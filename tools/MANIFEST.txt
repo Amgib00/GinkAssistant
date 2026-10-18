@@ -113,6 +113,7 @@ src/ginkassistant/services/video_search.py
 src/ginkassistant/services/voice_bridge.py
 src/ginkassistant/services/voice_profiles.py
 src/ginkassistant/services/wake_word.py
+src/ginkassistant/services/web_app/admin.html
 src/ginkassistant/services/web_app/developers.html
 src/ginkassistant/services/web_app/index.html
 src/ginkassistant/ui/__init__.py
@@ -158,6 +159,7 @@ tests/test_main_screen.py
 tests/test_media_files_profile.py
 tests/test_model_upgrade.py
 tests/test_natural_voice.py
+tests/test_owner_dashboard.py
 tests/test_screens_and_server.py
 tests/test_settings_and_account.py
 tests/test_signin_name_and_history.py

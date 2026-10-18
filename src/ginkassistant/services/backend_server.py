@@ -2509,16 +2509,36 @@ def api_keys_revoke(key_id: str, request: Request):
 
 
 
+# ---- Owner checks: GINK_ADMIN_KEY (>= 24 chars, constant-time compare). 10 wrong keys from one
+# address within 10 minutes -> locked out for the rest of those 10 minutes (stops guessing).
+_admin_failures = {}
+
+
+def _client_ip(request: Request) -> str:
+    fwd = request.headers.get("x-forwarded-for", "")
+    return fwd.split(",")[0].strip() if fwd else (request.client.host if request.client else "?")
+
+
+def _require_owner(request: Request):
+    key = _env("GINK_ADMIN_KEY")
+    if len(key) < 24:
+        raise HTTPException(status_code=403, detail="Set GINK_ADMIN_KEY on the server (at least 24 random characters).")
+    ip, now = _client_ip(request), time.time()
+    recent = [t for t in _admin_failures.get(ip, []) if now - t < 600]
+    if len(recent) >= 10:
+        raise HTTPException(status_code=429, detail="Too many wrong keys. Try again in a few minutes.")
+    if not hmac.compare_digest(request.headers.get("x-admin-key", ""), key):
+        _admin_failures[ip] = recent + [now]
+        raise HTTPException(status_code=403, detail="Owner only.")
+    _admin_failures.pop(ip, None)
+
+
 # ---- Owner only: give an existing account Gink Pro (testing, gifts, support).
 #   POST /admin/grant-pro  header x-admin-key: <GINK_ADMIN_KEY>  {"email": "...", "days": 30}
 # Adds the days to the end of any current Pro time, like a payment. tools/grant_pro.py calls it.
 @app.post("/admin/grant-pro")
 def admin_grant_pro(request: Request, data: dict = Body(...)):
-    key = _env("GINK_ADMIN_KEY")
-    if len(key) < 24:
-        raise HTTPException(status_code=403, detail="Set GINK_ADMIN_KEY on the server (at least 24 random characters).")
-    if not hmac.compare_digest(request.headers.get("x-admin-key", ""), key):
-        raise HTTPException(status_code=403, detail="Owner only.")
+    _require_owner(request)
     email = str(data.get("email") or "").strip().lower()
     try:
         days = int(data.get("days") or 30)
@@ -2599,3 +2619,75 @@ async def web_search(request: Request, data: dict = Body(...)):
     msg = ((data.get("choices") or [{}])[0]).get("message") or {}
     return {"answer": _clean_cites(msg.get("content") or "").strip(),
             "sources": _find_sources(msg.get("executed_tools") or data.get("executed_tools") or [])[:6]}
+
+
+
+# ---- Owner dashboard: GET /admin (page) and GET /admin/stats (numbers; x-admin-key)
+@app.get("/admin", response_class=HTMLResponse)
+def admin_page():
+    with open(os.path.join(WEB_APP_DIR, "admin.html"), encoding="utf-8") as f:
+        return HTMLResponse(f.read(), headers=_WEB_HEADERS)
+
+
+@app.get("/admin/stats")
+def admin_stats(request: Request):
+    _require_owner(request)
+    now, today = time.time(), _today()
+    days = [time.strftime("%Y-%m-%d", time.gmtime(now - i * 86400)) for i in range(13, -1, -1)]
+    week = days[-7:]
+    with _db_lock:
+        con = _usage_db()
+        try:
+            con.execute(_API_KEYS_TABLE)
+            con.execute("CREATE TABLE IF NOT EXISTS claude_usage (email TEXT, day TEXT, n INTEGER, PRIMARY KEY (email, day))")
+            con.execute("CREATE TABLE IF NOT EXISTS search_usage (email TEXT, day TEXT, n INTEGER, PRIMARY KEY (email, day))")
+            con.execute("CREATE TABLE IF NOT EXISTS feedback (id INTEGER PRIMARY KEY AUTOINCREMENT, user TEXT NOT NULL,"
+                        " rating TEXT NOT NULL, reason TEXT, model TEXT, chars INTEGER, created REAL NOT NULL)")
+            cols = {r[1] for r in con.execute("PRAGMA table_info(ai_usage)").fetchall()}
+            img = "images" if "images" in cols else "0"
+            vox = "voice_chars" if "voice_chars" in cols else "0"
+            one = lambda q, *a: con.execute(q, a).fetchone()[0] or 0
+            users = {"total": one("SELECT COUNT(*) FROM users"),
+                     "new_today": one("SELECT COUNT(*) FROM users WHERE created >= ?", now - (now % 86400)),
+                     "new_7d": one("SELECT COUNT(*) FROM users WHERE created >= ?", now - 7 * 86400),
+                     "pro_active": one("SELECT COUNT(*) FROM users WHERE pro_until > ?", now),
+                     "api_keys_active": one("SELECT COUNT(*) FROM api_keys WHERE revoked=0")}
+            per_day = {d: {"day": d, "messages": 0, "calls": 0, "images": 0, "voice_chars": 0, "claude": 0, "searches": 0,
+                           "active_users": 0, "new_users": 0} for d in days}
+            for d, m, c, i, v, a in con.execute(f"SELECT day, SUM(messages), SUM(calls), SUM({img}), SUM({vox}), COUNT(*)"
+                                                f" FROM ai_usage WHERE day >= ? GROUP BY day", (days[0],)):
+                if d in per_day:
+                    per_day[d].update(messages=m or 0, calls=c or 0, images=i or 0, voice_chars=v or 0, active_users=a or 0)
+            for table, key in (("claude_usage", "claude"), ("search_usage", "searches")):
+                for d, n in con.execute(f"SELECT day, SUM(n) FROM {table} WHERE day >= ? GROUP BY day", (days[0],)):
+                    if d in per_day:
+                        per_day[d][key] = n or 0
+            for (created,) in con.execute("SELECT created FROM users WHERE created >= ?", (now - 14 * 86400,)):
+                d = time.strftime("%Y-%m-%d", time.gmtime(created))
+                if d in per_day:
+                    per_day[d]["new_users"] += 1
+            revenue = [{"currency": c, "amount": round(a or 0, 2), "payments": n} for c, a, n in con.execute(
+                "SELECT currency, SUM(amount), COUNT(*) FROM payments WHERE credited=1 AND created >= ? GROUP BY currency"
+                " ORDER BY SUM(amount) DESC", (now - 30 * 86400,))]
+            ratings = dict(con.execute("SELECT rating, COUNT(*) FROM feedback WHERE created >= ? GROUP BY rating",
+                                       (now - 7 * 86400,)).fetchall())
+            reasons = [{"reason": r, "count": n} for r, n in con.execute(
+                "SELECT reason, COUNT(*) FROM feedback WHERE created >= ? AND rating != 'up' AND reason != ''"
+                " GROUP BY reason ORDER BY COUNT(*) DESC LIMIT 5", (now - 7 * 86400,))]
+        finally:
+            con.close()
+    keys = ("messages", "calls", "images", "voice_chars", "claude", "searches")
+    total = lambda ds: {k: sum(per_day[d][k] for d in ds) for k in keys}
+    return {"generated": now, "users": users,
+            "today": {**(total([today]) if today in per_day else {k: 0 for k in keys}),
+                      "active_users": per_day.get(today, {}).get("active_users", 0)},
+            "last7": total(week), "daily": [per_day[d] for d in days], "revenue_30d": revenue,
+            "feedback_7d": {"up": ratings.get("up", 0), "down": sum(n for r, n in ratings.items() if r != "up"),
+                            "top_reasons": reasons},
+            "limits": {"free_daily": int(os.environ.get("GINK_FREE_DAILY", "30")), "pro_daily": int(os.environ.get("GINK_PRO_DAILY", "500")),
+                       "pro_claude_daily": int(os.environ.get("GINK_PRO_CLAUDE_DAILY", "50")),
+                       "free_search_daily": int(os.environ.get("GINK_FREE_SEARCH_DAILY", "10")),
+                       "pro_search_daily": int(os.environ.get("GINK_PRO_SEARCH_DAILY", "100"))},
+            "services": {"groq": bool(_env("GROQ_API_KEY")), "anthropic": bool(_env("ANTHROPIC_API_KEY")),
+                         "gemini": bool(_env("GEMINI_API_KEY")), "email": bool(_env("GMAIL_USER") and _env("GMAIL_APP_PASSWORD")),
+                         "storage": "disk" if _env("GINK_DB_PATH").startswith("/var/data") else "temporary"}}

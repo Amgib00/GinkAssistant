@@ -715,3 +715,15 @@ New services/live_info.py (all free, no API keys):
 - qwen/qwen3.6-27b retired 14 Sep 2026 -> qwen/qwen3.8-27b for photos and "Gink Prism"
   (server swap map, vision list, desktop cascade, pickers).
 - tests/test_web_search.py (7); browser check of automatic search.
+
+## Latest: owner dashboard (/admin)
+- GET /admin/stats (x-admin-key): users (total, new today/7d, Pro active, API keys), today
+  + last 7 days (messages, AI calls, images, voice chars, Claude, web searches, active users),
+  14 daily rows, payments credited in 30 days by currency, feedback 7d (+ top reasons),
+  limits, services (groq/anthropic/gemini/email, storage disk|temporary).
+- _require_owner: GINK_ADMIN_KEY >= 24 chars, constant-time compare, lockout after 10
+  wrong attempts per address in 10 min (X-Forwarded-For aware); grant-pro uses it too.
+- /admin page (noindex, CSP): key kept in sessionStorage only; warnings (temporary storage,
+  no email), cards, SVG chart, revenue, cost estimator from owner-entered rates
+  (localStorage), feedback, limits; auto-refresh every minute while visible.
+- tests/test_owner_dashboard.py: exact figures from a seeded database, owner-only + lockout.

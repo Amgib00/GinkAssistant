@@ -58,6 +58,12 @@ OpenAI-compatible, so the official OpenAI libraries work: `base_url="https://<se
 Calls share the account's daily allowance; each key also has a per-minute limit
 (`GINK_API_PER_MINUTE`, default 30).
 
+## Owner dashboard
+`https://<server>/admin`, opened with `GINK_ADMIN_KEY` (Render generates it): users, Pro,
+usage (messages, Claude, web searches, images, voice), a 14-day chart, payments, feedback,
+service status, and cost estimates from the prices you enter. `python tools/grant_pro.py`
+gives an account Pro. 10 wrong keys from one address lock it out for 10 minutes.
+
 ## Website
 The site lives in `website/` (one shared layout in `tools/build_website.py`). Preview it with
 `python tools/build_website.py` and open `website/_site/index.html`. It's published on GitHub
