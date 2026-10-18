@@ -108,7 +108,7 @@ console.log(reply.choices[0].message.content);</code></pre>
   <div class="scroll"><table>
     <tbody>
       <tr><td><code>POST /v1/chat/completions</code></td><td>Chat, with <code>stream: true</code> for word-by-word answers. Photos (image parts) need Gink Pro.</td></tr>
-      <tr><td><code>GET /v1/models</code></td><td>The models you can use right now: GPT-OSS and other fast models, plus Claude models with Gink Pro, Every model also has a Gink name you can use: <code>gink-flake</code> (GPT-OSS 20B), <code>gink-crystal</code> (GPT-OSS 120B), <code>gink-prism</code> (Qwen 3.6, photos), and with Pro <code>gink-flurry</code> (Claude Haiku), <code>gink-frost</code> (Claude Sonnet), <code>gink-glacier</code> (Claude Opus), <code>gink-aurora</code> (Claude Fable).</td></tr>
+      <tr><td><code>GET /v1/models</code></td><td>The models you can use right now: GPT-OSS and other fast models, plus Claude models with Gink Pro, <code>gink-search</code> searches the web and lists its sources (counts toward the daily web-search allowance). Every model also has a Gink name you can use: <code>gink-flake</code> (GPT-OSS 20B), <code>gink-crystal</code> (GPT-OSS 120B), <code>gink-prism</code> (Qwen 3.8, photos), and with Pro <code>gink-flurry</code> (Claude Haiku), <code>gink-frost</code> (Claude Sonnet), <code>gink-glacier</code> (Claude Opus), <code>gink-aurora</code> (Claude Fable).</td></tr>
       <tr><td><code>POST /v1/images/generations</code></td><td><code>{"prompt": "..."}</code> &rarr; <code>data[0].b64_json</code> (a PNG).</td></tr>
     </tbody>
   </table></div>

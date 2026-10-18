@@ -49,15 +49,15 @@ DEFAULT_FALLBACKS = {
     "llama3-8b-8192": "openai/gpt-oss-20b",
     "mixtral-8x7b-32768": "openai/gpt-oss-120b",
     "deepseek-r1-distill-llama-70b": "openai/gpt-oss-120b",
-    "qwen-2.5-coder-32b": "qwen/qwen3.6-27b",
+    "qwen-2.5-coder-32b": "qwen/qwen3.8-27b",
+    "qwen/qwen3.6-27b": "qwen/qwen3.8-27b",
     "_global_default": "openai/gpt-oss-120b",
 }
 
 PREFERRED_CASCADE = [
     "openai/gpt-oss-120b",
     "openai/gpt-oss-20b",
-    "qwen/qwen3.6-27b",
-    "meta-llama/llama-4-scout-17b-16e-instruct",
+    "qwen/qwen3.8-27b",
 ]
 
 DEFAULT_SYSTEM_PROMPT = (
@@ -180,6 +180,7 @@ class GroqBrain:
     # Vision-capable Groq models, best first. Groq's lineup changes, so the
     # first one Groq currently lists is used (GINK_VISION_MODEL overrides).
     VISION_CANDIDATES = (
+        "qwen/qwen3.8-27b",                 # qwen3.6-27b was retired on 14 Sep 2026
         "qwen/qwen3.6-27b",
         "meta-llama/llama-4-scout-17b-16e-instruct",
         "meta-llama/llama-4-maverick-17b-128e-instruct",

@@ -4,7 +4,7 @@ import asyncio, os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest
 
-LIVE = {"openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b", "whisper-large-v3", "groq/compound"}
+LIVE = {"openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b", "whisper-large-v3"}
 
 
 @pytest.fixture
@@ -26,8 +26,10 @@ def test_retired_models_are_swapped_for_current_ones(b, monkeypatch):
     assert run(b._current_model("openai/gpt-oss-20b")) == "openai/gpt-oss-20b"            # current: untouched
     assert run(b._current_model("some/unknown-model")) == "openai/gpt-oss-120b"           # best available
     # a photo sent to a text-only or retired model goes to a vision model Groq still offers
-    assert run(b._current_model("openai/gpt-oss-120b", needs_vision=True)) == "qwen/qwen3.6-27b"
-    assert run(b._current_model("meta-llama/llama-4-scout-17b-16e-instruct", needs_vision=True)) == "qwen/qwen3.6-27b"
+    assert run(b._current_model("openai/gpt-oss-120b", needs_vision=True)) == "qwen/qwen3.8-27b"
+    assert run(b._current_model("meta-llama/llama-4-scout-17b-16e-instruct", needs_vision=True)) == "qwen/qwen3.8-27b"
+    assert run(b._current_model("qwen/qwen3.6-27b")) == "qwen/qwen3.8-27b"          # retired 14 Sep 2026
+    assert run(b._current_model("qwen/qwen3.6-27b", needs_vision=True)) == "qwen/qwen3.8-27b"
 
 
 def test_without_the_live_list_known_retirements_are_still_fixed(b, monkeypatch):
@@ -44,9 +46,9 @@ def test_short_gpt_oss_answers_get_room_to_reason(b):
     long_answer = {"model": "openai/gpt-oss-120b", "max_tokens": 1024}
     b._fit_reasoning(long_answer, 1024)
     assert "reasoning_effort" not in long_answer and long_answer["max_tokens"] == 1024
-    other = {"model": "qwen/qwen3.6-27b", "max_tokens": 24}
+    other = {"model": "qwen/qwen3.8-27b", "max_tokens": 24}
     b._fit_reasoning(other, 1024)
-    assert other == {"model": "qwen/qwen3.6-27b", "max_tokens": 24}
+    assert other == {"model": "qwen/qwen3.8-27b", "max_tokens": 24}
 
 
 def test_app_defaults_are_current_models():

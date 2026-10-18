@@ -805,7 +805,8 @@ def build_main_screen(app: toga.App, email: str):
         "llama-3.3-70b-versatile": ("Llama 3.3 70B", "Smart"),
         "llama-3.1-8b-instant": ("Llama 3.1 8B", "Fast"),
         "openai/gpt-oss-120b": ("Gink Crystal", "Free \u00b7 GPT-OSS 120B"),
-        "qwen/qwen3.6-27b": ("Gink Prism", "Free \u00b7 Qwen 3.6"),
+        "qwen/qwen3.8-27b": ("Gink Prism", "Free \u00b7 Qwen 3.8"),
+        "gink-search": ("Gink Search", "Free \u00b7 searches the web"),
         "claude-sonnet-5-5": ("Gink Frost", "Pro \u00b7 Claude Sonnet"),
         "claude-opus-5-5": ("Gink Glacier", "Pro \u00b7 Claude Opus"),
         "claude-haiku-5-5": ("Gink Flurry", "Pro \u00b7 Claude Haiku"),
@@ -1053,6 +1054,26 @@ def build_main_screen(app: toga.App, email: str):
         except ApiError as exc:
             raise RuntimeError(str(exc))
     app.task_runner.image_maker = make_image
+
+    async def research(query):
+        """web_search through the Gink server (real search + sources). None -> the tool's old lookup."""
+        token = getattr(app, "session_token", None)
+        if not token:
+            return None
+        import httpx
+        async with httpx.AsyncClient(timeout=httpx.Timeout(90, connect=15)) as client:
+            r = await client.post(app.state.base_url.rstrip("/") + "/web/search", json={"query": query},
+                                  headers={"Authorization": f"Bearer {token}"})
+        if r.status_code == 200:
+            j = r.json()
+            return {"ok": True, "answer": j.get("answer", ""), "sources": j.get("sources", [])}
+        if r.status_code == 429:                                   # today's searches are used up: say so
+            try:
+                return {"ok": False, "message": r.json()["error"]["message"]}
+            except Exception:
+                return None
+        return None
+    app.task_runner.web_researcher = research
 
     def file_path(name: str) -> str:
         path = os.path.join(files_dir, os.path.basename(name or ""))

@@ -175,9 +175,10 @@
 
   // ---------------------------------------------------------------- talking to the AI
   function niceModel(id) {             // "openai/gpt-oss-120b" -> "GPT-OSS 120B", "claude-sonnet-5-5" -> "Claude Sonnet 5.5"
-    var GINK = { "openai/gpt-oss-20b": "Gink Flake \u00b7 Free \u00b7 GPT-OSS",            // Gink's names
+    var GINK = { "gink-search": "Gink Search \u00b7 Free \u00b7 searches the web",
+                 "openai/gpt-oss-20b": "Gink Flake \u00b7 Free \u00b7 GPT-OSS",            // Gink's names
                  "openai/gpt-oss-120b": "Gink Crystal \u00b7 Free \u00b7 GPT-OSS",
-                 "qwen/qwen3.6-27b": "Gink Prism \u00b7 Free \u00b7 Qwen",
+                 "qwen/qwen3.8-27b": "Gink Prism \u00b7 Free \u00b7 Qwen",
                  "claude-haiku-5-5": "Gink Flurry \u00b7 Pro \u00b7 Claude", "claude-sonnet-5-5": "Gink Frost \u00b7 Pro \u00b7 Claude",
                  "claude-opus-5-5": "Gink Glacier \u00b7 Pro \u00b7 Claude", "claude-fable-5-1": "Gink Aurora \u00b7 Pro \u00b7 Claude" };
     if (GINK[id]) return GINK[id];
@@ -198,11 +199,14 @@
            hour: "2-digit", minute: "2-digit" }) + " in the user's time zone (" +
            (Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown") + "). Use this for any question about the time or date." +
            who + lang +
+           " When you have web search results, use them and keep the facts accurate." +
            " You're running in a web browser: you can't set alarms, reminders or tasks or control the user's computer here; " +
            "if asked, say that the Gink app can do it." +
            (voice ? " You're in a live voice conversation: reply in one to three short, natural spoken sentences, " +
                     "with no lists, headings, code, links or emojis." : "");
   }
+  // questions that need the internet search the web on their own, whatever model is picked
+  var WEB_RE = /\b(search|look up|google|find out|latest|news|headlines|today'?s|this week|right now|currently|price of|cost of|how much (is|are|does)|exchange rate|who won|score|results? of|release date|weather|recherche|cherche|actualit\u00e9s?|derni\u00e8res? nouvelles|prix d|aujourd'hui|cette semaine)\b/i;
   var IMAGE_RE = /^\s*(please\s+)?(create|make|draw|generate|paint|design)\s+(me\s+)?(an?\s+)?(image|picture|photo|drawing|illustration|logo|poster)\b/i;
 
   // ---- attachments: photos stay in the browser; documents are read by the server
@@ -249,7 +253,9 @@
     var aid = "a" + uid().slice(0, 12);
     addAssistantMessage(aid, "Thinking\u2026");
     setComposerBusy(true);
-    var job = IMAGE_RE.test(text) && !atts.length ? makeImage(text, aid) : chat(s, aid, { voice: opts.voice, last: content });
+    var web = !atts.length && (W.model === "gink-search" || WEB_RE.test(text));
+    if (web) setSpinLabel(aid, "Searching the web\u2026");
+    var job = IMAGE_RE.test(text) && !atts.length ? makeImage(text, aid) : chat(s, aid, { voice: opts.voice, last: content, web: web });
     return job.then(function (reply) {
       if (reply) { s.messages.push({ role: "assistant", content: reply, ts: stamp() }); touch(s.id); }
       W.busy = null; setComposerBusy(false); refreshSidebar(); sync();
@@ -263,6 +269,7 @@
     var history = s.messages.slice(-24).map(function (m) { return { role: m.role, content: m.content }; });
     if (opts.last !== undefined && history.length) history[history.length - 1].content = opts.last;   // files + photos
     var body = { model: W.model || undefined, stream: true, messages: [{ role: "system", content: systemPrompt(opts.voice) }].concat(history) };
+    if (opts.web) body.gink_web = true;                       // the server runs it as a web search
     var text = "";
     return api("/ai/openai/v1/chat/completions", body, { signal: ctrl.signal }).then(function (r) {
       if (!r.ok) return errorText(r).then(function (t) { setPlainText(aid, t); return ""; });

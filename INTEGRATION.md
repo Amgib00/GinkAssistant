@@ -698,3 +698,20 @@ New services/live_info.py (all free, no API keys):
 - Rules: no training on users' chats without consent; no Claude-generated training data
   (Anthropic's terms); Apache-2.0 base (Qwen / GPT-OSS) for a "Gink" name.
 - tests/test_gink_dataset.py.
+
+## Latest: Gink can search the web (+ Qwen 3.8 photo fix)
+- Groq Compound was decommissioned on 21 Sep 2026 (no replacement), so search uses GPT-OSS
+  with Groq's built-in browser_search (powered by Exa): tools [{"type": "browser_search"}],
+  tool_choice required, reasoning_effort low (Groq's advice). GINK_SEARCH_MODEL overrides.
+- Triggers: model "gink-search" (pickers + Developer API) or "gink_web": true (the web app
+  sets it for questions that need the internet). Citation marks 【n†Lx-Ly】 removed (also when
+  split across stream pieces, with the space before them); "**Sources**" list added from
+  executed_tools (searched wherever Groq reports url/title).
+- POST /web/search (auth) {query} -> {answer, sources}: the desktop agent's web_search tool
+  asks it first (task_runner.web_researcher, set in main_screen) and falls back to the old
+  DuckDuckGo instant answer + Wikipedia lookup.
+- Allowance: GINK_FREE_SEARCH_DAILY (10) / GINK_PRO_SEARCH_DAILY (100); one question = one.
+  Account deletion clears search_usage/search_turns. Privacy policy lists Groq + Exa.
+- qwen/qwen3.6-27b retired 14 Sep 2026 -> qwen/qwen3.8-27b for photos and "Gink Prism"
+  (server swap map, vision list, desktop cascade, pickers).
+- tests/test_web_search.py (7); browser check of automatic search.

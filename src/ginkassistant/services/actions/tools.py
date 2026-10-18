@@ -476,6 +476,14 @@ class ToolRunner:
 
     # ---------------- web ----------------
     async def _t_web_search(self, query):
+        researcher = getattr(self, "web_researcher", None)     # set by the app: real web search via the Gink server
+        if researcher:
+            try:
+                found = await researcher(query)
+            except Exception:
+                found = None
+            if found:
+                return found
         import httpx
         client = self._http or httpx.AsyncClient(timeout=12, follow_redirects=True,
                                                  headers={"User-Agent": "Gink/0.1"})

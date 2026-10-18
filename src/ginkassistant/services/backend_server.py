@@ -1283,8 +1283,8 @@ async def ai_models(request: Request):
     if r.status_code != 200:
         return _ai_error(502, "Couldn't list AI models right now.", "upstream")
     data = r.json()
-    data["data"] = list(data.get("data", [])) + [{"id": m, "object": "model", "owned_by": "anthropic"}
-                                                  for m in sorted(await _live_claude_models())]
+    data["data"] = list(data.get("data", [])) + [{"id": "gink-search", "object": "model", "owned_by": "gink"}] + \
+        [{"id": m, "object": "model", "owned_by": "anthropic"} for m in sorted(await _live_claude_models())]
     _models_cache.update(at=time.time(), data=data)
     return _models_cache["data"]
 
@@ -1297,9 +1297,10 @@ RETIRED_MODELS = {
     "llama-3.3-70b-versatile": "openai/gpt-oss-120b", "llama3-70b-8192": "openai/gpt-oss-120b",
     "mixtral-8x7b-32768": "openai/gpt-oss-120b", "deepseek-r1-distill-llama-70b": "openai/gpt-oss-120b",
     "moonshotai/kimi-k2-instruct": "openai/gpt-oss-120b", "qwen/qwen3-32b": "openai/gpt-oss-120b",
+    "qwen/qwen3.6-27b": "qwen/qwen3.8-27b",                          # retired 14 Sep 2026
 }
-TEXT_MODELS_BEST_FIRST = ("openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b")
-VISION_MODELS_BEST_FIRST = ("qwen/qwen3.6-27b", "meta-llama/llama-4-scout-17b-16e-instruct",
+TEXT_MODELS_BEST_FIRST = ("openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b")
+VISION_MODELS_BEST_FIRST = ("qwen/qwen3.8-27b", "qwen/qwen3.6-27b", "meta-llama/llama-4-scout-17b-16e-instruct",
                             "meta-llama/llama-4-maverick-17b-128e-instruct")
 _groq_models = {"ids": set(), "at": 0.0}
 
@@ -1359,7 +1360,7 @@ CLAUDE_MODELS_BEST_FIRST = ("claude-sonnet-5-5", "claude-opus-5-5", "claude-haik
 # Gink's own names for the Claude models (fastest -> most capable). Apps and developers may use
 # either; the server translates. Change a name here and in the apps' pickers.
 GINK_MODEL_NAMES = {"gink-flake": "openai/gpt-oss-20b", "gink-crystal": "openai/gpt-oss-120b",      # Free (Groq)
-                    "gink-prism": "qwen/qwen3.6-27b",
+                    "gink-prism": "qwen/qwen3.8-27b",
                     "gink-flurry": "claude-haiku-5-5", "gink-frost": "claude-sonnet-5-5",           # Pro (Claude)
                     "gink-glacier": "claude-opus-5-5", "gink-aurora": "claude-fable-5-1"}
 _claude_models = {"ids": set(), "at": 0.0}
@@ -1643,6 +1644,146 @@ async def _claude_native(body: dict):
     return StreamingResponse(relay(), media_type="text/event-stream")
 
 
+# ---- Web search: GPT-OSS with Groq's built-in browser_search (powered by Exa). Groq Compound
+# was retired on 21 Sep 2026. Apps ask with model "gink-search" or "gink_web": true. Answers
+# come back with citation marks like 【2†L6-L10】: removed, and a Sources list is added.
+SEARCH_MODEL = os.environ.get("GINK_SEARCH_MODEL", "openai/gpt-oss-120b")
+SEARCH_ALIASES = {"gink-search"}
+_CITE = re.compile(r"【[^】]{0,60}】")
+
+
+def _prepare_search(body: dict):
+    body["tools"] = [{"type": "browser_search"}]      # Groq's built-in tool (custom tools can't be mixed in)
+    body["tool_choice"] = "required"
+    body["reasoning_effort"] = "low"                   # Groq's advice: shorter, cheaper browsing
+    body["max_tokens"] = max(int(body.get("max_tokens") or 0), 2048)
+
+
+def _clean_cites(text: str) -> str:
+    return re.sub(r"[ \t]+([.,;:!?])", r"\1", _CITE.sub("", text or ""))
+
+
+def _find_sources(obj, out=None, depth=0) -> list:
+    """Every {url, title} the search tool reported, wherever Groq put it (executed_tools)."""
+    out = [] if out is None else out
+    if depth > 8:
+        return out
+    if isinstance(obj, dict):
+        url = obj.get("url") or obj.get("link")
+        if isinstance(url, str) and url.startswith(("http://", "https://")) and url not in [s["url"] for s in out]:
+            out.append({"url": url, "title": str(obj.get("title") or url.split("/")[2])[:120]})
+        for v in obj.values():
+            _find_sources(v, out, depth + 1)
+    elif isinstance(obj, list):
+        for v in obj:
+            _find_sources(v, out, depth + 1)
+    return out
+
+
+def _sources_md(sources: list) -> str:
+    if not sources:
+        return ""
+    lines = [f"- [{s['title'].replace('[', '(').replace(']', ')')}]({s['url']})" for s in sources[:6]]
+    return "\n\n**Sources**\n" + "\n".join(lines)
+
+
+def _tidy_search_answer(data: dict):
+    try:
+        msg = data["choices"][0]["message"]
+    except (KeyError, IndexError, TypeError):
+        return
+    sources = _find_sources(msg.get("executed_tools") or data.get("executed_tools") or [])
+    msg["content"] = _clean_cites(msg.get("content") or "").strip() + _sources_md(sources)
+
+
+class _SearchStream:
+    """Streamed search answers: drop citation marks (even split across pieces), keep the
+    sources the search tool reports, and add them as a final piece before [DONE]."""
+
+    def __init__(self):
+        self.buf, self.hold, self.sources, self.last = "", "", [], None
+
+    def _emit(self, chunk: dict, text: str) -> bytes:
+        c = _json.loads(_json.dumps(chunk))
+        c["choices"][0]["delta"] = {"content": text}
+        c["choices"][0]["finish_reason"] = None
+        return ("data: " + _json.dumps(c) + "\n\n").encode()
+
+    def feed(self, piece: str) -> list:
+        out = []
+        self.buf += piece
+        while "\n\n" in self.buf:
+            frame, self.buf = self.buf.split("\n\n", 1)
+            data = "".join(line[5:].strip() for line in frame.splitlines() if line.startswith("data:"))
+            if not data or data == "[DONE]":
+                continue
+            try:
+                chunk = _json.loads(data)
+            except ValueError:
+                continue
+            _find_sources(chunk, self.sources)
+            choices = chunk.get("choices") or []
+            if not choices:
+                continue
+            self.last = chunk
+            delta = choices[0].get("delta") or {}
+            if delta.get("content"):
+                text = self.hold + delta["content"]
+                cut = text.rfind("【")
+                if cut != -1 and "】" not in text[cut:]:          # a mark is still arriving: wait for its end
+                    while cut > 0 and text[cut - 1] in " \t":       # ...with the space before it
+                        cut -= 1
+                    text, self.hold = text[:cut], text[cut:]
+                else:
+                    self.hold = ""
+                delta = dict(delta, content=_clean_cites(text))
+                choices[0]["delta"] = {k: v for k, v in delta.items() if k != "executed_tools"}
+                out.append(("data: " + _json.dumps(chunk) + "\n\n").encode())
+            elif choices[0].get("finish_reason"):
+                self.finish_chunk = chunk
+            elif delta.get("role"):
+                out.append(("data: " + _json.dumps({**chunk, "choices": [dict(choices[0], delta={"role": delta["role"]})]}) + "\n\n").encode())
+        return out
+
+    def finish(self) -> list:
+        out, base = [], self.last or {"id": "chatcmpl-search", "object": "chat.completion.chunk", "choices": [{"index": 0}]}
+        tail = _clean_cites(self.hold) + _sources_md(self.sources)
+        if tail:
+            out.append(self._emit(base, tail))
+        fin = getattr(self, "finish_chunk", None)
+        if fin:
+            out.append(("data: " + _json.dumps(fin) + "\n\n").encode())
+        out.append(b"data: [DONE]\n\n")
+        return out
+
+
+def _count_search(email: str, plan: str, turn: str = ""):
+    """Daily web searches (they cost per use): Free GINK_FREE_SEARCH_DAILY, Pro GINK_PRO_SEARCH_DAILY."""
+    limit = int(os.environ.get("GINK_PRO_SEARCH_DAILY" if plan == "pro" else "GINK_FREE_SEARCH_DAILY",
+                               "100" if plan == "pro" else "10"))
+    day = _today()
+    with _db_lock:
+        con = _usage_db()
+        try:
+            con.execute("CREATE TABLE IF NOT EXISTS search_usage (email TEXT, day TEXT, n INTEGER, PRIMARY KEY (email, day))")
+            con.execute("CREATE TABLE IF NOT EXISTS search_turns (email TEXT, turn TEXT, day TEXT, PRIMARY KEY (email, turn))")
+            if turn and con.execute("SELECT 1 FROM search_turns WHERE email=? AND turn=?", (email, turn)).fetchone():
+                return None
+            row = con.execute("SELECT n FROM search_usage WHERE email=? AND day=?", (email, day)).fetchone()
+            if (row[0] if row else 0) >= limit:
+                extra = " Gink Pro includes more." if plan != "pro" else ""
+                return _ai_error(429, f"You've used today's {limit} web searches. Gink can still answer from what it "
+                                      f"knows, and searching is back tomorrow.{extra}", "daily_limit")
+            con.execute("INSERT INTO search_usage (email, day, n) VALUES (?, ?, 1) ON CONFLICT(email, day) DO UPDATE SET n = n + 1",
+                        (email, day))
+            if turn:
+                con.execute("INSERT OR IGNORE INTO search_turns (email, turn, day) VALUES (?, ?, ?)", (email, turn, day))
+            con.commit()
+        finally:
+            con.close()
+    return None
+
+
 @app.post("/ai/openai/v1/chat/completions")
 async def ai_chat(request: Request):
     email = _email_from_auth(request)
@@ -1662,6 +1803,9 @@ async def ai_chat(request: Request):
     # the app groups one question's calls under X-Gink-Turn; API callers can't (every API call counts)
     turn = "" if getattr(request.state, "gink_api_email", None) else request.headers.get("x-gink-turn", "")
     # Claude (Anthropic) or Groq: decided once, here
+    web = str(body["model"]).lower() in SEARCH_ALIASES or body.pop("gink_web", False) is True
+    if web:
+        body["model"] = SEARCH_MODEL                                         # web search runs on GPT-OSS
     body["model"] = GINK_MODEL_NAMES.get(str(body["model"]).lower(), body["model"])   # "gink-frost" -> Claude Sonnet
     wants_claude = str(body["model"]).startswith("claude-")
     if wants_claude and not _env("ANTHROPIC_API_KEY"):
@@ -1675,6 +1819,10 @@ async def ai_chat(request: Request):
         blocked = _count_claude(email, turn)
         if blocked is not None:
             return blocked
+    if web:
+        blocked = _count_search(email, plan, turn)
+        if blocked is not None:
+            return blocked
     body["max_tokens"] = min(int(body.get("max_tokens") or MAX_TOKENS[plan]), MAX_TOKENS[plan])
     if wants_claude:
         body["model"] = await _current_claude_model(str(body["model"]))
@@ -1685,6 +1833,8 @@ async def ai_chat(request: Request):
         body["model"] = await _current_model(str(body["model"]), _has_images(body["messages"]))
         _fit_reasoning(body, MAX_TOKENS[plan])
         body["user"] = hashlib.sha256(email.encode()).hexdigest()[:32]   # abuse tracing without sharing the email
+        if web:
+            _prepare_search(body)
         base, key = GROQ_BASE, _env("GROQ_API_KEY")
     if wants_claude and os.environ.get("GINK_CLAUDE_MODE", "native") != "compat":
         return await _claude_native(body)                 # native Messages API + prompt caching
@@ -1706,6 +1856,14 @@ async def ai_chat(request: Request):
 
         async def relay():
             try:
+                if web:                                        # tidy the answer, then list the sources
+                    tidy = _SearchStream()
+                    async for piece in upstream.aiter_text():
+                        for out in tidy.feed(piece):
+                            yield out
+                    for out in tidy.finish():
+                        yield out
+                    return
                 # aiter_bytes (not aiter_raw): decompressed, because the
                 # Content-Encoding header isn't passed on to the app
                 async for chunk in upstream.aiter_bytes():
@@ -1717,7 +1875,10 @@ async def ai_chat(request: Request):
     async with httpx.AsyncClient(timeout=120) as client:
         r = await client.post(f"{base}/chat/completions", json=body, headers=headers)
     try:
-        return JSONResponse(status_code=r.status_code, content=r.json())
+        data = r.json()
+        if web and r.status_code == 200:
+            _tidy_search_answer(data)
+        return JSONResponse(status_code=r.status_code, content=data)
     except ValueError:
         return _ai_error(502, "The AI service had a problem. Please try again.", "upstream")
 
@@ -1767,7 +1928,10 @@ def delete_account(request: Request, data: dict = Body(...)):
             con.execute(_API_KEYS_TABLE)
             con.execute("CREATE TABLE IF NOT EXISTS claude_usage (email TEXT, day TEXT, n INTEGER, PRIMARY KEY (email, day))")
             con.execute("CREATE TABLE IF NOT EXISTS claude_turns (email TEXT, turn TEXT, day TEXT, PRIMARY KEY (email, turn))")
-            for table in ("users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns"):
+            con.execute("CREATE TABLE IF NOT EXISTS search_usage (email TEXT, day TEXT, n INTEGER, PRIMARY KEY (email, day))")
+            con.execute("CREATE TABLE IF NOT EXISTS search_turns (email TEXT, turn TEXT, day TEXT, PRIMARY KEY (email, turn))")
+            for table in ("users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
+                          "search_usage", "search_turns"):
                 con.execute(f"DELETE FROM {table} WHERE email=?", (email,))
             con.execute("UPDATE payments SET email=? WHERE email=?", (anon, email))
             con.execute("CREATE TABLE IF NOT EXISTS deleted_accounts (email TEXT PRIMARY KEY, at REAL NOT NULL)")
@@ -2275,7 +2439,7 @@ async def api_models(request: Request):
     live = await _live_groq_models()
     chat = sorted(m for m in (live or set(TEXT_MODELS_BEST_FIRST))
                   if not any(x in m for x in ("whisper", "tts", "guard", "embed", "orpheus", "compound", "allam", "playai")))
-    chat += sorted(await _live_claude_models())
+    chat += ["gink-search"] + sorted(await _live_claude_models())
     return {"object": "list", "data": [{"id": m, "object": "model", "owned_by": "gink"} for m in chat]}
 
 
@@ -2400,3 +2564,38 @@ def attachments_read(request: Request, data: dict = Body(...)):
     if att.kind != "text":
         raise HTTPException(status_code=422, detail="Send photos straight from the chat.")
     return {"name": att.name, "kind": "text", "text": att.text, "note": att.chip().get("note", "")}
+
+
+
+# ---- Web search for the apps' own tools (the desktop agent's web_search):
+#   POST /web/search (auth) {"query": "..."} -> {"answer", "sources": [{"title", "url"}]}
+@app.post("/web/search")
+async def web_search(request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    query = " ".join(str(data.get("query") or "").split())[:400]
+    if not query:
+        raise HTTPException(status_code=422, detail="What should Gink search for?")
+    if not _env("GROQ_API_KEY"):
+        return _ai_error(503, "Web search isn't set up on this server yet.", "not_configured")
+    plan = _plan_status(email)["plan"]
+    blocked = _count_search(email, plan, request.headers.get("x-gink-turn", ""))
+    if blocked is not None:
+        return blocked
+    body = {"model": await _current_model(SEARCH_MODEL), "messages": [
+        {"role": "system", "content": "Search the web and answer the question accurately and concisely, with the most "
+                                      "important facts and dates. Say so if you can't find reliable information."},
+        {"role": "user", "content": query}], "user": hashlib.sha256(email.encode()).hexdigest()[:32]}
+    _prepare_search(body)
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(120, connect=15)) as client:
+            r = await client.post(f"{GROQ_BASE}/chat/completions", json=body,
+                                  headers={"Authorization": f"Bearer {_env('GROQ_API_KEY')}"})
+    except Exception:
+        return _ai_error(502, "The web search service didn't answer. Please try again.", "upstream")
+    if r.status_code != 200:
+        return _ai_error(502, "The web search service had a problem. Please try again.", "upstream")
+    data = r.json()
+    msg = ((data.get("choices") or [{}])[0]).get("message") or {}
+    return {"answer": _clean_cites(msg.get("content") or "").strip(),
+            "sources": _find_sources(msg.get("executed_tools") or data.get("executed_tools") or [])[:6]}
