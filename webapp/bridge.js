@@ -107,10 +107,15 @@
     api("/auth/" + provider + "/begin", { state: state }, { noLogout: true }).then(function (r) {
       if (!r.ok) return errorText(r).then(function (t) { throw new Error(t); });
       win.location.href = "/auth/" + provider + "/start?state=" + encodeURIComponent(state);
-      var started = Date.now();
+      var started = Date.now(), closedAt = 0;
       return new Promise(function (resolve, reject) {
         (function check() {
           if (Date.now() - started > 5 * 60 * 1000) return reject(new Error("Sign-in timed out. Try again."));
+          // The pop-up was closed: check a few more seconds (it may have just finished), then stop waiting
+          if (win.closed && !closedAt) closedAt = Date.now();
+          if (closedAt && Date.now() - closedAt > 4000) {
+            return reject(new Error("The sign-in window was closed before it finished. Try again."));
+          }
           api("/auth/poll?state=" + state, undefined, { noLogout: true }).then(function (r) {
             if (r.status === 200) return r.json().then(function (j) { j.status === "pending" ? setTimeout(check, 1500) : resolve(j); });
             return errorText(r).then(function (t) { reject(new Error(t)); });

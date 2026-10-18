@@ -20,13 +20,28 @@ jobs:
   check:
     runs-on: ubuntu-24.04
     steps:
-      - name: Check the version looks like v1.2.3
+      - uses: actions/checkout@v7
+      - name: Check the version (format, pyproject.toml, not released yet)
         env:
           VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Version must look like v0.1.0 (got: $VERSION)"; exit 1
           fi
+          # the apps compare their own version with the release's: they must match
+          IN_PYPROJECT=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          if [ "v$IN_PYPROJECT" != "$VERSION" ]; then
+            echo "::error::pyproject.toml says version $IN_PYPROJECT, but you asked to release $VERSION. Change version = \"...\" in BOTH places in pyproject.toml (and add it to CHANGELOG.md), publish, then run Release again."
+            exit 1
+          fi
+          # stop now, not after 30 minutes of building
+          if gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::$VERSION is already released. Use a new version number (bump pyproject.toml and CHANGELOG.md first)."
+            exit 1
+          fi
+          grep -q "^## ${VERSION#v} " CHANGELOG.md || echo "::warning::CHANGELOG.md has no '## ${VERSION#v}' section yet."
+          echo "OK: releasing $VERSION"
   mac:
     needs: check
     uses: ./.github/workflows/macos.yml

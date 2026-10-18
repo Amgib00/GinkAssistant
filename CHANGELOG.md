@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.1 (October 2026)
+
+- A 32-bit Android edition for phones such as TECNO POP and itel
+- Gink can search the web and shows its sources
+- Photos work again (Groq retired the previous photo model)
+- Update notices: Gink tells you when a new version is out
+- Windows and Linux installers
+- Clearer sign-in on the web when the sign-in window is closed
+
 ## 0.1.0 (October 2026)
 
 The first public beta of Gink.

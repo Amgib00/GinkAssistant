@@ -787,3 +787,16 @@ New services/live_info.py (all free, no API keys):
   Briefcase's own parser. Release + website: Gink-android-32bit.apk. Update notice picks it when
   platform.machine() has no "64" (armv7l, armv8l).
 - tests/test_android_32bit.py + a 32-bit import test in test_android_startup.py.
+
+## Latest: web sign-in notices a closed pop-up
+- webapp/bridge.js socialSignIn: when the provider pop-up is closed, keep checking /auth/poll
+  for 4 more seconds (it may have just finished), then say "The sign-in window was closed
+  before it finished" -- instead of waiting the full 5 minutes ("Sign-in timed out").
+- Browser-tested both cases (closed early -> message in ~6 s; finished then closed -> signed in).
+
+## Latest: version 0.1.1 + Release checks up front
+- Release #4 built everything but publish failed: v0.1.0 already existed. pyproject (both
+  places) -> 0.1.1; CHANGELOG.md 0.1.1 section.
+- release.yml "check" job (seconds, before any build): vX.Y.Z format; must equal pyproject's
+  version (apps compare their own version with the release's); must not already be released
+  (gh release view); warns if CHANGELOG.md lacks the section.
