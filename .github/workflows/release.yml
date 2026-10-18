@@ -33,8 +33,14 @@ jobs:
   android:
     needs: check
     uses: ./.github/workflows/android.yml
+  windows:
+    needs: check
+    uses: ./.github/workflows/windows.yml
+  linux:
+    needs: check
+    uses: ./.github/workflows/linux.yml
   publish:
-    needs: [mac, android]
+    needs: [mac, android, windows, linux]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/download-artifact@v8
@@ -58,10 +64,14 @@ jobs:
           | **Mac (Apple Silicon: M1 to M4)** | `Gink-mac-arm64.dmg` | macOS 12 or later |
           | **Mac (Intel)** | `Gink-mac-x86_64.dmg` | macOS 11 or later |
           | **Android** | `Gink-android.apk` | Android 7 or later |
+          | **Windows** | `Gink-windows-x64.msi` | Windows 10 or 11 (64-bit) |
+          | **Linux** | `Gink-linux-amd64.deb` | Ubuntu 24.04+ or Debian 13+ (64-bit) |
 
           **Mac:** open the .dmg and drag Gink to Applications. The first time, **right-click Gink and choose Open**
           (the app isn't notarized by Apple yet).
           **Android:** open the .apk on your phone and allow installing apps from this source when asked.
+          **Windows:** if SmartScreen warns you, choose **More info**, then **Run anyway** (the installer isn't signed yet).
+          **Linux:** `sudo apt install ./Gink-linux-amd64.deb` (installs what Gink needs automatically).
           This is a test build.
           NOTES
           gh release create "$VERSION" dist/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \

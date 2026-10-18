@@ -1,0 +1,45 @@
+# Builds Gink for Windows (an .msi installer) on GitHub's Windows machine.
+# Run it: Actions -> "Windows app" -> Run workflow. Result: the run's page -> Artifacts.
+# Everything installs from ready-made packages except llama-cpp-python, built here first
+# (GGML_NATIVE off: no CPU features older PCs lack). Not code-signed yet, so Windows
+# SmartScreen shows "More info -> Run anyway" the first time.
+name: Windows app
+
+on:
+  workflow_dispatch:
+  workflow_call:          # used by release.yml
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Build llama-cpp-python into a wheel
+        shell: bash
+        env:
+          CMAKE_ARGS: -DGGML_NATIVE=OFF
+        run: |
+          python -m pip install --upgrade pip wheel
+          mkdir -p wheels
+          python -m pip wheel --no-deps -w wheels llama-cpp-python
+          ls -l wheels
+      - name: Build the app with Briefcase
+        shell: bash
+        run: |
+          python -m pip install briefcase
+          WHEELS=$(cygpath -m "$GITHUB_WORKSPACE/wheels")
+          OVERRIDES=(-C "requirement_installer_args=[\"--find-links\", \"$WHEELS\"]")
+          briefcase create windows app --no-input "${OVERRIDES[@]}"
+          briefcase build windows app --no-input "${OVERRIDES[@]}"
+          briefcase package windows app --adhoc-sign --no-input "${OVERRIDES[@]}"
+          ls -l dist
+          cp "$(ls dist/*.msi | head -1)" Gink-windows-x64.msi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Gink-windows-x64
+          path: Gink-windows-x64.msi
+          retention-days: 14

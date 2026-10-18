@@ -2,10 +2,12 @@
 .github/dependabot.yml
 .github/workflows/android.yml
 .github/workflows/ios.yml
+.github/workflows/linux.yml
 .github/workflows/macos.yml
 .github/workflows/release.yml
 .github/workflows/tests.yml
 .github/workflows/website.yml
+.github/workflows/windows.yml
 .gitignore
 INTEGRATION.md
 README.md

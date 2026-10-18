@@ -727,3 +727,18 @@ New services/live_info.py (all free, no API keys):
   no email), cards, SVG chart, revenue, cost estimator from owner-entered rates
   (localStorage), feedback, limits; auto-refresh every minute while visible.
 - tests/test_owner_dashboard.py: exact figures from a seeded database, owner-only + lockout.
+
+## Latest: Windows + Linux installers
+- .github/workflows/windows.yml (windows-latest, Python 3.12): pip resolution checked here
+  (95 of 96 Windows packages have wheels); llama-cpp-python built first (GGML_NATIVE=OFF),
+  passed with -C requirement_installer_args --find-links; briefcase package windows
+  --adhoc-sign -> Gink-windows-x64.msi (unsigned: SmartScreen "Run anyway").
+- .github/workflows/linux.yml (ubuntu-24.04, system Python 3.12, Briefcase checks it):
+  apt build + run packages, briefcase linux system -> Gink-linux-amd64.deb (sdists allowed).
+- FIX pyproject linux.system.debian: system_requires (libcairo2-dev, libgirepository-2.0-dev,
+  pkg-config, portaudio19-dev, cmake); runtime adds gir1.2-webkit2-4.1 (Toga WebView =
+  Gink's chat window; was missing), gir1.2-gtk-3.0, libgirepository-2.0-0,
+  libcanberra-gtk3-module, libportaudio2. Every apt name checked on Ubuntu 24.04
+  (libgtk-3-0 -> libgtk-3-0t64 in the workflow; the .deb keeps the provided name).
+- release.yml builds Mac, Android, Windows, Linux; website Download buttons for all.
+- Not yet run on GitHub's machines: the first run may need a fix from its log.
