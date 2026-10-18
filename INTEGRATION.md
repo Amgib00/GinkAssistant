@@ -754,3 +754,11 @@ New services/live_info.py (all free, no API keys):
   8 s after start; "Download" opens the right installer. Imports use distinct names
   (a local `from ..services.paths import data_dir` had shadowed the function-wide name).
 - tests/test_updates.py.
+
+## Latest: license settings for every Briefcase version
+- [project] license = "MIT" + license-files = ["LICENSE"] (PEP 639: Briefcase 0.4.4/0.4.6 quiet);
+  [tool.briefcase] license = "MIT" (Briefcase 0.3.15 reads that one first; it crashed on the
+  PEP 639 string otherwise). Checked: 0.3.15, 0.4.4, 0.4.6 read macOS/Android/Windows/Linux
+  settings with no warnings. LICENSE (from the GitHub repo) now in the package + publish list.
+- Local Android with Python 3.10: Chaquopy has no Pillow for 3.10 -> use the cloud build
+  (Python 3.13) or a Python 3.13 environment.

@@ -16,7 +16,7 @@ set -euo pipefail
 REPO="${GINK_REPO:-https://github.com/amgib00/ginkassistant.git}"
 BRANCH="${GINK_BRANCH:-main}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PUBLISH=(.github .gitignore .env.example README.md SECURITY.md INTEGRATION.md pyproject.toml
+PUBLISH=(.github .gitignore .env.example README.md SECURITY.md INTEGRATION.md LICENSE pyproject.toml
          requirements.txt requirements-test.txt render.yaml src tests deploy tools icons website webapp)
 KEEP_FROM_REPO=(LICENSE .github/ISSUE_TEMPLATE)      # kept as they are on GitHub
 SECRET_RE='hf_[A-Za-z0-9]{30,}|gsk_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|sk-(proj-)?[A-Za-z0-9]{32,}|sk_live_[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_-]{35}|-----BEGIN [A-Z ]*PRIVATE KEY'

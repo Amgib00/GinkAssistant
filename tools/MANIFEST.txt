@@ -10,6 +10,7 @@
 .github/workflows/windows.yml
 .gitignore
 INTEGRATION.md
+LICENSE
 README.md
 SECURITY.md
 deploy/Dockerfile

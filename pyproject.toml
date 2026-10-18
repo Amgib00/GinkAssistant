@@ -10,12 +10,14 @@ version = "0.1.0"
 description = "AI Assistant powered to Help Humans"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "Amgib00", email = "kargboi131ik667957@gmail.com" },
 ]
 
 [tool.briefcase]
+license = "MIT"          # Briefcase 0.3.15 reads this one (it can't read the [project] form below)
 # Internal project name: must be a valid package name (Briefcase 0.4.6 warns that
 # "Gink Ai Assistant" will become an error). Users see formal_name ("Gink") below.
 project_name = "ginkassistant"
@@ -30,7 +32,6 @@ formal_name = "Gink"
 description = "AI Assistant powered to Help Humans"
 sources = ["src/ginkassistant"]
 test_sources = ["tests"]
-license = "MIT"
 # App icon for every platform. tools/make_icons.py builds all the sizes and formats
 # Briefcase asks for (icons/ginkassistant.icns / .ico / -<size>.png ...) from
 # icons/source-icon.png. A missing file makes Briefcase use BeeWare's default bee.
