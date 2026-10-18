@@ -2691,3 +2691,31 @@ def admin_stats(request: Request):
             "services": {"groq": bool(_env("GROQ_API_KEY")), "anthropic": bool(_env("ANTHROPIC_API_KEY")),
                          "gemini": bool(_env("GEMINI_API_KEY")), "email": bool(_env("GMAIL_USER") and _env("GMAIL_APP_PASSWORD")),
                          "storage": "disk" if _env("GINK_DB_PATH").startswith("/var/data") else "temporary"}}
+
+
+
+# ---- Newest release, for the apps' "update available" notice (services/updates.py).
+#   GET /app/version (public) -> {"version", "page", "assets": {name: url}, "published"}
+# The server asks GitHub (cached 1 hour), so users' apps never contact GitHub directly.
+_release_cache = {"data": {"version": None}, "at": 0.0}
+
+
+@app.get("/app/version")
+async def app_version():
+    if time.time() - _release_cache["at"] < 3600:
+        return _release_cache["data"]
+    import httpx
+    repo = os.environ.get("GINK_RELEASES_REPO", "Amgib00/GinkAssistant")
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(f"https://api.github.com/repos/{repo}/releases/latest",
+                                 headers={"Accept": "application/vnd.github+json"})
+        if r.status_code == 200:
+            j = r.json()
+            _release_cache["data"] = {"version": j.get("tag_name"), "page": j.get("html_url"), "published": j.get("published_at"),
+                                      "assets": {a["name"]: a["browser_download_url"] for a in j.get("assets") or []
+                                                 if a.get("name") and a.get("browser_download_url")}}
+        _release_cache["at"] = time.time()
+    except Exception:
+        _release_cache["at"] = time.time() - 3000           # GitHub unreachable: retry in ~10 minutes
+    return _release_cache["data"]

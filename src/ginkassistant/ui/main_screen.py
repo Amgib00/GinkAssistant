@@ -735,6 +735,22 @@ def build_main_screen(app: toga.App, email: str):
         audio_engine.run_loop(handle_voice_turn, on_status=on_voice_status, on_song_detected=on_song_detected)
     )
 
+    # ---- "a newer Gink is out" (services/updates.py): once a day, a little after start
+    from ..services import updates as updates_svc, paths as paths_svc     # own names: no clash with names used above
+    update_offer = {}
+    update_state_path = str(paths_svc.data_dir(app) / "updates.json")
+
+    async def check_for_update():
+        await asyncio.sleep(8)
+        try:
+            offer = await updates_svc.check(app.state.base_url, getattr(app, "version", None) or "0.1.0", update_state_path)
+        except Exception:
+            offer = None
+        if offer:
+            update_offer.update(offer)
+            await web_chat.show_update(offer["version"])
+    asyncio.create_task(check_for_update())
+
     async def on_item_due(item):
         """A reminder/alarm/timer came due. Items handed to the OS
         (Android Clock, macOS Reminders, Windows Task Scheduler) already
@@ -869,6 +885,11 @@ def build_main_screen(app: toga.App, email: str):
             viewer.show(watch_url(value["id"]), value.get("title") or "Video")
         elif kind == "open_url" and value:
             await open_link(str(value))
+        elif kind == "update_get" and update_offer.get("url"):
+            await open_link(update_offer["url"])
+            await web_chat.hide_update()
+        elif kind == "update_later" and update_offer.get("version"):
+            updates_svc.dismiss(update_state_path, update_offer["version"])
         elif kind == "setting" and isinstance(value, dict):
             await settings.on_setting(value.get("key"), value.get("value"))
         elif kind == "settings_action" and isinstance(value, dict):

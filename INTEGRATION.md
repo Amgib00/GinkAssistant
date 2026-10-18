@@ -742,3 +742,15 @@ New services/live_info.py (all free, no API keys):
   (libgtk-3-0 -> libgtk-3-0t64 in the workflow; the .deb keeps the provided name).
 - release.yml builds Mac, Android, Windows, Linux; website Download buttons for all.
 - Not yet run on GitHub's machines: the first run may need a fix from its log.
+
+## Latest: "a newer Gink is out" notices
+- Server GET /app/version (public): latest GitHub release (GINK_RELEASES_REPO, default
+  Amgib00/GinkAssistant) cached 1 h -> {version, page, assets{name: url}, published}; apps
+  never contact GitHub directly.
+- services/updates.py: daily check (state in data_dir/updates.json; "never checked" checks
+  now), version_tuple comparison (v0.10.0 > 0.9.9), installer per device (Mac arm64/x86_64,
+  Windows, Linux, Android; none on iPhone/iPad), "Later" hides that version only, offline harmless.
+- ui/update_ui.py injects the notice (showUpdate / hideUpdate); main_screen starts the check
+  8 s after start; "Download" opens the right installer. Imports use distinct names
+  (a local `from ..services.paths import data_dir` had shadowed the function-wide name).
+- tests/test_updates.py.

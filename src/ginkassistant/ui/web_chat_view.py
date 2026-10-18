@@ -1470,6 +1470,12 @@ class WebChatFeed:
     async def set_dictating(self, on: bool):
         await self._js(f"setDictating({'true' if on else 'false'})")
 
+    async def show_update(self, version: str):
+        await self._js(f"showUpdate({json.dumps(version)})")
+
+    async def hide_update(self):
+        await self._js("hideUpdate()")
+
     async def set_status(self, text: str):
         await self._js(f"setStatus({json.dumps(text or '')})")
 
@@ -1580,5 +1586,6 @@ class WebChatFeed:
         await self.finalize_message(message_id, raw_markdown)
 
 def _build_page_html(welcome_title, welcome_subtitle):
-    from . import chat_extras, settings_page, voice_ui, wake_ui
-    return wake_ui.inject(voice_ui.inject(chat_extras.inject(settings_page.inject(_build_page_html_base(welcome_title, welcome_subtitle)))))
+    from . import chat_extras, settings_page, update_ui, voice_ui, wake_ui
+    return update_ui.inject(wake_ui.inject(voice_ui.inject(chat_extras.inject(settings_page.inject(
+        _build_page_html_base(welcome_title, welcome_subtitle))))))
