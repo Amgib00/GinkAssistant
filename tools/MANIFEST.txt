@@ -159,6 +159,7 @@ tests/test_claude_native.py
 tests/test_computer_actions.py
 tests/test_dark_theme.py
 tests/test_developer_api.py
+tests/test_email_delivery.py
 tests/test_formatting_security.py
 tests/test_gink_cloud.py
 tests/test_gink_dataset.py

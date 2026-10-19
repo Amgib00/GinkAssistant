@@ -155,29 +155,76 @@ def _create_session_token(email: str) -> str:
     return jwt.encode(payload, _get_secret_key(), algorithm=ALGORITHM)
 
 
+def _email_status() -> str:
+    """Which email service is set up: "brevo", "gmail" or ""."""
+    if _env("BREVO_API_KEY") and (_env("EMAIL_FROM") or _env("GMAIL_USER")):
+        return "brevo"
+    if _env("GMAIL_USER") and (_env("GMAIL_APP_PASSWORD") or _env("GMAIL_PASSWORD") or _env("GMAIL_PASS")):
+        return "gmail"
+    return ""
+
+
+def _code_html(intro: str, code: str, minutes: int) -> str:
+    import html as _h
+    return ('<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:auto;padding:24px;color:#151D23">'
+            '<p style="font-size:18px;font-weight:700;margin:0 0 12px">Gink</p>'
+            f'<p style="font-size:15px;line-height:1.5">{_h.escape(intro)}</p>'
+            f'<p style="font-size:32px;font-weight:800;letter-spacing:6px;margin:20px 0">{_h.escape(code)}</p>'
+            f'<p style="font-size:13px;color:#5D6B64">It expires in {minutes} minutes. If you didn\u2019t ask for it, you can ignore this email.</p></div>')
+
+
+def _send_email(to: str, subject: str, text: str, html: str = "") -> str:
+    """Send one email. Returns "" when it was sent, otherwise the reason it wasn't.
+    1) Brevo's HTTPS API (BREVO_API_KEY + a sender verified in Brevo: EMAIL_FROM, or GMAIL_USER)
+       -- works on Render's free plan, which blocks SMTP ports 25/465/587 since September 2025.
+    2) Gmail SMTP (GMAIL_USER + GMAIL_APP_PASSWORD) -- paid Render plans, or your own computer."""
+    how = _email_status()
+    if how == "brevo":
+        import httpx
+        sender = _env("EMAIL_FROM") or _env("GMAIL_USER")
+        body = {"sender": {"name": _env("EMAIL_FROM_NAME") or "Gink", "email": sender}, "to": [{"email": to}],
+                "subject": subject, "textContent": text}
+        if html:
+            body["htmlContent"] = html
+        try:
+            r = httpx.post("https://api.brevo.com/v3/smtp/email", json=body, timeout=15,
+                           headers={"api-key": _env("BREVO_API_KEY"), "accept": "application/json"})
+        except Exception as exc:
+            return f"Brevo couldn't be reached ({type(exc).__name__})"
+        if r.status_code in (200, 201, 202):
+            return ""
+        try:
+            detail = r.json().get("message") or r.text
+        except Exception:
+            detail = r.text
+        hint = " -- verify this sender address in Brevo (Senders, domains & IPs)" if "sender" in str(detail).lower() else ""
+        return f"Brevo refused it ({r.status_code}: {str(detail)[:200]}){hint}"
+    if how == "gmail":
+        user = _env("GMAIL_USER")
+        password = (_env("GMAIL_APP_PASSWORD") or _env("GMAIL_PASSWORD") or _env("GMAIL_PASS")).replace(" ", "")
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["From"], msg["To"], msg["Subject"] = user, to, subject
+            msg.attach(MIMEText(text, "plain"))
+            if html:
+                msg.attach(MIMEText(html, "html"))
+            with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
+                server.starttls()
+                server.login(user, password)
+                server.send_message(msg)
+            return ""
+        except Exception as exc:
+            blocked = isinstance(exc, (OSError, TimeoutError)) and not isinstance(exc, smtplib.SMTPException)
+            return (f"Gmail SMTP failed ({type(exc).__name__}: {str(exc)[:120]})"
+                    + (" -- Render's free plan blocks SMTP; set BREVO_API_KEY instead" if blocked else ""))
+    return "no email service is set up (BREVO_API_KEY, or GMAIL_USER + GMAIL_APP_PASSWORD)"
+
+
 def _dispatch_otp(email: str, otp: str) -> None:
-    gmail_user = os.environ.get("GMAIL_USER", "").strip()
-    gmail_pass = (
-        os.environ.get("GMAIL_APP_PASSWORD")
-        or os.environ.get("GMAIL_PASSWORD")
-        or os.environ.get("GMAIL_PASS")
-        or ""
-    ).replace(" ", "").strip()
-
-    if not gmail_user or not gmail_pass:
-        print(f"[Gink] No email configured -- your OTP for {email} is: {otp}")
-        return
-
-    msg = MIMEMultipart()
-    msg["From"] = gmail_user
-    msg["To"] = email
-    msg["Subject"] = "Gink Assistant - Your Security Code"
-    msg.attach(MIMEText(f"Your Gink Assistant code is: {otp}\n\nExpires in 5 minutes.", "plain"))
-
-    with smtplib.SMTP("smtp.gmail.com", 587) as server:
-        server.starttls()
-        server.login(gmail_user, gmail_pass)
-        server.send_message(msg)
+    reason = _send_email(email, "Your Gink code", f"Your Gink code is: {otp}\n\nIt expires in 5 minutes.",
+                         _code_html("Here\u2019s your Gink sign-in code:", otp, 5))
+    if reason:
+        print(f"[Gink] Email not sent ({reason}) -- code for {email}: {otp}")
 
 
 def _sweep_expired_locked():
@@ -415,23 +462,11 @@ def _token_response(email: str, name: str = "") -> dict:
 
 
 def _send_code_email(email: str, code: str, subject: str, intro: str):
-    """Reuses the OTP mailer; falls back to printing the code."""
-    gmail_user = os.environ.get("GMAIL_USER", "").strip()
-    gmail_pass = (os.environ.get("GMAIL_APP_PASSWORD") or os.environ.get("GMAIL_PASSWORD")
-                  or os.environ.get("GMAIL_PASS") or "").replace(" ", "").strip()
-    if not gmail_user or not gmail_pass:
-        print(f"[Gink] No email configured -- {subject} code for {email}: {code}")
-        return
-    try:
-        msg = MIMEMultipart()
-        msg["From"], msg["To"], msg["Subject"] = gmail_user, email, f"Gink Assistant - {subject}"
-        msg.attach(MIMEText(f"{intro}\n\nYour code: {code}\n\nIt expires in 10 minutes.", "plain"))
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
-            server.login(gmail_user, gmail_pass)
-            server.send_message(msg)
-    except Exception as exc:
-        print(f"[Gink] Email failed ({exc}) -- {subject} code for {email}: {code}")
+    """Sign-up / reset codes. When email can't be sent, the code goes to the server log, with the reason."""
+    reason = _send_email(email, f"Gink - {subject}", f"{intro}\n\nYour code: {code}\n\nIt expires in 10 minutes.",
+                         _code_html(intro, code, 10))
+    if reason:
+        print(f"[Gink] Email not sent ({reason}) -- {subject} code for {email}: {code}")
 
 
 def _check_code(store: dict, email: str, code: str) -> dict:
@@ -2781,7 +2816,7 @@ def admin_stats(request: Request):
                        "free_search_daily": int(os.environ.get("GINK_FREE_SEARCH_DAILY", "10")),
                        "pro_search_daily": int(os.environ.get("GINK_PRO_SEARCH_DAILY", "100"))},
             "services": {"groq": bool(_env("GROQ_API_KEY")), "anthropic": bool(_env("ANTHROPIC_API_KEY")),
-                         "gemini": bool(_env("GEMINI_API_KEY")), "email": bool(_env("GMAIL_USER") and _env("GMAIL_APP_PASSWORD")),
+                         "gemini": bool(_env("GEMINI_API_KEY")), "email": bool(_email_status()), "email_service": _email_status(),
                          "storage": "disk" if _env("GINK_DB_PATH").startswith("/var/data") else "temporary"}}
 
 
@@ -2875,3 +2910,12 @@ def auth_logout(request: Request):
     if sid:
         _revoke(email, sids=[sid])
     return {"ok": True}
+
+# ---- Owner: send a test email (owner dashboard), so delivery problems show their real reason.
+@app.post("/admin/test-email")
+def admin_test_email(request: Request, data: dict = Body(...)):
+    _require_owner(request)
+    to = _validate_email(str(data.get("to") or "")).lower()
+    reason = _send_email(to, "Gink test email", "This is a test email from your Gink server. Email works!",
+                         _code_html("This is a test email from your Gink server. Email works!", "OK", 1))
+    return {"sent": not reason, "service": _email_status() or "none", "reason": reason}

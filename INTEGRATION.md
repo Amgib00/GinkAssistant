@@ -847,3 +847,11 @@ New services/live_info.py (all free, no API keys):
 - ID tokens: issuer host must be Google / Microsoft / Apple's.
 - Settings > Account > Signed-in devices (desktop/phones + web app); real logout everywhere.
   tests/test_sessions_security.py; browser-tested.
+
+## Latest (0.1.3): email that works on Render's free plan
+- Render's free web services block SMTP ports 25/465/587 (since 26 Sep 2025), so Gmail SMTP
+  can't send there. _send_email(): 1) Brevo HTTPS API (POST api.brevo.com/v3/smtp/email,
+  header api-key; BREVO_API_KEY + EMAIL_FROM = a sender verified in Brevo), 2) Gmail SMTP
+  (timeout 15 s), 3) log the code WITH the reason. Text + HTML. _dispatch_otp no longer raises.
+- POST /admin/test-email (owner) + dashboard box; services.email_service. render.yaml:
+  BREVO_API_KEY, EMAIL_FROM. tests/test_email_delivery.py; browser-checked.

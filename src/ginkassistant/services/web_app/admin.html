@@ -96,6 +96,16 @@
       <table><thead><tr><th>Top reasons for thumbs down</th><th class="num">Times</th></tr></thead><tbody id="reasons"></tbody></table>
     </div>
   </div>
+  <h2>Email</h2>
+  <div class="card">
+    <p class="note" id="email-service"></p>
+    <form id="test-form" style="display:flex;gap:8px;flex-wrap:wrap">
+      <input id="test-to" type="email" required placeholder="Your email address" aria-label="Send a test email to" style="flex:1;min-width:220px">
+      <button>Send a test email</button>
+    </form>
+    <p id="test-result" style="margin:10px 0 0;font-weight:600"></p>
+  </div>
+
   <h2>Limits on this server</h2>
   <p class="note" id="limits"></p>
 </div>
@@ -128,7 +138,10 @@
     $("when").textContent = "Updated " + new Date(d.generated * 1000).toLocaleTimeString();
     var w = $("warnings"); w.innerHTML = "";
     if (s.storage !== "disk") w.appendChild(el("div", "warn", "Data is stored temporarily (Render free plan): accounts, keys and payments are erased on every update. Upgrade to Starter + disk."));
-    if (!s.email) w.appendChild(el("div", "warn", "Email isn't set up: sign-up codes only appear in Render's logs."));
+    if (!s.email) w.appendChild(el("div", "warn", "Email isn't set up: sign-up codes only appear in Render's logs. Add BREVO_API_KEY and EMAIL_FROM in Render (free plan: Gmail SMTP is blocked)."));
+    $("email-service").textContent = s.email_service === "brevo" ? "Emails are sent with Brevo." :
+      s.email_service === "gmail" ? "Emails are sent with Gmail (SMTP). On Render\u2019s free plan this is blocked \u2014 use Brevo instead." :
+      "No email service is set up yet.";
     var sv = $("services"); sv.innerHTML = "";
     [["groq", "Groq AI"], ["anthropic", "Claude"], ["gemini", "Images + voices"], ["email", "Email codes"]].forEach(function (p) {
       sv.appendChild(el("span", "pill " + (s[p[0]] ? "on" : "off"), p[1] + (s[p[0]] ? "" : ": not set")));
@@ -204,6 +217,14 @@
     load();
   };
   $("refresh").onclick = load;
+  $("test-form").onsubmit = function (e) {
+    e.preventDefault(); var out = $("test-result"); out.textContent = "Sending\u2026";
+    fetch("/admin/test-email", { method: "POST", headers: { "x-admin-key": key, "Content-Type": "application/json" },
+                                 body: JSON.stringify({ to: $("test-to").value.trim() }) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { out.textContent = j.sent ? "Sent \u2713 \u2014 check that inbox (and its spam folder)." : "Not sent: " + (j.reason || j.detail || "unknown reason"); })
+      .catch(function () { out.textContent = "The server didn\u2019t answer."; });
+  };
   $("lock").onclick = function () { key = ""; try { sessionStorage.removeItem("gink_admin_key"); } catch (e) {} clearInterval(timer); $("key").value = ""; show(false); };
   if (key) load(); else show(false);
   timer = setInterval(function () { if (key && document.visibilityState === "visible") load(); }, 60000);

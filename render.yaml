@@ -27,6 +27,12 @@ services:
         sync: false
       - key: ANTHROPIC_API_KEY     # optional: Claude models for Gink Pro (platform.claude.com) -- empty = Groq only
         sync: false
+      # Email on Render's FREE plan: Brevo (SMTP ports are blocked there). Free Brevo account ->
+      # Settings > SMTP & API > API keys; verify your sender address under Senders.
+      - key: BREVO_API_KEY
+        sync: false
+      - key: EMAIL_FROM          # the sender you verified in Brevo (e.g. your Gmail address)
+        sync: false
       - key: GMAIL_USER            # sends sign-up / login codes (a Gmail address)
         sync: false
       - key: GMAIL_APP_PASSWORD    # a Gmail "app password", not your normal password
