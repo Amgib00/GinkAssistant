@@ -294,6 +294,7 @@ SETTINGS_JS = r"""
           {type: 'info', label: 'Email', value: info.email || ''},
           {type: 'html', label: 'Plan', html: pro ? '<span class="badge pro">Gink Pro</span>' : '<span class="badge">Free</span>'},
           {type: 'button', label: 'Log out', desc: 'Sign out of Gink on this device.', action: 'logout', text: 'Log out'}]},
+        {title: 'Two-step verification', rows: twofaRows(info.twofa || {})},
         {title: 'Signed-in devices', rows: [
           {type: 'list', items: (L.sessions || []).map(function (d) {
             return {t: d.device, m: d.when, button: d.current ? null : {text: 'Log out', action: 'revoke_session', value: d.id}}; }),
@@ -388,6 +389,28 @@ SETTINGS_JS = r"""
             ['Mute during voice', ['Space']], ['End a voice conversation', ['Esc']]];
   }
   function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+  function twofaRows(t) {
+    if (t.codes && t.codes.length) {                       // shown once, right after turning it on
+      return [{type: 'note', text: 'Two-step verification is on. Save these recovery codes somewhere safe \u2014 each one signs you in once if you lose your phone. They won\u2019t be shown again.'},
+              {type: 'html', label: 'Recovery codes', html: '<div style="font-family:ui-monospace,Menlo,monospace;font-size:14px;line-height:1.9">' +
+                 t.codes.map(esc).join('<br>') + '</div>'},
+              {type: 'button', label: 'I\u2019ve saved them', action: 'twofa_done', text: 'Done'}];
+    }
+    if (t.setup) {
+      var qr = /^data:image\/svg\+xml;base64,[A-Za-z0-9+\/=]+$/.test(t.setup.qr || '') ? t.setup.qr : '';
+      return [{type: 'note', text: '1. Open an authenticator app (Google Authenticator, Microsoft Authenticator, Authy\u2026) and scan this code.'},
+              {type: 'html', label: 'Scan with your app', html: (qr ? '<img src="' + qr + '" alt="QR code for your authenticator app" width="170" height="170" style="border-radius:8px;background:#fff">' : '') +
+                 '<div style="margin-top:6px;font-size:12px;color:var(--text-muted)">Can\u2019t scan? Enter this key:<br><b style="font-family:ui-monospace,Menlo,monospace;letter-spacing:1px">' + esc(t.setup.secret) + '</b></div>'},
+              {type: 'input', key: 'twofa_code', label: '2. Enter the 6-digit code it shows', placeholder: '123456', action: 'twofa_enable', text: 'Turn on'},
+              {type: 'button', label: 'Cancel', action: 'twofa_cancel', text: 'Cancel', style: 'ghost'}];
+    }
+    if (t.enabled) {
+      return [{type: 'info', label: 'Status', value: 'On \u2014 signing in needs a code from your authenticator app' + (t.recovery_left != null ? ' (' + t.recovery_left + ' recovery codes left)' : '')},
+              {type: 'input', key: 'twofa_off', label: 'Turn off', desc: 'Enter a current code from your app, or a recovery code.', placeholder: 'Code', action: 'twofa_disable', text: 'Turn off', style: 'danger-ghost'}];
+    }
+    return [{type: 'button', label: 'Turn on two-step verification', desc: 'After your password, Gink asks for a code from an authenticator app on your phone. Someone who learns your password still can\u2019t get in.',
+             action: 'twofa_setup', text: 'Turn on'}];
+  }
 
   function rowHtml(r, pid) {
     var v = S.values, ctl = '', lab = '<div class="lab"><b>' + esc(r.label || '') + '</b>' + (r.desc ? '<span>' + esc(r.desc) + '</span>' : '') + '</div>';

@@ -855,3 +855,20 @@ New services/live_info.py (all free, no API keys):
   (timeout 15 s), 3) log the code WITH the reason. Text + HTML. _dispatch_otp no longer raises.
 - POST /admin/test-email (owner) + dashboard box; services.email_service. render.yaml:
   BREVO_API_KEY, EMAIL_FROM. tests/test_email_delivery.py; browser-checked.
+
+## Latest (0.1.3): two-step verification (TOTP)
+- Server: RFC 6238 TOTP (SHA-1, 30 s, 6 digits; +/-1 step; a step is never accepted twice),
+  secret sealed with Fernet (key from GINK_SECRET_KEY: _seal/_unseal), 10 recovery codes stored
+  as SHA-256 (dashes/spaces/case ignored, spent on use). _login_response gates EVERY sign-in
+  (password, email code, sign-up confirm, password reset, Google/GitHub/Microsoft/Apple):
+  {"twofa_required", "ticket"} (5-minute JWT, purpose "2fa", 5 tries) -> POST /auth/2fa.
+  /account/2fa (status), /setup (otpauth URI + segno SVG QR, drawn on the server), /enable,
+  /disable (needs a code). Account deletion removes it. deploy: segno.
+- Apps: api_client TwoFactorRequired from _session (one place); login screen "twofa" view
+  (6 boxes / recovery code) from any method incl. polling. FIX found by the test: the code
+  step no longer marks the screen dead (Google after "back" works).
+- Web: signedIn() shows the code form for every method; FIX found by the browser test: the
+  sign-in screen resets to the login form when it opens. Settings > Account (apps + web):
+  turn on (QR + key), recovery codes once, turn off.
+- tests/test_two_step.py (RFC vector, flow, encryption, reuse, recovery, limits, reset/social,
+  app sign-in logic against a real server); browser journey.

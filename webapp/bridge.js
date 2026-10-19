@@ -40,6 +40,7 @@
   var $ = function (id) { return document.getElementById(id); };
   function showSignIn(message) {
     $("web-signin").classList.add("open");
+    if ($("ws-signup").hidden) tab("login");          // always start from a usable form (not a finished code step)
     $("ws-err").textContent = message || "";
     setTimeout(function () { ($("ws-login").hidden ? $("ws-semail") : $("ws-email")).focus(); }, 30);
   }
@@ -47,17 +48,25 @@
     $("ws-tab-login").setAttribute("aria-selected", which === "login" ? "true" : "false");
     $("ws-tab-signup").setAttribute("aria-selected", which === "signup" ? "true" : "false");
     $("ws-login").hidden = which !== "login"; $("ws-signup").hidden = which !== "signup"; $("ws-code").hidden = true;
+    $("ws-twofa").hidden = true; W.ticket = null;
     $("ws-err").textContent = "";
   }
   function busyForm(form, on) { var b = form.querySelector(".ws-go"); if (b) b.disabled = on; }
   function signedIn(res) {
+    if (res && res.twofa_required) {                 // two-step sign-in: the authenticator code comes next
+      W.ticket = res.ticket; W.email = res.email || W.email;
+      ["ws-login", "ws-signup", "ws-code"].forEach(function (id) { $(id).hidden = true; });
+      $("ws-twofa").hidden = false; $("ws-tfcode").value = ""; $("ws-tfcode").focus();
+      $("ws-err").textContent = "";
+      return;
+    }
     W.token = res.token; W.email = res.email || W.email; W.name = res.name || W.name || "";
     LS.setItem("gink_token", W.token); LS.setItem("gink_email", W.email); LS.setItem("gink_name", W.name);
     $("web-signin").classList.remove("open");
     start();
   }
   function wireSignIn() {
-    socialButtons();
+    socialButtons(); wireTwoStep();
     $("ws-tab-login").onclick = function () { tab("login"); };
     $("ws-tab-signup").onclick = function () { tab("signup"); };
     $("ws-login").onsubmit = function (e) {
@@ -78,6 +87,14 @@
     $("ws-code").onsubmit = function (e) {
       e.preventDefault(); var f = e.target; busyForm(f, true); $("ws-err").textContent = "";
       api("/auth/register/verify", { email: W.email, code: $("ws-codein").value.trim() }, { noLogout: true }).then(function (r) {
+        return r.ok ? r.json().then(signedIn) : errorText(r).then(function (t) { $("ws-err").textContent = t; });
+      }).catch(function () { $("ws-err").textContent = "Can't reach the Gink server."; }).then(function () { busyForm(f, false); });
+    };
+  }
+  function wireTwoStep() {
+    $("ws-twofa").onsubmit = function (e) {
+      e.preventDefault(); var f = e.target; busyForm(f, true); $("ws-err").textContent = "";
+      api("/auth/2fa", { ticket: W.ticket, code: $("ws-tfcode").value.trim() }, { noLogout: true }).then(function (r) {
         return r.ok ? r.json().then(signedIn) : errorText(r).then(function (t) { $("ws-err").textContent = t; });
       }).catch(function () { $("ws-err").textContent = "Can't reach the Gink server."; }).then(function () { busyForm(f, false); });
     };
@@ -456,12 +473,22 @@
     var days = Math.floor(ago / 86400);
     return days === 1 ? "Last active yesterday" : "Last active " + days + " days ago";
   }
+  W.twofa = {};                                    // setup in progress / codes shown once
   function loadDevices() {
-    pushSettings();
-    api("/account/sessions", undefined, { method: "GET" }).then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-      .then(function (j) {
-        pushSettings({ sessions: (j.sessions || []).map(function (d) { return Object.assign({}, d, { when: activeText(d) }); }) });
-      }).catch(function () { pushSettings({ sessions: [] }, { sessions_error: "Your devices aren\u2019t available right now." }); });
+    pushSettings({}, { twofa: W.twofa });
+    var json = function (r) { return r.ok ? r.json() : Promise.reject(); };
+    Promise.all([api("/account/sessions").then(json).catch(function () { return null; }),
+                 api("/account/2fa").then(json).catch(function () { return {}; })]).then(function (res) {
+      var lists = { sessions: res[0] ? (res[0].sessions || []).map(function (d) { return Object.assign({}, d, { when: activeText(d) }); }) : [] };
+      var extra = { twofa: Object.assign({}, res[1] || {}, W.twofa) };
+      if (!res[0]) extra.sessions_error = "Your devices aren\u2019t available right now.";
+      pushSettings(lists, extra);
+    });
+  }
+  function twofaPost(path, body, then) {
+    api(path, body || {}).then(function (r) {
+      return r.ok ? r.json().then(then) : errorText(r).then(function (t) { settingsToast(t); });
+    });
   }
   function applyAppearance() { setAppearance(W.prefs.theme, W.prefs.chat_font, W.prefs.motion); }
 
@@ -530,6 +557,12 @@
         return fetch("/account/sessions/" + encodeURIComponent(v.value), { method: "DELETE", headers: { Authorization: "Bearer " + W.token } })
           .then(function () { settingsToast("That device is signed out."); loadDevices(); });
       }
+      if (name === "twofa_setup") return twofaPost("/account/2fa/setup", {}, function (j) { W.twofa = { setup: j }; loadDevices(); });
+      if (name === "twofa_enable") return twofaPost("/account/2fa/enable", { code: String(v.value || "").trim() }, function (j) {
+        W.twofa = { codes: j.recovery_codes || [] }; settingsToast("Two-step verification is on."); loadDevices(); });
+      if (name === "twofa_disable") return twofaPost("/account/2fa/disable", { code: String(v.value || "").trim() }, function () {
+        W.twofa = {}; settingsToast("Two-step verification is off."); loadDevices(); });
+      if (name === "twofa_cancel" || name === "twofa_done") { W.twofa = {}; return loadDevices(); }
       if (name === "sign_out_others") {
         return api("/account/sessions/sign-out-others", {}).then(function () { settingsToast("All your other devices are signed out."); loadDevices(); });
       }

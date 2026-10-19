@@ -9,6 +9,9 @@
   others at once (they're refused immediately). "Log out" now ends the session on the server.
   The server also tells browsers to use HTTPS only, and checks who issued Google, Microsoft and
   Apple sign-ins
+- Two-step verification: Settings > Account. After your password (or email code, or Google,
+  GitHub, Microsoft, Apple -- and after a password reset), Gink asks for a code from an
+  authenticator app. 10 one-time recovery codes. The authenticator key is stored encrypted
 - Email works on Render's free plan: codes are sent through Brevo's web API (Render blocks
   email ports there). The owner dashboard can send a test email and shows why one failed
 - Settings > Location: see your area, detect your approximate location, and turn location off

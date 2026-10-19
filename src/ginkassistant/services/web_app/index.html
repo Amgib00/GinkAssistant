@@ -1985,6 +1985,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
           {type: 'info', label: 'Email', value: info.email || ''},
           {type: 'html', label: 'Plan', html: pro ? '<span class="badge pro">Gink Pro</span>' : '<span class="badge">Free</span>'},
           {type: 'button', label: 'Log out', desc: 'Sign out of Gink on this device.', action: 'logout', text: 'Log out'}]},
+        {title: 'Two-step verification', rows: twofaRows(info.twofa || {})},
         {title: 'Signed-in devices', rows: [
           {type: 'list', items: (L.sessions || []).map(function (d) {
             return {t: d.device, m: d.when, button: d.current ? null : {text: 'Log out', action: 'revoke_session', value: d.id}}; }),
@@ -2079,6 +2080,28 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
             ['Mute during voice', ['Space']], ['End a voice conversation', ['Esc']]];
   }
   function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+  function twofaRows(t) {
+    if (t.codes && t.codes.length) {                       // shown once, right after turning it on
+      return [{type: 'note', text: 'Two-step verification is on. Save these recovery codes somewhere safe \u2014 each one signs you in once if you lose your phone. They won\u2019t be shown again.'},
+              {type: 'html', label: 'Recovery codes', html: '<div style="font-family:ui-monospace,Menlo,monospace;font-size:14px;line-height:1.9">' +
+                 t.codes.map(esc).join('<br>') + '</div>'},
+              {type: 'button', label: 'I\u2019ve saved them', action: 'twofa_done', text: 'Done'}];
+    }
+    if (t.setup) {
+      var qr = /^data:image\/svg\+xml;base64,[A-Za-z0-9+\/=]+$/.test(t.setup.qr || '') ? t.setup.qr : '';
+      return [{type: 'note', text: '1. Open an authenticator app (Google Authenticator, Microsoft Authenticator, Authy\u2026) and scan this code.'},
+              {type: 'html', label: 'Scan with your app', html: (qr ? '<img src="' + qr + '" alt="QR code for your authenticator app" width="170" height="170" style="border-radius:8px;background:#fff">' : '') +
+                 '<div style="margin-top:6px;font-size:12px;color:var(--text-muted)">Can\u2019t scan? Enter this key:<br><b style="font-family:ui-monospace,Menlo,monospace;letter-spacing:1px">' + esc(t.setup.secret) + '</b></div>'},
+              {type: 'input', key: 'twofa_code', label: '2. Enter the 6-digit code it shows', placeholder: '123456', action: 'twofa_enable', text: 'Turn on'},
+              {type: 'button', label: 'Cancel', action: 'twofa_cancel', text: 'Cancel', style: 'ghost'}];
+    }
+    if (t.enabled) {
+      return [{type: 'info', label: 'Status', value: 'On \u2014 signing in needs a code from your authenticator app' + (t.recovery_left != null ? ' (' + t.recovery_left + ' recovery codes left)' : '')},
+              {type: 'input', key: 'twofa_off', label: 'Turn off', desc: 'Enter a current code from your app, or a recovery code.', placeholder: 'Code', action: 'twofa_disable', text: 'Turn off', style: 'danger-ghost'}];
+    }
+    return [{type: 'button', label: 'Turn on two-step verification', desc: 'After your password, Gink asks for a code from an authenticator app on your phone. Someone who learns your password still can\u2019t get in.',
+             action: 'twofa_setup', text: 'Turn on'}];
+  }
 
   function rowHtml(r, pid) {
     var v = S.values, ctl = '', lab = '<div class="lab"><b>' + esc(r.label || '') + '</b>' + (r.desc ? '<span>' + esc(r.desc) + '</span>' : '') + '</div>';
@@ -2932,6 +2955,11 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
       <input id="ws-codein" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required>
       <button class="ws-go" type="submit">Verify</button>
     </form>
+    <form id="ws-twofa" hidden>
+      <label for="ws-tfcode">Two-step verification: enter the 6-digit code from your authenticator app, or a recovery code</label>
+      <input id="ws-tfcode" autocomplete="one-time-code" maxlength="20" required>
+      <button class="ws-go" type="submit">Continue</button>
+    </form>
     <div id="ws-social-wrap" hidden>
       <div class="ws-or">or</div>
       <div class="ws-social" id="ws-social"></div>
@@ -2984,6 +3012,7 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
   var $ = function (id) { return document.getElementById(id); };
   function showSignIn(message) {
     $("web-signin").classList.add("open");
+    if ($("ws-signup").hidden) tab("login");          // always start from a usable form (not a finished code step)
     $("ws-err").textContent = message || "";
     setTimeout(function () { ($("ws-login").hidden ? $("ws-semail") : $("ws-email")).focus(); }, 30);
   }
@@ -2991,17 +3020,25 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     $("ws-tab-login").setAttribute("aria-selected", which === "login" ? "true" : "false");
     $("ws-tab-signup").setAttribute("aria-selected", which === "signup" ? "true" : "false");
     $("ws-login").hidden = which !== "login"; $("ws-signup").hidden = which !== "signup"; $("ws-code").hidden = true;
+    $("ws-twofa").hidden = true; W.ticket = null;
     $("ws-err").textContent = "";
   }
   function busyForm(form, on) { var b = form.querySelector(".ws-go"); if (b) b.disabled = on; }
   function signedIn(res) {
+    if (res && res.twofa_required) {                 // two-step sign-in: the authenticator code comes next
+      W.ticket = res.ticket; W.email = res.email || W.email;
+      ["ws-login", "ws-signup", "ws-code"].forEach(function (id) { $(id).hidden = true; });
+      $("ws-twofa").hidden = false; $("ws-tfcode").value = ""; $("ws-tfcode").focus();
+      $("ws-err").textContent = "";
+      return;
+    }
     W.token = res.token; W.email = res.email || W.email; W.name = res.name || W.name || "";
     LS.setItem("gink_token", W.token); LS.setItem("gink_email", W.email); LS.setItem("gink_name", W.name);
     $("web-signin").classList.remove("open");
     start();
   }
   function wireSignIn() {
-    socialButtons();
+    socialButtons(); wireTwoStep();
     $("ws-tab-login").onclick = function () { tab("login"); };
     $("ws-tab-signup").onclick = function () { tab("signup"); };
     $("ws-login").onsubmit = function (e) {
@@ -3022,6 +3059,14 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     $("ws-code").onsubmit = function (e) {
       e.preventDefault(); var f = e.target; busyForm(f, true); $("ws-err").textContent = "";
       api("/auth/register/verify", { email: W.email, code: $("ws-codein").value.trim() }, { noLogout: true }).then(function (r) {
+        return r.ok ? r.json().then(signedIn) : errorText(r).then(function (t) { $("ws-err").textContent = t; });
+      }).catch(function () { $("ws-err").textContent = "Can't reach the Gink server."; }).then(function () { busyForm(f, false); });
+    };
+  }
+  function wireTwoStep() {
+    $("ws-twofa").onsubmit = function (e) {
+      e.preventDefault(); var f = e.target; busyForm(f, true); $("ws-err").textContent = "";
+      api("/auth/2fa", { ticket: W.ticket, code: $("ws-tfcode").value.trim() }, { noLogout: true }).then(function (r) {
         return r.ok ? r.json().then(signedIn) : errorText(r).then(function (t) { $("ws-err").textContent = t; });
       }).catch(function () { $("ws-err").textContent = "Can't reach the Gink server."; }).then(function () { busyForm(f, false); });
     };
@@ -3400,12 +3445,22 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     var days = Math.floor(ago / 86400);
     return days === 1 ? "Last active yesterday" : "Last active " + days + " days ago";
   }
+  W.twofa = {};                                    // setup in progress / codes shown once
   function loadDevices() {
-    pushSettings();
-    api("/account/sessions", undefined, { method: "GET" }).then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-      .then(function (j) {
-        pushSettings({ sessions: (j.sessions || []).map(function (d) { return Object.assign({}, d, { when: activeText(d) }); }) });
-      }).catch(function () { pushSettings({ sessions: [] }, { sessions_error: "Your devices aren\u2019t available right now." }); });
+    pushSettings({}, { twofa: W.twofa });
+    var json = function (r) { return r.ok ? r.json() : Promise.reject(); };
+    Promise.all([api("/account/sessions").then(json).catch(function () { return null; }),
+                 api("/account/2fa").then(json).catch(function () { return {}; })]).then(function (res) {
+      var lists = { sessions: res[0] ? (res[0].sessions || []).map(function (d) { return Object.assign({}, d, { when: activeText(d) }); }) : [] };
+      var extra = { twofa: Object.assign({}, res[1] || {}, W.twofa) };
+      if (!res[0]) extra.sessions_error = "Your devices aren\u2019t available right now.";
+      pushSettings(lists, extra);
+    });
+  }
+  function twofaPost(path, body, then) {
+    api(path, body || {}).then(function (r) {
+      return r.ok ? r.json().then(then) : errorText(r).then(function (t) { settingsToast(t); });
+    });
   }
   function applyAppearance() { setAppearance(W.prefs.theme, W.prefs.chat_font, W.prefs.motion); }
 
@@ -3474,6 +3529,12 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
         return fetch("/account/sessions/" + encodeURIComponent(v.value), { method: "DELETE", headers: { Authorization: "Bearer " + W.token } })
           .then(function () { settingsToast("That device is signed out."); loadDevices(); });
       }
+      if (name === "twofa_setup") return twofaPost("/account/2fa/setup", {}, function (j) { W.twofa = { setup: j }; loadDevices(); });
+      if (name === "twofa_enable") return twofaPost("/account/2fa/enable", { code: String(v.value || "").trim() }, function (j) {
+        W.twofa = { codes: j.recovery_codes || [] }; settingsToast("Two-step verification is on."); loadDevices(); });
+      if (name === "twofa_disable") return twofaPost("/account/2fa/disable", { code: String(v.value || "").trim() }, function () {
+        W.twofa = {}; settingsToast("Two-step verification is off."); loadDevices(); });
+      if (name === "twofa_cancel" || name === "twofa_done") { W.twofa = {}; return loadDevices(); }
       if (name === "sign_out_others") {
         return api("/account/sessions/sign-out-others", {}).then(function () { settingsToast("All your other devices are signed out."); loadDevices(); });
       }

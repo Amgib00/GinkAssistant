@@ -31,7 +31,7 @@ from toga.style.pack import COLUMN
 from .branding import LOGO_SPINNER_DATA_URI
 from .theme import css_vars
 from ..services import server_config
-from ..services.api_client import ApiClient, ApiError
+from ..services.api_client import ApiClient, ApiError, TwoFactorRequired
 from ..services.paths import data_dir
 
 SESSION_FILE = "session.json"
@@ -293,6 +293,18 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
       <div class="resend" id="resend-verify"></div>
     </div>
 
+    <!-- TWO-STEP SIGN-IN -->
+    <div class="view" id="v-twofa">
+      <a class="back" data-go="login">&larr;&nbsp; Back to log in</a>
+      <h1>Two-step verification</h1>
+      <p class="sub" id="tf-sub">Enter the 6-digit code from your authenticator app</p>
+      <div class="codes" id="codes-twofa"></div>
+      <div class="field" id="tf-recovery-wrap" hidden><input id="tf-recovery" type="text" autocomplete="one-time-code" placeholder="Recovery code, e.g. a1b2-c3d4" aria-label="Recovery code"></div>
+      <div class="msg" id="m-twofa"></div>
+      <button class="btn" id="b-twofa" data-primary><span class="label">Continue</span><span class="dots"><span></span><span></span><span></span></span></button>
+      <a class="resend" id="tf-switch" href="#" role="button">Use a recovery code instead</a>
+    </div>
+
     <!-- FORGOT -->
     <div class="view" id="v-forgot">
       <a class="back" data-go="login">&larr;&nbsp; Back to log in</a>
@@ -375,8 +387,21 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
     if (data.title) $('oauth-title').textContent = data.title;
     if (data.info) info(data.info);
     if (view === 'verify' || view === 'reset') { buildCodes(view === 'verify' ? 'codes-verify' : 'codes-reset'); startResend(); }
+    if (view === 'twofa') { buildCodes('codes-twofa'); setRecovery(false); }
     setTimeout(function () { var f = $('v-' + view).querySelector('input'); if (f) f.focus(); }, 60);
   }
+  var recoveryMode = false;
+  function setRecovery(on) {
+    recoveryMode = on;
+    $('codes-twofa').hidden = on; $('tf-recovery-wrap').hidden = !on;
+    $('tf-sub').textContent = on ? 'Enter one of the recovery codes you saved when you turned on two-step verification'
+                                 : 'Enter the 6-digit code from your authenticator app';
+    $('tf-switch').textContent = on ? 'Use my authenticator app instead' : 'Use a recovery code instead';
+    setTimeout(function () { (on ? $('tf-recovery') : $('codes-twofa').querySelector('input')).focus(); }, 30);
+  }
+  document.addEventListener('click', function (e) {
+    if (e.target && e.target.id === 'tf-switch') { e.preventDefault(); setRecovery(!recoveryMode); }
+  });
   function msgEl() { return $('m-' + current); }
   function error(text) {
     var m = msgEl(); if (m) { m.textContent = text; m.className = 'msg err'; }
@@ -461,6 +486,11 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
       if (p !== $('s-pass2').value) return error('The passwords don\u2019t match.');
       if (!$('s-terms').checked) return error('Please accept the Terms & Privacy Policy.');
       busy(true); ginkEmit('signup', {name: n, email: e, password: p, remember: true});
+    } else if (current === 'twofa') {
+      var tc = recoveryMode ? $('tf-recovery').value.trim() : codeOf($('codes-twofa').querySelectorAll('input'));
+      if (!recoveryMode && tc.length !== 6) return error('Enter all 6 digits.');
+      if (recoveryMode && tc.replace(/[^a-z0-9]/gi, '').length < 8) return error('Enter one of your recovery codes.');
+      busy(true); ginkEmit('twofa', {code: tc});
     } else if (current === 'verify') {
       var c = codeOf($('codes-verify').querySelectorAll('input'));
       if (c.length !== 6) return error('Enter all 6 digits.');
@@ -618,6 +648,13 @@ class LoginController:
                 asyncio.create_task(self.handle(event))
             await asyncio.sleep(0.15)
 
+    async def ask_second_step(self, need, remember: bool):
+        """Two-step sign-in is on: ask for the authenticator code (any sign-in method lands here)."""
+        self.pending.update(ticket=need.ticket, twofa_remember=remember)
+        self.oauth["state"] = None                       # stops any Google/GitHub polling (the screen stays alive)
+        await self.call("busy", False)
+        await self.call("show", "twofa", {"email": need.email})
+
     def finish(self, session, remember: bool):
         self.app.session_token = session.token          # sync uses it even when not remembered
         # Name from Google / GitHub / Microsoft / Apple / SSO or the sign-up form
@@ -677,6 +714,10 @@ class LoginController:
             elif kind == "reset":
                 session = await self.api.reset_password(self.pending["email"], v["code"], v["password"])
                 self.finish(session, True)
+            elif kind == "twofa" and self.pending.get("ticket"):              # the authenticator code
+                session = await self.api.verify_2fa(self.pending["ticket"], str(v.get("code", "")))
+                self.pending.pop("ticket", None)
+                self.finish(session, self.pending.get("twofa_remember", True))
             elif kind == "oauth":
                 await self.start_oauth(str(event.get("value")))
             elif kind == "oauth_again" and self.oauth["state"]:
@@ -691,6 +732,8 @@ class LoginController:
                 await self.call("info" if ok else "error", f"{msg} ({self.app.state.base_url})")
                 if ok:
                     await self.call("setProviders", await self.api.providers())
+        except TwoFactorRequired as need:
+            await self.ask_second_step(need, bool(v.get("remember", self.pending.get("remember", True))))
         except ApiError as exc:
             await self.call("error", str(exc))
         except KeyError:
@@ -728,6 +771,9 @@ class LoginController:
                 return
             try:
                 session = await self.api.oauth_poll(state)
+            except TwoFactorRequired as need:                 # Google/GitHub... was right; now the code
+                await self.ask_second_step(need, True)
+                return
             except ApiError as exc:
                 self.oauth["state"] = None
                 await self.call("show", "login")

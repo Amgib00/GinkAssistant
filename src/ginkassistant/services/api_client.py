@@ -41,6 +41,13 @@ class Session:
     name: str = ""
 
 
+class TwoFactorRequired(Exception):
+    """The password (or code, or Google...) was right; now the authenticator code is needed."""
+    def __init__(self, ticket: str, email: str = ""):
+        super().__init__("Enter the code from your authenticator app.")
+        self.ticket, self.email = ticket, email
+
+
 def unreachable(exc: Exception) -> "ApiError":
     """Say WHY the server couldn't be reached, and what to do -- plus a short technical
     detail, so one screenshot is enough to fix a problem on someone's phone."""
@@ -116,6 +123,8 @@ class ApiClient:
         return data
 
     def _session(self, data: dict, email: str) -> Session:
+        if data.get("twofa_required"):                  # two-step sign-in: the code comes next
+            raise TwoFactorRequired(data.get("ticket", ""), data.get("email", email))
         if "token" not in data:
             raise ApiError("The server didn't return a session.")
         return Session(token=data["token"], email=data.get("email", email), name=data.get("name", ""))
@@ -123,6 +132,23 @@ class ApiClient:
     async def login(self, email: str, password: str) -> Session:
         data = await self._post("/auth/login", {"email": email, "password": password}, "Couldn't log in.")
         return self._session(data, email)
+
+    async def verify_2fa(self, ticket: str, code: str) -> Session:
+        data = await self._post("/auth/2fa", {"ticket": ticket, "code": code}, "That code didn't work.")
+        return self._session(data, data.get("email", ""))
+
+    # -- two-step sign-in settings (Settings > Account) ------------------------
+    async def twofa_status(self, token: str) -> dict:
+        return await self._authed("GET", "/account/2fa", token)
+
+    async def twofa_setup(self, token: str) -> dict:
+        return await self._authed("POST", "/account/2fa/setup", token)
+
+    async def twofa_enable(self, token: str, code: str) -> dict:
+        return await self._authed("POST", "/account/2fa/enable", token, json={"code": code})
+
+    async def twofa_disable(self, token: str, code: str) -> dict:
+        return await self._authed("POST", "/account/2fa/disable", token, json={"code": code})
 
     async def register(self, name: str, email: str, password: str) -> None:
         await self._post("/auth/register", {"name": name, "email": email, "password": password},

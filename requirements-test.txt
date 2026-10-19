@@ -28,3 +28,4 @@ uvicorn
 numpy<2.0.0; python_version < "3.13"
 numpy; python_version >= "3.13"          # numpy 1.x has no builds for Python 3.13
 tomli; python_version < "3.11"
+segno

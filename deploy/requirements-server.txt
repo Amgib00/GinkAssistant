@@ -8,3 +8,4 @@ python-multipart>=0.0.9  # form posts: CinetPay notifications, Sign in with Appl
 markdown>=3.5      # Gink on the web: formatting answers (/render)
 pygments>=2.17     # code highlighting in answers
 pypdf>=4          # Gink on the web: reading attached PDFs (/attachments/read)
+segno>=1.6        # two-step sign-in QR codes (pure Python)

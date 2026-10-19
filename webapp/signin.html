@@ -58,6 +58,11 @@
       <input id="ws-codein" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required>
       <button class="ws-go" type="submit">Verify</button>
     </form>
+    <form id="ws-twofa" hidden>
+      <label for="ws-tfcode">Two-step verification: enter the 6-digit code from your authenticator app, or a recovery code</label>
+      <input id="ws-tfcode" autocomplete="one-time-code" maxlength="20" required>
+      <button class="ws-go" type="submit">Continue</button>
+    </form>
     <div id="ws-social-wrap" hidden>
       <div class="ws-or">or</div>
       <div class="ws-social" id="ws-social"></div>

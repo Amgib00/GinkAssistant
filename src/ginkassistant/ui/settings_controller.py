@@ -187,6 +187,12 @@ class SettingsController:
                 self._plan, self._pro_until = st.get("plan", "free"), st.get("pro_until", 0)
             except Exception:
                 pass
+        if token and panel == "account":                      # two-step verification
+            try:
+                status = await asyncio.wait_for(api.twofa_status(token), timeout=8)
+                extra_info["twofa"] = dict(status, **self._twofa)
+            except Exception:
+                extra_info["twofa"] = dict(self._twofa)
         if token and panel == "account":                      # signed-in devices
             try:
                 found = await asyncio.wait_for(api.sessions(token), timeout=8)
@@ -324,6 +330,52 @@ class SettingsController:
             except Exception:
                 pass
         self.on_log_out()
+
+    @property
+    def _twofa(self) -> dict:                 # setup in progress / codes to show once (not saved anywhere)
+        if not hasattr(self, "_twofa_state"):
+            self._twofa_state = {}
+        return self._twofa_state
+
+    async def _twofa_call(self, fn, *args):
+        token = getattr(self.app, "session_token", None)
+        if not token:
+            return None
+        try:
+            return await fn(token, *args)
+        except ApiError as exc:
+            await self.web.settings_toast(str(exc))
+            return None
+
+    async def _a_twofa_setup(self, _):
+        api = ApiClient(self.app.state.base_url)
+        setup = await self._twofa_call(api.twofa_setup)
+        if setup:
+            self._twofa.clear(); self._twofa["setup"] = setup
+            await self.refresh("account")
+
+    async def _a_twofa_enable(self, code):
+        api = ApiClient(self.app.state.base_url)
+        done = await self._twofa_call(api.twofa_enable, str(code or "").strip())
+        if done:
+            self._twofa.clear(); self._twofa["codes"] = done.get("recovery_codes", [])
+            await self.web.settings_toast("Two-step verification is on.")
+            await self.refresh("account")
+
+    async def _a_twofa_disable(self, code):
+        api = ApiClient(self.app.state.base_url)
+        if await self._twofa_call(api.twofa_disable, str(code or "").strip()):
+            self._twofa.clear()
+            await self.web.settings_toast("Two-step verification is off.")
+            await self.refresh("account")
+
+    async def _a_twofa_cancel(self, _):
+        self._twofa.clear()
+        await self.refresh("account")
+
+    async def _a_twofa_done(self, _):
+        self._twofa.clear()                    # the codes are never shown again
+        await self.refresh("account")
 
     async def _a_revoke_session(self, sid):
         token = getattr(self.app, "session_token", None)

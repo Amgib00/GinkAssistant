@@ -510,7 +510,7 @@ def register_verify(data: dict = Body(...)):
     with _otp_lock:
         entry = _check_code(_pending_signups, email, data.get("code", ""))
     _upsert_user(email, entry["name"], entry["pw_hash"], "password")
-    return _token_response(email, entry["name"])
+    return _login_response(email, entry["name"])
 
 
 @app.post("/auth/login")
@@ -531,7 +531,7 @@ def login(data: dict = Body(...)):
         raise HTTPException(status_code=401, detail="Email or password is incorrect.")
     with _otp_lock:
         _login_failures.pop(email, None)
-    return _token_response(email, user["name"])
+    return _login_response(email, user["name"])
 
 
 @app.post("/auth/forgot")
@@ -555,7 +555,7 @@ def reset(data: dict = Body(...)):
         _login_failures.pop(email, None)
     user = _get_user(email) or {"name": ""}
     _upsert_user(email, user["name"], _hash_password(password), "password")
-    return _token_response(email, user["name"])
+    return _login_response(email, user["name"])
 
 
 # ---------------------------------------------------------------- social / SSO
@@ -786,7 +786,7 @@ async def _oauth_callback(provider: str, request: Request):
             f"{_public_base(request)}/auth/{provider}/callback", params.get("user", ""))
         existing = _get_user(email)
         _upsert_user(email, name or (existing or {}).get("name", ""), None, provider)
-        entry["result"] = _token_response(email, name or (existing or {}).get("name", ""))
+        entry["result"] = _login_response(email, name or (existing or {}).get("name", ""))
         return HTMLResponse(_result_page(True, "Go back to Gink \u2014 you can close this tab."))
     except Exception as exc:
         entry["result"] = {"error": f"{PROVIDERS[provider]['label']} sign-in failed: {exc}"}
@@ -2057,7 +2057,8 @@ def delete_account(request: Request, data: dict = Body(...)):
             con.execute("CREATE TABLE IF NOT EXISTS search_turns (email TEXT, turn TEXT, day TEXT, PRIMARY KEY (email, turn))")
             con.execute(_SESSIONS_TABLE)
             con.execute(_SECURITY_TABLE)
-            for table in ("users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
+            con.execute(_TWOFA_TABLE)
+            for table in ("twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
                           "search_usage", "search_turns", "sessions", "account_security"):
                 con.execute(f"DELETE FROM {table} WHERE email=?", (email,))
             con.execute("UPDATE payments SET email=? WHERE email=?", (anon, email))
@@ -2919,3 +2920,193 @@ def admin_test_email(request: Request, data: dict = Body(...)):
     reason = _send_email(to, "Gink test email", "This is a test email from your Gink server. Email works!",
                          _code_html("This is a test email from your Gink server. Email works!", "OK", 1))
     return {"sent": not reason, "service": _email_status() or "none", "reason": reason}
+
+
+# ---- Two-step sign-in (TOTP, RFC 6238: Google Authenticator, Microsoft Authenticator, Authy...).
+# The secret is stored encrypted (_seal). When it's on, every sign-in -- password, email code,
+# password reset, Google/GitHub/Microsoft/Apple -- answers {"twofa_required", "ticket"} instead
+# of a token; POST /auth/2fa with the ticket and a code finishes it.
+_TWOFA_TABLE = ("CREATE TABLE IF NOT EXISTS twofa (email TEXT PRIMARY KEY, secret TEXT NOT NULL, enabled INTEGER NOT NULL "
+                "DEFAULT 0, recovery TEXT NOT NULL DEFAULT '[]', last_step INTEGER NOT NULL DEFAULT 0, created REAL NOT NULL)")
+_twofa_attempts = {}
+
+
+def _fernet():
+    from cryptography.fernet import Fernet
+    return Fernet(base64.urlsafe_b64encode(hashlib.sha256(b"gink-seal:" + _get_secret_key().encode()).digest()))
+
+
+def _seal(text: str) -> str:
+    """Encrypt a small secret for storage (key derived from GINK_SECRET_KEY)."""
+    return _fernet().encrypt(text.encode()).decode()
+
+
+def _unseal(token: str) -> str:
+    return _fernet().decrypt(token.encode()).decode()
+
+
+def _recovery_form(code) -> str:
+    return "".join(ch for ch in str(code).lower() if ch.isalnum())     # "A1B2-c3d4 " == "a1b2c3d4"
+
+
+def _totp(secret_b32: str, step: int) -> str:
+    import struct
+    key = base64.b32decode(secret_b32 + "=" * (-len(secret_b32) % 8), casefold=True)
+    digest = hmac.new(key, struct.pack(">Q", step), hashlib.sha1).digest()
+    offset = digest[-1] & 15
+    return f"{(struct.unpack('>I', digest[offset:offset + 4])[0] & 0x7FFFFFFF) % 1000000:06d}"
+
+
+def _totp_step(secret_b32: str, code: str, after_step: int):
+    """The time step the code belongs to (one step of clock drift either way), never one used before."""
+    code = "".join(ch for ch in str(code) if ch.isdigit())
+    if len(code) != 6:
+        return None
+    now = int(time.time() // 30)
+    for step in (now - 1, now, now + 1):
+        if step > after_step and hmac.compare_digest(_totp(secret_b32, step), code):
+            return step
+    return None
+
+
+def _twofa_row(email: str):
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(_TWOFA_TABLE)
+            return con.execute("SELECT secret, enabled, recovery, last_step FROM twofa WHERE email=?", (email,)).fetchone()
+        finally:
+            con.close()
+
+
+def _login_response(email: str, name: str = "") -> dict:
+    """Every sign-in ends here: a token, or -- with two-step sign-in on -- a 5-minute ticket for the code."""
+    row = _twofa_row(email)
+    if row and row[1]:
+        ticket = jwt.encode({"sub": email, "name": name or "", "purpose": "2fa", "jti": secrets.token_hex(8),
+                             "iat": time.time(), "exp": time.time() + 300, "iss": "gink_assistant"},
+                            _get_secret_key(), algorithm=ALGORITHM)
+        return {"twofa_required": True, "ticket": ticket, "email": email}
+    return _token_response(email, name)
+
+
+def _use_second_factor(email: str, code: str) -> bool:
+    """A current authenticator code (not reused), or an unused recovery code (then spent)."""
+    row = _twofa_row(email)
+    if not row or not row[1]:
+        return False
+    secret, _, recovery, last_step = row
+    step = _totp_step(_unseal(secret), code, last_step)
+    with _db_lock:
+        con = _db()
+        try:
+            if step is not None:
+                con.execute("UPDATE twofa SET last_step=? WHERE email=?", (step, email))
+                con.commit()
+                return True
+            given = hashlib.sha256(_recovery_form(code).encode()).hexdigest()
+            left = _json.loads(recovery or "[]")
+            if given in left:
+                left.remove(given)
+                con.execute("UPDATE twofa SET recovery=? WHERE email=?", (_json.dumps(left), email))
+                con.commit()
+                return True
+            return False
+        finally:
+            con.close()
+
+
+@app.post("/auth/2fa")
+def auth_two_factor(data: dict = Body(...)):
+    try:
+        claims = jwt.decode(str(data.get("ticket") or ""), _get_secret_key(), algorithms=[ALGORITHM], issuer="gink_assistant")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="That took too long. Sign in again.")
+    if claims.get("purpose") != "2fa":
+        raise HTTPException(status_code=401, detail="Sign in again.")
+    jti, now = claims.get("jti", ""), time.time()
+    with _otp_lock:
+        for k in [k for k, (n, exp) in _twofa_attempts.items() if exp < now]:
+            _twofa_attempts.pop(k, None)
+        tries, _ = _twofa_attempts.get(jti, (0, claims["exp"]))
+        if tries >= 5:
+            raise HTTPException(status_code=429, detail="Too many wrong codes. Sign in again.")
+        _twofa_attempts[jti] = (tries + 1, claims["exp"])
+    email = claims["sub"]
+    if not _use_second_factor(email, str(data.get("code") or "")):
+        raise HTTPException(status_code=401, detail="That code didn't work. Use the current code from your authenticator app, or a recovery code.")
+    with _otp_lock:
+        _twofa_attempts[jti] = (99, claims["exp"])                  # a ticket works once
+    return _token_response(email, claims.get("name", ""))
+
+
+@app.get("/account/2fa")
+def account_twofa_status(request: Request):
+    email = _email_from_auth(request)
+    row = _twofa_row(email)
+    return {"enabled": bool(row and row[1]), "recovery_left": len(_json.loads(row[2])) if row and row[1] else 0}
+
+
+@app.post("/account/2fa/setup")
+def account_twofa_setup(request: Request):
+    email = _email_from_auth(request)
+    row = _twofa_row(email)
+    if row and row[1]:
+        raise HTTPException(status_code=409, detail="Two-step sign-in is already on.")
+    secret = base64.b32encode(secrets.token_bytes(20)).decode().rstrip("=")
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(_TWOFA_TABLE)
+            con.execute("INSERT OR REPLACE INTO twofa (email, secret, enabled, recovery, last_step, created) VALUES (?, ?, 0, '[]', 0, ?)",
+                        (email, _seal(secret), time.time()))
+            con.commit()
+        finally:
+            con.close()
+    uri = (f"otpauth://totp/Gink:{urllib.parse.quote(email)}?secret={secret}&issuer=Gink&digits=6&period=30")
+    qr = ""
+    try:
+        import io, segno
+        buf = io.BytesIO()
+        segno.make(uri, error="m").save(buf, kind="svg", scale=5, border=2, xmldecl=False, svgns=True,
+                                        dark="#151D23", light="#FFFFFF")
+        qr = "data:image/svg+xml;base64," + base64.b64encode(buf.getvalue()).decode()
+    except Exception:
+        pass                                              # the secret can still be typed in
+    return {"secret": " ".join(secret[i:i + 4] for i in range(0, len(secret), 4)), "uri": uri, "qr": qr}
+
+
+@app.post("/account/2fa/enable")
+def account_twofa_enable(request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    row = _twofa_row(email)
+    if not row or row[1]:
+        raise HTTPException(status_code=409, detail="Start the setup again.")
+    step = _totp_step(_unseal(row[0]), str(data.get("code") or ""), 0)
+    if step is None:
+        raise HTTPException(status_code=401, detail="That code didn't work. Check the time on your phone is set automatically, and try the current code.")
+    codes = ["-".join(secrets.token_hex(4)[i:i + 4] for i in (0, 4)) for _ in range(10)]
+    hashed = [hashlib.sha256(_recovery_form(c).encode()).hexdigest() for c in codes]   # stored hashed, shown once
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute("UPDATE twofa SET enabled=1, recovery=?, last_step=? WHERE email=?", (_json.dumps(hashed), step, email))
+            con.commit()
+        finally:
+            con.close()
+    return {"enabled": True, "recovery_codes": codes}
+
+
+@app.post("/account/2fa/disable")
+def account_twofa_disable(request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    if not _use_second_factor(email, str(data.get("code") or "")):
+        raise HTTPException(status_code=401, detail="To turn it off, enter a current code from your authenticator app, or a recovery code.")
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute("DELETE FROM twofa WHERE email=?", (email,))
+            con.commit()
+        finally:
+            con.close()
+    return {"enabled": False}

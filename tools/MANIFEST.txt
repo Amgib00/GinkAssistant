@@ -176,6 +176,7 @@ tests/test_sessions_security.py
 tests/test_settings_and_account.py
 tests/test_signin_name_and_history.py
 tests/test_sync_attach_memory_briefing.py
+tests/test_two_step.py
 tests/test_ui.py
 tests/test_unreachable.py
 tests/test_updates.py
