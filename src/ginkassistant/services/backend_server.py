@@ -77,6 +77,25 @@ EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 app = FastAPI(title="Gink Assistant Backend")
 
+import contextvars
+_current_request = contextvars.ContextVar("gink_request", default=None)
+
+
+@app.middleware("http")
+async def _security_headers(request, call_next):
+    """Every response: HSTS (browsers only ever use HTTPS for this server), no MIME sniffing,
+    no referrer leaks. The request is remembered so new sign-in sessions know their device."""
+    token = _current_request.set(request)
+    try:
+        response = await call_next(request)
+    finally:
+        _current_request.reset(token)
+    if request.headers.get("x-forwarded-proto", request.url.scheme) == "https":
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("Referrer-Policy", "no-referrer")
+    return response
+
 _otp_store: dict[str, dict] = {}
 _otp_lock = threading.Lock()
 
@@ -349,8 +368,48 @@ def _validate_password(password: str) -> str:
     return password
 
 
+_SESSIONS_TABLE = ("CREATE TABLE IF NOT EXISTS sessions (sid TEXT PRIMARY KEY, email TEXT NOT NULL, device TEXT, "
+                   "created REAL NOT NULL, last_seen REAL NOT NULL, revoked INTEGER NOT NULL DEFAULT 0)")
+_SECURITY_TABLE = "CREATE TABLE IF NOT EXISTS account_security (email TEXT PRIMARY KEY, tokens_after REAL NOT NULL DEFAULT 0)"
+
+
+def _device_label(request) -> str:
+    """'Gink for Mac' (the apps say so), or 'Chrome on Windows' for browsers."""
+    if request is None:
+        return "Unknown device"
+    named = " ".join(str(request.headers.get("x-gink-device", "")).split())[:60]
+    if named:
+        return named
+    ua = request.headers.get("user-agent", "")
+    if "python-httpx" in ua or "Gink" in ua:
+        return "Gink app"
+    browser = next((b for k, b in (("Edg/", "Edge"), ("OPR/", "Opera"), ("Firefox/", "Firefox"), ("Chrome/", "Chrome"),
+                                    ("Safari/", "Safari")) if k in ua), "")
+    system = next((o for k, o in (("Android", "Android"), ("iPhone", "iPhone"), ("iPad", "iPad"), ("Windows", "Windows"),
+                                   ("Mac OS X", "Mac"), ("Linux", "Linux")) if k in ua), "")
+    if browser:
+        return f"{browser} on {system}" if system else browser
+    return "Unknown device"
+
+
+def _new_session(email: str) -> str:
+    sid = secrets.token_urlsafe(18)
+    now = time.time()
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(_SESSIONS_TABLE)
+            con.execute("INSERT INTO sessions (sid, email, device, created, last_seen) VALUES (?, ?, ?, ?, ?)",
+                        (sid, email, _device_label(_current_request.get()), now, now))
+            con.commit()
+        finally:
+            con.close()
+    return sid
+
+
 def _token_response(email: str, name: str = "") -> dict:
     payload = {"sub": email, "name": name or "", "iat": time.time(), "exp": time.time() + 30 * 86400,
+               "sid": _new_session(email),
                "iss": "gink_assistant"}
     return {"token": jwt.encode(payload, _get_secret_key(), algorithm=ALGORITHM), "email": email, "name": name or ""}
 
@@ -641,6 +700,11 @@ def _identity_from_code(provider: str, code: str, redirect_uri: str, apple_user:
         raise ValueError("ID token was issued for a different app.")
     if claims.get("exp", 0) < time.time():
         raise ValueError("ID token expired.")
+    issuer_host = urllib.parse.urlparse(str(claims.get("iss") or "")).netloc or str(claims.get("iss") or "")
+    expected = {"google": ("accounts.google.com",), "microsoft": ("login.microsoftonline.com", "sts.windows.net"),
+                "apple": ("appleid.apple.com",)}.get(provider)
+    if expected and not any(issuer_host == h or issuer_host.endswith("." + h) for h in expected):
+        raise ValueError("ID token came from an unexpected issuer.")
     email = (claims.get("email") or claims.get("preferred_username") or "").lower()
     if not email or claims.get("email_verified") in (False, "false"):
         raise ValueError("Your account didn't share a verified email address.")
@@ -771,7 +835,33 @@ def _email_from_auth(request: Request) -> str:
             con.close()
     if row and float(claims.get("iat") or 0) <= row[0]:
         raise HTTPException(status_code=401, detail="This account was deleted.")
+    _check_session(email, claims, request)
     return email
+
+
+def _check_session(email: str, claims: dict, request: Request):
+    """Signed-out devices are refused at once. Tokens from before sessions existed (no sid) stop
+    working after 'Log out of all other devices'."""
+    sid, now = claims.get("sid"), time.time()
+    with _db_lock:
+        con = _db()
+        try:
+            if sid:
+                con.execute(_SESSIONS_TABLE)
+                row = con.execute("SELECT revoked, last_seen FROM sessions WHERE sid=? AND email=?", (sid, email)).fetchone()
+                if not row or row[0]:
+                    raise HTTPException(status_code=401, detail="You were signed out on this device. Sign in again.")
+                if now - row[1] > 300:                                   # "last active", without a write per request
+                    con.execute("UPDATE sessions SET last_seen=? WHERE sid=?", (now, sid))
+                    con.commit()
+            else:
+                con.execute(_SECURITY_TABLE)
+                row = con.execute("SELECT tokens_after FROM account_security WHERE email=?", (email,)).fetchone()
+                if row and float(claims.get("iat") or 0) <= row[0]:
+                    raise HTTPException(status_code=401, detail="You were signed out on this device. Sign in again.")
+        finally:
+            con.close()
+    request.state.gink_sid = sid
 
 
 @app.post("/sync")
@@ -1930,8 +2020,10 @@ def delete_account(request: Request, data: dict = Body(...)):
             con.execute("CREATE TABLE IF NOT EXISTS claude_turns (email TEXT, turn TEXT, day TEXT, PRIMARY KEY (email, turn))")
             con.execute("CREATE TABLE IF NOT EXISTS search_usage (email TEXT, day TEXT, n INTEGER, PRIMARY KEY (email, day))")
             con.execute("CREATE TABLE IF NOT EXISTS search_turns (email TEXT, turn TEXT, day TEXT, PRIMARY KEY (email, turn))")
+            con.execute(_SESSIONS_TABLE)
+            con.execute(_SECURITY_TABLE)
             for table in ("users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
-                          "search_usage", "search_turns"):
+                          "search_usage", "search_turns", "sessions", "account_security"):
                 con.execute(f"DELETE FROM {table} WHERE email=?", (email,))
             con.execute("UPDATE payments SET email=? WHERE email=?", (anon, email))
             con.execute("CREATE TABLE IF NOT EXISTS deleted_accounts (email TEXT PRIMARY KEY, at REAL NOT NULL)")
@@ -2719,3 +2811,67 @@ async def app_version():
     except Exception:
         _release_cache["at"] = time.time() - 3000           # GitHub unreachable: retry in ~10 minutes
     return _release_cache["data"]
+
+
+# ---- Signed-in devices (Settings > Account):
+#   GET /account/sessions, DELETE /account/sessions/{sid}, POST /account/sessions/sign-out-others,
+#   POST /auth/logout (this device). Signed-out devices are refused at once (_check_session).
+@app.get("/account/sessions")
+def account_sessions(request: Request):
+    email = _email_from_auth(request)
+    current = getattr(request.state, "gink_sid", None)
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(_SESSIONS_TABLE)
+            rows = con.execute("SELECT sid, device, created, last_seen FROM sessions WHERE email=? AND revoked=0 "
+                               "ORDER BY last_seen DESC LIMIT 50", (email,)).fetchall()
+        finally:
+            con.close()
+    return {"sessions": [{"id": sid, "device": device or "Unknown device", "created": created, "last_seen": seen,
+                          "current": sid == current} for sid, device, created, seen in rows]}
+
+
+def _revoke(email: str, sids=None, keep=None, everything_older=False):
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(_SESSIONS_TABLE)
+            con.execute(_SECURITY_TABLE)
+            if sids is not None:
+                for sid in sids:
+                    con.execute("UPDATE sessions SET revoked=1 WHERE sid=? AND email=?", (sid, email))
+            else:
+                con.execute("UPDATE sessions SET revoked=1 WHERE email=? AND sid != ?", (email, keep or ""))
+            if everything_older:                       # tokens from before sessions existed, too
+                con.execute("INSERT INTO account_security (email, tokens_after) VALUES (?, ?) ON CONFLICT(email) "
+                            "DO UPDATE SET tokens_after=excluded.tokens_after", (email, time.time()))
+            con.commit()
+        finally:
+            con.close()
+
+
+@app.delete("/account/sessions/{sid}")
+def account_session_revoke(sid: str, request: Request):
+    email = _email_from_auth(request)
+    _revoke(email, sids=[sid])
+    return {"ok": True}
+
+
+@app.post("/account/sessions/sign-out-others")
+def account_sign_out_others(request: Request):
+    email = _email_from_auth(request)
+    _revoke(email, keep=getattr(request.state, "gink_sid", None), everything_older=True)
+    return {"ok": True}
+
+
+@app.post("/auth/logout")
+def auth_logout(request: Request):
+    try:
+        email = _email_from_auth(request)
+    except HTTPException:
+        return {"ok": True}                            # already signed out: nothing to do
+    sid = getattr(request.state, "gink_sid", None)
+    if sid:
+        _revoke(email, sids=[sid])
+    return {"ok": True}

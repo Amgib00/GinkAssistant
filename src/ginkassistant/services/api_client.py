@@ -64,6 +64,19 @@ def unreachable(exc: Exception) -> "ApiError":
     return ApiError(f"{msg} (Details: {detail})")
 
 
+def device_headers() -> dict:
+    """Tell the server which app this is, so Settings > Account can list "Gink for Mac" etc."""
+    from .platform_utils import is_android, is_ios
+    import sys
+    if is_android():
+        name = "Gink on Android"
+    elif is_ios():
+        name = "Gink on iPhone or iPad"
+    else:
+        name = {"darwin": "Gink for Mac", "win32": "Gink for Windows"}.get(sys.platform, "Gink for Linux")
+    return {"X-Gink-Device": name}
+
+
 class ApiClient:
     def __init__(self, base_url: str, timeout: float = None):
         self.base_url = base_url.rstrip("/")
@@ -71,13 +84,13 @@ class ApiClient:
         self.timeout = timeout or wait_for(base_url)   # online servers may need ~60 s to wake
 
     async def send_otp(self, email: str) -> None:
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(headers=device_headers(), timeout=self.timeout) as client:
             resp = await client.post(f"{self.base_url}/send-otp", params={"email": email})
         if resp.status_code != 200:
             raise ApiError(self._detail(resp, "Failed to send the code. Check your connection."))
 
     async def verify_otp(self, email: str, otp: str) -> Session:
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(headers=device_headers(), timeout=self.timeout) as client:
             resp = await client.post(
                 f"{self.base_url}/verify-otp", params={"email": email, "otp": otp}
             )
@@ -90,7 +103,7 @@ class ApiClient:
 
     async def _post(self, path: str, payload: dict, default_error: str) -> dict:
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
+            async with httpx.AsyncClient(headers=device_headers(), timeout=self.timeout) as client:
                 resp = await client.post(f"{self.base_url}{path}", json=payload)
         except httpx.HTTPError as e:
             raise unreachable(e)
@@ -132,7 +145,7 @@ class ApiClient:
     async def providers(self) -> dict:
         """{"google": {"enabled": bool, "label": "Google"}, ...}; {} if offline."""
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
+            async with httpx.AsyncClient(headers=device_headers(), timeout=self.timeout) as client:
                 resp = await client.get(f"{self.base_url}/auth/providers")
             return resp.json() if resp.status_code == 200 else {}
         except Exception:
@@ -147,7 +160,7 @@ class ApiClient:
     async def oauth_poll(self, state: str):
         """None while the user is still signing in, a Session when done."""
         try:
-            async with httpx.AsyncClient(timeout=10) as client:
+            async with httpx.AsyncClient(headers=device_headers(), timeout=10) as client:
                 resp = await client.get(f"{self.base_url}/auth/poll", params={"state": state})
         except httpx.HTTPError:
             return None
@@ -162,7 +175,7 @@ class ApiClient:
 
     async def _authed(self, method: str, path: str, token: str, **kw) -> dict:
         try:
-            async with httpx.AsyncClient(timeout=25) as client:
+            async with httpx.AsyncClient(headers=device_headers(), timeout=25) as client:
                 resp = await client.request(method, f"{self.base_url}{path}",
                                             headers={"Authorization": f"Bearer {token}"}, **kw)
         except httpx.HTTPError as e:
@@ -188,11 +201,28 @@ class ApiClient:
 
     async def app_info(self) -> dict:
         try:
-            async with httpx.AsyncClient(timeout=8) as client:
+            async with httpx.AsyncClient(headers=device_headers(), timeout=8) as client:
                 r = await client.get(f"{self.base_url}/info")
             return r.json() if r.status_code == 200 else {}
         except Exception:
             return {}
+
+    # -- signed-in devices (Settings > Account) ---------------------------------
+    async def sessions(self, token: str) -> list:
+        return (await self._authed("GET", "/account/sessions", token)).get("sessions", [])
+
+    async def revoke_session(self, token: str, sid: str) -> None:
+        await self._authed("DELETE", f"/account/sessions/{sid}", token)
+
+    async def sign_out_others(self, token: str) -> None:
+        await self._authed("POST", "/account/sessions/sign-out-others", token)
+
+    async def logout(self, token: str) -> None:
+        """End this device's session on the server (best effort: logging out works offline too)."""
+        try:
+            await self._authed("POST", "/auth/logout", token)
+        except Exception:
+            pass
 
     async def billing_history(self, token: str) -> list:
         return (await self._authed("GET", "/billing/history", token)).get("payments", [])
@@ -208,7 +238,7 @@ class ApiClient:
         """Gink Cloud image creation. Raises ApiError with a friendly message
         (daily limit, refused prompt, not set up...)."""
         try:
-            async with httpx.AsyncClient(timeout=200) as client:
+            async with httpx.AsyncClient(headers=device_headers(), timeout=200) as client:
                 resp = await client.post(f"{self.base_url}/media/image", headers={"Authorization": f"Bearer {token}"},
                                          json={"prompt": prompt, "aspect_ratio": aspect_ratio, "style": style})
         except httpx.HTTPError as e:

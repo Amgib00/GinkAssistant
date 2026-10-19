@@ -442,10 +442,26 @@
   }
 
   // ---------------------------------------------------------------- settings (web subset)
-  function pushSettings() {
+  function pushSettings(lists, extra) {
     setSettingsState({ values: Object.assign({}, W.prefs, { model: W.model }),
-                       info: { name: W.name, email: W.email, version: "web", plan: W.plan || "free", voices: [], models: W.models, web: true },
-                       lists: {} });
+                       info: Object.assign({ name: W.name, email: W.email, version: "web", plan: W.plan || "free", voices: [], models: W.models, web: true }, extra || {}),
+                       lists: lists || {} });
+  }
+  // signed-in devices (Settings > Account)
+  function activeText(d) {
+    if (d.current) return "This device";
+    var ago = Date.now() / 1000 - (d.last_seen || 0);
+    if (ago < 600) return "Active now";
+    if (ago < 86400) return "Active today";
+    var days = Math.floor(ago / 86400);
+    return days === 1 ? "Last active yesterday" : "Last active " + days + " days ago";
+  }
+  function loadDevices() {
+    pushSettings();
+    api("/account/sessions", undefined, { method: "GET" }).then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (j) {
+        pushSettings({ sessions: (j.sessions || []).map(function (d) { return Object.assign({}, d, { when: activeText(d) }); }) });
+      }).catch(function () { pushSettings({ sessions: [] }, { sessions_error: "Your devices aren\u2019t available right now." }); });
   }
   function applyAppearance() { setAppearance(W.prefs.theme, W.prefs.chat_font, W.prefs.motion); }
 
@@ -506,8 +522,17 @@
     },
     settings_action: function (v) {
       var name = v && v.name;
-      if (name === "refresh") return pushSettings();
-      if (name === "log_out" || name === "logout") return signOut("");
+      if (name === "refresh") return (v.value === "account" ? loadDevices() : pushSettings());
+      if (name === "log_out" || name === "logout") {             // end this browser's session on the server too
+        return api("/auth/logout", {}, { noLogout: true }).catch(function () {}).then(function () { signOut(""); });
+      }
+      if (name === "revoke_session" && v.value) {
+        return fetch("/account/sessions/" + encodeURIComponent(v.value), { method: "DELETE", headers: { Authorization: "Bearer " + W.token } })
+          .then(function () { settingsToast("That device is signed out."); loadDevices(); });
+      }
+      if (name === "sign_out_others") {
+        return api("/account/sessions/sign-out-others", {}).then(function () { settingsToast("All your other devices are signed out."); loadDevices(); });
+      }
       settingsToast(DESKTOP_ONLY);
     },
     attach_data: function (v) {

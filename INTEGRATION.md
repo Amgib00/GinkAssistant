@@ -833,3 +833,17 @@ New services/live_info.py (all free, no API keys):
 - ui/agent_ui.py: checklist panel above the composer (agentStep / agentAsk / agentEnd; text
   only), Allow / Don't allow -> 'agent_answer'. main_screen: typed chats only (voice screen
   covers the panel); prefs agent_confirm (Settings > Capabilities). tests/test_agent_mode.py.
+
+## Latest (0.1.3): security -- signed-in devices
+- Review: scrypt passwords OK; 30-day JWTs had no revocation (logout only forgot the token
+  locally); no HSTS; ID tokens (OIDC, direct from the token endpoint) checked aud + exp only.
+- Sessions: every token carries "sid" (sessions table: device, created, last_seen, revoked).
+  _check_session refuses revoked sessions at once; tokens without sid (older) are refused after
+  "log out of all other devices" (account_security.tokens_after). Endpoints: GET/DELETE
+  /account/sessions, POST /account/sessions/sign-out-others, POST /auth/logout. Account
+  deletion removes both tables. Device name: X-Gink-Device from the apps (api_client
+  device_headers) or the browser's User-Agent ("Chrome on Android").
+- Middleware: HSTS (https), nosniff, Referrer-Policy no-referrer on every response.
+- ID tokens: issuer host must be Google / Microsoft / Apple's.
+- Settings > Account > Signed-in devices (desktop/phones + web app); real logout everywhere.
+  tests/test_sessions_security.py; browser-tested.

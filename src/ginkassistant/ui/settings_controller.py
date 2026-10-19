@@ -32,6 +32,18 @@ CHOICES = {"theme": {"system", "light", "dark"}, "chat_font": {"sans", "serif", 
            "speech_lang": SPEECH_LANG_CODES}
 
 
+def _active_text(s: dict) -> str:
+    if s.get("current"):
+        return "This device"
+    ago = time.time() - float(s.get("last_seen") or 0)
+    if ago < 600:
+        return "Active now"
+    if ago < 86400:
+        return "Active today"
+    days = int(ago // 86400)
+    return "Last active yesterday" if days == 1 else f"Last active {days} days ago"
+
+
 class SettingsController:
     def __init__(self, app, web_chat, brain, selected_voice, audio_engine, *, email, display_name,
                  models_fn, push_models, open_pro, on_log_out, refresh_sidebar, clear_all_chats,
@@ -175,6 +187,13 @@ class SettingsController:
                 self._plan, self._pro_until = st.get("plan", "free"), st.get("pro_until", 0)
             except Exception:
                 pass
+        if token and panel == "account":                      # signed-in devices
+            try:
+                found = await asyncio.wait_for(api.sessions(token), timeout=8)
+                extra_lists["sessions"] = [dict(s, when=_active_text(s)) for s in found]
+            except Exception:
+                extra_lists["sessions"] = []
+                extra_info["sessions_error"] = "Your devices aren't available right now."
         if token and panel == "billing":
             try:
                 pays = await asyncio.wait_for(api.billing_history(token), timeout=8)
@@ -298,7 +317,27 @@ class SettingsController:
         await self.refresh(panel or "")
 
     async def _a_logout(self, _):
+        token = getattr(self.app, "session_token", None)
+        if token:                                   # end this device's session on the server too
+            try:
+                await asyncio.wait_for(ApiClient(self.app.state.base_url).logout(token), timeout=6)
+            except Exception:
+                pass
         self.on_log_out()
+
+    async def _a_revoke_session(self, sid):
+        token = getattr(self.app, "session_token", None)
+        if token and sid:
+            await ApiClient(self.app.state.base_url).revoke_session(token, str(sid))
+            await self.web.settings_toast("That device is signed out.")
+            await self.refresh("account")
+
+    async def _a_sign_out_others(self, _):
+        token = getattr(self.app, "session_token", None)
+        if token:
+            await ApiClient(self.app.state.base_url).sign_out_others(token)
+            await self.web.settings_toast("All your other devices are signed out.")
+            await self.refresh("account")
 
     async def _a_open_url(self, url):
         if url:

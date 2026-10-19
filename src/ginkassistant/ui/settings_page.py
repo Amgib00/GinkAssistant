@@ -294,6 +294,12 @@ SETTINGS_JS = r"""
           {type: 'info', label: 'Email', value: info.email || ''},
           {type: 'html', label: 'Plan', html: pro ? '<span class="badge pro">Gink Pro</span>' : '<span class="badge">Free</span>'},
           {type: 'button', label: 'Log out', desc: 'Sign out of Gink on this device.', action: 'logout', text: 'Log out'}]},
+        {title: 'Signed-in devices', rows: [
+          {type: 'list', items: (L.sessions || []).map(function (d) {
+            return {t: d.device, m: d.when, button: d.current ? null : {text: 'Log out', action: 'revoke_session', value: d.id}}; }),
+           empty: info.sessions_error || 'Loading your devices\u2026'}].concat(
+          (L.sessions || []).length > 1 ? [{type: 'button', label: 'Log out of all other devices', desc: 'If you lost a phone or used a shared computer, this signs you out everywhere except here.',
+                                            action: 'sign_out_others', text: 'Log out others', style: 'danger-ghost'}] : [])},
         {title: 'Delete account', rows: [
           {type: 'button', label: 'Delete your account', desc: 'Permanently deletes your account and everything synced to it. Payment records are kept for accounting, without your name or email. This can\u2019t be undone.', action: 'delete_account', text: 'Delete account', style: 'danger-ghost'}]}]},
       {id: 'privacy', group: 'Settings', title: 'Privacy', sections: [

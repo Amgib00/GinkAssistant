@@ -5,6 +5,10 @@
 - Agent mode: Gink carries out multi-step tasks and shows each step as it goes, and asks before
   sensitive actions (sending messages, calls, deleting, locking or sleeping the computer).
   Settings > Capabilities > "Ask before sensitive actions"
+- Security: Settings > Account lists your signed-in devices; sign out any of them, or all
+  others at once (they're refused immediately). "Log out" now ends the session on the server.
+  The server also tells browsers to use HTTPS only, and checks who issued Google, Microsoft and
+  Apple sign-ins
 - Settings > Location: see your area, detect your approximate location, and turn location off
   completely (Gink then asks when it needs a place)
 

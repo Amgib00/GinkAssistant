@@ -171,6 +171,7 @@ tests/test_model_upgrade.py
 tests/test_natural_voice.py
 tests/test_owner_dashboard.py
 tests/test_screens_and_server.py
+tests/test_sessions_security.py
 tests/test_settings_and_account.py
 tests/test_signin_name_and_history.py
 tests/test_sync_attach_memory_briefing.py
