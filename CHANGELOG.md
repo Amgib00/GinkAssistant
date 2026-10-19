@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3 (October 2026)
+
+- Agent mode: Gink carries out multi-step tasks and shows each step as it goes, and asks before
+  sensitive actions (sending messages, calls, deleting, locking or sleeping the computer).
+  Settings > Capabilities > "Ask before sensitive actions"
+- Settings > Location: see your area, detect your approximate location, and turn location off
+  completely (Gink then asks when it needs a place)
+
 ## 0.1.2 (October 2026)
 
 - Android: Gink now asks for the microphone (voice, "Hey Gink") and can set alarms

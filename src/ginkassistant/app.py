@@ -171,6 +171,7 @@ class GinkAssistantApp(toga.App):
         self.task_runner = ToolRunner(self.task_store, DeviceActions(str(d)), memory=self.memory)
         from .services import prefs as _prefs
         self.task_runner.live.city_fn = lambda: _prefs.city(self)     # Settings -> Location
+        self.task_runner.live.allowed_fn = lambda: _prefs.load(self).get("use_location", True)
         self.task_agent = TaskAgent(self.task_runner)
         self.task_scheduler = ReminderScheduler(self.task_store)
 

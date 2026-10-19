@@ -122,6 +122,7 @@ src/ginkassistant/services/web_app/admin.html
 src/ginkassistant/services/web_app/developers.html
 src/ginkassistant/services/web_app/index.html
 src/ginkassistant/ui/__init__.py
+src/ginkassistant/ui/agent_ui.py
 src/ginkassistant/ui/branding.py
 src/ginkassistant/ui/chat_extras.py
 src/ginkassistant/ui/history_sidebar.py
@@ -146,6 +147,7 @@ src/ginkassistant/ui/wake_ui.py
 src/ginkassistant/ui/web_chat_view.py
 tests/test_actions.py
 tests/test_actions_briefing_mic.py
+tests/test_agent_mode.py
 tests/test_android_32bit.py
 tests/test_android_startup.py
 tests/test_app_icons.py
@@ -162,6 +164,7 @@ tests/test_gink_cloud.py
 tests/test_gink_dataset.py
 tests/test_ios_startup.py
 tests/test_live_info.py
+tests/test_location.py
 tests/test_main_screen.py
 tests/test_media_files_profile.py
 tests/test_model_upgrade.py

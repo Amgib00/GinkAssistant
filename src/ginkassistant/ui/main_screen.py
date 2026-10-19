@@ -84,8 +84,10 @@ LaunchAgent implementation in services/launch_at_login.py), and About.
 """
 
 import asyncio
+import json
 import os
 import re
+import uuid
 import datetime
 import itertools
 from typing import Optional
@@ -139,6 +141,7 @@ def _new_message_id() -> str:
 
 def build_main_screen(app: toga.App, email: str):
     brain = GroqBrain(app, session_id="default_session")
+    agent_answers = {}            # agent mode: approval id -> future answered by Allow / Don't allow
     # Default voice, previously hardcoded with no way to change it anywhere
     # in the UI -- matches the original Settings screen's "Voice Synthesis
     # Profile" idea (never rebuilt here as a full Settings screen yet),
@@ -429,7 +432,33 @@ def build_main_screen(app: toga.App, email: str):
         history = brain.get_history()
         if history and history[-1].get("role") == "user":
             history = history[:-1]                  # answer() already saved this message
-        result = await agent.run(message, history=history, on_status=on_status)
+        # Agent mode (typed chats): live checklist + approvals before sensitive steps.
+        # Voice turns keep the old behaviour: the voice screen covers the panel.
+        typed = on_step is not None
+        asks_ok = typed and prefs.load(app).get("agent_confirm", True)
+
+        async def agent_step(i, label, state):
+            await web_chat._js(f"agentStep({int(i)}, {json.dumps(label)}, {json.dumps(state)})")
+
+        async def agent_confirm(tool, args, label):
+            ask_id = uuid.uuid4().hex[:12]
+            fut = asyncio.get_running_loop().create_future()
+            agent_answers[ask_id] = fut
+            await web_chat._js(f"agentAsk({json.dumps(ask_id)}, {json.dumps(label)})")
+            try:
+                return bool(await asyncio.wait_for(fut, timeout=120))   # no answer in 2 minutes = no
+            except asyncio.TimeoutError:
+                return False
+            finally:
+                agent_answers.pop(ask_id, None)
+
+        try:
+            result = await agent.run(message, history=history, on_status=on_status,
+                                     on_step=agent_step if typed else None,
+                                     confirm=agent_confirm if asks_ok else None)
+        finally:
+            if typed:
+                await web_chat._js("agentEnd()")
         set_voice_status("")
         if on_media is not None:
             for label, items in await step_media_for(result.actions):
@@ -885,6 +914,10 @@ def build_main_screen(app: toga.App, email: str):
             viewer.show(watch_url(value["id"]), value.get("title") or "Video")
         elif kind == "open_url" and value:
             await open_link(str(value))
+        elif kind == "agent_answer" and isinstance(value, dict):          # Allow / Don't allow
+            fut = agent_answers.get(str(value.get("id")))
+            if fut is not None and not fut.done():
+                fut.set_result(bool(value.get("ok")))
         elif kind == "update_get" and update_offer.get("url"):
             await open_link(update_offer["url"])
             await web_chat.hide_update()

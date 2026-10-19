@@ -28,7 +28,42 @@ GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 class GinkLimit(Exception):
     """Gink Cloud said no (daily limit, Pro-only feature...): show the message, don't fall back."""
 DEFAULT_MODEL = "openai/gpt-oss-120b"     # llama-3.3-70b-versatile was retired by Groq on 16 Aug 2026
-MAX_ROUNDS = 6
+MAX_ROUNDS = 12          # agent mode: enough for real multi-step tasks
+
+# ---- Agent mode: actions that need the user's OK before they run.
+# Always: it leaves the device, or can't be undone. In a chain: fine when asked for directly
+# ("lock my screen"), but asked about when Gink decides on it as part of a longer task.
+ALWAYS_ASK = {"compose_message", "make_call", "delete_item", "forget"}
+ASK_IN_CHAIN = {"quit_app", "lock_screen", "sleep_computer", "read_clipboard", "take_screenshot"}
+
+
+def describe(name: str, args: dict) -> str:
+    """A short, plain description of one step ("Send a WhatsApp message to Awa")."""
+    a = args or {}
+    to = a.get("to") or a.get("contact") or a.get("name") or ""
+    text = (a.get("body") or a.get("text") or a.get("message") or "").strip()
+    if name == "compose_message":
+        how = {"whatsapp": "a WhatsApp message", "sms": "a text message", "email": "an email"}.get(str(a.get("channel", "")).lower(), "a message")
+        return f"Send {how}" + (f" to {to}" if to else "") + (f": \u201c{text[:80]}\u201d" if text else "")
+    if name == "make_call":
+        return "Call " + (to or "this number")
+    if name == "delete_item":
+        return "Delete an item from your Workspace" + (f" ({a.get('id')})" if a.get("id") else "")
+    if name == "forget":
+        return "Forget" + (f" \u201c{a.get('what')}\u201d" if a.get("what") else " a memory")
+    if name == "quit_app":
+        return "Quit " + (a.get("name") or "an app")
+    if name in ("lock_screen", "sleep_computer"):
+        return {"lock_screen": "Lock the screen", "sleep_computer": "Put the computer to sleep"}[name]
+    if name == "read_clipboard":
+        return "Read what you copied (your clipboard)"
+    if name == "take_screenshot":
+        return "Take a screenshot of your screen"
+    return _status_text(name).rstrip("\u2026.").strip()
+
+
+def needs_ok(name: str, in_chain: bool) -> bool:
+    return name in ALWAYS_ASK or (in_chain and name in ASK_IN_CHAIN)
 
 _ACTION_WORDS = re.compile(
     r"\b(wake me|wake up|alarm|timer|count ?down|remind|reminder|remember to|don'?t (let me )?forget|"
@@ -154,9 +189,14 @@ class TaskAgent:
         return r.json()["choices"][0]["message"]
 
     async def run(self, user_text: str, history: Optional[list] = None,
-                  on_status: Optional[Callable[[str], Awaitable[None]]] = None) -> AgentReply:
+                  on_status: Optional[Callable[[str], Awaitable[None]]] = None,
+                  on_step: Optional[Callable[[int, str, str], Awaitable[None]]] = None,
+                  confirm: Optional[Callable[[str, dict, str], Awaitable[bool]]] = None) -> AgentReply:
+        """on_step(index, label, state) drives the live checklist (state: running/done/failed/skipped);
+        confirm(tool, args, description) -> bool asks the user before sensitive actions."""
         import uuid as _uuid
         self._turn = _uuid.uuid4().hex          # all AI rounds for this request count as ONE message
+        self._on_step, self._confirm = on_step, confirm
         try:
             return await self._run(user_text, history, on_status)
         except GinkLimit as limit:
@@ -198,12 +238,13 @@ class TaskAgent:
                 messages.append({"role": m["role"], "content": m["content"]})
         messages.append({"role": "user", "content": user_text})
         actions = []
+        on_step, confirm = getattr(self, "_on_step", None), getattr(self, "_confirm", None)
         try:
-            for _ in range(MAX_ROUNDS):
+            for round_no in range(MAX_ROUNDS):
                 msg = await self._chat(messages)
                 calls = msg.get("tool_calls") or []
                 if not calls:
-                    return AgentReply((msg.get("content") or "").strip() or "Done.", actions)
+                    return AgentReply((msg.get("content") or "").strip() or _done_text(actions), actions)
                 messages.append({"role": "assistant", "content": msg.get("content") or "",
                                  "tool_calls": calls})
                 for call in calls:
@@ -214,12 +255,33 @@ class TaskAgent:
                         args = {}
                     if on_status:
                         await on_status(_status_text(name))
+                    step, label = len(actions), describe(name, args)
+                    in_chain = round_no > 0 or len(calls) > 1
+                    if confirm is not None and needs_ok(name, in_chain):
+                        if on_step:
+                            await on_step(step, label, "asking")
+                        try:
+                            allowed = await confirm(name, args, label)
+                        except Exception:
+                            allowed = False
+                        if not allowed:
+                            result = {"ok": False, "skipped": True,
+                                      "message": "The user didn't allow this step, so it was not done."}
+                            actions.append({"tool": name, "args": args, "result": result})
+                            if on_step:
+                                await on_step(step, label, "skipped")
+                            messages.append({"role": "tool", "tool_call_id": call["id"], "content": json.dumps(result)})
+                            continue
+                    if on_step:
+                        await on_step(step, label, "running")
                     result = await self.runner.execute(name, args)
                     actions.append({"tool": name, "args": args, "result": result})
+                    if on_step:
+                        await on_step(step, label, "done" if (result or {}).get("ok", True) else "failed")
                     messages.append({"role": "tool", "tool_call_id": call["id"],
                                      "content": json.dumps(result, default=str)[:6000]})
             msg = await self._chat(messages, use_tools=False)
-            return AgentReply((msg.get("content") or "").strip() or "Done.", actions)
+            return AgentReply((msg.get("content") or "").strip() or _done_text(actions), actions)
         except GinkLimit:
             raise                          # a limit message must reach the user, not a fallback
         except Exception as e:
@@ -232,6 +294,15 @@ class TaskAgent:
             done = "; ".join(a["result"].get("message", a["tool"]) for a in actions if a["result"].get("ok"))
             return AgentReply(f"I hit a problem reaching the AI ({e})."
                               + (f" Already done: {done}." if done else ""), actions)
+
+
+def _done_text(actions) -> str:
+    """When the AI gives no final words: say what actually happened."""
+    done = [a["result"].get("message") or describe(a["tool"], a["args"]) for a in actions
+            if (a["result"] or {}).get("ok", True) and not a["result"].get("skipped")]
+    skipped = [describe(a["tool"], a["args"]) for a in actions if (a["result"] or {}).get("skipped")]
+    parts = (["Done: " + "; ".join(done) + "."] if done else []) + (["Not done (you didn\u2019t allow it): " + "; ".join(skipped) + "."] if skipped else [])
+    return " ".join(parts) or "Done."
 
 
 def _status_text(tool):

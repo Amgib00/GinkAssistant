@@ -10,6 +10,8 @@ DEFAULTS = {
     "briefing_time": "07:30",
     "briefing_city": "",            # kept for older saves; "city" is the one to use
     "city": "",
+    "use_location": True,
+    "agent_confirm": True,        # agent mode: ask before sending messages, calls, deleting...         # Settings -> Location: use the city / approximate location in answers
     "briefing_speak": True,
     "briefing_last_date": "",
     # Settings window
@@ -60,4 +62,6 @@ def save(app, **changes) -> dict:
 def city(app) -> str:
     """Settings -> Location (falls back to the older briefing-only field)."""
     p = load(app)
+    if not p.get("use_location", True):
+        return ""
     return (p.get("city") or p.get("briefing_city") or "").strip()

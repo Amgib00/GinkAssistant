@@ -54,7 +54,7 @@ def test_agent_answer_shows_spinner_steps_and_events(tmp_path, monkeypatch):
     js = []
     async def rec(self, script): js.append(script)
     monkeypatch.setattr(web_chat_view.WebChatFeed, "_js", rec)
-    async def fake_run(self, text, history=None, on_status=None):
+    async def fake_run(self, text, history=None, on_status=None, **agent_mode):
         await on_status("Checking the weather\u2026")
         from ginkassistant.services.actions.agent import AgentReply
         return AgentReply("It's sunny.", [{"tool": "get_weather", "args": {}, "result": {"ok": True}}], used_ai=True)
@@ -107,7 +107,7 @@ def test_step_thumbnails_for_made_files(tmp_path, monkeypatch):
     js = []
     async def rec(self, script): js.append(script)
     monkeypatch.setattr(web_chat_view.WebChatFeed, "_js", rec)
-    async def fake_run(self, text, history=None, on_status=None):
+    async def fake_run(self, text, history=None, on_status=None, **agent_mode):
         from ginkassistant.services.actions.agent import AgentReply
         await on_status("Making your file\u2026")
         res = self.runner._t_create_file("pdf", "Week plan", "# Week plan\n- Monday: revise")

@@ -322,6 +322,7 @@ SETTINGS_JS = r"""
         {title: 'AI', rows: [
           {type: 'select', key: 'model', label: 'Model', desc: 'Faster models answer quicker; deeper ones reason more.', options: (info.models || []).map(function (m) { return [m.id, m.name + (m.tier ? ' \u2014 ' + m.tier : '')]; })},
           {type: 'toggle', key: 'web_search', label: 'Search the web', desc: 'Let Gink look things up online for current facts.'},
+          {type: 'toggle', key: 'agent_confirm', label: 'Ask before sensitive actions', desc: 'Gink asks before it sends a message, makes a call, deletes something, or locks or sleeps your computer as part of a longer task.'},
           {type: 'toggle', key: 'video_suggestions', label: 'Suggest videos', desc: 'Add YouTube guides to how-to answers.'}]}]},
       {id: 'memory', group: 'Settings', title: 'Memory', sections: [
         {title: 'Instructions for Gink', rows: [
@@ -333,9 +334,14 @@ SETTINGS_JS = r"""
           empty: 'Nothing yet. Say \u201cremember that my exams start on 12 November\u201d in the chat.'}].concat(
           (L.memories || []).length ? [{type: 'button', label: 'Forget everything', action: 'forget_all', text: 'Forget all', style: 'danger-ghost'}] : [])}]},
       {id: 'location', group: 'Settings', title: 'Location', sections: [
-        {title: 'Your city', rows: [
+        {title: 'Your location', rows: [
+          {type: 'info', label: 'Your area', value: info.location_text || ''},
           {type: 'input', key: 'city', label: 'City', desc: 'Used for weather, air quality, sunrise and sunset, prayer times and your briefing. Leave empty to use an approximate location from your connection.',
-           placeholder: 'e.g. Dakar', action: 'save_city', text: 'Save'}]}]},
+           placeholder: 'e.g. Dakar', action: 'save_city', text: 'Save'},
+          {type: 'button', label: 'Use my approximate location', desc: 'Estimate your city from your internet connection.', action: 'detect_location', text: 'Detect'},
+          {type: 'toggle', key: 'use_location', label: 'Use location in answers', desc: 'When off, Gink doesn\u2019t use your city or estimate where you are \u2014 it asks when it needs a place.'}]},
+        {title: 'About this location', rows: [
+          {type: 'note', text: 'Your general area is estimated from your IP address. An IP address is assigned to your device by your internet provider, and it\u2019s needed to connect to websites and online services. Gink doesn\u2019t keep a history of your location.'}]}]},
       {id: 'briefing', group: 'Settings', title: 'Morning briefing', sections: [
         {title: 'Daily briefing', rows: [
           {type: 'toggle', key: 'briefing_enabled', label: 'Brief me every morning', desc: 'Weather, today\u2019s plans, open tasks and a headline.'},

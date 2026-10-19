@@ -1586,6 +1586,6 @@ class WebChatFeed:
         await self.finalize_message(message_id, raw_markdown)
 
 def _build_page_html(welcome_title, welcome_subtitle):
-    from . import chat_extras, settings_page, update_ui, voice_ui, wake_ui
-    return update_ui.inject(wake_ui.inject(voice_ui.inject(chat_extras.inject(settings_page.inject(
-        _build_page_html_base(welcome_title, welcome_subtitle))))))
+    from . import agent_ui, chat_extras, settings_page, update_ui, voice_ui, wake_ui
+    return agent_ui.inject(update_ui.inject(wake_ui.inject(voice_ui.inject(chat_extras.inject(settings_page.inject(
+        _build_page_html_base(welcome_title, welcome_subtitle)))))))

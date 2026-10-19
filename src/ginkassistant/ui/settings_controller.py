@@ -25,7 +25,7 @@ PLAN_LABELS = {"pro_1m": "Pro \u00b7 1 month", "pro_3m": "Pro \u00b7 3 months", 
 STATUS_LABELS = {"success": "Paid", "pending": "Pending", "failed": "Not completed"}
 BOOL_KEYS = {"read_aloud", "notify_reminders", "briefing_enabled", "briefing_speak", "use_memory",
              "web_search", "video_suggestions", "single_keys", "wake_enabled", "wake_followup", "wake_front",
-             "briefing_projects"}
+             "briefing_projects", "use_location", "agent_confirm"}
 CHOICES = {"theme": {"system", "light", "dark"}, "chat_font": {"sans", "serif", "mono"},
            "motion": {"system", "reduced"}, "voice_speed": {"slow", "normal", "fast"},
            "reply_language": set(languages.BY_CODE), "send_key": {"enter", "mod"},
@@ -117,7 +117,8 @@ class SettingsController:
                 "photo": (self.app.profile.get().get("photo", "") if getattr(self.app, "profile", None) else ""),
                 "work_options": WORK_OPTIONS,
                 "language_label": languages.label(prefs.load(self.app).get("reply_language", "auto")),
-                "build": getattr(self.app, "gink_build", "")}
+                "build": getattr(self.app, "gink_build", ""),
+                "location_text": self._location_text()}
         if not getattr(self, "_langs_sent", False):
             info["languages"] = [[c, n, e, x] for c, n, e, x in languages.LANGUAGES]
             self._langs_sent = True
@@ -255,6 +256,30 @@ class SettingsController:
         if self.on_profile_change:
             self.on_profile_change()
         await self.push()
+
+    def _location_text(self) -> str:
+        p = prefs.load(self.app)
+        if not p.get("use_location", True):
+            return "Off \u2014 Gink won\u2019t use your location"
+        city = (p.get("city") or p.get("briefing_city") or "").strip()
+        if city:
+            return f"{city} \u00b7 set by you"
+        live = getattr(getattr(self.app, "task_runner", None), "live", None)
+        place = getattr(live, "_ip_place", None) if live else None
+        if place:
+            label = ", ".join(x for x in (place.get("name"), place.get("country")) if x)
+            return f"{label} \u00b7 estimated from your IP address"
+        return "Not set \u2014 add your city, or use your approximate location"
+
+    async def _a_detect_location(self, _):
+        live = getattr(getattr(self.app, "task_runner", None), "live", None)
+        place = await live.approximate_place(fresh=True) if live else None
+        if not place or place.get("name") in (None, "", "your area"):
+            await self.web.settings_toast("Couldn\u2019t estimate your location right now. Type your city instead.")
+            return
+        prefs.save(self.app, city=place["name"], use_location=True)
+        await self.push()
+        await self.web.settings_toast(f"Location set to {place['name']}" + (f", {place['country']}" if place.get("country") else "") + ".")
 
     async def _a_save_instructions(self, text):
         self.app.profile.update(instructions=str(text or ""))

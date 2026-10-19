@@ -816,3 +816,20 @@ New services/live_info.py (all free, no API keys):
   fails under `set -euo pipefail` when the LAST file is a kept one -> the script stopped silently
   after "Secrets:" (0.1.2 never pushed). Now `if ...; then echo; fi; done || true`. Tested: only
   kept files / kept + leftover / nothing extra.
+
+## Latest (0.1.3): Settings > Location
+- The existing Location panel gains: "Your area" (set by you / estimated from your IP address /
+  off), "Use my approximate location" (LiveInfo.approximate_place via ipwho.is from the device),
+  "Use location in answers" (prefs use_location: prefs.city() returns "" and LiveInfo.where()
+  skips the IP estimate when off), and an "About this location" note. No map (would load
+  third-party tiles). tests/test_location.py.
+
+## Latest (0.1.3): agent mode
+- services/actions/agent.py: MAX_ROUNDS 12; run(..., on_step, confirm). ALWAYS_ASK
+  (compose_message, make_call, delete_item, forget) and ASK_IN_CHAIN (quit_app, lock_screen,
+  sleep_computer, read_clipboard, take_screenshot: only when Gink chose it mid-task -- round > 0
+  or several calls). Declined/timeout (2 min) -> {"ok": False, "skipped": True} to the AI;
+  describe() for plain step labels; _done_text() reports done + not-done steps.
+- ui/agent_ui.py: checklist panel above the composer (agentStep / agentAsk / agentEnd; text
+  only), Allow / Don't allow -> 'agent_answer'. main_screen: typed chats only (voice screen
+  covers the panel); prefs agent_confirm (Settings > Capabilities). tests/test_agent_mode.py.

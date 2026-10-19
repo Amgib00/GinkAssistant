@@ -108,6 +108,7 @@ def safe_eval(expr: str) -> float:
 class LiveInfo:
     def __init__(self, city_fn: Callable[[], str] = lambda: "", http_client=None):
         self.city_fn = city_fn            # Settings -> Location
+        self.allowed_fn = lambda: True    # Settings -> Location -> "Use location in answers"
         self._http = http_client
         self._ip_place = None              # cached for the session
 
@@ -154,13 +155,21 @@ class LiveInfo:
             if p:
                 p["source"] = "settings"
                 return p
-        if self._ip_place is None:
+        if not self.allowed_fn():
+            return None                   # location turned off: ask the user instead
+        return await self.approximate_place()
+
+    async def approximate_place(self, fresh: bool = False):
+        """The device's general area, estimated from its internet (IP) address. Cached per session."""
+        if self._ip_place is None or fresh:
             try:
                 d = await self._get("https://ipwho.is/")
                 if d.get("success", True) and d.get("latitude") is not None:
                     self._ip_place = {"name": d.get("city") or "your area", "country": d.get("country", ""),
-                                      "lat": d["latitude"], "lon": d["longitude"],
+                                      "region": d.get("region", ""), "lat": d["latitude"], "lon": d["longitude"],
                                       "tz": (d.get("timezone") or {}).get("id"), "source": "approximate"}
+                else:
+                    self._ip_place = False
             except Exception:
                 self._ip_place = False
         return self._ip_place or None
