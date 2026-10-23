@@ -35,6 +35,9 @@ MAX_ROUNDS = 12          # agent mode: enough for real multi-step tasks
 # ("lock my screen"), but asked about when Gink decides on it as part of a longer task.
 ALWAYS_ASK = {"compose_message", "make_call", "delete_item", "forget"}
 ASK_IN_CHAIN = {"quit_app", "lock_screen", "sleep_computer", "read_clipboard", "take_screenshot"}
+# Connected Apps: writing to someone's calendar or email ALWAYS needs an OK on screen, whatever the
+# "Ask before sensitive actions" setting; without a screen to ask on (voice), it isn't done.
+MUST_ASK = {"calendar_create", "email_draft", "email_send"}
 
 
 def describe(name: str, args: dict) -> str:
@@ -45,6 +48,12 @@ def describe(name: str, args: dict) -> str:
     if name == "compose_message":
         how = {"whatsapp": "a WhatsApp message", "sms": "a text message", "email": "an email"}.get(str(a.get("channel", "")).lower(), "a message")
         return f"Send {how}" + (f" to {to}" if to else "") + (f": \u201c{text[:80]}\u201d" if text else "")
+    if name in ("email_send", "email_draft"):
+        subject = (a.get("subject") or "").strip()
+        return ("Send an email" if name == "email_send" else "Write an email draft") + (f" to {to}" if to else "") + \
+               (f": \u201c{subject[:80]}\u201d" if subject else "")
+    if name == "calendar_create":
+        return f"Add \u201c{(a.get('title') or 'an event')[:80]}\u201d to your calendar" + (f" ({a.get('start')})" if a.get("start") else "")
     if name == "make_call":
         return "Call " + (to or "this number")
     if name == "delete_item":
@@ -191,12 +200,13 @@ class TaskAgent:
     async def run(self, user_text: str, history: Optional[list] = None,
                   on_status: Optional[Callable[[str], Awaitable[None]]] = None,
                   on_step: Optional[Callable[[int, str, str], Awaitable[None]]] = None,
-                  confirm: Optional[Callable[[str, dict, str], Awaitable[bool]]] = None) -> AgentReply:
+                  confirm: Optional[Callable[[str, dict, str], Awaitable[bool]]] = None,
+                  ask_sensitive: bool = True) -> AgentReply:
         """on_step(index, label, state) drives the live checklist (state: running/done/failed/skipped);
         confirm(tool, args, description) -> bool asks the user before sensitive actions."""
         import uuid as _uuid
         self._turn = _uuid.uuid4().hex          # all AI rounds for this request count as ONE message
-        self._on_step, self._confirm = on_step, confirm
+        self._on_step, self._confirm, self._ask_sensitive = on_step, confirm, ask_sensitive
         try:
             return await self._run(user_text, history, on_status)
         except GinkLimit as limit:
@@ -244,7 +254,7 @@ class TaskAgent:
                 msg = await self._chat(messages)
                 calls = msg.get("tool_calls") or []
                 if not calls:
-                    return AgentReply((msg.get("content") or "").strip() or _done_text(actions), actions)
+                    return AgentReply(_with_held_back((msg.get("content") or "").strip() or _done_text(actions), actions), actions)
                 messages.append({"role": "assistant", "content": msg.get("content") or "",
                                  "tool_calls": calls})
                 for call in calls:
@@ -257,7 +267,14 @@ class TaskAgent:
                         await on_status(_status_text(name))
                     step, label = len(actions), describe(name, args)
                     in_chain = round_no > 0 or len(calls) > 1
-                    if confirm is not None and needs_ok(name, in_chain):
+                    must = name in MUST_ASK
+                    if must and confirm is None:                       # nowhere to ask (voice): don't do it
+                        result = {"ok": False, "skipped": True,
+                                  "message": "This needs the user's OK on screen. Ask them to type the request in the chat."}
+                        actions.append({"tool": name, "args": args, "result": result})
+                        messages.append({"role": "tool", "tool_call_id": call["id"], "content": json.dumps(result)})
+                        continue
+                    if confirm is not None and (must or (getattr(self, "_ask_sensitive", True) and needs_ok(name, in_chain))):
                         if on_step:
                             await on_step(step, label, "asking")
                         try:
@@ -281,7 +298,7 @@ class TaskAgent:
                     messages.append({"role": "tool", "tool_call_id": call["id"],
                                      "content": json.dumps(result, default=str)[:6000]})
             msg = await self._chat(messages, use_tools=False)
-            return AgentReply((msg.get("content") or "").strip() or _done_text(actions), actions)
+            return AgentReply(_with_held_back((msg.get("content") or "").strip() or _done_text(actions), actions), actions)
         except GinkLimit:
             raise                          # a limit message must reach the user, not a fallback
         except Exception as e:
@@ -294,6 +311,17 @@ class TaskAgent:
             done = "; ".join(a["result"].get("message", a["tool"]) for a in actions if a["result"].get("ok"))
             return AgentReply(f"I hit a problem reaching the AI ({e})."
                               + (f" Already done: {done}." if done else ""), actions)
+
+
+def _with_held_back(text: str, actions) -> str:
+    """Steps that needed an OK on screen and couldn't get one (voice) are ALWAYS reported, whatever
+    the AI wrote -- so nobody believes an email was sent when it wasn't."""
+    held = [describe(a["tool"], a["args"]) for a in actions
+            if (a["result"] or {}).get("skipped") and "OK on screen" in (a["result"].get("message") or "")]
+    if not held:
+        return text
+    return (text + "\n\n" if text else "") + "Not done: " + "; ".join(held) + \
+        ". This needs your OK on screen \u2014 type the request in the chat to approve it."
 
 
 def _done_text(actions) -> str:
@@ -310,6 +338,9 @@ def _status_text(tool):
         "set_alarm": "Setting your alarm…", "set_timer": "Starting the timer…",
         "add_reminder": "Saving the reminder…", "add_task": "Saving your plan…",
         "web_search": "Searching the web…", "build_website": "Building your website…",
+        "calendar_upcoming": "Checking your calendar…", "calendar_create": "Adding to your calendar…",
+        "email_search": "Searching your email…", "email_read": "Reading the email…", "email_draft": "Writing the draft…",
+        "email_send": "Sending the email…", "drive_search": "Searching your Drive…",
         "edit_website": "Updating your website…", "open_app": "Opening the app…",
         "compose_message": "Preparing the message…", "add_calendar_event": "Adding to calendar…",
         "get_weather": "Checking the weather…", "get_air_quality": "Checking the air quality…",

@@ -193,6 +193,14 @@ class SettingsController:
                 extra_info["twofa"] = dict(status, **self._twofa)
             except Exception:
                 extra_info["twofa"] = dict(self._twofa)
+        if token and panel == "connected":                    # Connected Apps
+            try:
+                found = await asyncio.wait_for(api.connected_list(token), timeout=8)
+                extra_lists["connected"] = found.get("services", [])
+                extra_info["connected_configured"] = found.get("configured", False)
+            except Exception:
+                extra_lists["connected"] = []
+                extra_info["connected_error"] = "Connected apps aren't available right now."
         if token and panel == "account":                      # your websites
             try:
                 extra_lists["sites"] = await asyncio.wait_for(api.sites(token), timeout=8)
@@ -381,6 +389,36 @@ class SettingsController:
     async def _a_twofa_done(self, _):
         self._twofa.clear()                    # the codes are never shown again
         await self.refresh("account")
+
+    async def _a_connect_app(self, service):
+        token = getattr(self.app, "session_token", None)
+        if not token:
+            return
+        try:
+            url = await ApiClient(self.app.state.base_url).connected_begin(token, str(service))
+        except ApiError as exc:
+            return await self.web.settings_toast(str(exc))
+        from .login_screen import _open_in_browser
+        if not _open_in_browser(self.app, url):
+            return await self.web.settings_toast("Couldn't open your browser.")
+        await self.web.settings_toast("Finish in your browser \u2014 Gink will notice when you're done.")
+        api = ApiClient(self.app.state.base_url)
+        for _ in range(40):                          # up to 2 minutes: show it as connected when it is
+            await asyncio.sleep(3)
+            try:
+                found = await api.connected_list(token)
+            except Exception:
+                continue
+            if any(s["id"] == service and s["connected"] for s in found.get("services", [])):
+                await self.web.settings_toast("Connected.")
+                return await self.refresh("connected")
+
+    async def _a_disconnect_app(self, service):
+        token = getattr(self.app, "session_token", None)
+        if token:
+            await ApiClient(self.app.state.base_url).connected_disconnect(token, str(service))
+            await self.web.settings_toast("Disconnected. Gink can no longer use it.")
+            await self.refresh("connected")
 
     async def _a_delete_site(self, site_id):
         token = getattr(self.app, "session_token", None)

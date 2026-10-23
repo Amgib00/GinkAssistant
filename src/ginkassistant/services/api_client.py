@@ -233,6 +233,19 @@ class ApiClient:
         except Exception:
             return {}
 
+    # -- Connected Apps (Google Calendar, Gmail, Drive) ---------------------------
+    async def connected_list(self, token: str) -> dict:
+        return await self._authed("GET", "/connected", token)
+
+    async def connected_begin(self, token: str, service: str) -> str:
+        return (await self._authed("POST", f"/connected/{service}/begin", token))["url"]
+
+    async def connected_disconnect(self, token: str, service: str) -> None:
+        await self._authed("DELETE", f"/connected/{service}", token)
+
+    async def connected_call(self, token: str, path: str, payload: dict) -> dict:
+        return await self._authed("POST", f"/connected/{path}", token, json=payload, timeout=45)
+
     # -- websites ("make me a website for...") -----------------------------------
     async def create_site(self, token: str, prompt: str) -> dict:
         return await self._authed("POST", "/sites", token, json={"prompt": prompt}, timeout=200)

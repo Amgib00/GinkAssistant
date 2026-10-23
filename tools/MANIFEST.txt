@@ -184,6 +184,7 @@ tests/test_claude.py
 tests/test_claude_native.py
 tests/test_cli.py
 tests/test_computer_actions.py
+tests/test_connected_apps.py
 tests/test_dark_theme.py
 tests/test_dev_platform.py
 tests/test_developer_api.py

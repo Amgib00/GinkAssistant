@@ -518,6 +518,30 @@
       pushSettings(lists, extra);
     });
   }
+  // Connected apps (Google Calendar, Gmail, Drive)
+  function loadConnected() {
+    pushSettings({}, {});
+    api("/connected").then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) {
+      pushSettings({ connected: j.services || [] }, { connected_configured: j.configured });
+    }).catch(function () { pushSettings({ connected: [] }, { connected_error: "Connected apps aren\u2019t available right now." }); });
+  }
+  function connectApp(service) {
+    var win = window.open("about:blank", "_blank");           // opened during the click, so it isn't blocked
+    api("/connected/" + encodeURIComponent(service) + "/begin", {}).then(function (r) {
+      return r.ok ? r.json() : errorText(r).then(function (t) { throw new Error(t); });
+    }).then(function (j) {
+      if (win) win.location.href = j.url; else window.location.href = j.url;
+      settingsToast("Finish in the new window \u2014 Gink will notice when you\u2019re done.");
+      var tries = 0, timer = setInterval(function () {
+        if (++tries > 40) return clearInterval(timer);
+        api("/connected").then(function (r) { return r.json(); }).then(function (j2) {
+          if ((j2.services || []).some(function (s) { return s.id === service && s.connected; })) {
+            clearInterval(timer); settingsToast("Connected."); loadConnected();
+          }
+        });
+      }, 3000);
+    }).catch(function (e) { if (win) win.close(); settingsToast(e.message); });
+  }
   function twofaPost(path, body, then) {
     api(path, body || {}).then(function (r) {
       return r.ok ? r.json().then(then) : errorText(r).then(function (t) { settingsToast(t); });
@@ -582,7 +606,7 @@
     },
     settings_action: function (v) {
       var name = v && v.name;
-      if (name === "refresh") return (v.value === "account" ? loadDevices() : pushSettings());
+      if (name === "refresh") return (v.value === "account" ? loadDevices() : v.value === "connected" ? loadConnected() : pushSettings());
       if (name === "log_out" || name === "logout") {             // end this browser's session on the server too
         return api("/auth/logout", {}, { noLogout: true }).catch(function () {}).then(function () { signOut(""); });
       }
@@ -596,6 +620,11 @@
       if (name === "twofa_disable") return twofaPost("/account/2fa/disable", { code: String(v.value || "").trim() }, function () {
         W.twofa = {}; settingsToast("Two-step verification is off."); loadDevices(); });
       if (name === "twofa_cancel" || name === "twofa_done") { W.twofa = {}; return loadDevices(); }
+      if (name === "connect_app" && v.value) return connectApp(String(v.value));
+      if (name === "disconnect_app" && v.value) {
+        return fetch("/connected/" + encodeURIComponent(v.value), { method: "DELETE", headers: { Authorization: "Bearer " + W.token } })
+          .then(function () { settingsToast("Disconnected. Gink can no longer use it."); loadConnected(); });
+      }
       if (name === "delete_site" && v.value) {
         return fetch("/sites/" + encodeURIComponent(v.value), { method: "DELETE", headers: { Authorization: "Bearer " + W.token } })
           .then(function () { settingsToast("Website deleted."); loadDevices(); });

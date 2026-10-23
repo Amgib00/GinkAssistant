@@ -453,9 +453,11 @@ def build_main_screen(app: toga.App, email: str):
                 agent_answers.pop(ask_id, None)
 
         try:
+            # typed chats can always ask (Connected Apps' writing actions always do); the
+            # "Ask before sensitive actions" switch only controls the optional questions
             result = await agent.run(message, history=history, on_status=on_status,
                                      on_step=agent_step if typed else None,
-                                     confirm=agent_confirm if asks_ok else None)
+                                     confirm=agent_confirm if typed else None, ask_sensitive=asks_ok)
         finally:
             if typed:
                 await web_chat._js("agentEnd()")
@@ -1145,6 +1147,21 @@ def build_main_screen(app: toga.App, email: str):
             site_id = mine[0]["id"]                     # the most recently changed
         return await api.edit_site(token, site_id, instruction)
     app.task_runner.site_builder = site_builder
+
+    async def connected(path, payload):
+        """Connected Apps actions through the Gink server (Settings > Connected apps)."""
+        from ..services.api_client import ApiClient
+        token = getattr(app, "session_token", None)
+        if not token:
+            raise RuntimeError("sign in to Gink first")
+        if path == "calendar/create":
+            try:
+                from tzlocal import get_localzone_name
+                payload.setdefault("timezone", get_localzone_name())
+            except Exception:
+                payload.setdefault("timezone", "UTC")
+        return await ApiClient(app.state.base_url).connected_call(token, path, payload)
+    app.task_runner.connected = connected
 
     def file_path(name: str) -> str:
         path = os.path.join(files_dir, os.path.basename(name or ""))

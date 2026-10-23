@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.8 (October 2026)
+
+- Connected apps (Settings > Connected apps): connect Google Calendar, Gmail and Google Drive, one
+  at a time. Ask "what's on my calendar tomorrow?", "did Awa email me about the budget?" or "find my
+  budget spreadsheet". Gink always asks before adding an event or writing or sending an email, never
+  keeps what it reads, and disconnecting removes its access at Google too
+
 ## 0.1.7 (October 2026)
 
 - The Gink Developer Console (/developers): Dashboard, Playground (with ready-to-copy code),

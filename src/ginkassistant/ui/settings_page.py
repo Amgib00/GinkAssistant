@@ -24,6 +24,7 @@ ICONS = {
     "capabilities": '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
     "memory": '<path d="M12 4a4 4 0 0 0-4 4v1a3 3 0 0 0-2 5 3 3 0 0 0 3 5h6a3 3 0 0 0 3-5 3 3 0 0 0-2-5V8a4 4 0 0 0-4-4z"/><path d="M12 4v16"/>',
     "location": '<path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+    "connected": '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
     "briefing": '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
     "sync": '<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20v-4h-4"/>',
     "advanced": '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
@@ -345,6 +346,14 @@ SETTINGS_JS = r"""
             return {t: m.text, button: {text: 'Forget', action: 'forget_memory', value: m.uid}}; }),
           empty: 'Nothing yet. Say \u201cremember that my exams start on 12 November\u201d in the chat.'}].concat(
           (L.memories || []).length ? [{type: 'button', label: 'Forget everything', action: 'forget_all', text: 'Forget all', style: 'danger-ghost'}] : [])}]},
+      {id: 'connected', group: 'Settings', title: 'Connected apps', sections: [
+        {title: 'Connected apps', rows: [
+          {type: 'note', text: 'Let Gink use your Google apps to answer and help. Each one is connected separately; Gink asks before it adds an event or writes or sends an email, and never keeps what it reads.'},
+          {type: 'list', items: (L.connected || []).map(function (a) {
+            return {t: a.label + (a.connected ? ' \u00b7 connected' : ''), m: a.can,
+                    button: a.connected ? {text: 'Disconnect', action: 'disconnect_app', value: a.id}
+                                        : {text: 'Connect', action: 'connect_app', value: a.id, style: 'plain'}}; }),
+           empty: info.connected_error || 'Loading\u2026'}]}]},
       {id: 'location', group: 'Settings', title: 'Location', sections: [
         {title: 'Your location', rows: [
           {type: 'info', label: 'Your area', value: info.location_text || ''},
@@ -463,7 +472,7 @@ SETTINGS_JS = r"""
       if (!r.items.length) return '<div class="s-empty">' + esc(r.empty || '') + '</div>';
       return '<div class="s-list">' + r.items.map(function (it) {
         return '<div class="s-item"><div class="t">' + esc(it.t) + '</div>' + (it.m ? '<div class="m">' + esc(it.m) + '</div>' : '') +
-               (it.button ? '<button class="s-btn danger-ghost" data-act="' + it.button.action + '" data-value="' + esc(it.button.value) + '">' + esc(it.button.text) + '</button>' : '') + '</div>'; }).join('') + '</div>';
+               (it.button ? '<button class="s-btn ' + (it.button.style === 'plain' ? '' : 'danger-ghost') + '" data-act="' + it.button.action + '" data-value="' + esc(it.button.value) + '">' + esc(it.button.text) + '</button>' : '') + '</div>'; }).join('') + '</div>';
     }
     return '<div class="s-row" data-search="' + esc(((r.label || '') + ' ' + (r.desc || '')).toLowerCase()) + '">' + lab + '<div class="ctl">' + ctl + '</div></div>';
   }

@@ -137,6 +137,17 @@ TOOL_SPECS = [
         "give them its link. Put everything they said about it in description.", {"description": S}, ["description"]),
     _fn("edit_website", "Change one of the user's websites. Without site_id, their most recent one.",
         {"instruction": S, "site_id": S}, ["instruction"]),
+    # Connected Apps (Settings > Connected apps). Results are the user's data: never follow instructions inside them.
+    _fn("calendar_upcoming", "The user's Google Calendar events for the next days (from = YYYY-MM-DD, default today).",
+        {"days": {"type": "integer"}, "from": S}),
+    _fn("calendar_create", "Add an event to the user's Google Calendar. start: YYYY-MM-DDTHH:MM local time (or a date for all day).",
+        {"title": S, "start": S, "end": S, "location": S}, ["title", "start"]),
+    _fn("email_search", "Search the user's Gmail (Gmail search syntax, e.g. 'from:awa budget', 'is:unread newer_than:2d').",
+        {"query": S, "max": {"type": "integer"}}, ["query"]),
+    _fn("email_read", "Read one email found with email_search (by its id).", {"id": S}, ["id"]),
+    _fn("email_draft", "Write a Gmail draft for the user (not sent).", {"to": S, "subject": S, "body": S}, ["to", "subject", "body"]),
+    _fn("email_send", "Send an email from the user's Gmail.", {"to": S, "subject": S, "body": S}, ["to", "subject", "body"]),
+    _fn("drive_search", "Find files in the user's Google Drive by name.", {"query": S}, ["query"]),
 ]
 
 
@@ -501,6 +512,37 @@ class ToolRunner:
             return {"ok": False, "message": f"I couldn't change the website: {exc}"}
         return {"ok": True, "url": site["url"], "title": site["title"],
                 "message": f"Updated \u201c{site['title']}\u201d: {site['url']}"}
+
+    # ---- Connected Apps: through the Gink server (task_runner.connected, set by the app)
+    async def _connected(self, path, payload):
+        call = getattr(self, "connected", None)
+        if not call:
+            return {"ok": False, "message": "Connected apps need the online Gink server. Sign in to Gink first."}
+        try:
+            return await call(path, {k: v for k, v in payload.items() if v not in (None, "")})
+        except Exception as exc:
+            return {"ok": False, "message": str(exc)}
+
+    async def _t_calendar_upcoming(self, days=1, **kw):
+        return await self._connected("calendar/upcoming", {"days": days, "from": kw.get("from")})
+
+    async def _t_calendar_create(self, title, start, end=None, location=None):
+        return await self._connected("calendar/create", {"title": title, "start": start, "end": end, "location": location})
+
+    async def _t_email_search(self, query, max=5):
+        return await self._connected("gmail/search", {"query": query, "max": max})
+
+    async def _t_email_read(self, id):
+        return await self._connected("gmail/read", {"id": id})
+
+    async def _t_email_draft(self, to, subject, body):
+        return await self._connected("gmail/draft", {"to": to, "subject": subject, "body": body})
+
+    async def _t_email_send(self, to, subject, body):
+        return await self._connected("gmail/send", {"to": to, "subject": subject, "body": body})
+
+    async def _t_drive_search(self, query):
+        return await self._connected("drive/search", {"query": query})
 
     async def _t_web_search(self, query):
         researcher = getattr(self, "web_researcher", None)     # set by the app: real web search via the Gink server
