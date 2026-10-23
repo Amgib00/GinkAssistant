@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.6 (October 2026)
+
+- Websites: "make me a website for my bakery" -> Gink builds it and gives you a link to share;
+  "change my website: ..." updates it. Settings > Account > Your websites. Pages are sandboxed
+  (they can't touch Gink sign-ins or send data anywhere), have no password fields, and show
+  "Made with Gink"
+
 ## 0.1.5 (October 2026)
 
 - Gink in your terminal: `pip install gink-ai`, then `gink "question"`, a chat (`gink`), piped files,

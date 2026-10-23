@@ -197,6 +197,7 @@ tests/test_voice_and_stop.py
 tests/test_wake_word.py
 tests/test_web_app.py
 tests/test_web_search.py
+tests/test_websites.py
 tools/MANIFEST.txt
 tools/build_web_app.py
 tools/build_website.py

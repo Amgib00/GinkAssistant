@@ -133,6 +133,10 @@ TOOL_SPECS = [
         ["title", "start"]),
     _fn("web_search", "Look up current, factual information on the web.",
         {"query": S}, ["query"]),
+    _fn("build_website", "Build and publish a website for the user (e.g. for their business, event or portfolio) and "
+        "give them its link. Put everything they said about it in description.", {"description": S}, ["description"]),
+    _fn("edit_website", "Change one of the user's websites. Without site_id, their most recent one.",
+        {"instruction": S, "site_id": S}, ["instruction"]),
 ]
 
 
@@ -475,6 +479,29 @@ class ToolRunner:
         return r.to_dict()
 
     # ---------------- web ----------------
+    async def _t_build_website(self, description):
+        builder = getattr(self, "site_builder", None)                 # set by the app (needs the Gink server)
+        if not builder:
+            return {"ok": False, "message": "Websites need the online Gink server. Sign in to Gink to make one."}
+        try:
+            site = await builder("create", prompt=description)
+        except Exception as exc:
+            return {"ok": False, "message": f"I couldn't build the website: {exc}"}
+        return {"ok": True, "url": site["url"], "title": site["title"],
+                "message": f"Your website \u201c{site['title']}\u201d is live: {site['url']} "
+                           "(ask me to change anything on it)."}
+
+    async def _t_edit_website(self, instruction, site_id=None):
+        builder = getattr(self, "site_builder", None)
+        if not builder:
+            return {"ok": False, "message": "Websites need the online Gink server. Sign in to Gink to change one."}
+        try:
+            site = await builder("edit", instruction=instruction, site_id=site_id)
+        except Exception as exc:
+            return {"ok": False, "message": f"I couldn't change the website: {exc}"}
+        return {"ok": True, "url": site["url"], "title": site["title"],
+                "message": f"Updated \u201c{site['title']}\u201d: {site['url']}"}
+
     async def _t_web_search(self, query):
         researcher = getattr(self, "web_researcher", None)     # set by the app: real web search via the Gink server
         if researcher:

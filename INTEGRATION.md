@@ -917,3 +917,16 @@ New services/live_info.py (all free, no API keys):
   "model" -> gink-crystal (was a bare "Bad request."). Developers page: CLI + OpenAPI.
 - tests/test_cli.py runs the real CLI as a program against the real server (Groq simulated);
   the fixture restores the environment it changes (it had leaked into later tests).
+
+## Latest (0.1.6): websites
+- Server: POST /sites {prompt} (counts as a message; 20 per account; 300 KB), POST /sites/{id}/edit
+  {instruction}, GET /sites, DELETE /sites/{id}, DELETE /admin/sites/{id} (owner takedown),
+  GET /s/{id} public. Written by GPT-OSS 120B with SITE_SYSTEM rules; _site_clean strips password
+  inputs, external scripts and stylesheets, extracts <title>. Served with CSP "sandbox allow-scripts
+  ..." (no allow-same-origin -> opaque origin), default-src 'none' (no network), form-action 'none',
+  plus a "Made with Gink" badge. Account deletion removes sites.
+- Browser-verified: a hosted page's script can't read Gink's localStorage/cookies (SecurityError),
+  its origin is null, fetch to another server is blocked.
+- Apps: agent actions build_website / edit_website (task_runner.site_builder via main_screen);
+  web app: "make me a website..." / "change my website: ..."; Settings > Account > Your websites
+  (apps + web). tests/test_websites.py; browser journey.

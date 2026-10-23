@@ -309,7 +309,8 @@ def _status_text(tool):
     return {
         "set_alarm": "Setting your alarm…", "set_timer": "Starting the timer…",
         "add_reminder": "Saving the reminder…", "add_task": "Saving your plan…",
-        "web_search": "Searching the web…", "open_app": "Opening the app…",
+        "web_search": "Searching the web…", "build_website": "Building your website…",
+        "edit_website": "Updating your website…", "open_app": "Opening the app…",
         "compose_message": "Preparing the message…", "add_calendar_event": "Adding to calendar…",
         "get_weather": "Checking the weather…", "get_air_quality": "Checking the air quality…",
         "get_time": "Checking the time…", "get_date": "Checking the date…", "days_until": "Counting the days…",

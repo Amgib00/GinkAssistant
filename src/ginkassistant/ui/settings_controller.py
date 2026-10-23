@@ -193,6 +193,11 @@ class SettingsController:
                 extra_info["twofa"] = dict(status, **self._twofa)
             except Exception:
                 extra_info["twofa"] = dict(self._twofa)
+        if token and panel == "account":                      # your websites
+            try:
+                extra_lists["sites"] = await asyncio.wait_for(api.sites(token), timeout=8)
+            except Exception:
+                extra_lists["sites"] = []
         if token and panel == "account":                      # signed-in devices
             try:
                 found = await asyncio.wait_for(api.sessions(token), timeout=8)
@@ -376,6 +381,13 @@ class SettingsController:
     async def _a_twofa_done(self, _):
         self._twofa.clear()                    # the codes are never shown again
         await self.refresh("account")
+
+    async def _a_delete_site(self, site_id):
+        token = getattr(self.app, "session_token", None)
+        if token and site_id:
+            await ApiClient(self.app.state.base_url).delete_site(token, str(site_id))
+            await self.web.settings_toast("Website deleted.")
+            await self.refresh("account")
 
     async def _a_revoke_session(self, sid):
         token = getattr(self.app, "session_token", None)

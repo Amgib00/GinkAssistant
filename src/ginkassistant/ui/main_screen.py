@@ -1129,6 +1129,23 @@ def build_main_screen(app: toga.App, email: str):
         return None
     app.task_runner.web_researcher = research
 
+    async def site_builder(action, prompt="", instruction="", site_id=None):
+        """Websites through the Gink server ("make me a website for...")."""
+        from ..services.api_client import ApiClient
+        token = getattr(app, "session_token", None)
+        if not token:
+            raise RuntimeError("sign in to Gink first")
+        api = ApiClient(app.state.base_url)
+        if action == "create":
+            return await api.create_site(token, prompt)
+        if not site_id:
+            mine = await api.sites(token)
+            if not mine:
+                raise RuntimeError("you don't have a website yet \u2014 ask me to make one")
+            site_id = mine[0]["id"]                     # the most recently changed
+        return await api.edit_site(token, site_id, instruction)
+    app.task_runner.site_builder = site_builder
+
     def file_path(name: str) -> str:
         path = os.path.join(files_dir, os.path.basename(name or ""))
         return path if os.path.isfile(path) else ""

@@ -295,6 +295,11 @@ SETTINGS_JS = r"""
           {type: 'html', label: 'Plan', html: pro ? '<span class="badge pro">Gink Pro</span>' : '<span class="badge">Free</span>'},
           {type: 'button', label: 'Log out', desc: 'Sign out of Gink on this device.', action: 'logout', text: 'Log out'}]},
         {title: 'Two-step verification', rows: twofaRows(info.twofa || {})},
+        {title: 'Your websites', rows: [
+          {type: 'list', items: (L.sites || []).map(function (w) {
+            return {t: w.title, m: w.url + ' \u00b7 ' + (w.views || 0) + (w.views === 1 ? ' view' : ' views'),
+                    button: {text: 'Delete', action: 'delete_site', value: w.id}}; }),
+           empty: 'No websites yet. Ask Gink: \u201cmake me a website for my business\u201d.'}]},
         {title: 'Signed-in devices', rows: [
           {type: 'list', items: (L.sessions || []).map(function (d) {
             return {t: d.device, m: d.when, button: d.current ? null : {text: 'Log out', action: 'revoke_session', value: d.id}}; }),

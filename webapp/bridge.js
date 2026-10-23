@@ -278,7 +278,9 @@
     setComposerBusy(true);
     var web = !atts.length && (W.model === "gink-search" || WEB_RE.test(text));
     if (web) setSpinLabel(aid, "Searching the web\u2026");
-    var job = IMAGE_RE.test(text) && !atts.length ? makeImage(text, aid) : chat(s, aid, { voice: opts.voice, last: content, web: web });
+    var job = SITE_EDIT_RE.test(text) && !atts.length ? makeSite(text, aid, true)
+            : SITE_RE.test(text) && !atts.length ? makeSite(text, aid, false)
+            : IMAGE_RE.test(text) && !atts.length ? makeImage(text, aid) : chat(s, aid, { voice: opts.voice, last: content, web: web });
     return job.then(function (reply) {
       if (reply) { s.messages.push({ role: "assistant", content: reply, ts: stamp() }); touch(s.id); }
       W.busy = null; setComposerBusy(false); refreshSidebar(); sync();
@@ -333,6 +335,34 @@
       return text;
     }).catch(function () { setPlainText(aid, text); return text; });
   }
+  // ---- websites: "make me a website for..." / "change my website: ..."
+  var SITE_RE = /\b(make|build|create|design|generate|cr\u00e9e|fais)\b[^.?!]{0,50}\b(website|web site|site web|site internet|landing page|web ?page)\b/i;
+  var SITE_EDIT_RE = /\b(change|edit|update|modify|modifie|change)\b[^.?!]{0,20}\b(my|the|mon|le) (website|site)\b/i;
+  function siteLink(j, intro) {
+    var url = String(j.url || ""), safe = /^https?:\/\//.test(url) ? url : "#";
+    var a = document.createElement("a"); a.href = safe; a.target = "_blank"; a.rel = "noopener"; a.textContent = j.title || "your website";
+    return "<p>" + intro + " " + a.outerHTML + "</p><p class=\"muted\">" + escHtml(url) +
+           "</p><p>Ask me to change anything on it \u2014 for example \u201cmake the header green\u201d.</p>";
+  }
+  function escHtml(t) { var d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
+  function makeSite(text, aid, editing) {
+    W.busy = { abort: function () {} };
+    setSpinLabel(aid, editing ? "Updating your website\u2026" : "Building your website\u2026 (about a minute)");
+    var go = editing
+      ? api("/sites").then(function (r) { return r.json(); }).then(function (j) {
+          if (!j.sites || !j.sites.length) throw new Error("You don\u2019t have a website yet \u2014 ask me to make one.");
+          return api("/sites/" + encodeURIComponent(j.sites[0].id) + "/edit", { instruction: text });
+        })
+      : api("/sites", { prompt: text });
+    return go.then(function (r) {
+      if (!r.ok) return errorText(r).then(function (t) { setPlainText(aid, t); return ""; });
+      return r.json().then(function (j) {
+        finalizeMessage(aid, siteLink(j, editing ? "Updated:" : "Your website is live:"));
+        return (editing ? "Updated your website: " : "Your website is live: ") + j.title + " " + j.url;
+      });
+    }).catch(function (e) { setPlainText(aid, (e && e.message && e.message !== "signed out") ? e.message : "Can't reach the Gink server."); return ""; });
+  }
+
   function makeImage(prompt, aid) {
     W.busy = { abort: function () {} };
     setSpinLabel(aid, "Creating your image\u2026");
@@ -479,8 +509,10 @@
     pushSettings({}, { twofa: W.twofa });
     var json = function (r) { return r.ok ? r.json() : Promise.reject(); };
     Promise.all([api("/account/sessions").then(json).catch(function () { return null; }),
-                 api("/account/2fa").then(json).catch(function () { return {}; })]).then(function (res) {
-      var lists = { sessions: res[0] ? (res[0].sessions || []).map(function (d) { return Object.assign({}, d, { when: activeText(d) }); }) : [] };
+                 api("/account/2fa").then(json).catch(function () { return {}; }),
+                 api("/sites").then(json).catch(function () { return { sites: [] }; })]).then(function (res) {
+      var lists = { sessions: res[0] ? (res[0].sessions || []).map(function (d) { return Object.assign({}, d, { when: activeText(d) }); }) : [],
+                    sites: (res[2].sites || []) };
       var extra = { twofa: Object.assign({}, res[1] || {}, W.twofa) };
       if (!res[0]) extra.sessions_error = "Your devices aren\u2019t available right now.";
       pushSettings(lists, extra);
@@ -564,6 +596,10 @@
       if (name === "twofa_disable") return twofaPost("/account/2fa/disable", { code: String(v.value || "").trim() }, function () {
         W.twofa = {}; settingsToast("Two-step verification is off."); loadDevices(); });
       if (name === "twofa_cancel" || name === "twofa_done") { W.twofa = {}; return loadDevices(); }
+      if (name === "delete_site" && v.value) {
+        return fetch("/sites/" + encodeURIComponent(v.value), { method: "DELETE", headers: { Authorization: "Bearer " + W.token } })
+          .then(function () { settingsToast("Website deleted."); loadDevices(); });
+      }
       if (name === "sign_out_others") {
         return api("/account/sessions/sign-out-others", {}).then(function () { settingsToast("All your other devices are signed out."); loadDevices(); });
       }

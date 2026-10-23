@@ -199,9 +199,9 @@ class ApiClient:
 
     # -- billing (Gink Pro) ----------------------------------------------------
 
-    async def _authed(self, method: str, path: str, token: str, **kw) -> dict:
+    async def _authed(self, method: str, path: str, token: str, timeout: float = 25, **kw) -> dict:
         try:
-            async with httpx.AsyncClient(headers=device_headers(), timeout=25) as client:
+            async with httpx.AsyncClient(headers=device_headers(), timeout=timeout) as client:
                 resp = await client.request(method, f"{self.base_url}{path}",
                                             headers={"Authorization": f"Bearer {token}"}, **kw)
         except httpx.HTTPError as e:
@@ -232,6 +232,19 @@ class ApiClient:
             return r.json() if r.status_code == 200 else {}
         except Exception:
             return {}
+
+    # -- websites ("make me a website for...") -----------------------------------
+    async def create_site(self, token: str, prompt: str) -> dict:
+        return await self._authed("POST", "/sites", token, json={"prompt": prompt}, timeout=200)
+
+    async def edit_site(self, token: str, site_id: str, instruction: str) -> dict:
+        return await self._authed("POST", f"/sites/{site_id}/edit", token, json={"instruction": instruction}, timeout=200)
+
+    async def sites(self, token: str) -> list:
+        return (await self._authed("GET", "/sites", token)).get("sites", [])
+
+    async def delete_site(self, token: str, site_id: str) -> None:
+        await self._authed("DELETE", f"/sites/{site_id}", token)
 
     # -- signed-in devices (Settings > Account) ---------------------------------
     async def sessions(self, token: str) -> list:

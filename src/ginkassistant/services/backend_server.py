@@ -2062,7 +2062,8 @@ def delete_account(request: Request, data: dict = Body(...)):
             con.execute(_SESSIONS_TABLE)
             con.execute(_SECURITY_TABLE)
             con.execute(_TWOFA_TABLE)
-            for table in ("twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
+            con.execute(_SITES_TABLE)
+            for table in ("sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
                           "search_usage", "search_turns", "sessions", "account_security"):
                 con.execute(f"DELETE FROM {table} WHERE email=?", (email,))
             con.execute("UPDATE payments SET email=? WHERE email=?", (anon, email))
@@ -3217,3 +3218,168 @@ def _developer_openapi(base_url: str) -> dict:
 @app.get("/v1/openapi.json")
 def developer_openapi(request: Request):
     return _developer_openapi(_public_base(request))
+
+
+# ---- Websites: "make me a website for my restaurant" -> a page at https://<server>/s/<id>.
+# Pages are written by the AI from people's requests, so they're served in a SANDBOX (an empty,
+# separate origin: no access to Gink sign-ins), can't make network requests, can't submit forms
+# anywhere, have no password fields, and carry a "Made with Gink" badge.
+SITE_MAX_BYTES = 300_000
+SITES_PER_ACCOUNT = 20
+_SITES_TABLE = ("CREATE TABLE IF NOT EXISTS sites (id TEXT PRIMARY KEY, email TEXT NOT NULL, title TEXT, prompt TEXT, "
+                "html TEXT NOT NULL, created REAL NOT NULL, updated REAL NOT NULL, views INTEGER NOT NULL DEFAULT 0)")
+SITE_CSP = ("sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation; "
+            "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data: https:; "
+            "media-src data: https:; font-src data:; form-action 'none'; base-uri 'none'")
+SITE_SYSTEM = (
+    "You build websites. Reply with ONE complete HTML5 document and nothing else: no Markdown fences, no explanation.\n"
+    "Rules: everything in one file -- CSS in a <style> tag, and only a small inline <script> if really needed; no "
+    "external scripts, stylesheets or fonts (use system fonts); images only as inline SVG, emoji, CSS gradients or "
+    "https image URLs. Mobile-friendly (viewport meta tag, flexible layout), accessible (headings in order, alt text, "
+    "good contrast), fast. No forms that collect data and no password fields: for contact use mailto:, tel: or "
+    "WhatsApp (https://wa.me/...) links. Never imitate a bank, government, or another company's login or payment "
+    "page. Write the content in the language the person used. Make it look polished, modern and specific to them.")
+_BADGE = ('<a href="https://amgib00.github.io/GinkAssistant/" target="_blank" rel="noopener" '
+          'style="position:fixed;right:10px;bottom:10px;z-index:2147483647;font:600 12px/1 system-ui,sans-serif;'
+          'background:#151D23;color:#A8F03C;padding:7px 10px;border-radius:999px;text-decoration:none;'
+          'box-shadow:0 2px 8px rgba(0,0,0,.25)">Made with Gink</a>')
+
+
+def _site_clean(text: str):
+    """The AI's answer -> (html, title). Removes what a sandboxed page must not have."""
+    html = text.strip()
+    fence = re.search(r"```(?:html)?\s*(.*?)```", html, re.S | re.I)
+    if fence:
+        html = fence.group(1).strip()
+    start = re.search(r"<!doctype html|<html", html, re.I)
+    if not start:
+        raise ValueError("The AI didn't return a web page. Try describing the website again.")
+    html = html[start.start():]
+    html = re.sub(r"<input\b[^>]*type\s*=\s*['\"]?password['\"]?[^>]*>", "", html, flags=re.I)        # no passwords
+    html = re.sub(r"<script\b[^>]*\bsrc\s*=[^>]*>\s*</script>", "", html, flags=re.I)                 # no outside scripts
+    html = re.sub(r"<link\b[^>]*rel\s*=\s*['\"]?stylesheet[^>]*>", "", html, flags=re.I)              # no outside CSS
+    if len(html.encode()) > SITE_MAX_BYTES:
+        raise ValueError("That website came out too large. Ask for a simpler page.")
+    m = re.search(r"<title>(.*?)</title>", html, re.I | re.S)
+    title = " ".join((m.group(1) if m else "My website").split())[:80] or "My website"
+    return html, title
+
+
+async def _site_ai(messages: list) -> str:
+    import httpx
+    body = {"model": await _current_model("openai/gpt-oss-120b"), "messages": messages, "max_tokens": 8192,
+            "temperature": 0.6, "reasoning_effort": "low"}
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(180, connect=15)) as client:
+            r = await client.post(f"{GROQ_BASE}/chat/completions", json=body,
+                                  headers={"Authorization": f"Bearer {_env('GROQ_API_KEY')}"})
+    except Exception:
+        raise ValueError("The AI service didn't answer. Please try again.")
+    if r.status_code != 200:
+        raise ValueError("The AI service had a problem. Please try again.")
+    return ((r.json().get("choices") or [{}])[0].get("message") or {}).get("content") or ""
+
+
+def _sites_db(fn):
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(_SITES_TABLE)
+            out = fn(con)
+            con.commit()
+            return out
+        finally:
+            con.close()
+
+
+def _site_url(request: Request, site_id: str) -> str:
+    return f"{_public_base(request).rstrip('/')}/s/{site_id}"
+
+
+async def _site_prepare(request: Request):
+    email = _email_from_auth(request)
+    if not _env("GROQ_API_KEY"):
+        return email, _ai_error(503, "Websites aren't set up on this server yet.", "not_configured")
+    plan = _plan_status(email)["plan"]
+    return email, _count_call(email, request.headers.get("x-gink-turn", ""), plan)
+
+
+@app.post("/sites")
+async def site_create(request: Request, data: dict = Body(...)):
+    prompt = " ".join(str(data.get("prompt") or "").split())[:2000]
+    if len(prompt) < 5:
+        raise HTTPException(status_code=422, detail="Describe the website you'd like.")
+    email, blocked = await _site_prepare(request)
+    if blocked is not None:
+        return blocked
+    if _sites_db(lambda con: con.execute("SELECT COUNT(*) FROM sites WHERE email=?", (email,)).fetchone()[0]) >= SITES_PER_ACCOUNT:
+        raise HTTPException(status_code=409, detail=f"You have {SITES_PER_ACCOUNT} websites already. Delete one to make another.")
+    try:
+        html, title = _site_clean(await _site_ai([{"role": "system", "content": SITE_SYSTEM},
+                                                  {"role": "user", "content": prompt}]))
+    except ValueError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+    site_id, now = secrets.token_urlsafe(6).replace("_", "x").replace("-", "y"), time.time()
+    _sites_db(lambda con: con.execute("INSERT INTO sites (id, email, title, prompt, html, created, updated) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                      (site_id, email, title, prompt, html, now, now)))
+    return {"id": site_id, "title": title, "url": _site_url(request, site_id)}
+
+
+@app.post("/sites/{site_id}/edit")
+async def site_edit(site_id: str, request: Request, data: dict = Body(...)):
+    instruction = " ".join(str(data.get("instruction") or "").split())[:2000]
+    if len(instruction) < 3:
+        raise HTTPException(status_code=422, detail="Say what to change.")
+    email, blocked = await _site_prepare(request)
+    if blocked is not None:
+        return blocked
+    row = _sites_db(lambda con: con.execute("SELECT html FROM sites WHERE id=? AND email=?", (site_id, email)).fetchone())
+    if not row:
+        raise HTTPException(status_code=404, detail="That website wasn't found.")
+    try:
+        html, title = _site_clean(await _site_ai([
+            {"role": "system", "content": SITE_SYSTEM},
+            {"role": "user", "content": f"Here is my current website:\n\n{row[0]}\n\nChange it: {instruction}\n"
+                                        "Reply with the complete updated HTML document."}]))
+    except ValueError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+    _sites_db(lambda con: con.execute("UPDATE sites SET html=?, title=?, updated=? WHERE id=? AND email=?",
+                                      (html, title, time.time(), site_id, email)))
+    return {"id": site_id, "title": title, "url": _site_url(request, site_id)}
+
+
+@app.get("/sites")
+def site_list(request: Request):
+    email = _email_from_auth(request)
+    rows = _sites_db(lambda con: con.execute("SELECT id, title, created, updated, views FROM sites WHERE email=? "
+                                             "ORDER BY updated DESC", (email,)).fetchall())
+    return {"sites": [{"id": i, "title": t, "url": _site_url(request, i), "created": c, "updated": u, "views": v}
+                      for i, t, c, u, v in rows], "limit": SITES_PER_ACCOUNT}
+
+
+@app.delete("/sites/{site_id}")
+def site_delete(site_id: str, request: Request):
+    email = _email_from_auth(request)
+    _sites_db(lambda con: con.execute("DELETE FROM sites WHERE id=? AND email=?", (site_id, email)))
+    return {"ok": True}
+
+
+@app.delete("/admin/sites/{site_id}")
+def admin_site_delete(site_id: str, request: Request):
+    """Owner: take down any website (abuse reports)."""
+    _require_owner(request)
+    _sites_db(lambda con: con.execute("DELETE FROM sites WHERE id=?", (site_id,)))
+    return {"ok": True}
+
+
+@app.get("/s/{site_id}", response_class=HTMLResponse)
+def site_view(site_id: str):
+    row = _sites_db(lambda con: con.execute("SELECT html FROM sites WHERE id=?", (site_id,)).fetchone())
+    if not row:
+        return HTMLResponse("<!doctype html><title>Not found</title><p>This website doesn't exist (anymore).</p>",
+                            status_code=404)
+    _sites_db(lambda con: con.execute("UPDATE sites SET views = views + 1 WHERE id=?", (site_id,)))
+    html = row[0]
+    html = html.replace("</body>", _BADGE + "</body>", 1) if "</body>" in html else html + _BADGE
+    return HTMLResponse(html, headers={"Content-Security-Policy": SITE_CSP, "X-Content-Type-Options": "nosniff",
+                                       "Referrer-Policy": "no-referrer", "Cache-Control": "no-store"})
