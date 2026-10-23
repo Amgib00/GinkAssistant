@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gink Developer Console</title>
+<style>
+  :root { --bg:#F6F7F4; --side:#EEF1EC; --card:#FFFFFF; --text:#151D23; --muted:#5D6B64; --line:#E1E5E0; --accent:#3F7D12;
+          --lime:#A8F03C; --ok:#2E7D32; --warn:#B26A00; --bad:#C42B1C; --code:#F1F3EF; --c1:#3F7D12; --c2:#C26A00; --c3:#2F6FB3; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0F1519; --side:#141C21; --card:#18222A; --text:#E9EFEA; --muted:#9AABA3;
+          --line:rgba(233,239,234,.12); --accent:#A8F03C; --ok:#7BD88F; --warn:#FFB547; --bad:#FF8A80; --code:#0F171C;
+          --c1:#A8F03C; --c2:#FFB547; --c3:#7DB7FF; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14.5px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  a { color:var(--accent); }
+  .shell { display:grid; grid-template-columns:232px 1fr; min-height:100vh; }
+  aside { background:var(--side); border-right:1px solid var(--line); padding:18px 12px; position:sticky; top:0; height:100vh;
+          display:flex; flex-direction:column; gap:4px; overflow:auto; }
+  .brand { display:flex; align-items:center; gap:8px; font-weight:800; font-size:17px; padding:4px 10px 14px; }
+  .brand .dot { width:22px; height:22px; border-radius:7px; background:#151D23; display:grid; place-items:center; color:var(--lime); font-size:13px; }
+  .brand small { font-weight:600; color:var(--muted); font-size:12px; }
+  nav a { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:9px; color:var(--text); text-decoration:none; font-weight:550; }
+  nav a:hover { background:rgba(127,127,127,.10); }
+  nav a.on { background:var(--card); box-shadow:0 1px 2px rgba(0,0,0,.06); }
+  nav .grp { font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); padding:14px 10px 4px; font-weight:700; }
+  .who { margin-top:auto; padding:10px; font-size:12.5px; color:var(--muted); border-top:1px solid var(--line); }
+  main { padding:26px 32px 60px; max-width:1180px; width:100%; }
+  h1 { font-size:24px; margin:0 0 4px; } .sub { color:var(--muted); margin:0 0 20px; }
+  h2 { font-size:16px; margin:26px 0 10px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; }
+  .k { color:var(--muted); font-size:12.5px; } .v { font-size:26px; font-weight:780; line-height:1.25; } .s { color:var(--muted); font-size:12.5px; }
+  button, .btn { font:inherit; font-weight:650; border:0; border-radius:999px; padding:8px 15px; cursor:pointer; background:var(--text); color:var(--bg); text-decoration:none; display:inline-block; }
+  button.ghost { background:transparent; color:var(--text); box-shadow:inset 0 0 0 1.5px var(--line); }
+  button.danger { background:transparent; color:var(--bad); box-shadow:inset 0 0 0 1.5px var(--line); }
+  button:disabled { opacity:.5; cursor:default; }
+  input, select, textarea { font:inherit; color:var(--text); background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:8px 11px; }
+  textarea { width:100%; font-family:ui-monospace,Menlo,monospace; font-size:13px; }
+  table { width:100%; border-collapse:collapse; } th, td { text-align:left; padding:8px 8px; border-top:1px solid var(--line); font-size:13.5px; vertical-align:top; }
+  th { color:var(--muted); font-weight:600; font-size:12.5px; } td.n, th.n { text-align:right; font-variant-numeric:tabular-nums; }
+  .scroll { overflow-x:auto; }
+  .pill { border-radius:999px; padding:2px 9px; font-size:12px; font-weight:700; display:inline-block; }
+  .p-ok { background:rgba(46,125,50,.14); color:var(--ok); } .p-bad { background:rgba(196,43,28,.12); color:var(--bad); }
+  .p-run { background:rgba(178,106,0,.14); color:var(--warn); } .p-mute { background:rgba(127,127,127,.14); color:var(--muted); }
+  pre { background:var(--code); border:1px solid var(--line); border-radius:12px; padding:12px 14px; overflow:auto; font-size:12.8px; margin:8px 0; }
+  code { font-family:ui-monospace,Menlo,monospace; font-size:12.8px; }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .bar { height:8px; border-radius:999px; background:rgba(127,127,127,.18); overflow:hidden; } .bar i { display:block; height:100%; background:var(--accent); }
+  .note { color:var(--muted); font-size:13px; } .err { color:var(--bad); min-height:20px; } .okmsg { color:var(--ok); }
+  svg text { fill:var(--muted); font-size:11px; }
+  .pg { display:grid; grid-template-columns:300px 1fr; gap:14px; } .pg label { display:block; font-weight:600; font-size:13px; margin:12px 0 4px; }
+  .thread { min-height:280px; max-height:56vh; overflow:auto; display:flex; flex-direction:column; gap:10px; }
+  .msg { border-radius:12px; padding:10px 12px; white-space:pre-wrap; } .msg.u { background:var(--code); align-self:flex-end; max-width:85%; }
+  .msg.a { border:1px solid var(--line); } .msg .meta { color:var(--muted); font-size:12px; margin-top:6px; }
+  .tabs button { border-radius:8px; padding:5px 11px; } .tabs button.ghost.on { box-shadow:inset 0 0 0 1.5px var(--accent); }
+  .newkey { background:rgba(168,240,60,.12); border:1px solid var(--accent); border-radius:12px; padding:12px; margin-top:12px; }
+  [hidden] { display:none !important; }
+  @media (max-width: 860px) { .shell { grid-template-columns:1fr; } aside { position:static; height:auto; flex-direction:row; flex-wrap:wrap; }
+    .who { display:none; } main { padding:18px; } .pg { grid-template-columns:1fr; } nav { display:flex; flex-wrap:wrap; } nav .grp { display:none; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="brand"><span class="dot">&#10052;</span> Gink <small>Console</small></div>
+    <nav id="nav">
+      <a href="#dashboard" data-v="dashboard">Dashboard</a>
+      <a href="#playground" data-v="playground">Playground</a>
+      <span class="grp">Manage</span>
+      <a href="#keys" data-v="keys">API keys</a>
+      <a href="#usage" data-v="usage">Usage</a>
+      <a href="#metrics" data-v="metrics">Metrics</a>
+      <a href="#logs" data-v="logs">Logs</a>
+      <a href="#batches" data-v="batches">Batches</a>
+      <span class="grp">Learn</span>
+      <a href="#docs" data-v="docs">Docs</a>
+      <a href="/v1/openapi.json" target="_blank" rel="noopener">OpenAPI &#8599;</a>
+      <a href="/app">Open Gink &#8599;</a>
+    </nav>
+    <div class="who" id="who"></div>
+  </aside>
+
+  <main>
+    <section id="signed-out" hidden>
+      <h1>Gink Developer Console</h1>
+      <p class="sub">Build with Gink: an OpenAI-compatible API, a CLI, batches and live metrics.</p>
+      <div class="card"><p>Sign in to Gink in this browser to create API keys and see your usage.</p>
+        <a class="btn" href="/app">Sign in to Gink</a></div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section data-view="dashboard" hidden>
+      <h1>Dashboard</h1><p class="sub">Your Gink Developer API at a glance.</p>
+      <div class="grid" id="dash-cards"></div>
+      <h2>Requests, last 14 days</h2>
+      <div class="card"><svg id="dash-chart" viewBox="0 0 760 200" width="100%" role="img" aria-label="Requests per day"></svg></div>
+      <h2>Quick start</h2>
+      <div class="card"><p class="note">Use any OpenAI library: set the base URL and your Gink key.</p><pre><code id="dash-quick"></code></pre></div>
+    </section>
+
+    <!-- PLAYGROUND -->
+    <section data-view="playground" hidden>
+      <h1>Playground</h1><p class="sub">Try models live. Requests count toward your daily allowance.</p>
+      <div class="pg">
+        <div class="card">
+          <label for="pg-model">Model</label><select id="pg-model" style="width:100%"></select>
+          <label for="pg-system">System instructions</label><textarea id="pg-system" rows="5" placeholder="You are a helpful assistant."></textarea>
+          <label for="pg-temp">Temperature <span id="pg-temp-v">0.7</span></label><input id="pg-temp" type="range" min="0" max="2" step="0.1" value="0.7" style="width:100%">
+          <label for="pg-max">Max tokens</label><input id="pg-max" type="number" min="16" max="8192" value="1024" style="width:100%">
+          <label><input id="pg-stream" type="checkbox" checked> Stream the answer</label>
+          <div class="row" style="margin-top:12px"><button class="ghost" id="pg-clear">Clear</button><button class="ghost" id="pg-code-btn">View code</button></div>
+        </div>
+        <div class="card">
+          <div class="thread" id="pg-thread"><p class="note" id="pg-empty">Send a message to start.</p></div>
+          <div class="row" style="margin-top:10px">
+            <textarea id="pg-input" rows="3" placeholder="Ask something\u2026  (Ctrl+Enter to send)" style="flex:1;font-family:inherit"></textarea>
+            <button id="pg-send">Send</button>
+          </div>
+          <p class="err" id="pg-err"></p>
+          <div id="pg-code" hidden>
+            <div class="row tabs"><button class="ghost on" data-lang="python">Python</button><button class="ghost" data-lang="js">JavaScript</button><button class="ghost" data-lang="curl">curl</button></div>
+            <pre><code id="pg-code-text"></code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KEYS -->
+    <section data-view="keys" hidden>
+      <h1>API keys</h1><p class="sub">Keys let your apps use Gink. Treat them like passwords; you can revoke one anytime.</p>
+      <div class="card">
+        <form id="key-form" class="row"><input id="key-name" placeholder="Key name, e.g. My website" maxlength="60" style="flex:1;min-width:200px"><button>Create key</button></form>
+        <div class="newkey" id="key-new" hidden><b>Copy your new key now, it won't be shown again:</b>
+          <pre><code id="key-new-text"></code></pre><button class="ghost" id="key-copy">Copy</button> <span class="okmsg" id="key-copied"></span></div>
+        <p class="err" id="key-err"></p>
+        <div class="scroll"><table><thead><tr><th>Name</th><th>Key</th><th>Created</th><th>Last used</th><th class="n">Requests</th><th></th></tr></thead><tbody id="key-rows"></tbody></table></div>
+        <p class="note" id="key-empty" hidden>No keys yet.</p>
+      </div>
+    </section>
+
+    <!-- USAGE -->
+    <section data-view="usage" hidden>
+      <h1>Usage</h1><p class="sub">Requests and tokens per key. API calls share your account's daily allowance with the Gink apps.</p>
+      <div class="card"><div class="k">Today's API requests vs. your daily allowance</div><div class="v" id="use-today"></div>
+        <div class="bar" style="margin-top:8px"><i id="use-bar" style="width:0"></i></div><p class="note" id="use-note"></p></div>
+      <h2>By key</h2>
+      <div class="card scroll"><table><thead><tr><th>Key</th><th class="n">Today</th><th class="n">7 days</th><th class="n">30 days</th><th class="n">Tokens (30 days)</th><th>Last used</th></tr></thead><tbody id="use-rows"></tbody></table></div>
+    </section>
+
+    <!-- METRICS -->
+    <section data-view="metrics" hidden>
+      <div class="row" style="justify-content:space-between"><div><h1>Metrics</h1><p class="sub">Volume, errors, speed and tokens.</p></div>
+        <select id="met-days" aria-label="Period"><option value="7">Last 7 days</option><option value="14" selected>Last 14 days</option><option value="30">Last 30 days</option></select></div>
+      <div class="grid" id="met-cards"></div>
+      <h2>Requests and errors</h2><div class="card"><svg id="met-req" viewBox="0 0 760 200" width="100%" role="img" aria-label="Requests and errors per day"></svg></div>
+      <h2>Response time (average and 95th percentile, ms)</h2><div class="card"><svg id="met-ms" viewBox="0 0 760 200" width="100%" role="img" aria-label="Response times"></svg></div>
+      <h2>Tokens per day</h2><div class="card"><svg id="met-tok" viewBox="0 0 760 200" width="100%" role="img" aria-label="Tokens per day"></svg></div>
+      <div class="grid" style="margin-top:14px">
+        <div class="card"><b>Models</b><table><tbody id="met-models"></tbody></table></div>
+        <div class="card"><b>Status codes</b><table><tbody id="met-status"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- LOGS -->
+    <section data-view="logs" hidden>
+      <div class="row" style="justify-content:space-between"><div><h1>Logs</h1><p class="sub">Every API request, without its contents (Gink never stores what you send).</p></div>
+        <div class="row"><label class="note"><input type="checkbox" id="log-auto"> Auto-refresh</label><button class="ghost" id="log-refresh">Refresh</button></div></div>
+      <div class="card scroll"><table><thead><tr><th>Time</th><th>Key</th><th>Endpoint</th><th>Model</th><th>Status</th><th class="n">ms</th><th class="n">Tokens in / out</th></tr></thead><tbody id="log-rows"></tbody></table>
+        <p class="note" id="log-empty" hidden>No requests yet. Make one with your API key, the CLI or the Playground&hellip; (Playground requests use your sign-in, so they appear in the apps' usage instead.)</p>
+        <button class="ghost" id="log-more" hidden>Load older</button></div>
+    </section>
+
+    <!-- BATCHES -->
+    <section data-view="batches" hidden>
+      <h1>Batches</h1><p class="sub">Send up to 100 chat requests at once. They run in the background; download the results when done.</p>
+      <div class="card">
+        <label for="bat-input"><b>Requests</b> <span class="note">&mdash; one JSON per line: {"custom_id": "...", "body": {chat request}}</span></label>
+        <textarea id="bat-input" rows="7" spellcheck="false"></textarea>
+        <div class="row" style="margin-top:8px"><input id="bat-name" placeholder="Batch name (optional)" maxlength="60">
+          <button class="ghost" id="bat-example">Load example</button>
+          <label class="btn ghost" style="background:transparent;color:var(--text);box-shadow:inset 0 0 0 1.5px var(--line)">Upload .jsonl<input id="bat-file" type="file" accept=".jsonl,.json,.txt" hidden></label>
+          <button id="bat-run">Run batch</button></div>
+        <p class="err" id="bat-err"></p>
+      </div>
+      <h2>Your batches</h2>
+      <div class="card scroll"><table><thead><tr><th>Batch</th><th>Status</th><th>Progress</th><th>Created</th><th></th></tr></thead><tbody id="bat-rows"></tbody></table>
+        <p class="note" id="bat-empty" hidden>No batches yet.</p></div>
+      <p class="note">With your API key: <code>POST /v1/batches</code>, <code>GET /v1/batches/{id}</code>, <code>GET /v1/batches/{id}/results</code>, <code>POST /v1/batches/{id}/cancel</code>.</p>
+    </section>
+
+    <!-- DOCS -->
+    <section data-view="docs" hidden>
+      <h1>Docs</h1><p class="sub">Everything to build with Gink.</p>
+      <div class="card">
+        <h2 style="margin-top:0">Quick start</h2>
+        <pre><code id="docs-quick"></code></pre>
+        <h2>Endpoints</h2>
+        <div class="scroll"><table><tbody>
+          <tr><td><code>POST /v1/chat/completions</code></td><td>Chat. <code>stream: true</code> for word-by-word answers. Without <code>model</code>: Gink Crystal.</td></tr>
+          <tr><td><code>GET /v1/models</code></td><td>Models you can use. <code>gink-search</code> searches the web and lists sources.</td></tr>
+          <tr><td><code>POST /v1/images/generations</code></td><td><code>{"prompt"}</code> &rarr; <code>data[0].b64_json</code> (PNG).</td></tr>
+          <tr><td><code>POST /v1/batches</code></td><td><code>{"requests": [{"custom_id", "body"}], "name"}</code>, up to 100. Then <code>GET /v1/batches/{id}</code>, <code>/results</code> (JSONL), <code>/cancel</code>.</td></tr>
+        </tbody></table></div>
+        <h2>Errors</h2>
+        <div class="scroll"><table><tbody>
+          <tr><td><code>401</code></td><td>Missing, invalid or revoked key.</td></tr>
+          <tr><td><code>403</code></td><td>The model needs Gink Pro.</td></tr>
+          <tr><td><code>422</code></td><td>The request is malformed (the message says what to fix).</td></tr>
+          <tr><td><code>429</code></td><td>Daily allowance or per-minute limit reached (see <code>Retry-After</code>).</td></tr>
+          <tr><td><code>502 / 503</code></td><td>The AI service had a problem, or the server is waking up. Retry after a moment.</td></tr>
+        </tbody></table></div>
+        <h2>In your terminal</h2>
+        <pre><code>pip install gink-ai
+gink login
+gink "What's the weather in Dakar?"
+cat notes.txt | gink "summarise this"</code></pre>
+        <h2>OpenAPI</h2><p>Machine-readable description: <a href="/v1/openapi.json">/v1/openapi.json</a>.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var token = ""; try { token = localStorage.getItem("gink_token") || ""; } catch (e) {}
+  var STATE = { overview: null, view: "", models: [], thread: [], logsBefore: 0, timers: {} };
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function fmt(n) { return Number(n || 0).toLocaleString(); }
+  function when(ts) { return ts ? new Date(ts * 1000).toLocaleString() : "\u2014"; }
+  function ago(ts) {
+    if (!ts) return "never";
+    var s = Date.now() / 1000 - ts;
+    return s < 60 ? "just now" : s < 3600 ? Math.round(s / 60) + " min ago" : s < 86400 ? Math.round(s / 3600) + " h ago" : Math.round(s / 86400) + " days ago";
+  }
+  function api(path, opts) {
+    opts = opts || {};
+    var h = { Authorization: "Bearer " + token };
+    if (opts.body !== undefined) h["Content-Type"] = "application/json";
+    return fetch(path, { method: opts.method || (opts.body !== undefined ? "POST" : "GET"), headers: h,
+                         body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined }).then(function (r) {
+      if (r.status === 401) { signedOut(); throw new Error("signed out"); }
+      return r;
+    });
+  }
+  function json(r) { return r.json().then(function (j) { if (!r.ok) throw new Error((j.error && j.error.message) || j.detail || ("Error " + r.status)); return j; }); }
+  function signedOut() {
+    document.querySelectorAll("[data-view]").forEach(function (s) { s.hidden = true; });
+    $("signed-out").hidden = false; $("who").textContent = "";
+  }
+  function pill(text, kind) { return el("span", "pill " + kind, text); }
+  function statusPill(code) { return pill(String(code), code < 400 ? "p-ok" : "p-bad"); }
+
+  // ---- tiny SVG charts (numbers and dates only, from our own server)
+  function bars(svgId, labels, series, colors) {
+    var svg = $(svgId), W = 760, H = 200, P = 30, n = labels.length;
+    var max = Math.max(1, Math.max.apply(null, series.map(function (s) { return Math.max.apply(null, s.concat([0])); })));
+    var bw = (W - P * 2) / Math.max(n, 1), parts = [];
+    labels.forEach(function (lab, i) {
+      series.forEach(function (s, j) {
+        var h = (H - P * 2) * (s[i] / max), w = bw / (series.length + 0.8);
+        parts.push('<rect x="' + (P + i * bw + 2 + j * w).toFixed(1) + '" y="' + (H - P - h).toFixed(1) + '" width="' + w.toFixed(1) +
+                   '" height="' + Math.max(h, 0).toFixed(1) + '" rx="2" fill="' + colors[j] + '"><title>' + lab + ": " + s[i] + "</title></rect>");
+      });
+      if (n <= 14 || i % Math.ceil(n / 10) === 0) parts.push('<text x="' + (P + i * bw + bw / 2).toFixed(1) + '" y="' + (H - 9) + '" text-anchor="middle">' + lab.slice(5) + "</text>");
+    });
+    parts.push('<text x="' + P + '" y="14">' + max + '</text><line x1="' + P + '" x2="' + (W - P) + '" y1="' + (H - P) + '" y2="' + (H - P) + '" stroke="var(--line)"/>');
+    svg.innerHTML = parts.join("");
+  }
+  function lines(svgId, labels, series, colors) {
+    var svg = $(svgId), W = 760, H = 200, P = 30, n = labels.length;
+    var max = Math.max(1, Math.max.apply(null, series.map(function (s) { return Math.max.apply(null, s.concat([0])); })));
+    var x = function (i) { return P + (n <= 1 ? 0 : i * (W - P * 2) / (n - 1)); }, y = function (v) { return H - P - (H - P * 2) * v / max; };
+    var parts = series.map(function (s, j) {
+      return '<polyline fill="none" stroke="' + colors[j] + '" stroke-width="2.2" points="' + s.map(function (v, i) { return x(i).toFixed(1) + "," + y(v).toFixed(1); }).join(" ") + '"/>';
+    });
+    labels.forEach(function (lab, i) { if (n <= 14 || i % Math.ceil(n / 10) === 0) parts.push('<text x="' + x(i).toFixed(1) + '" y="' + (H - 9) + '" text-anchor="middle">' + lab.slice(5) + "</text>"); });
+    parts.push('<text x="' + P + '" y="14">' + max + '</text><line x1="' + P + '" x2="' + (W - P) + '" y1="' + (H - P) + '" y2="' + (H - P) + '" stroke="var(--line)"/>');
+    svg.innerHTML = parts.join("");
+  }
+  function card(host, k, v, s) { var c = el("div", "card"); c.appendChild(el("div", "k", k)); c.appendChild(el("div", "v", v)); if (s) c.appendChild(el("div", "s", s)); host.appendChild(c); }
+
+  function quickStart(base) {
+    return "from openai import OpenAI\n\nclient = OpenAI(base_url=\"" + base + "\", api_key=\"gink_live_...\")\n" +
+           "reply = client.chat.completions.create(\n    model=\"gink-crystal\",\n    messages=[{\"role\": \"user\", \"content\": \"Hello Gink!\"}],\n)\nprint(reply.choices[0].message.content)";
+  }
+
+  // ---- views
+  var VIEWS = {
+    dashboard: function () {
+      return Promise.all([api("/dev/overview").then(json), api("/dev/metrics?days=14").then(json)]).then(function (r) {
+        var o = r[0], m = r[1], host = $("dash-cards"); STATE.overview = o; host.innerHTML = "";
+        card(host, "Requests today", fmt(o.today.requests), fmt(o.last7.requests) + " in 7 days");
+        card(host, "Errors today", fmt(o.today.errors), o.today.requests ? Math.round(100 * o.today.errors / o.today.requests) + "% of requests" : "none");
+        card(host, "Avg response", fmt(o.today.avg_ms) + " ms", "today");
+        card(host, "Tokens today", fmt(o.today.tokens), fmt(o.last7.tokens) + " in 7 days");
+        card(host, "Active keys", fmt(o.active_keys), o.per_minute + " requests/min per key");
+        card(host, "Plan", o.plan === "pro" ? "Pro" : "Free", fmt(o.daily_limit) + " messages a day");
+        bars("dash-chart", m.days.map(function (d) { return d.day; }), [m.days.map(function (d) { return d.requests; })], ["var(--c1)"]);
+        $("dash-quick").textContent = quickStart(o.base_url);
+      });
+    },
+    playground: function () {
+      if (STATE.models.length) return Promise.resolve();
+      return api("/ai/openai/v1/models").then(json).then(function (j) {
+        STATE.models = (j.data || []).map(function (m) { return m.id; });
+        var sel = $("pg-model"); sel.innerHTML = "";
+        ["gink-crystal"].concat(STATE.models.filter(function (m) { return m !== "gink-crystal"; })).forEach(function (m) { var o = el("option", "", m); o.value = m; sel.appendChild(o); });
+      });
+    },
+    keys: function () {
+      return api("/account/api-keys").then(json).then(function (j) {
+        var body = $("key-rows"); body.innerHTML = ""; $("key-empty").hidden = (j.keys || []).length > 0;
+        (j.keys || []).forEach(function (k) {
+          var tr = el("tr"); tr.appendChild(el("td", "", k.name)); var tdk = el("td"); tdk.appendChild(el("code", "", "gink_live_\u2026" + (k.hint || ""))); tr.appendChild(tdk);
+          tr.appendChild(el("td", "", when(k.created))); tr.appendChild(el("td", "", ago(k.last_used))); tr.appendChild(el("td", "n", fmt(k.requests)));
+          var td = el("td"), b = el("button", "danger", "Revoke");
+          b.onclick = function () {
+            if (!confirm("Revoke \u201c" + k.name + "\u201d? Apps using it will stop working.")) return;
+            api("/account/api-keys/" + encodeURIComponent(k.id), { method: "DELETE" }).then(function () { VIEWS.keys(); });
+          };
+          td.appendChild(b); tr.appendChild(td); body.appendChild(tr);
+        });
+      });
+    },
+    usage: function () {
+      return Promise.all([api("/dev/overview").then(json), api("/dev/usage").then(json)]).then(function (r) {
+        var o = r[0], used = o.today.requests, pct = Math.min(100, Math.round(100 * used / Math.max(o.daily_limit, 1)));
+        $("use-today").textContent = fmt(used) + " / " + fmt(o.daily_limit); $("use-bar").style.width = pct + "%";
+        $("use-note").textContent = "The allowance is shared with the Gink apps and resets every day (UTC). Each key: up to " + o.per_minute + " requests a minute.";
+        var body = $("use-rows"); body.innerHTML = "";
+        (r[1].keys || []).forEach(function (k) {
+          var tr = el("tr"); tr.appendChild(el("td", "", k.name + (k.revoked ? " (revoked)" : "")));
+          ["today", "week", "month"].forEach(function (p) { tr.appendChild(el("td", "n", fmt((k[p] || {}).requests))); });
+          tr.appendChild(el("td", "n", fmt((k.month || {}).tokens))); tr.appendChild(el("td", "", ago(k.last_used))); body.appendChild(tr);
+        });
+      });
+    },
+    metrics: function () {
+      return api("/dev/metrics?days=" + $("met-days").value).then(json).then(function (m) {
+        var labels = m.days.map(function (d) { return d.day; }), sum = function (k) { return m.days.reduce(function (a, d) { return a + d[k]; }, 0); };
+        var host = $("met-cards"); host.innerHTML = "";
+        var total = sum("requests"), errs = sum("errors");
+        card(host, "Requests", fmt(total)); card(host, "Error rate", total ? (100 * errs / total).toFixed(1) + "%" : "0%", fmt(errs) + " errors");
+        card(host, "Tokens", fmt(sum("tokens")));
+        bars("met-req", labels, [m.days.map(function (d) { return d.requests; }), m.days.map(function (d) { return d.errors; })], ["var(--c1)", "var(--bad)"]);
+        lines("met-ms", labels, [m.days.map(function (d) { return d.avg_ms; }), m.days.map(function (d) { return d.p95_ms; })], ["var(--c3)", "var(--c2)"]);
+        bars("met-tok", labels, [m.days.map(function (d) { return d.tokens; })], ["var(--c3)"]);
+        var mb = $("met-models"); mb.innerHTML = "";
+        (m.models.length ? m.models : [{ model: "No requests yet", requests: "" }]).forEach(function (x) { var tr = el("tr"); tr.appendChild(el("td", "", x.model)); tr.appendChild(el("td", "n", x.requests === "" ? "" : fmt(x.requests))); mb.appendChild(tr); });
+        var sb = $("met-status"); sb.innerHTML = "";
+        Object.keys(m.statuses).sort().forEach(function (c) { var tr = el("tr"), td = el("td"); td.appendChild(statusPill(Number(c))); tr.appendChild(td); tr.appendChild(el("td", "n", fmt(m.statuses[c]))); sb.appendChild(tr); });
+      });
+    },
+    logs: function (more) {
+      if (!more) { STATE.logsBefore = 0; $("log-rows").innerHTML = ""; }
+      return api("/dev/logs?limit=50" + (STATE.logsBefore ? "&before=" + STATE.logsBefore : "")).then(json).then(function (j) {
+        var body = $("log-rows");
+        (j.logs || []).forEach(function (l) {
+          var tr = el("tr"); tr.appendChild(el("td", "", new Date(l.ts * 1000).toLocaleTimeString() + " \u00b7 " + new Date(l.ts * 1000).toLocaleDateString()));
+          tr.appendChild(el("td", "", l.key)); tr.appendChild(el("td", "", l.endpoint + (l.stream ? " (stream)" : "")));
+          tr.appendChild(el("td", "", l.model || "default")); var td = el("td"); td.appendChild(statusPill(l.status)); if (l.error) td.appendChild(el("span", "note", " " + l.error)); tr.appendChild(td);
+          tr.appendChild(el("td", "n", fmt(l.ms))); tr.appendChild(el("td", "n", (l.prompt_tokens == null ? "\u2014" : fmt(l.prompt_tokens)) + " / " + (l.completion_tokens == null ? "\u2014" : fmt(l.completion_tokens))));
+          body.appendChild(tr); STATE.logsBefore = l.id;
+        });
+        $("log-empty").hidden = body.children.length > 0; $("log-more").hidden = (j.logs || []).length < 50;
+      });
+    },
+    batches: function () {
+      return api("/dev/batches").then(json).then(function (j) {
+        var body = $("bat-rows"), running = false; body.innerHTML = ""; $("bat-empty").hidden = (j.data || []).length > 0;
+        (j.data || []).forEach(function (b) {
+          var c = b.request_counts, finished = c.completed + c.failed, tr = el("tr");
+          var name = el("td"); name.appendChild(el("div", "", b.name || b.id)); name.appendChild(el("code", "note", b.id)); tr.appendChild(name);
+          var st = el("td"); st.appendChild(pill(b.status, b.status === "completed" ? "p-ok" : b.status === "cancelled" ? "p-mute" : "p-run")); tr.appendChild(st);
+          var pr = el("td"); var bar = el("div", "bar"), fill = el("i"); fill.style.width = Math.round(100 * finished / Math.max(c.total, 1)) + "%"; bar.appendChild(fill); pr.appendChild(bar);
+          pr.appendChild(el("div", "note", fmt(c.completed) + " done \u00b7 " + fmt(c.failed) + " failed \u00b7 " + fmt(c.total) + " total")); tr.appendChild(pr);
+          tr.appendChild(el("td", "", when(b.created_at)));
+          var act = el("td"), dl = el("button", "ghost", "Results");
+          dl.disabled = finished === 0; dl.onclick = function () { download(b.id); }; act.appendChild(dl);
+          if (b.status === "queued" || b.status === "running") {
+            running = true; var cx = el("button", "danger", "Cancel");
+            cx.onclick = function () { api("/dev/batches/" + encodeURIComponent(b.id) + "/cancel", { body: {} }).then(function () { VIEWS.batches(); }); };
+            act.appendChild(document.createTextNode(" ")); act.appendChild(cx);
+          }
+          tr.appendChild(act); body.appendChild(tr);
+        });
+        clearTimeout(STATE.timers.batches);
+        if (running && STATE.view === "batches") STATE.timers.batches = setTimeout(VIEWS.batches, 2000);
+      });
+    },
+    docs: function () {
+      var base = (STATE.overview && STATE.overview.base_url) || (location.origin + "/v1");
+      $("docs-quick").textContent = quickStart(base); return Promise.resolve();
+    }
+  };
+
+  function download(id) {
+    api("/dev/batches/" + encodeURIComponent(id) + "/results").then(function (r) { return r.blob(); }).then(function (blob) {
+      var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = id + ".jsonl";
+      document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    });
+  }
+
+  function show(view) {
+    if (!VIEWS[view]) view = "dashboard";
+    STATE.view = view;
+    document.querySelectorAll("[data-view]").forEach(function (s) { s.hidden = s.getAttribute("data-view") !== view; });
+    document.querySelectorAll("#nav a[data-v]").forEach(function (a) { a.classList.toggle("on", a.getAttribute("data-v") === view); });
+    VIEWS[view]().catch(function (e) { if (e.message !== "signed out") console.warn(e); });
+  }
+
+  // ---- playground
+  function codeFor(lang) {
+    var base = (STATE.overview && STATE.overview.base_url) || (location.origin + "/v1");
+    var msgs = []; if ($("pg-system").value.trim()) msgs.push({ role: "system", content: $("pg-system").value.trim() });
+    msgs = msgs.concat(STATE.thread.length ? STATE.thread : [{ role: "user", content: "Hello Gink!" }]);
+    var body = { model: $("pg-model").value, messages: msgs, temperature: Number($("pg-temp").value), max_tokens: Number($("pg-max").value) };
+    var js = JSON.stringify(body, null, 2);
+    if (lang === "curl") return "curl " + base + "/chat/completions \\\n  -H \"Authorization: Bearer $GINK_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '" + JSON.stringify(body).replace(/'/g, "'\\''") + "'";
+    if (lang === "js") return "import OpenAI from \"openai\";\n\nconst client = new OpenAI({ baseURL: \"" + base + "\", apiKey: process.env.GINK_API_KEY });\nconst reply = await client.chat.completions.create(" + js + ");\nconsole.log(reply.choices[0].message.content);";
+    return "import os\nfrom openai import OpenAI\n\nclient = OpenAI(base_url=\"" + base + "\", api_key=os.environ[\"GINK_API_KEY\"])\nreply = client.chat.completions.create(**" +
+           js.replace(/\btrue\b/g, "True").replace(/\bfalse\b/g, "False") + ")\nprint(reply.choices[0].message.content)";
+  }
+  var codeLang = "python";
+  function refreshCode() { $("pg-code-text").textContent = codeFor(codeLang); }
+  document.querySelectorAll(".tabs button").forEach(function (b) {
+    b.onclick = function () { codeLang = b.getAttribute("data-lang"); document.querySelectorAll(".tabs button").forEach(function (x) { x.classList.toggle("on", x === b); }); refreshCode(); };
+  });
+  $("pg-code-btn").onclick = function () { $("pg-code").hidden = !$("pg-code").hidden; refreshCode(); };
+  $("pg-temp").oninput = function () { $("pg-temp-v").textContent = this.value; };
+  $("pg-clear").onclick = function () { STATE.thread = []; $("pg-thread").innerHTML = ""; $("pg-thread").appendChild(el("p", "note", "Send a message to start.")); refreshCode(); };
+  $("pg-input").onkeydown = function (e) { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); $("pg-send").click(); } };
+  $("pg-send").onclick = function () {
+    var text = $("pg-input").value.trim(); if (!text) return;
+    $("pg-err").textContent = ""; var empty = $("pg-thread").querySelector("p.note"); if (empty) empty.remove();
+    STATE.thread.push({ role: "user", content: text }); $("pg-input").value = "";
+    $("pg-thread").appendChild(el("div", "msg u", text));
+    var out = el("div", "msg a", ""), meta = el("div", "meta", "\u2026"); out.appendChild(meta); $("pg-thread").appendChild(out);
+    var msgs = []; if ($("pg-system").value.trim()) msgs.push({ role: "system", content: $("pg-system").value.trim() });
+    var body = { model: $("pg-model").value, messages: msgs.concat(STATE.thread.slice(-30)), temperature: Number($("pg-temp").value),
+                 max_tokens: Number($("pg-max").value), stream: $("pg-stream").checked };
+    var started = performance.now(), answer = "", btn = $("pg-send"); btn.disabled = true;
+    var textNode = document.createTextNode(""); out.insertBefore(textNode, meta);
+    fetch("/ai/openai/v1/chat/completions", { method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      .then(function (r) {
+        if (!r.ok) return r.json().then(function (j) { throw new Error((j.error && j.error.message) || j.detail || ("Error " + r.status)); });
+        if (!body.stream) return r.json().then(function (j) { answer = j.choices[0].message.content || ""; textNode.textContent = answer; return j.usage; });
+        var reader = r.body.getReader(), dec = new TextDecoder(), buf = "", usage = null;
+        return (function pump() {
+          return reader.read().then(function (res) {
+            if (res.done) return usage;
+            buf += dec.decode(res.value, { stream: true });
+            var parts = buf.split("\n"); buf = parts.pop();
+            parts.forEach(function (line) {
+              if (line.indexOf("data:") !== 0) return; var d = line.slice(5).trim(); if (!d || d === "[DONE]") return;
+              try { var j = JSON.parse(d); var c = j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content;
+                    if (c) { answer += c; textNode.textContent = answer; } usage = j.usage || (j.x_groq && j.x_groq.usage) || usage; } catch (e) {}
+            });
+            return pump();
+          });
+        })();
+      }).then(function (usage) {
+        STATE.thread.push({ role: "assistant", content: answer });
+        meta.textContent = Math.round(performance.now() - started) + " ms" + (usage ? " \u00b7 " + fmt(usage.prompt_tokens) + " in / " + fmt(usage.completion_tokens) + " out" : "");
+        refreshCode();
+      }).catch(function (e) { out.remove(); STATE.thread.pop(); $("pg-err").textContent = e.message; })
+      .then(function () { btn.disabled = false; $("pg-thread").scrollTop = 1e9; });
+  };
+
+  // ---- keys
+  $("key-form").onsubmit = function (e) {
+    e.preventDefault(); $("key-err").textContent = "";
+    api("/account/api-keys", { body: { name: $("key-name").value.trim() || "My key" } }).then(json).then(function (j) {
+      $("key-new-text").textContent = j.key; $("key-new").hidden = false; $("key-name").value = ""; $("key-copied").textContent = ""; VIEWS.keys();
+    }).catch(function (e) { $("key-err").textContent = e.message; });
+  };
+  $("key-copy").onclick = function () {
+    var t = $("key-new-text").textContent;
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { $("key-copied").textContent = "Copied"; }, function () { $("key-copied").textContent = "Select the key and copy it"; });
+  };
+
+  // ---- batches
+  $("bat-example").onclick = function () {
+    $("bat-input").value = [
+      { custom_id: "greeting-fr", body: { model: "gink-crystal", messages: [{ role: "user", content: "Say good morning in French." }] } },
+      { custom_id: "greeting-wo", body: { model: "gink-crystal", messages: [{ role: "user", content: "Say good morning in Wolof." }] } },
+      { custom_id: "haiku", body: { model: "gink-flake", messages: [{ role: "user", content: "Write a haiku about Dakar." }] } }
+    ].map(function (x) { return JSON.stringify(x); }).join("\n");
+  };
+  $("bat-file").onchange = function () { var f = this.files[0]; if (!f) return; f.text().then(function (t) { $("bat-input").value = t; }); };
+  $("bat-run").onclick = function () {
+    $("bat-err").textContent = ""; var lines = $("bat-input").value.split("\n").map(function (l) { return l.trim(); }).filter(Boolean), reqs = [];
+    try { lines.forEach(function (l, i) { try { reqs.push(JSON.parse(l)); } catch (e) { throw new Error("Line " + (i + 1) + " isn't valid JSON."); } }); }
+    catch (e) { $("bat-err").textContent = e.message; return; }
+    if (!reqs.length) { $("bat-err").textContent = "Add at least one request (or click Load example)."; return; }
+    api("/dev/batches", { body: { requests: reqs, name: $("bat-name").value.trim() } }).then(json).then(function () { $("bat-input").value = ""; VIEWS.batches(); })
+      .catch(function (e) { $("bat-err").textContent = e.message; });
+  };
+
+  // ---- logs / metrics controls
+  $("log-refresh").onclick = function () { VIEWS.logs(); };
+  $("log-more").onclick = function () { VIEWS.logs(true); };
+  $("log-auto").onchange = function () { clearInterval(STATE.timers.logs); if (this.checked) STATE.timers.logs = setInterval(function () { if (STATE.view === "logs") VIEWS.logs(); }, 5000); };
+  $("met-days").onchange = function () { VIEWS.metrics(); };
+
+  // ---- start
+  if (!token) { signedOut(); return; }
+  api("/dev/overview").then(json).then(function (o) {
+    STATE.overview = o;
+    var name = ""; try { name = localStorage.getItem("gink_name") || ""; } catch (e) {}
+    $("who").textContent = (name ? name + " \u00b7 " : "") + (o.plan === "pro" ? "Gink Pro" : "Free plan");
+    window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+    show(location.hash.slice(1) || "dashboard");
+  }).catch(function () {});
+})();
+</script>
+</body>
+</html>

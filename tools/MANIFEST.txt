@@ -126,7 +126,7 @@ src/ginkassistant/services/voice_bridge.py
 src/ginkassistant/services/voice_profiles.py
 src/ginkassistant/services/wake_word.py
 src/ginkassistant/services/web_app/admin.html
-src/ginkassistant/services/web_app/developers.html
+src/ginkassistant/services/web_app/console.html
 src/ginkassistant/services/web_app/index.html
 src/ginkassistant/ui/__init__.py
 src/ginkassistant/ui/agent_ui.py
@@ -168,6 +168,7 @@ tests/test_claude_native.py
 tests/test_cli.py
 tests/test_computer_actions.py
 tests/test_dark_theme.py
+tests/test_dev_platform.py
 tests/test_developer_api.py
 tests/test_email_delivery.py
 tests/test_formatting_security.py

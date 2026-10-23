@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.7 (October 2026)
+
+- The Gink Developer Console (/developers): Dashboard, Playground (with ready-to-copy code),
+  API keys, Usage per key, Metrics (requests, errors, response times, tokens, models), Logs
+  (never the contents of requests), Batches and Docs
+- Batch API: up to 100 chat requests at once (POST /v1/batches), processed in the background,
+  results as JSONL; batches carry on after a server restart
+
 ## 0.1.6 (October 2026)
 
 - Websites: "make me a website for my bakery" -> Gink builds it and gives you a link to share;

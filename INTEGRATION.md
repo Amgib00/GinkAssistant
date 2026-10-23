@@ -930,3 +930,17 @@ New services/live_info.py (all free, no API keys):
 - Apps: agent actions build_website / edit_website (task_runner.site_builder via main_screen);
   web app: "make me a website..." / "change my website: ..."; Settings > Account > Your websites
   (apps + web). tests/test_websites.py; browser journey.
+
+## Latest (0.1.7): the developer console + Batch API
+- Server: _logged() wraps /v1/chat/completions -> api_requests (key, endpoint, model, status, ms,
+  tokens from usage or x_groq.usage incl. streams; never contents; 30 days). /dev/overview,
+  /dev/metrics?days=, /dev/logs?before=, /dev/usage (session auth). Batches (OpenAI-style):
+  /v1/batches (+ /{id}, /results JSONL, /cancel) with an API key, /dev/batches with the session;
+  <= 100 requests, 2 at a time through ai_chat with a synthetic Request (same rules/limits),
+  resumed at start-up; account deletion removes logs and batches. Missing `import asyncio` caught
+  by pyflakes before it could crash the first batch.
+- web_app/console.html at /developers and /console (old developers.html removed): sidebar +
+  Dashboard, Playground (streaming, temperature, max tokens, code in Python/JS/curl), API keys,
+  Usage, Metrics (SVG charts), Logs (auto-refresh, older pages), Batches (example, upload,
+  progress, cancel, download), Docs. Text only via textContent; charts are numbers and dates.
+- tests/test_dev_platform.py (5); browser walkthrough of every section.

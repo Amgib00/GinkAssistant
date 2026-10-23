@@ -56,6 +56,7 @@ the following existed before:
 import os
 import random
 import re
+import asyncio
 import secrets
 import smtplib
 import threading
@@ -2063,7 +2064,9 @@ def delete_account(request: Request, data: dict = Body(...)):
             con.execute(_SECURITY_TABLE)
             con.execute(_TWOFA_TABLE)
             con.execute(_SITES_TABLE)
-            for table in ("sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
+            con.execute(_API_LOG_TABLE)
+            con.execute(_BATCH_TABLE)
+            for table in ("api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
                           "search_usage", "search_turns", "sessions", "account_security"):
                 con.execute(f"DELETE FROM {table} WHERE email=?", (email,))
             con.execute("UPDATE payments SET email=? WHERE email=?", (anon, email))
@@ -2465,10 +2468,12 @@ def web_app_page():
         return HTMLResponse(f.read(), headers=_WEB_HEADERS)
 
 
+@app.get("/console", response_class=HTMLResponse)
 @app.get("/developers", response_class=HTMLResponse)
 def developers_page():
-    """API keys + quick start (web_app/developers.html). Uses the web app's sign-in (same site)."""
-    path = os.path.join(WEB_APP_DIR, "developers.html")
+    """The developer console (web_app/console.html): dashboard, playground, keys, usage, metrics,
+    logs, batches, docs. Uses the web app's sign-in (same site)."""
+    path = os.path.join(WEB_APP_DIR, "console.html")
     with open(path, encoding="utf-8") as f:
         return HTMLResponse(f.read(), headers=_WEB_HEADERS)
 
@@ -2557,11 +2562,7 @@ def _api_key_owner(request: Request):
 
 @app.post("/v1/chat/completions")
 async def api_chat(request: Request):
-    owner, err = _api_key_owner(request)
-    if err:
-        return err
-    request.state.gink_api_email = owner[0]
-    return await ai_chat(request)
+    return await _logged(request, "chat", ai_chat)              # logged without its contents
 
 
 @app.get("/v1/models")
@@ -3383,3 +3384,392 @@ def site_view(site_id: str):
     html = html.replace("</body>", _BADGE + "</body>", 1) if "</body>" in html else html + _BADGE
     return HTMLResponse(html, headers={"Content-Security-Policy": SITE_CSP, "X-Content-Type-Options": "nosniff",
                                        "Referrer-Policy": "no-referrer", "Cache-Control": "no-store"})
+
+
+# ================================================================ Developer platform
+# Every Developer API request is logged WITHOUT its contents (time, key, model, status, speed,
+# tokens) for the console's Metrics, Usage and Logs. Batches run requests in the background
+# through the very same chat code as live calls. Kept 30 days.
+_API_LOG_TABLE = ("CREATE TABLE IF NOT EXISTS api_requests (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL, "
+                  "key_id TEXT, ts REAL NOT NULL, endpoint TEXT, model TEXT, status INTEGER, ms INTEGER, "
+                  "prompt_tokens INTEGER, completion_tokens INTEGER, stream INTEGER NOT NULL DEFAULT 0, error TEXT)")
+_BATCH_TABLE = ("CREATE TABLE IF NOT EXISTS batches (id TEXT PRIMARY KEY, email TEXT NOT NULL, key_id TEXT, name TEXT, "
+                "status TEXT NOT NULL, created REAL NOT NULL, finished REAL, total INTEGER NOT NULL, done INTEGER NOT NULL "
+                "DEFAULT 0, failed INTEGER NOT NULL DEFAULT 0, requests TEXT NOT NULL, results TEXT NOT NULL DEFAULT '[]')")
+BATCH_MAX = 100
+_batch_tasks = {}
+
+
+def _dev_db(fn):
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(_API_LOG_TABLE)
+            con.execute(_BATCH_TABLE)
+            con.execute("CREATE INDEX IF NOT EXISTS api_requests_by_user ON api_requests (email, ts)")
+            out = fn(con)
+            con.commit()
+            return out
+        finally:
+            con.close()
+
+
+def _log_api(email, key_id, endpoint, model, status, started, usage=None, stream=False, error=""):
+    usage = usage or {}
+    now = time.time()
+    def write(con):
+        con.execute("INSERT INTO api_requests (email, key_id, ts, endpoint, model, status, ms, prompt_tokens, "
+                    "completion_tokens, stream, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (email, key_id, now, endpoint, str(model or "")[:80], int(status), int((now - started) * 1000),
+                     usage.get("prompt_tokens"), usage.get("completion_tokens"), 1 if stream else 0, str(error or "")[:40]))
+        if int(now) % 50 == 0:                                   # now and then: keep 30 days
+            con.execute("DELETE FROM api_requests WHERE ts < ?", (now - 30 * 86400,))
+    try:
+        _dev_db(write)
+    except Exception:
+        pass                                                     # logging never breaks a request
+
+
+def _usage_from(obj) -> dict:
+    """OpenAI 'usage', or Groq's x_groq.usage in the last streamed chunk."""
+    if not isinstance(obj, dict):
+        return {}
+    u = obj.get("usage") or (obj.get("x_groq") or {}).get("usage") or {}
+    return {"prompt_tokens": u.get("prompt_tokens"), "completion_tokens": u.get("completion_tokens")} if u else {}
+
+
+async def _logged(request: Request, endpoint: str, handler):
+    """Run a Developer API handler and log the request (never its contents)."""
+    from fastapi.responses import StreamingResponse
+    started = time.time()
+    owner, err = _api_key_owner(request)
+    if err:
+        return err
+    email, key_id = owner
+    request.state.gink_api_email = email
+    try:
+        body = _json.loads(await request.body() or b"{}")
+    except ValueError:
+        body = {}
+    model = body.get("model") if isinstance(body, dict) else ""
+    response = await handler(request)
+    status = getattr(response, "status_code", 200)
+    if isinstance(response, StreamingResponse):              # log when the stream ends, with its tokens
+        inner = response.body_iterator
+
+        async def watched():
+            usage = {}
+            try:
+                async for chunk in inner:
+                    text = chunk.decode("utf-8", "replace") if isinstance(chunk, bytes) else str(chunk)
+                    for line in text.splitlines():
+                        if line.startswith("data:") and ("usage" in line):
+                            try:
+                                usage = _usage_from(_json.loads(line[5:].strip())) or usage
+                            except ValueError:
+                                pass
+                    yield chunk
+            finally:
+                _log_api(email, key_id, endpoint, model, status, started, usage, stream=True)
+        response.body_iterator = watched()
+        return response
+    usage, error = {}, ""
+    if isinstance(response, dict):
+        usage = _usage_from(response)
+    else:
+        try:
+            data = _json.loads(bytes(response.body))
+            usage = _usage_from(data)
+            error = (data.get("error") or {}).get("code", "") if isinstance(data.get("error"), dict) else ""
+        except Exception:
+            pass
+    _log_api(email, key_id, endpoint, model, status, started, usage, error=error)
+    return response
+
+
+def _session_email(request: Request) -> str:
+    return _email_from_auth(request)
+
+
+# ---- console data (signed in with the app / web app session)
+@app.get("/dev/overview")
+def dev_overview(request: Request):
+    email = _session_email(request)
+    now = time.time()
+    day0 = now - (now % 86400)
+    def q(con):
+        row = lambda since: con.execute(
+            "SELECT COUNT(*), SUM(status >= 400), AVG(ms), SUM(COALESCE(prompt_tokens,0) + COALESCE(completion_tokens,0)) "
+            "FROM api_requests WHERE email=? AND ts >= ?", (email, since)).fetchone()
+        con.execute(_API_KEYS_TABLE)
+        keys = con.execute("SELECT COUNT(*) FROM api_keys WHERE email=? AND revoked=0", (email,)).fetchone()[0]
+        return row(day0), row(now - 7 * 86400), keys
+    today, week, keys = _dev_db(q)
+    plan = _plan_status(email)["plan"]
+    limit = int(os.environ.get("GINK_PRO_DAILY" if plan == "pro" else "GINK_FREE_DAILY", "500" if plan == "pro" else "30"))
+    fmt = lambda r: {"requests": r[0] or 0, "errors": int(r[1] or 0), "avg_ms": int(r[2] or 0), "tokens": int(r[3] or 0)}
+    return {"today": fmt(today), "last7": fmt(week), "active_keys": keys, "plan": plan, "daily_limit": limit,
+            "per_minute": API_PER_MINUTE, "base_url": _public_base(request).rstrip("/") + "/v1"}
+
+
+@app.get("/dev/metrics")
+def dev_metrics(request: Request, days: int = 14):
+    email = _session_email(request)
+    days = max(1, min(int(days), 30))
+    now = time.time()
+    since = now - days * 86400
+    def q(con):
+        rows = con.execute("SELECT ts, status, ms, COALESCE(prompt_tokens,0) + COALESCE(completion_tokens,0), model "
+                           "FROM api_requests WHERE email=? AND ts >= ?", (email, since)).fetchall()
+        return rows
+    rows = _dev_db(q)
+    daily = {}
+    for i in range(days - 1, -1, -1):
+        d = time.strftime("%Y-%m-%d", time.gmtime(now - i * 86400))
+        daily[d] = {"day": d, "requests": 0, "errors": 0, "tokens": 0, "ms": []}
+    models, statuses = {}, {}
+    for ts, status, ms, tokens, model in rows:
+        d = time.strftime("%Y-%m-%d", time.gmtime(ts))
+        if d in daily:
+            e = daily[d]; e["requests"] += 1; e["errors"] += status >= 400; e["tokens"] += tokens; e["ms"].append(ms or 0)
+        models[model or "default"] = models.get(model or "default", 0) + 1
+        statuses[str(status)] = statuses.get(str(status), 0) + 1
+    out = []
+    for e in daily.values():
+        ms = sorted(e.pop("ms"))
+        e["avg_ms"] = int(sum(ms) / len(ms)) if ms else 0
+        e["p95_ms"] = ms[min(len(ms) - 1, int(len(ms) * 0.95))] if ms else 0
+        out.append(e)
+    return {"days": out, "models": sorted(({"model": m, "requests": n} for m, n in models.items()), key=lambda x: -x["requests"]),
+            "statuses": statuses}
+
+
+@app.get("/dev/logs")
+def dev_logs(request: Request, limit: int = 100, before: int = 0):
+    email = _session_email(request)
+    limit = max(1, min(int(limit), 200))
+    def q(con):
+        con.execute(_API_KEYS_TABLE)
+        names = dict(con.execute("SELECT id, name FROM api_keys WHERE email=?", (email,)).fetchall())
+        rows = con.execute("SELECT id, ts, key_id, endpoint, model, status, ms, prompt_tokens, completion_tokens, stream, error "
+                           "FROM api_requests WHERE email=? AND (? = 0 OR id < ?) ORDER BY id DESC LIMIT ?",
+                           (email, before, before, limit)).fetchall()
+        return names, rows
+    names, rows = _dev_db(q)
+    return {"logs": [{"id": r[0], "ts": r[1], "key": names.get(r[2], "\u2014"), "endpoint": r[3], "model": r[4], "status": r[5],
+                      "ms": r[6], "prompt_tokens": r[7], "completion_tokens": r[8], "stream": bool(r[9]), "error": r[10]}
+                     for r in rows]}
+
+
+@app.get("/dev/usage")
+def dev_usage(request: Request):
+    email = _session_email(request)
+    now = time.time()
+    def q(con):
+        con.execute(_API_KEYS_TABLE)
+        keys = con.execute("SELECT id, name, hint, created, last_used, revoked FROM api_keys WHERE email=? ORDER BY created DESC",
+                           (email,)).fetchall()
+        stats = {}
+        for key_id, since_name, since in ((k, n, s) for k in [x[0] for x in keys] for n, s in
+                                          (("today", now - (now % 86400)), ("week", now - 7 * 86400), ("month", now - 30 * 86400))):
+            row = con.execute("SELECT COUNT(*), SUM(COALESCE(prompt_tokens,0) + COALESCE(completion_tokens,0)) FROM api_requests "
+                              "WHERE email=? AND key_id=? AND ts >= ?", (email, key_id, since)).fetchone()
+            stats.setdefault(key_id, {})[since_name] = {"requests": row[0] or 0, "tokens": int(row[1] or 0)}
+        return keys, stats
+    keys, stats = _dev_db(q)
+    return {"keys": [{"id": k[0], "name": k[1], "hint": k[2], "created": k[3], "last_used": k[4], "revoked": bool(k[5]),
+                      **stats.get(k[0], {})} for k in keys]}
+
+
+# ---- Batch API (OpenAI-style): up to BATCH_MAX chat requests, processed in the background
+def _make_request(email: str, body: dict) -> Request:
+    """A request object for the chat code, as if the API had been called directly."""
+    raw = _json.dumps(body).encode()
+    scope = {"type": "http", "method": "POST", "path": "/v1/chat/completions", "raw_path": b"/v1/chat/completions",
+             "query_string": b"", "headers": [(b"content-type", b"application/json")], "client": ("batch", 0),
+             "server": ("gink", 443), "scheme": "https", "http_version": "1.1", "app": app}
+    sent = {"done": False}
+
+    async def receive():
+        if sent["done"]:
+            return {"type": "http.disconnect"}
+        sent["done"] = True
+        return {"type": "http.request", "body": raw, "more_body": False}
+    req = Request(scope, receive)
+    req.state.gink_api_email = email
+    return req
+
+
+async def _run_batch(batch_id: str):
+    row = _dev_db(lambda con: con.execute("SELECT email, key_id, requests, results, status FROM batches WHERE id=?",
+                                          (batch_id,)).fetchone())
+    if not row or row[4] in ("completed", "cancelled", "failed"):
+        return
+    email, key_id, items, results = row[0], row[1], _json.loads(row[2]), _json.loads(row[3])
+    finished_ids = {r["custom_id"] for r in results}
+    _dev_db(lambda con: con.execute("UPDATE batches SET status='running' WHERE id=?", (batch_id,)))
+    sem = asyncio.Semaphore(2)
+    lock = asyncio.Lock()
+
+    async def one(item):
+        async with sem:
+            status = _dev_db(lambda con: con.execute("SELECT status FROM batches WHERE id=?", (batch_id,)).fetchone())
+            if not status or status[0] == "cancelled":
+                return
+            body = dict(item.get("body") or {}, stream=False)
+            started = time.time()
+            try:
+                resp = await ai_chat(_make_request(email, body))
+                code = getattr(resp, "status_code", 200)
+                data = resp if isinstance(resp, dict) else _json.loads(bytes(resp.body))
+            except Exception as exc:
+                code, data = 500, {"error": {"message": f"{type(exc).__name__}", "code": "batch_error"}}
+            _log_api(email, key_id, "batch", body.get("model"), code, started, _usage_from(data),
+                     error=(data.get("error") or {}).get("code", "") if isinstance(data.get("error"), dict) else "")
+            result = {"custom_id": item["custom_id"], "status": code}
+            result["response" if code < 400 else "error"] = data if code < 400 else data.get("error", data)
+            async with lock:
+                results.append(result)
+                ok = code < 400
+                _dev_db(lambda con: con.execute(
+                    "UPDATE batches SET results=?, done=done+?, failed=failed+? WHERE id=?",
+                    (_json.dumps(results), 1 if ok else 0, 0 if ok else 1, batch_id)))
+
+    await asyncio.gather(*(one(i) for i in items if i["custom_id"] not in finished_ids))
+    _dev_db(lambda con: con.execute("UPDATE batches SET status=CASE WHEN status='cancelled' THEN 'cancelled' ELSE 'completed' END, "
+                                    "finished=? WHERE id=?", (time.time(), batch_id)))
+    _batch_tasks.pop(batch_id, None)
+
+
+def _start_batch(batch_id: str):
+    if batch_id not in _batch_tasks:
+        _batch_tasks[batch_id] = asyncio.ensure_future(_run_batch(batch_id))
+
+
+@app.on_event("startup")
+async def _resume_batches():
+    """After a server restart, unfinished batches carry on where they stopped."""
+    try:
+        for (bid,) in _dev_db(lambda con: con.execute("SELECT id FROM batches WHERE status IN ('queued','running')").fetchall()):
+            _start_batch(bid)
+    except Exception:
+        pass
+
+
+def _batch_public(row) -> dict:
+    bid, name, status, created, finished, total, done, failed = row
+    return {"id": bid, "object": "batch", "name": name, "status": status, "created_at": int(created),
+            "completed_at": int(finished) if finished else None,
+            "request_counts": {"total": total, "completed": done, "failed": failed}}
+
+
+_BATCH_COLS = "id, name, status, created, finished, total, done, failed"
+
+
+def _create_batch(email: str, key_id, data: dict) -> dict:
+    items = data.get("requests")
+    if not isinstance(items, list) or not items:
+        raise HTTPException(status_code=422, detail='Send {"requests": [{"custom_id": "...", "body": {chat request}}, ...]}.')
+    if len(items) > BATCH_MAX:
+        raise HTTPException(status_code=422, detail=f"A batch can have up to {BATCH_MAX} requests.")
+    clean, seen = [], set()
+    for i, it in enumerate(items):
+        cid = str((it or {}).get("custom_id") or f"request-{i + 1}")[:64]
+        body = (it or {}).get("body")
+        if cid in seen or not isinstance(body, dict) or not isinstance(body.get("messages"), list):
+            raise HTTPException(status_code=422, detail=f"Request {i + 1}: needs a unique custom_id and a body with messages.")
+        seen.add(cid)
+        clean.append({"custom_id": cid, "body": body})
+    bid = "batch_" + secrets.token_hex(8)
+    name = " ".join(str(data.get("name") or "").split())[:60] or None
+    _dev_db(lambda con: con.execute("INSERT INTO batches (id, email, key_id, name, status, created, total, requests) "
+                                    "VALUES (?, ?, ?, ?, 'queued', ?, ?, ?)",
+                                    (bid, email, key_id, name, time.time(), len(clean), _json.dumps(clean))))
+    _start_batch(bid)
+    return _get_batch(email, bid)
+
+
+def _get_batch(email: str, bid: str) -> dict:
+    row = _dev_db(lambda con: con.execute(f"SELECT {_BATCH_COLS} FROM batches WHERE id=? AND email=?", (bid, email)).fetchone())
+    if not row:
+        raise HTTPException(status_code=404, detail="That batch wasn't found.")
+    return _batch_public(row)
+
+
+def _batch_results(email: str, bid: str):
+    from fastapi.responses import PlainTextResponse
+    row = _dev_db(lambda con: con.execute("SELECT results FROM batches WHERE id=? AND email=?", (bid, email)).fetchone())
+    if not row:
+        raise HTTPException(status_code=404, detail="That batch wasn't found.")
+    lines = "\n".join(_json.dumps(r) for r in _json.loads(row[0]))
+    return PlainTextResponse(lines + ("\n" if lines else ""), media_type="application/jsonl",
+                             headers={"Content-Disposition": f'attachment; filename="{bid}.jsonl"'})
+
+
+def _cancel_batch(email: str, bid: str) -> dict:
+    _get_batch(email, bid)
+    _dev_db(lambda con: con.execute("UPDATE batches SET status='cancelled', finished=? WHERE id=? AND email=? "
+                                    "AND status IN ('queued','running')", (time.time(), bid, email)))
+    return _get_batch(email, bid)
+
+
+def _list_batches(email: str) -> dict:
+    rows = _dev_db(lambda con: con.execute(f"SELECT {_BATCH_COLS} FROM batches WHERE email=? ORDER BY created DESC LIMIT 50",
+                                           (email,)).fetchall())
+    return {"object": "list", "data": [_batch_public(r) for r in rows]}
+
+
+def _api_owner_or_error(request: Request):
+    owner, err = _api_key_owner(request)
+    return owner, err
+
+
+@app.post("/v1/batches")
+async def api_batch_create(request: Request, data: dict = Body(...)):
+    owner, err = _api_owner_or_error(request)
+    return err if err else _create_batch(owner[0], owner[1], data)
+
+
+@app.get("/v1/batches")
+def api_batch_list(request: Request):
+    owner, err = _api_owner_or_error(request)
+    return err if err else _list_batches(owner[0])
+
+
+@app.get("/v1/batches/{bid}")
+def api_batch_get(bid: str, request: Request):
+    owner, err = _api_owner_or_error(request)
+    return err if err else _get_batch(owner[0], bid)
+
+
+@app.get("/v1/batches/{bid}/results")
+def api_batch_results(bid: str, request: Request):
+    owner, err = _api_owner_or_error(request)
+    return err if err else _batch_results(owner[0], bid)
+
+
+@app.post("/v1/batches/{bid}/cancel")
+def api_batch_cancel(bid: str, request: Request):
+    owner, err = _api_owner_or_error(request)
+    return err if err else _cancel_batch(owner[0], bid)
+
+
+# the console's own batch routes (signed in with the session)
+@app.post("/dev/batches")
+async def dev_batch_create(request: Request, data: dict = Body(...)):
+    return _create_batch(_session_email(request), None, data)
+
+
+@app.get("/dev/batches")
+def dev_batch_list(request: Request):
+    return _list_batches(_session_email(request))
+
+
+@app.get("/dev/batches/{bid}/results")
+def dev_batch_results(bid: str, request: Request):
+    return _batch_results(_session_email(request), bid)
+
+
+@app.post("/dev/batches/{bid}/cancel")
+def dev_batch_cancel(bid: str, request: Request):
+    return _cancel_batch(_session_email(request), bid)
