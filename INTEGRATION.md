@@ -944,3 +944,14 @@ New services/live_info.py (all free, no API keys):
   Usage, Metrics (SVG charts), Logs (auto-refresh, older pages), Batches (example, upload,
   progress, cancel, download), Docs. Text only via textContent; charts are numbers and dates.
 - tests/test_dev_platform.py (5); browser walkthrough of every section.
+
+## Latest: OpenSpec (spec-driven development)
+- openspec/ (OpenSpec 1.14, layout from its own `openspec init`): config.yaml (schema spec-driven;
+  context = constraints an assistant can't infer: Python 3.10/3.11, 3 Briefcase versions, wheels,
+  privacy, sandboxing, two-step gate, tone, done-criteria; rules for proposals and tasks).
+- 10 specs written from tested behaviour: accounts-security, developer-api, websites, web-search,
+  agent-mode, languages-voice, location, email-delivery, app-updates, releases.
+- Proposed change add-connected-apps (proposal: why / what / out of scope / platforms / impact;
+  design: scopes, sealed tokens, server-side tools, prompt-injection risk; 11 tasks; delta spec).
+- `openspec validate --all --strict`: 11/11 pass; also a `specs` job in tests.yml (npx, pinned).
+- AGENTS.md at the root: how AI assistants should work on Gink.

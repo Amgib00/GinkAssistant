@@ -1,0 +1,26 @@
+schema: spec-driven
+
+# Constraints an AI assistant can't infer from the code. General documentation lives in README.md
+# and INTEGRATION.md; the behaviour itself is in specs/ (and covered by tests/).
+context: |
+  Gink is one Python codebase for macOS, Windows, Linux, Android (64-bit and a 32-bit edition) and
+  iOS (BeeWare Briefcase + Toga; Chaquopy on Android), plus a FastAPI server (Render) that also
+  serves the web app, the developer console and the Developer API.
+  - App code must run on Python 3.10 (the owner builds on macOS 10.15 Catalina with Briefcase
+    0.3.15) and on Python 3.11 for the 32-bit Android edition (no Pillow, psutil or fpdf2 there:
+    every use needs a fallback). Every Briefcase setting must parse with 0.3.15, 0.4.4 and 0.4.6.
+  - Only ready-made wheels can be used for macOS builds (check Intel AND Apple Silicon).
+  - Privacy: never store the contents of messages, API requests or voice recordings on the server;
+    never put sensitive data in logs. Keys are stored hashed; secrets encrypted (_seal).
+  - Anything people publish (websites) is served sandboxed, without network access or forms.
+  - Every sign-in path goes through _login_response (two-step verification).
+  - User-facing text is plain, warm and short, and says what to do next.
+  - A change isn't done until its tests pass on Python 3.12 and 3.10 and, for UI, it has been
+    checked in a real browser.
+
+rules:
+  proposal:
+    - State what is out of scope
+    - Name the platforms affected (macOS, Windows, Linux, Android 64/32-bit, iOS, web, server)
+  tasks:
+    - Include the tests to write and the real-browser or on-device check

@@ -26,3 +26,11 @@ jobs:
         run: python -m pip install -r requirements-test.txt
       - name: Run the tests
         run: python -m pytest tests -q
+
+  specs:
+    # The OpenSpec specs (openspec/) must stay valid: requirements with scenarios, correct format.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate specs and changes (OpenSpec, strict)
+        run: npx --yes @fission-ai/openspec@1.14.3 validate --all --strict --no-interactive
