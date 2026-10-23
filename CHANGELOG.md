@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.9 (October 2026)
+
+- A full sign-in page for the web (/login, /signup, /forgot): log in, create an account (with
+  password rules as you type), confirm your email, forgot password, "email me a sign-in code",
+  two-step verification, Google / GitHub / Microsoft / Apple, Remember me, and back to where you were
+- Security fix: signing in with an emailed code now asks for your two-step code and shows up in
+  Signed-in devices (it skipped both before)
+
 ## 0.1.8 (October 2026)
 
 - Connected apps (Settings > Connected apps): connect Google Calendar, Gmail and Google Drive, one

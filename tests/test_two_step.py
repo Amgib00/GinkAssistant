@@ -139,3 +139,20 @@ def test_app_sign_in_screen_asks_for_the_code(tmp_path, monkeypatch):
         assert ("show", "twofa", {"email": "ib@example.com"}) in calls and not done          # code step, not signed in
     finally:
         server.should_exit = True
+
+
+def test_email_code_sign_in_is_gated_and_has_a_session(srv, monkeypatch):
+    """/verify-otp used to issue a bare token: no session, and no two-step verification."""
+    b, c, db = srv
+    monkeypatch.setattr(b, "_dispatch_otp", lambda email, otp: None)
+    def code_login():
+        c.post("/send-otp", params={"email": "ib@example.com"})
+        otp = b._otp_store["ib@example.com"]["otp"] if "otp" in b._otp_store["ib@example.com"] else b._otp_store["ib@example.com"]["code"]
+        return c.post("/verify-otp", params={"email": "ib@example.com", "otp": otp}).json()
+    plain = code_login()
+    auth = {"Authorization": "Bearer " + plain["token"]}
+    assert len(c.get("/account/sessions", headers=auth).json()["sessions"]) == 1     # a real session now
+    turn_on(b, c, auth)
+    b._otp_store.clear()
+    gated = code_login()
+    assert gated.get("twofa_required") and "token" not in gated                       # code alone isn't enough

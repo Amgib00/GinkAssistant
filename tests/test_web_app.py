@@ -69,3 +69,16 @@ def test_reading_attached_documents_for_the_web_app(client):
     buf = io.BytesIO(); Image.new("RGB", (8, 8)).save(buf, "PNG")
     r = c.post("/attachments/read", headers=h, json={"name": "p.png", "data": as_url("image/png", buf.getvalue())})
     assert r.status_code == 422                                              # photos stay in the browser
+
+
+def test_full_sign_in_page_is_served_safely(client):
+    b, c, h = client
+    for path in ("/login", "/signup", "/forgot"):
+        r = c.get(path)
+        assert r.status_code == 200 and "connect-src 'self'" in r.headers["content-security-policy"]
+        for view in ('id="v-login"', 'id="v-signup"', 'id="v-code"', 'id="v-forgot"', 'id="v-twofa"', "li-remember", "su-agree"):
+            assert view in r.text, (path, view)
+    page = c.get("/login").text
+    assert "/^\\/(?!\\/)[^\\\\\\s]*$/" in page                     # next= only to Gink's own pages (no //evil.example)
+    bridge = open(os.path.join(ROOT, "webapp", "bridge.js"), encoding="utf-8").read()
+    assert 'location.replace("/login?next="' in bridge and 'sessionStorage.getItem("gink_token")' in bridge

@@ -97,14 +97,15 @@ class ApiClient:
             raise ApiError(self._detail(resp, "Failed to send the code. Check your connection."))
 
     async def verify_otp(self, email: str, otp: str) -> Session:
-        async with httpx.AsyncClient(headers=device_headers(), timeout=self.timeout) as client:
-            resp = await client.post(
-                f"{self.base_url}/verify-otp", params={"email": email, "otp": otp}
-            )
+        try:
+            async with httpx.AsyncClient(headers=device_headers(), timeout=self.timeout) as client:
+                resp = await client.post(f"{self.base_url}/verify-otp", params={"email": email, "otp": otp})
+        except httpx.HTTPError as e:
+            raise unreachable(e)
         data = self._json(resp)
-        if resp.status_code != 200 or "token" not in data:
+        if resp.status_code != 200:
             raise ApiError(data.get("detail", "Invalid or expired code."))
-        return Session(token=data["token"], email=data.get("email", email))
+        return self._session(data, email)               # two-step verification when it's on
 
     # -- accounts (password, verification, reset) -------------------------
 

@@ -2995,7 +2995,10 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
   function save(k, v) { try { LS.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
   var W = {
-    token: LS.getItem("gink_token") || "", email: LS.getItem("gink_email") || "", name: LS.getItem("gink_name") || "",
+    // "Remember me" off keeps the sign-in in sessionStorage (until the browser closes): read both
+    token: LS.getItem("gink_token") || sessionStorage.getItem("gink_token") || "",
+    email: LS.getItem("gink_email") || sessionStorage.getItem("gink_email") || "",
+    name: LS.getItem("gink_name") || sessionStorage.getItem("gink_name") || "",
     model: LS.getItem("gink_model") || "", models: [],
     sessions: load("gink_sessions", {}), dirty: load("gink_dirty", {}), since: parseFloat(LS.getItem("gink_since") || "0"),
     prefs: load("gink_prefs", { theme: "system", chat_font: "sans", motion: "system", read_aloud: false, voice: "Female (Jenny)", reply_language: "auto" }),
@@ -3024,6 +3027,11 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
   // ---------------------------------------------------------------- sign in
   var $ = function (id) { return document.getElementById(id); };
   function showSignIn(message) {
+    // The full sign-in page (/login): log in, create account, codes, reset, two-step, Google...
+    if (location.pathname.indexOf("/app") === 0) {
+      location.replace("/login?next=" + encodeURIComponent(location.pathname + location.hash) + (message ? "&reason=ended" : ""));
+      return;
+    }
     $("web-signin").classList.add("open");
     if ($("ws-signup").hidden) tab("login");          // always start from a usable form (not a finished code step)
     $("ws-err").textContent = message || "";
@@ -3133,7 +3141,7 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     }).then(function () { btn.disabled = false; });
   }
   function signOut(message) {
-    W.token = ""; LS.removeItem("gink_token");
+    W.token = ""; LS.removeItem("gink_token"); try { sessionStorage.removeItem("gink_token"); } catch (e) {}
     if (W.busy && W.busy.abort) W.busy.abort();
     showSignIn(message);
   }

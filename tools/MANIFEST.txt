@@ -143,6 +143,7 @@ src/ginkassistant/services/voice_bridge.py
 src/ginkassistant/services/voice_profiles.py
 src/ginkassistant/services/wake_word.py
 src/ginkassistant/services/web_app/admin.html
+src/ginkassistant/services/web_app/auth.html
 src/ginkassistant/services/web_app/console.html
 src/ginkassistant/services/web_app/index.html
 src/ginkassistant/ui/__init__.py

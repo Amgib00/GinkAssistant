@@ -85,7 +85,7 @@
       <h1>Gink Developer Console</h1>
       <p class="sub">Build with Gink: an OpenAI-compatible API, a CLI, batches and live metrics.</p>
       <div class="card"><p>Sign in to Gink in this browser to create API keys and see your usage.</p>
-        <a class="btn" href="/app">Sign in to Gink</a></div>
+        <a class="btn" href="/login?next=/developers">Sign in to Gink</a> <a class="btn" href="/signup?next=/developers" style="background:transparent;color:var(--text);box-shadow:inset 0 0 0 1.5px var(--line)">Create an account</a></div>
     </section>
 
     <!-- DASHBOARD -->
@@ -224,7 +224,7 @@ cat notes.txt | gink "summarise this"</code></pre>
 (function () {
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
-  var token = ""; try { token = localStorage.getItem("gink_token") || ""; } catch (e) {}
+  var token = ""; try { token = localStorage.getItem("gink_token") || sessionStorage.getItem("gink_token") || ""; } catch (e) {}
   var STATE = { overview: null, view: "", models: [], thread: [], logsBefore: 0, timers: {} };
 
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }

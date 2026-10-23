@@ -976,3 +976,19 @@ New services/live_info.py (all free, no API keys):
   Google verifies the app, only test users can connect Gmail.
 - tests/test_connected_apps.py (7); browser check with Google simulated. Open tasks: 3.1 with a
   real Google account, 3.2 on the TECNO.
+
+## Latest (0.1.9): the full web sign-in + a security fix
+- SECURITY: /verify-otp issued a bare 24-hour token via _create_session_token: no session (not in
+  Signed-in devices, not individually revocable) and NO two-step verification. Now
+  _login_response like every sign-in; _create_session_token removed; api_client.verify_otp goes
+  through _session (two-step accounts got "Invalid or expired code"). Test added.
+- web_app/auth.html at /login, /signup, /forgot: log in (show/hide, Remember me = localStorage vs
+  sessionStorage), create account (live rules = server's: 8+ chars, letters + numbers/symbols;
+  Terms/Privacy consent), code screen for verify / email-code sign-in / reset (6 boxes, paste,
+  resend with 30 s countdown, change email), forgot -> reset (twice, must match), two-step (code or
+  recovery), social buttons from /auth/providers (pop-up + closed detection), "waking up" notice
+  after 4 s, next= limited to same-site paths, reason=ended message.
+- Web app: signed out -> /login?next=/app (the old overlay stays as a fallback); reads the token
+  from localStorage or sessionStorage. Console: Sign in / Create an account -> back to /developers.
+- Browser-tested: every path (signup with pasted code, wrong password, Remember me off, reset with
+  mismatch, email code + two-step, next=//evil.example blocked, console round trip).

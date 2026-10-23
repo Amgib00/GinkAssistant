@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Sign in to Gink</title>
+<style>
+  :root { --bg:#F6F7F4; --panel:#151D23; --card:#FFFFFF; --text:#151D23; --muted:#5D6B64; --line:#E1E5E0; --lime:#A8F03C;
+          --accent:#3F7D12; --bad:#C42B1C; --ok:#2E7D32; --field:#FFFFFF; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0F1519; --card:#18222A; --text:#E9EFEA; --muted:#9AABA3;
+          --line:rgba(233,239,234,.14); --accent:#A8F03C; --bad:#FF8A80; --ok:#7BD88F; --field:#0F171C; } }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+         display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); }
+  .side { background:var(--panel); color:#E9EFEA; padding:48px; display:flex; flex-direction:column; justify-content:space-between; }
+  .logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:20px; }
+  .logo span { width:36px; height:36px; border-radius:10px; background:#0B1013; display:grid; place-items:center; color:var(--lime); font-size:20px; }
+  .side h2 { font-size:32px; line-height:1.2; margin:0 0 14px; max-width:420px; }
+  .side p { color:#9AABA3; max-width:420px; margin:0; }
+  .side ul { list-style:none; padding:0; margin:22px 0 0; color:#C9D3CD; } .side li { margin:8px 0; } .side li::before { content:"\2713  "; color:var(--lime); }
+  .side small { color:#6F7E77; }
+  main { display:grid; place-items:center; padding:32px 20px; }
+  .card { width:100%; max-width:420px; }
+  h1 { font-size:26px; margin:0 0 6px; } .sub { color:var(--muted); margin:0 0 22px; }
+  label { display:block; font-weight:600; font-size:13.5px; margin:14px 0 6px; }
+  input[type=email], input[type=text], input[type=password] { width:100%; font:inherit; padding:11px 13px; border-radius:12px;
+         border:1.5px solid var(--line); background:var(--field); color:var(--text); }
+  input:focus { outline:none; border-color:var(--accent); }
+  .pw { position:relative; } .pw input { padding-right:64px; }
+  .pw button { position:absolute; right:6px; top:50%; transform:translateY(-50%); background:none; border:0; color:var(--muted); font:inherit; font-size:13px; font-weight:650; padding:6px 8px; cursor:pointer; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px; font-size:14px; }
+  .row label { margin:0; font-weight:500; display:flex; gap:8px; align-items:center; }
+  .go { width:100%; margin-top:18px; font:inherit; font-weight:700; padding:12px; border:0; border-radius:999px; background:var(--text); color:var(--bg); cursor:pointer; }
+  .go:disabled { opacity:.55; cursor:default; }
+  .link { background:none; border:0; padding:0; font:inherit; color:var(--accent); cursor:pointer; font-weight:600; }
+  a { color:var(--accent); }
+  .msg { min-height:22px; margin-top:12px; font-size:14px; } .msg.err { color:var(--bad); } .msg.ok { color:var(--ok); }
+  .or { display:flex; align-items:center; gap:12px; color:var(--muted); font-size:13px; margin:22px 0 14px; } .or::before, .or::after { content:""; flex:1; height:1px; background:var(--line); }
+  .social { display:grid; gap:10px; }
+  .social button { font:inherit; font-weight:650; padding:11px; border-radius:999px; border:1.5px solid var(--line); background:transparent; color:var(--text); cursor:pointer; }
+  .switch { text-align:center; margin-top:22px; color:var(--muted); font-size:14px; }
+  .rules { list-style:none; padding:0; margin:8px 0 0; font-size:13px; color:var(--muted); } .rules li::before { content:"\25CB  "; } .rules li.met { color:var(--ok); } .rules li.met::before { content:"\2713  "; }
+  .codes { display:flex; gap:8px; justify-content:space-between; margin-top:6px; }
+  .codes input { width:100%; max-width:52px; height:56px; text-align:center; font-size:22px; font-weight:700; border-radius:12px; border:1.5px solid var(--line); background:var(--field); color:var(--text); }
+  .note { color:var(--muted); font-size:13px; } .wake { color:var(--muted); font-size:13.5px; margin-top:10px; }
+  [hidden] { display:none !important; }
+  @media (max-width: 860px) { body { grid-template-columns:1fr; } .side { display:none; } }
+</style>
+</head>
+<body>
+<aside class="side">
+  <div class="logo"><span>&#10052;</span> Gink</div>
+  <div>
+    <h2>Think. Talk. Create.</h2>
+    <p>Your assistant on the web, on your computer and on your phone, with one account.</p>
+    <ul><li>Your chats on every device</li><li>Voice, images, websites and web search</li><li>Two-step verification to protect your account</li></ul>
+  </div>
+  <small>By using Gink you agree to the <a href="https://amgib00.github.io/GinkAssistant/terms.html" style="color:#C9D3CD">Terms</a> and <a href="https://amgib00.github.io/GinkAssistant/privacy.html" style="color:#C9D3CD">Privacy Policy</a>.</small>
+</aside>
+
+<main>
+  <div class="card">
+    <!-- LOG IN -->
+    <form id="v-login" novalidate>
+      <h1>Welcome back</h1><p class="sub">Log in to continue with Gink.</p>
+      <label for="li-email">Email</label><input id="li-email" type="email" autocomplete="email" required>
+      <label for="li-pass">Password</label>
+      <div class="pw"><input id="li-pass" type="password" autocomplete="current-password" required><button type="button" data-show="li-pass">Show</button></div>
+      <div class="row"><label><input type="checkbox" id="li-remember" checked> Remember me</label><button type="button" class="link" data-go="forgot">Forgot password?</button></div>
+      <button class="go" type="submit">Log in</button>
+      <div class="row" style="justify-content:center"><button type="button" class="link" id="li-codebtn">Email me a sign-in code instead</button></div>
+    </form>
+
+    <!-- CREATE ACCOUNT -->
+    <form id="v-signup" novalidate hidden>
+      <h1>Create your account</h1><p class="sub">Free to start. It takes a minute.</p>
+      <label for="su-name">Name</label><input id="su-name" type="text" autocomplete="name" maxlength="80" required>
+      <label for="su-email">Email</label><input id="su-email" type="email" autocomplete="email" required>
+      <label for="su-pass">Password</label>
+      <div class="pw"><input id="su-pass" type="password" autocomplete="new-password" required aria-describedby="su-rules"><button type="button" data-show="su-pass">Show</button></div>
+      <ul class="rules" id="su-rules"><li data-rule="len">At least 8 characters</li><li data-rule="mix">Letters and numbers or symbols</li></ul>
+      <div class="row" style="justify-content:flex-start"><label><input type="checkbox" id="su-agree"> I agree to the <a href="https://amgib00.github.io/GinkAssistant/terms.html" target="_blank" rel="noopener">Terms</a> and <a href="https://amgib00.github.io/GinkAssistant/privacy.html" target="_blank" rel="noopener">Privacy Policy</a></label></div>
+      <button class="go" type="submit">Create account</button>
+    </form>
+
+    <!-- CODE (verify email / sign-in code / reset) -->
+    <form id="v-code" novalidate hidden>
+      <h1 id="cd-title">Check your email</h1><p class="sub" id="cd-sub"></p>
+      <label id="cd-label">6-digit code</label>
+      <div class="codes" id="cd-boxes" role="group" aria-labelledby="cd-label"></div>
+      <div id="cd-newpass" hidden>
+        <label for="rs-pass">New password</label>
+        <div class="pw"><input id="rs-pass" type="password" autocomplete="new-password"><button type="button" data-show="rs-pass">Show</button></div>
+        <ul class="rules" id="rs-rules"><li data-rule="len">At least 8 characters</li><li data-rule="mix">Letters and numbers or symbols</li></ul>
+        <label for="rs-pass2">Repeat the new password</label><input id="rs-pass2" type="password" autocomplete="new-password">
+      </div>
+      <button class="go" type="submit" id="cd-go">Continue</button>
+      <div class="row"><button type="button" class="link" id="cd-resend">Resend code</button><button type="button" class="link" id="cd-change">Use a different email</button></div>
+      <p class="note">Can't find it? Check your spam folder.</p>
+    </form>
+
+    <!-- FORGOT -->
+    <form id="v-forgot" novalidate hidden>
+      <h1>Reset your password</h1><p class="sub">We'll email you a code to choose a new password.</p>
+      <label for="fg-email">Email</label><input id="fg-email" type="email" autocomplete="email" required>
+      <button class="go" type="submit">Send the code</button>
+      <div class="switch"><button type="button" class="link" data-go="login">Back to log in</button></div>
+    </form>
+
+    <!-- TWO-STEP -->
+    <form id="v-twofa" novalidate hidden>
+      <h1>Two-step verification</h1><p class="sub" id="tf-sub">Enter the 6-digit code from your authenticator app.</p>
+      <div class="codes" id="tf-boxes" role="group" aria-label="Authenticator code"></div>
+      <div id="tf-recwrap" hidden><label for="tf-rec">Recovery code</label><input id="tf-rec" type="text" autocomplete="one-time-code" placeholder="a1b2-c3d4"></div>
+      <button class="go" type="submit">Continue</button>
+      <div class="row" style="justify-content:center"><button type="button" class="link" id="tf-switch">Use a recovery code instead</button></div>
+    </form>
+
+    <p class="msg" id="msg" role="alert" aria-live="assertive"></p>
+    <p class="wake" id="wake" hidden>Waking up the Gink server&hellip; this can take up to a minute the first time.</p>
+
+    <div id="social-wrap" hidden><div class="or">or</div><div class="social" id="social"></div></div>
+    <div class="switch" id="sw-login">New to Gink? <button type="button" class="link" data-go="signup">Create an account</button></div>
+    <div class="switch" id="sw-signup" hidden>Already have an account? <button type="button" class="link" data-go="login">Log in</button></div>
+  </div>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var S = { view: "login", email: "", mode: "", remember: true, ticket: "", cooldown: 0, timer: null, recovery: false };
+
+  // ---- where to go afterwards: only Gink's own pages
+  function nextPath() {
+    var n = new URLSearchParams(location.search).get("next") || "/app";
+    return /^\/(?!\/)[^\\\s]*$/.test(n) ? n : "/app";
+  }
+
+  function say(text, ok) { var m = $("msg"); m.textContent = text || ""; m.className = "msg " + (ok ? "ok" : "err"); }
+  function busy(form, on) { form.querySelectorAll("button, input").forEach(function (e) { e.disabled = on; }); }
+
+  // ---- talking to the server (and saying so when it's waking up)
+  function post(path, body, query) {
+    var wake = setTimeout(function () { $("wake").hidden = false; }, 4000);
+    var url = path + (query ? "?" + new URLSearchParams(query).toString() : "");
+    return fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error((typeof j.detail === "string" && j.detail) || (j.error && j.error.message) || "Something went wrong. Please try again.");
+        return j; }); }, function () { throw new Error("Can't reach the Gink server. Check your connection."); })
+      .then(function (j) { clearTimeout(wake); $("wake").hidden = true; return j; },
+            function (e) { clearTimeout(wake); $("wake").hidden = true; throw e; });
+  }
+
+  // ---- finishing: two-step if needed, then store the sign-in and go back
+  function finish(res) {
+    if (res && res.twofa_required) { S.ticket = res.ticket; return show("twofa"); }
+    if (!res || !res.token) { return say("Something went wrong. Please try again."); }
+    var store = S.remember ? localStorage : sessionStorage, other = S.remember ? sessionStorage : localStorage;
+    try {
+      other.removeItem("gink_token"); store.setItem("gink_token", res.token);
+      if (res.name) store.setItem("gink_name", res.name);
+      store.setItem("gink_email", res.email || S.email);
+    } catch (e) {}
+    say("Signed in. One moment\u2026", true);
+    location.replace(nextPath());
+  }
+
+  // ---- views
+  function show(view, opts) {
+    S.view = view; opts = opts || {};
+    ["login", "signup", "code", "forgot", "twofa"].forEach(function (v) { $("v-" + v).hidden = v !== view; });
+    $("sw-login").hidden = view !== "login"; $("sw-signup").hidden = view !== "signup";
+    $("social-wrap").hidden = !(view === "login" || view === "signup") || !$("social").children.length;
+    if (!opts.keepMsg) say("");
+    var path = { login: "/login", signup: "/signup", forgot: "/forgot" }[view];
+    if (path && location.pathname !== path) history.replaceState(null, "", path + location.search);
+    if (view === "code") { boxes("cd-boxes"); }
+    if (view === "twofa") { boxes("tf-boxes"); setRecovery(false); }
+    var first = $("v-" + view).querySelector("input:not([type=checkbox])");
+    if (first) setTimeout(function () { first.focus(); }, 30);
+  }
+  document.addEventListener("click", function (e) {
+    var go = e.target.closest && e.target.closest("[data-go]");
+    if (go) { e.preventDefault(); show(go.getAttribute("data-go")); }
+    var sh = e.target.closest && e.target.closest("[data-show]");
+    if (sh) { var inp = $(sh.getAttribute("data-show")); inp.type = inp.type === "password" ? "text" : "password"; sh.textContent = inp.type === "password" ? "Show" : "Hide"; }
+  });
+
+  // ---- 6-digit boxes (typing, backspace, pasting a whole code)
+  function boxes(id) {
+    var host = $(id); host.innerHTML = "";
+    for (var i = 0; i < 6; i++) {
+      var b = document.createElement("input"); b.inputMode = "numeric"; b.maxLength = 1; b.autocomplete = i ? "off" : "one-time-code";
+      b.setAttribute("aria-label", "Digit " + (i + 1)); host.appendChild(b);
+    }
+    var all = host.querySelectorAll("input");
+    all.forEach(function (b, i) {
+      b.addEventListener("input", function () {
+        var v = b.value.replace(/\D/g, "");
+        if (v.length > 1) { fill(all, v); return; }
+        b.value = v; if (v && i < 5) all[i + 1].focus();
+        if (codeOf(all).length === 6) b.form.requestSubmit();
+      });
+      b.addEventListener("keydown", function (e) { if (e.key === "Backspace" && !b.value && i > 0) all[i - 1].focus(); });
+      b.addEventListener("paste", function (e) { e.preventDefault(); fill(all, (e.clipboardData || window.clipboardData).getData("text")); });
+    });
+    setTimeout(function () { all[0].focus(); }, 30);
+  }
+  function fill(all, text) {
+    var d = String(text).replace(/\D/g, "").slice(0, 6).split("");
+    all.forEach(function (b, i) { b.value = d[i] || ""; });
+    (all[Math.min(d.length, 5)]).focus();
+    if (d.length === 6) all[0].form.requestSubmit();
+  }
+  function codeOf(all) { return Array.prototype.map.call(all, function (b) { return b.value; }).join(""); }
+
+  // ---- password rules (the server's own: 8+ characters, letters with numbers or symbols)
+  function rules(inputId, listId) {
+    var v = $(inputId).value;
+    var met = { len: v.length >= 8, mix: /[A-Za-z]/.test(v) && /[^A-Za-z]/.test(v) };
+    $(listId).querySelectorAll("li").forEach(function (li) { li.classList.toggle("met", met[li.getAttribute("data-rule")]); });
+    return met.len && met.mix;
+  }
+  $("su-pass").addEventListener("input", function () { rules("su-pass", "su-rules"); });
+  $("rs-pass").addEventListener("input", function () { rules("rs-pass", "rs-rules"); });
+  function validEmail(v) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v); }
+
+  // ---- the code screen, for three purposes
+  function codeScreen(mode, email) {
+    S.mode = mode; S.email = email;
+    $("cd-title").textContent = mode === "reset" ? "Choose a new password" : mode === "otp" ? "Check your email" : "Confirm your email";
+    $("cd-sub").textContent = "We sent a 6-digit code to " + email + ".";
+    $("cd-newpass").hidden = mode !== "reset"; $("rs-pass").value = ""; $("rs-pass2").value = "";
+    $("cd-go").textContent = mode === "reset" ? "Save the new password" : "Continue";
+    show("code"); startCooldown(30);
+  }
+  function startCooldown(sec) {
+    clearInterval(S.timer); S.cooldown = sec; var b = $("cd-resend");
+    var tick = function () { b.disabled = S.cooldown > 0; b.textContent = S.cooldown > 0 ? "Resend code in " + S.cooldown + "s" : "Resend code"; S.cooldown--; if (S.cooldown < -1) clearInterval(S.timer); };
+    tick(); S.timer = setInterval(tick, 1000);
+  }
+  function sendCode(mode, email) {
+    if (mode === "verify") return post("/auth/register", { name: $("su-name").value.trim(), email: email, password: $("su-pass").value });
+    if (mode === "reset") return post("/auth/forgot", { email: email });
+    return post("/send-otp", null, { email: email });
+  }
+
+  // ---- forms
+  $("v-login").onsubmit = function (e) {
+    e.preventDefault(); var f = this, email = $("li-email").value.trim();
+    if (!validEmail(email)) return say("Enter your email address.");
+    if (!$("li-pass").value) return say("Enter your password.");
+    S.email = email; S.remember = $("li-remember").checked; busy(f, true); say("");
+    post("/auth/login", { email: email, password: $("li-pass").value }).then(finish)
+      .catch(function (err) { say(err.message); }).then(function () { busy(f, false); });
+  };
+  $("li-codebtn").onclick = function () {
+    var email = $("li-email").value.trim();
+    if (!validEmail(email)) { $("li-email").focus(); return say("Enter your email first, then ask for a code."); }
+    S.remember = $("li-remember").checked; say("Sending\u2026", true);
+    sendCode("otp", email).then(function () { codeScreen("otp", email); }).catch(function (err) { say(err.message); });
+  };
+  $("v-signup").onsubmit = function (e) {
+    e.preventDefault(); var f = this, email = $("su-email").value.trim();
+    if (!$("su-name").value.trim()) return say("Enter your name.");
+    if (!validEmail(email)) return say("Enter a valid email address.");
+    if (!rules("su-pass", "su-rules")) return say("Choose a password that meets both rules.");
+    if (!$("su-agree").checked) return say("Please agree to the Terms and Privacy Policy to continue.");
+    busy(f, true); say("");
+    sendCode("verify", email).then(function () { S.remember = true; codeScreen("verify", email); })
+      .catch(function (err) { say(err.message); }).then(function () { busy(f, false); });
+  };
+  $("v-forgot").onsubmit = function (e) {
+    e.preventDefault(); var f = this, email = $("fg-email").value.trim();
+    if (!validEmail(email)) return say("Enter your email address.");
+    busy(f, true); say("");
+    sendCode("reset", email).then(function () { S.remember = true; codeScreen("reset", email); })
+      .catch(function (err) { say(err.message); }).then(function () { busy(f, false); });
+  };
+  $("v-code").onsubmit = function (e) {
+    e.preventDefault(); var f = this, code = codeOf($("cd-boxes").querySelectorAll("input"));
+    if (code.length !== 6) return say("Enter all 6 digits.");
+    var req;
+    if (S.mode === "reset") {
+      if (!rules("rs-pass", "rs-rules")) return say("Choose a password that meets both rules.");
+      if ($("rs-pass").value !== $("rs-pass2").value) return say("The two passwords don't match.");
+      req = post("/auth/reset", { email: S.email, code: code, password: $("rs-pass").value });
+    } else if (S.mode === "verify") {
+      req = post("/auth/register/verify", { email: S.email, code: code });
+    } else {
+      req = post("/verify-otp", null, { email: S.email, otp: code });
+    }
+    busy(f, true); say("");
+    req.then(finish).catch(function (err) {
+      say(err.message); $("cd-boxes").querySelectorAll("input").forEach(function (b) { b.value = ""; });
+      $("cd-boxes").querySelector("input").focus();
+    }).then(function () { busy(f, false); if (S.cooldown > 0) $("cd-resend").disabled = true; });
+  };
+  $("cd-resend").onclick = function () {
+    sendCode(S.mode, S.email).then(function () { say("A new code is on its way.", true); startCooldown(30); }).catch(function (err) { say(err.message); });
+  };
+  $("cd-change").onclick = function () { show(S.mode === "verify" ? "signup" : S.mode === "reset" ? "forgot" : "login"); };
+
+  function setRecovery(on) {
+    S.recovery = on; $("tf-boxes").hidden = on; $("tf-recwrap").hidden = !on;
+    $("tf-sub").textContent = on ? "Enter one of the recovery codes you saved." : "Enter the 6-digit code from your authenticator app.";
+    $("tf-switch").textContent = on ? "Use my authenticator app instead" : "Use a recovery code instead";
+    setTimeout(function () { (on ? $("tf-rec") : $("tf-boxes").querySelector("input")).focus(); }, 30);
+  }
+  $("tf-switch").onclick = function () { setRecovery(!S.recovery); };
+  $("v-twofa").onsubmit = function (e) {
+    e.preventDefault(); var f = this;
+    var code = S.recovery ? $("tf-rec").value.trim() : codeOf($("tf-boxes").querySelectorAll("input"));
+    if (!S.recovery && code.length !== 6) return say("Enter all 6 digits.");
+    if (S.recovery && code.replace(/[^a-z0-9]/gi, "").length < 8) return say("Enter one of your recovery codes.");
+    busy(f, true); say("");
+    post("/auth/2fa", { ticket: S.ticket, code: code }).then(finish).catch(function (err) { say(err.message); })
+      .then(function () { busy(f, false); });
+  };
+
+  // ---- Google, GitHub, Microsoft, Apple (those switched on in Render)
+  function social(provider, label) {
+    var bytes = new Uint8Array(16); crypto.getRandomValues(bytes);
+    var state = Array.prototype.map.call(bytes, function (x) { return ("0" + x.toString(16)).slice(-2); }).join("");
+    var win = window.open("", "gink_signin", "width=520,height=700");
+    say("Finish signing in with " + label + " in the window that opened\u2026", true);
+    post("/auth/" + provider + "/begin", { state: state }).then(function () {
+      if (!win) throw new Error("Allow pop-ups for this site, then try again.");
+      win.location.href = "/auth/" + provider + "/start?state=" + encodeURIComponent(state);
+      var started = Date.now(), closedAt = 0;
+      (function check() {
+        if (Date.now() - started > 5 * 60 * 1000) return say("Sign-in timed out. Try again.");
+        if (win.closed && !closedAt) closedAt = Date.now();
+        if (closedAt && Date.now() - closedAt > 4000) return say("The sign-in window was closed before it finished. Try again.");
+        fetch("/auth/poll?state=" + state).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); }).then(function (x) {
+          if (!x.ok) return say(x.j.detail || "Sign-in didn't work. Try again.");
+          if (x.j.status === "pending") return setTimeout(check, 1500);
+          try { win.close(); } catch (e) {}
+          S.remember = $("li-remember").checked; finish(x.j);
+        }, function () { setTimeout(check, 3000); });
+      })();
+    }).catch(function (err) { if (win) win.close(); say(err.message); });
+  }
+  fetch("/auth/providers").then(function (r) { return r.json(); }).then(function (p) {
+    var host = $("social");
+    Object.keys(p).forEach(function (name) {
+      if (!p[name].enabled) return;
+      var b = document.createElement("button"); b.type = "button"; b.textContent = "Continue with " + p[name].label;
+      b.onclick = function () { social(name, p[name].label); }; host.appendChild(b);
+    });
+    $("social-wrap").hidden = !host.children.length || !(S.view === "login" || S.view === "signup");
+  }).catch(function () {});
+
+  // ---- start: already signed in? go straight on. Otherwise the view the address asks for.
+  var have = ""; try { have = localStorage.getItem("gink_token") || sessionStorage.getItem("gink_token") || ""; } catch (e) {}
+  if (have && !new URLSearchParams(location.search).get("reason")) { location.replace(nextPath()); return; }
+  if (new URLSearchParams(location.search).get("reason") === "ended") say("Your session has ended. Please log in again.");
+  show({ "/signup": "signup", "/forgot": "forgot" }[location.pathname] || "login", { keepMsg: true });
+})();
+</script>
+</body>
+</html>

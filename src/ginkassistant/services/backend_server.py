@@ -148,16 +148,6 @@ def _get_secret_key() -> str:
         return _secret_key_cache
 
 
-def _create_session_token(email: str) -> str:
-    payload = {
-        "sub": email,
-        "iat": time.time(),
-        "exp": time.time() + 86400,
-        "iss": "gink_assistant",
-    }
-    return jwt.encode(payload, _get_secret_key(), algorithm=ALGORITHM)
-
-
 def _email_status() -> str:
     """Which email service is set up: "brevo", "gmail" or ""."""
     if _env("BREVO_API_KEY") and (_env("EMAIL_FROM") or _env("GMAIL_USER")):
@@ -298,7 +288,9 @@ def verify_otp(email: str, otp: str):
             raise HTTPException(status_code=401, detail=f"Incorrect code. {remaining} attempt(s) left.")
         del _otp_store[email]
 
-    return {"token": _create_session_token(email), "email": email}
+    # Like every sign-in: a session (Signed-in devices) and two-step verification when it's on.
+    # (This used to issue a bare 24-hour token: no session, and it skipped two-step verification.)
+    return _login_response(email, (_get_user(email) or {}).get("name", ""))
 
 # =====================================================================
 # Accounts: password sign-up/login, email verification, password reset,
@@ -2467,6 +2459,15 @@ def web_app_page():
     if not os.path.isfile(path):
         return HTMLResponse("Gink on the web isn't built yet: run  python tools/build_web_app.py", status_code=503)
     with open(path, encoding="utf-8") as f:
+        return HTMLResponse(f.read(), headers=_WEB_HEADERS)
+
+
+@app.get("/login", response_class=HTMLResponse)
+@app.get("/signup", response_class=HTMLResponse)
+@app.get("/forgot", response_class=HTMLResponse)
+def auth_page():
+    """The full sign-in page (web_app/auth.html) for the web app, the console and the website."""
+    with open(os.path.join(WEB_APP_DIR, "auth.html"), encoding="utf-8") as f:
         return HTMLResponse(f.read(), headers=_WEB_HEADERS)
 
 
