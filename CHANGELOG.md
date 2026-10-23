@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.5 (October 2026)
+
+- Gink in your terminal: `pip install gink-ai`, then `gink "question"`, a chat (`gink`), piped files,
+  web search (`-s`) and images (`--image`), with your Developer API key
+- The Developer API has its own OpenAPI description (/v1/openapi.json); requests without a model
+  use Gink Crystal
+- Security: the server no longer publishes an automatic list of all its endpoints (/docs)
+
 ## 0.1.4 (October 2026)
 
 - Android: voice works -- speak to Gink (the mic button and voice conversations), hear answers in

@@ -904,3 +904,16 @@ New services/live_info.py (all free, no API keys):
   (Android 11+ package visibility).
 - tests/fake_android.py (stand-in for Chaquopy's java module) + tests/test_android_voice.py.
   Not yet run on a real phone: the first test on the TECNO may need adjustments.
+
+## Latest (0.1.5): the gink CLI + OpenAPI
+- cli/ = PyPI package "gink-ai" (httpx only, Python >= 3.9): gink "q" (streamed), gink (chat:
+  /new /model /models /search /exit), stdin piped as <attached_file>, -s (gink-search), --image,
+  login (getpass, verified, saved 0600 at ~/.config/gink/config.json), logout, models, version.
+  GINK_API_KEY / GINK_BASE_URL. Clear errors (invalid key -> gink login; 429 + Retry-After;
+  timeout -> waking server). Built as wheel + sdist and installed in a fresh venv.
+- .github/workflows/cli.yml: tests, builds, publishes with PyPI Trusted Publishing (no token).
+- Server: FastAPI docs_url/redoc_url/openapi_url = None (they listed all 57 endpoints, owner
+  tools too); curated OpenAPI 3.1 for the Developer API at /v1/openapi.json. /v1 chat without
+  "model" -> gink-crystal (was a bare "Bad request."). Developers page: CLI + OpenAPI.
+- tests/test_cli.py runs the real CLI as a program against the real server (Groq simulated);
+  the fixture restores the environment it changes (it had leaked into later tests).

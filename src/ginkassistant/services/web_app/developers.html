@@ -115,7 +115,19 @@ console.log(reply.choices[0].message.content);</code></pre>
 
   <h2>Limits</h2>
   <p>API calls share your account's daily allowance: <strong>Free</strong> 30 messages and 3 images a day, <strong>Gink Pro</strong> 500 messages and 50 images. Each key can also make up to <strong id="per-min">30</strong> requests a minute. Over a limit, you get HTTP 429 with a message (and <code>Retry-After</code> for the per-minute limit).</p>
-  <p class="muted">If you ask for a model that's no longer available, Gink uses the best current one instead, so your code keeps working.</p>
+  <p class="muted">If you ask for a model that's no longer available, Gink uses the best current one instead, so your code keeps working. Leave out <code>model</code> to use Gink Crystal.</p>
+
+  <h2>Gink in your terminal</h2>
+  <pre><code>pip install gink-ai
+gink login                                  # paste your key
+gink "What's the weather in Dakar?"
+gink                                        # a chat: /new, /model, /search on, /exit
+cat notes.txt | gink "summarise this"
+gink -s "latest news in Senegal"            # search the web, with sources
+gink --image "a baobab at sunset" -o tree.png</code></pre>
+
+  <h2>API description (OpenAPI)</h2>
+  <p>Tools that understand OpenAPI can connect to Gink automatically: <a href="/v1/openapi.json">/v1/openapi.json</a> describes the endpoints above.</p>
 </div>
 <script>
 (function () {

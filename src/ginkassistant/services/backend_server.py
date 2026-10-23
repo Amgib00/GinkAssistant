@@ -75,7 +75,9 @@ MAX_VERIFY_ATTEMPTS = 5
 MAX_EMAIL_LENGTH = 254  # RFC 5321
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
-app = FastAPI(title="Gink Assistant Backend")
+app = FastAPI(title="Gink Assistant Backend", docs_url=None, redoc_url=None, openapi_url=None)
+# ^ no automatic /docs, /redoc or /openapi.json: they listed every endpoint, owner tools included.
+#   The Developer API's own description is at /v1/openapi.json.
 
 import contextvars
 _current_request = contextvars.ContextVar("gink_request", default=None)
@@ -1918,8 +1920,10 @@ async def ai_chat(request: Request):
         body = await request.json()
     except Exception:
         return _ai_error(400, "Bad request.", "bad_request")
-    if not isinstance(body, dict) or not isinstance(body.get("messages"), list) or not body.get("model"):
-        return _ai_error(400, "Bad request.", "bad_request")
+    if not isinstance(body, dict) or not isinstance(body.get("messages"), list) or not body["messages"]:
+        return _ai_error(400, "Bad request: send a JSON body with a non-empty \"messages\" list.", "bad_request")
+    if not body.get("model"):
+        body["model"] = "gink-crystal"                 # no model given: Gink's default (GPT-OSS 120B)
     if len(_json.dumps(body)) > 12_000_000:
         return _ai_error(413, "That message is too large.", "too_large")
     plan = _plan_status(email)["plan"]
@@ -3154,3 +3158,62 @@ async def voice_transcribe(request: Request, data: dict = Body(...)):
             if r.status_code not in (400, 404) or "model" not in r.text.lower():
                 break                                   # not a "this model is gone" answer: stop here
     return _ai_error(502, "The speech service had a problem. Please try again.", "upstream")
+
+
+# ---- The Developer API's own description (OpenAPI 3.1) -- only the public /v1 endpoints.
+# (FastAPI's automatic /docs and /openapi.json are off: they listed every endpoint, owner tools too.)
+def _developer_openapi(base_url: str) -> dict:
+    message = {"type": "object", "required": ["role", "content"], "properties": {
+        "role": {"type": "string", "enum": ["system", "user", "assistant"]},
+        "content": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "object"}}],
+                    "description": "Text, or OpenAI-style parts (text and image_url) for photos."}}}
+    error = {"type": "object", "properties": {"error": {"type": "object", "properties": {
+        "message": {"type": "string"}, "type": {"type": "string"}, "code": {"type": "string"}}}}}
+    err = lambda d: {"description": d, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+    return {
+        "openapi": "3.1.0",
+        "info": {"title": "Gink Developer API", "version": "1.0.0",
+                 "description": "OpenAI-compatible. Use any OpenAI library with base_url set to this server's /v1 "
+                                "and a Gink API key (gink_live_...) from Settings > Developers. Requests count toward "
+                                "your account's daily allowance, and each key is limited per minute."},
+        "servers": [{"url": base_url.rstrip("/") + "/v1"}],
+        "security": [{"GinkKey": []}],
+        "paths": {
+            "/chat/completions": {"post": {
+                "summary": "Chat (OpenAI chat.completions)", "operationId": "createChatCompletion",
+                "requestBody": {"required": True, "content": {"application/json": {"schema": {
+                    "type": "object", "required": ["messages"], "properties": {
+                        "model": {"type": "string", "example": "gink-crystal",
+                                  "description": "A model from GET /models. gink-search searches the web and lists its sources."},
+                        "messages": {"type": "array", "items": message},
+                        "stream": {"type": "boolean", "default": False, "description": "Server-sent events, OpenAI chunk format."},
+                        "max_tokens": {"type": "integer"}, "temperature": {"type": "number"},
+                        "tools": {"type": "array", "items": {"type": "object"}, "description": "OpenAI function tools."}}}}}},
+                "responses": {"200": {"description": "A chat completion (or an event stream when stream is true)."},
+                              "401": err("Missing, invalid or revoked API key."),
+                              "403": err("This model needs Gink Pro."),
+                              "429": err("Daily allowance or per-minute limit reached (see Retry-After).")}}},
+            "/models": {"get": {
+                "summary": "Models you can use", "operationId": "listModels",
+                "responses": {"200": {"description": "OpenAI list of models.", "content": {"application/json": {"schema": {
+                    "type": "object", "properties": {"data": {"type": "array", "items": {"type": "object", "properties": {
+                        "id": {"type": "string"}, "owned_by": {"type": "string"}}}}}}}}},
+                              "401": err("Missing, invalid or revoked API key.")}}},
+            "/images/generations": {"post": {
+                "summary": "Create an image", "operationId": "createImage",
+                "requestBody": {"required": True, "content": {"application/json": {"schema": {
+                    "type": "object", "required": ["prompt"], "properties": {"prompt": {"type": "string"}}}}}},
+                "responses": {"200": {"description": "The image as base64 PNG.", "content": {"application/json": {"schema": {
+                    "type": "object", "properties": {"created": {"type": "integer"}, "data": {"type": "array", "items": {
+                        "type": "object", "properties": {"b64_json": {"type": "string"}}}}}}}}},
+                              "401": err("Missing, invalid or revoked API key."),
+                              "429": err("Daily image allowance reached.")}}},
+        },
+        "components": {"securitySchemes": {"GinkKey": {"type": "http", "scheme": "bearer", "bearerFormat": "gink_live_..."}},
+                       "schemas": {"Error": error}},
+    }
+
+
+@app.get("/v1/openapi.json")
+def developer_openapi(request: Request):
+    return _developer_openapi(_public_base(request))

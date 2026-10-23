@@ -1,0 +1,33 @@
+# Publishes the gink CLI (cli/) to PyPI, so anyone can: pip install gink-ai
+# Uses PyPI "Trusted Publishing": GitHub proves who it is to PyPI -- no password or token stored.
+# One-time setup on pypi.org: Account > Publishing > Add a pending publisher:
+#   project name gink-ai, owner Amgib00, repository GinkAssistant, workflow cli.yml, environment pypi
+# Then: Actions -> "CLI to PyPI" -> Run workflow. Bump cli/pyproject.toml "version" for each release.
+name: CLI to PyPI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    environment: pypi
+    permissions:
+      id-token: write          # Trusted Publishing
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Test the CLI against the server code
+        run: |
+          python -m pip install -r requirements-test.txt
+          python -m pytest tests/test_cli.py -q
+      - name: Build
+        run: |
+          python -m pip install build
+          python -m build cli --outdir dist
+          ls -l dist
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

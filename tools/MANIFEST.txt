@@ -1,6 +1,7 @@
 .env.example
 .github/dependabot.yml
 .github/workflows/android.yml
+.github/workflows/cli.yml
 .github/workflows/ios.yml
 .github/workflows/linux.yml
 .github/workflows/macos.yml
@@ -14,6 +15,11 @@ INTEGRATION.md
 LICENSE
 README.md
 SECURITY.md
+cli/README.md
+cli/gink_cli/__init__.py
+cli/gink_cli/__main__.py
+cli/gink_cli/main.py
+cli/pyproject.toml
 deploy/Dockerfile
 deploy/IOS_AND_WEB.md
 deploy/README.md
@@ -159,6 +165,7 @@ tests/test_chat_extras.py
 tests/test_check_project.py
 tests/test_claude.py
 tests/test_claude_native.py
+tests/test_cli.py
 tests/test_computer_actions.py
 tests/test_dark_theme.py
 tests/test_developer_api.py

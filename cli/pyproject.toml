@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gink-ai"
+version = "0.1.0"
+description = "Gink in your terminal: ask, chat, search the web and make images with your Gink API key."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [{ name = "Gink AI" }]
+dependencies = ["httpx>=0.25"]
+keywords = ["gink", "ai", "assistant", "cli", "chat"]
+classifiers = ["Environment :: Console", "Programming Language :: Python :: 3", "Operating System :: OS Independent"]
+
+[project.urls]
+Homepage = "https://amgib00.github.io/GinkAssistant/"
+Source = "https://github.com/Amgib00/GinkAssistant"
+
+[project.scripts]
+gink = "gink_cli.main:main"
+
+[tool.setuptools]
+packages = ["gink_cli"]
