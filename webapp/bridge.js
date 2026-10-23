@@ -16,7 +16,9 @@
     name: LS.getItem("gink_name") || sessionStorage.getItem("gink_name") || "",
     model: LS.getItem("gink_model") || "", models: [],
     sessions: load("gink_sessions", {}), dirty: load("gink_dirty", {}), since: parseFloat(LS.getItem("gink_since") || "0"),
-    prefs: load("gink_prefs", { theme: "system", chat_font: "sans", motion: "system", read_aloud: false, voice: "Female (Jenny)", reply_language: "auto" }),
+    prefs: Object.assign({ theme: "system", chat_font: "sans", motion: "system", read_aloud: false, voice: "Female (Jenny)", reply_language: "auto",
+                           style_base: "default", style_warmth: "default", style_enthusiasm: "default", style_emoji: "default", style_headers: "default" },
+                         load("gink_prefs", {})),      // defaults first, so new settings show their real value
     current: null, busy: null, pendingCode: null, syncing: false
   };
   var DESKTOP_ONLY = "That\u2019s available in the Gink app on your computer or phone.";
@@ -221,6 +223,21 @@
     return n;
   }
   function narrow(t) { return String(t).replace(/[\u202f\u2009\u200a\u2006\u2005\u2007]/g, " "); }
+  // Settings > Personalization (mirrors services/personality.py)
+  var STYLE_NOTES = { professional: "Write in a polished, professional tone.", friendly: "Write in a warm, friendly, conversational tone.",
+    concise: "Be brief and to the point: short answers, no filler.", candid: "Be direct and candid: say plainly what you think, including disagreement.",
+    playful: "Be playful and lighthearted where it fits, without getting in the way of the answer." };
+  var LEVEL_NOTES = {
+    style_warmth: { less: "Keep a neutral, matter-of-fact warmth.", more: "Be especially warm, encouraging and kind." },
+    style_enthusiasm: { less: "Keep enthusiasm low-key; avoid exclamation marks.", more: "Be upbeat and enthusiastic." },
+    style_emoji: { less: "Don't use emoji.", more: "Use a few fitting emoji." },
+    style_headers: { less: "Prefer flowing paragraphs; avoid headers and bullet lists unless asked.", more: "Use headers and lists to structure longer answers." } };
+  function personalityNote() {
+    var parts = [STYLE_NOTES[W.prefs.style_base] || ""];
+    Object.keys(LEVEL_NOTES).forEach(function (k) { parts.push(LEVEL_NOTES[k][W.prefs[k]] || ""); });
+    var text = parts.filter(Boolean).join(" ");
+    return text ? " How to write (the user's personalization): " + text : "";
+  }
   function systemPrompt(voice) {
     var lang = W.prefs.reply_language && W.prefs.reply_language !== "auto" ? " Always answer in this language: " + W.prefs.reply_language + "." :
       " Reply in the same language the user writes in (for example French to French, Wolof to Wolof). If they mix languages, use the main one.";
@@ -229,7 +246,7 @@
            "It is now " + new Date().toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric",
            hour: "2-digit", minute: "2-digit" }) + " in the user's time zone (" +
            (Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown") + "). Use this for any question about the time or date." +
-           who + lang +
+           who + lang + personalityNote() +
            " When you have web search results, use them and keep the facts accurate." +
            " You're running in a web browser: you can't set alarms, reminders or tasks or control the user's computer here; " +
            "if asked, say that the Gink app can do it." +
@@ -518,9 +535,10 @@
     var json = function (r) { return r.ok ? r.json() : Promise.reject(); };
     Promise.all([api("/account/sessions").then(json).catch(function () { return null; }),
                  api("/account/2fa").then(json).catch(function () { return {}; }),
-                 api("/sites").then(json).catch(function () { return { sites: [] }; })]).then(function (res) {
+                 api("/sites").then(json).catch(function () { return { sites: [] }; }),
+                 api("/account/security-history").then(json).catch(function () { return { events: [] }; })]).then(function (res) {
       var lists = { sessions: res[0] ? (res[0].sessions || []).map(function (d) { return Object.assign({}, d, { when: activeText(d) }); }) : [],
-                    sites: (res[2].sites || []) };
+                    sites: (res[2].sites || []), security: (res[3].events || []) };
       var extra = { twofa: Object.assign({}, res[1] || {}, W.twofa) };
       if (!res[0]) extra.sessions_error = "Your devices aren\u2019t available right now.";
       pushSettings(lists, extra);
@@ -532,6 +550,11 @@
     api("/connected").then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) {
       pushSettings({ connected: j.services || [] }, { connected_configured: j.configured });
     }).catch(function () { pushSettings({ connected: [] }, { connected_error: "Connected apps aren\u2019t available right now." }); });
+  }
+  function loadLockdown() {
+    pushSettings();
+    api("/account/lockdown").then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (j) { pushSettings({}, { lockdown_on: !!j.on }); }).catch(function () {});
   }
   function connectApp(service) {
     var win = window.open("about:blank", "_blank");           // opened during the click, so it isn't blocked
@@ -614,7 +637,12 @@
     },
     settings_action: function (v) {
       var name = v && v.name;
-      if (name === "refresh") return (v.value === "account" ? loadDevices() : v.value === "connected" ? loadConnected() : pushSettings());
+      if (name === "refresh") return (v.value === "account" ? loadDevices() : v.value === "connected" ? loadConnected()
+                                      : v.value === "privacy" ? loadLockdown() : pushSettings());
+      if (name === "lockdown_on" || name === "lockdown_off") {
+        return api("/account/lockdown", { on: name === "lockdown_on" }).then(function () {
+          settingsToast(name === "lockdown_on" ? "Lockdown mode is on." : "Lockdown mode is off."); loadLockdown(); });
+      }
       if (name === "log_out" || name === "logout") {             // end this browser's session on the server too
         return api("/auth/logout", {}, { noLogout: true }).catch(function () {}).then(function () { signOut(""); });
       }

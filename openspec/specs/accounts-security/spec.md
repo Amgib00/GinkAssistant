@@ -90,3 +90,17 @@ An email sign-in code SHALL only sign in an existing account; for an unknown add
 #### Scenario: Unknown address
 - **WHEN** someone asks for a sign-in code for an address with no Gink account
 - **THEN** no code exists to sign in with, and the inbox receives a note about creating an account
+
+### Requirement: Security history
+The server SHALL record, with time and device, sign-ins, wrong passwords on an existing account, password resets, two-step verification changes, devices signed out, API keys created or revoked, apps connected or disconnected and Lockdown mode changes; it SHALL show the person their last 50 events, keep them 180 days and delete them with the account.
+
+#### Scenario: Someone tried a password
+- **WHEN** a wrong password is entered for the account
+- **THEN** "Wrong password entered" appears in Settings > Account > Security history with the device
+
+### Requirement: Lockdown mode
+When the person turns on Lockdown mode, the server SHALL refuse web search, connected apps and images from web addresses for that account on every device and API path, with a message saying how to turn it off, while normal chat keeps working.
+
+#### Scenario: Web search in Lockdown mode
+- **WHEN** a question would search the web while Lockdown mode is on
+- **THEN** it is refused with "Lockdown mode is on, so Gink doesn't use web search"

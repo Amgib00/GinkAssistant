@@ -1005,3 +1005,17 @@ New services/live_info.py (all free, no API keys):
 - FIX: no limit on code emails (5 requests = 5 emails). _throttle_code(kind, email): 30 s cooldown,
   CODES_PER_HOUR = 6, applied before the account lookup (identical for unknown addresses).
 - accounts-security spec: two new requirements (validated, strict).
+
+## Latest (0.1.11): from the settings screenshots, batch 1
+- Personalization (services/personality.py + bridge.personalityNote): style_base + 4 Less/Default/
+  More levels -> one instruction each, appended through SettingsController.reply_language_note
+  (chat + agent) and the web systemPrompt. FIX found in the browser: the web app had no defaults
+  for new settings, so dropdowns showed their first option ("Less"); defaults are now merged first.
+- Security history: security_events (180 days) via _security_event at sign-in (_new_session),
+  wrong password (existing password accounts), reset, two-step on/off, device(s) signed out, API
+  key created/revoked, app connected/disconnected, lockdown on/off. GET /account/security-history.
+- Lockdown mode: account_flags.lockdown; _refuse_in_lockdown in ai_chat (web search; https image
+  parts), /web/search, /connected/*/begin and every Google call (_gapi). Normal chat unaffected.
+- Specs: accounts-security (+2 requirements), new personalization spec. Next batches: archive chats,
+  storage, usage-limit UX, passkeys; needing decisions: phone sign-in (SMS provider), pricing tiers,
+  parental controls; separate projects: GitHub code review, cloud computer.

@@ -11,6 +11,8 @@ DEFAULTS = {
     "briefing_city": "",            # kept for older saves; "city" is the one to use
     "city": "",
     "use_location": True,
+    "style_base": "default", "style_warmth": "default", "style_enthusiasm": "default",   # Settings > Personalization
+    "style_emoji": "default", "style_headers": "default",
     "agent_confirm": True,        # agent mode: ask before sending messages, calls, deleting...         # Settings -> Location: use the city / approximate location in answers
     "briefing_speak": True,
     "briefing_last_date": "",

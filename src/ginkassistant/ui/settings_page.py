@@ -23,6 +23,7 @@ ICONS = {
     "usage": '<path d="M12 21a9 9 0 1 1 9-9"/><path d="M12 12l4-4"/><circle cx="12" cy="12" r="1.2"/>',
     "capabilities": '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
     "memory": '<path d="M12 4a4 4 0 0 0-4 4v1a3 3 0 0 0-2 5 3 3 0 0 0 3 5h6a3 3 0 0 0 3-5 3 3 0 0 0-2-5V8a4 4 0 0 0-4-4z"/><path d="M12 4v16"/>',
+    "personalization": '<path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6l-5 3.6 1.9-5.8L4 8.8h6.1z"/>',
     "location": '<path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/>',
     "connected": '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
     "briefing": '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
@@ -307,6 +308,10 @@ SETTINGS_JS = r"""
            empty: info.sessions_error || 'Loading your devices\u2026'}].concat(
           (L.sessions || []).length > 1 ? [{type: 'button', label: 'Log out of all other devices', desc: 'If you lost a phone or used a shared computer, this signs you out everywhere except here.',
                                             action: 'sign_out_others', text: 'Log out others', style: 'danger-ghost'}] : [])},
+        {title: 'Security history', rows: [
+          {type: 'list', items: (L.security || []).map(function (e) {
+            return {t: e.text, m: new Date(e.ts * 1000).toLocaleString() + (e.device ? ' \u00b7 ' + e.device : '')}; }),
+           empty: 'Sign-ins and security changes will appear here.'}]},
         {title: 'Delete account', rows: [
           {type: 'button', label: 'Delete your account', desc: 'Permanently deletes your account and everything synced to it. Payment records are kept for accounting, without your name or email. This can\u2019t be undone.', action: 'delete_account', text: 'Delete account', style: 'danger-ghost'}]}]},
       {id: 'privacy', group: 'Settings', title: 'Privacy', sections: [
@@ -314,6 +319,13 @@ SETTINGS_JS = r"""
           {type: 'toggle', key: 'use_memory', label: 'Use memories in answers', desc: 'When off, Gink ignores what you asked it to remember (they stay saved \u2014 manage them under Memory).'},
           {type: 'button', label: 'Export my data', desc: 'Save your chats, Workspace, memories and settings as a file.', action: 'export', text: 'Export'},
           {type: 'button', label: 'Delete all chats', desc: 'Removes every conversation from this device and your other devices.', action: 'delete_chats', text: 'Delete all', style: 'danger-ghost'}]},
+        {title: 'Your chats and AI training', rows: [
+          {type: 'note', text: 'Gink never uses your chats, files or voice to train AI models, and doesn\u2019t use tracking or advertising cookies.'}]},
+        {title: 'Lockdown mode', rows: [
+          {type: 'note', text: 'Protects you from hidden instructions in web pages and emails (prompt injection) by turning off everything that brings outside content into Gink: web search, connected apps, and images from web addresses. Your server enforces it on every device.'},
+          info.lockdown_on === undefined ? {type: 'note', text: 'Sign in to use Lockdown mode.'} :
+          {type: 'button', label: info.lockdown_on ? 'Lockdown mode is on' : 'Lockdown mode is off', desc: info.lockdown_on ? 'Web search and connected apps are off.' : 'Turn it on if you handle sensitive information.',
+           action: info.lockdown_on ? 'lockdown_off' : 'lockdown_on', text: info.lockdown_on ? 'Turn off' : 'Turn on', style: info.lockdown_on ? '' : 'danger-ghost'}]},
         {title: 'Policies', rows: (info.privacy_url || info.terms_url) ? [
           info.privacy_url ? {type: 'button', label: 'Privacy policy', action: 'open_url', value: info.privacy_url, text: 'Open'} : null,
           info.terms_url ? {type: 'button', label: 'Terms of service', action: 'open_url', value: info.terms_url, text: 'Open'} : null].filter(Boolean)
@@ -346,6 +358,14 @@ SETTINGS_JS = r"""
             return {t: m.text, button: {text: 'Forget', action: 'forget_memory', value: m.uid}}; }),
           empty: 'Nothing yet. Say \u201cremember that my exams start on 12 November\u201d in the chat.'}].concat(
           (L.memories || []).length ? [{type: 'button', label: 'Forget everything', action: 'forget_all', text: 'Forget all', style: 'danger-ghost'}] : [])}]},
+      {id: 'personalization', group: 'Settings', title: 'Personalization', sections: [
+        {title: 'Style and tone', rows: [
+          {type: 'note', text: 'Choose how Gink writes to you. This doesn\u2019t change what Gink can do.'},
+          {type: 'select', key: 'style_base', label: 'Base style and tone', options: [['default', 'Default'], ['professional', 'Professional'], ['friendly', 'Friendly'], ['concise', 'Concise'], ['candid', 'Candid'], ['playful', 'Playful']]},
+          {type: 'select', key: 'style_warmth', label: 'Warmth', options: [['less', 'Less'], ['default', 'Default'], ['more', 'More']]},
+          {type: 'select', key: 'style_enthusiasm', label: 'Enthusiasm', options: [['less', 'Less'], ['default', 'Default'], ['more', 'More']]},
+          {type: 'select', key: 'style_emoji', label: 'Emoji', options: [['less', 'Less'], ['default', 'Default'], ['more', 'More']]},
+          {type: 'select', key: 'style_headers', label: 'Headers and lists', options: [['less', 'Less'], ['default', 'Default'], ['more', 'More']]}]}]},
       {id: 'connected', group: 'Settings', title: 'Connected apps', sections: [
         {title: 'Connected apps', rows: [
           {type: 'note', text: 'Let Gink use your Google apps to answer and help. Each one is connected separately; Gink asks before it adds an event or writes or sends an email, and never keeps what it reads.'},

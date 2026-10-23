@@ -9,7 +9,7 @@ import os
 import time
 from datetime import datetime
 
-from ..services import data_export, languages, launch_at_login, prefs, server_config, voice_bridge
+from ..services import personality, data_export, languages, launch_at_login, prefs, server_config, voice_bridge
 from ..services.profile import WORK_OPTIONS
 from ..services.voice_profiles import SPEECH_LANG_CODES, SPEECH_LANGS, VOICE_PROFILES
 from ..services.api_client import ApiClient, ApiError
@@ -29,7 +29,9 @@ BOOL_KEYS = {"read_aloud", "notify_reminders", "briefing_enabled", "briefing_spe
 CHOICES = {"theme": {"system", "light", "dark"}, "chat_font": {"sans", "serif", "mono"},
            "motion": {"system", "reduced"}, "voice_speed": {"slow", "normal", "fast"},
            "reply_language": set(languages.BY_CODE), "send_key": {"enter", "mod"},
-           "speech_lang": SPEECH_LANG_CODES}
+           "speech_lang": SPEECH_LANG_CODES,
+           "style_base": set(personality.STYLES), "style_warmth": personality.LEVELS,
+           "style_enthusiasm": personality.LEVELS, "style_emoji": personality.LEVELS, "style_headers": personality.LEVELS}
 
 
 def _active_text(s: dict) -> str:
@@ -86,7 +88,8 @@ class SettingsController:
             self.brain.preferred_model = p["model"]
 
     def reply_language_note(self) -> str:
-        return languages.reply_note(prefs.load(self.app).get("reply_language", "auto"))
+        p = prefs.load(self.app)               # language + Settings > Personalization (chat and agent)
+        return languages.reply_note(p.get("reply_language", "auto")) + personality.note(p)
 
     async def apply_appearance(self):
         p = self.p()
@@ -201,6 +204,16 @@ class SettingsController:
             except Exception:
                 extra_lists["connected"] = []
                 extra_info["connected_error"] = "Connected apps aren't available right now."
+        if token and panel == "account":                      # security history
+            try:
+                extra_lists["security"] = await asyncio.wait_for(api.security_history(token), timeout=8)
+            except Exception:
+                extra_lists["security"] = []
+        if token and panel == "privacy":                      # Lockdown mode
+            try:
+                extra_info["lockdown_on"] = await asyncio.wait_for(api.lockdown(token), timeout=8)
+            except Exception:
+                pass
         if token and panel == "account":                      # your websites
             try:
                 extra_lists["sites"] = await asyncio.wait_for(api.sites(token), timeout=8)
@@ -389,6 +402,23 @@ class SettingsController:
     async def _a_twofa_done(self, _):
         self._twofa.clear()                    # the codes are never shown again
         await self.refresh("account")
+
+    async def _a_lockdown_on(self, _):
+        await self._set_lockdown(True)
+
+    async def _a_lockdown_off(self, _):
+        await self._set_lockdown(False)
+
+    async def _set_lockdown(self, on: bool):
+        token = getattr(self.app, "session_token", None)
+        if not token:
+            return
+        try:
+            await ApiClient(self.app.state.base_url).lockdown(token, on)
+        except ApiError as exc:
+            return await self.web.settings_toast(str(exc))
+        await self.web.settings_toast("Lockdown mode is on." if on else "Lockdown mode is off.")
+        await self.refresh("privacy")
 
     async def _a_connect_app(self, service):
         token = getattr(self.app, "session_token", None)

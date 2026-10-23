@@ -247,6 +247,15 @@ class ApiClient:
     async def connected_call(self, token: str, path: str, payload: dict) -> dict:
         return await self._authed("POST", f"/connected/{path}", token, json=payload, timeout=45)
 
+    # -- security (Settings > Account / Privacy) -----------------------------------
+    async def security_history(self, token: str) -> list:
+        return (await self._authed("GET", "/account/security-history", token)).get("events", [])
+
+    async def lockdown(self, token: str, on=None) -> bool:
+        if on is None:
+            return bool((await self._authed("GET", "/account/lockdown", token)).get("on"))
+        return bool((await self._authed("POST", "/account/lockdown", token, json={"on": bool(on)})).get("on"))
+
     # -- websites ("make me a website for...") -----------------------------------
     async def create_site(self, token: str, prompt: str) -> dict:
         return await self._authed("POST", "/sites", token, json={"prompt": prompt}, timeout=200)

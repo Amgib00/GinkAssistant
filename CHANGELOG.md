@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.11 (October 2026)
+
+- Settings > Personalization: choose Gink's style (professional, friendly, concise, candid, playful)
+  and how much warmth, enthusiasm, emoji, headers and lists it uses
+- Settings > Account > Security history: sign-ins, wrong passwords, two-step changes, signed-out
+  devices, API keys and connected apps, with the device
+- Settings > Privacy > Lockdown mode: protection against hidden instructions in web pages and
+  emails -- turns off web search, connected apps and images from web addresses, on every device
+- Settings > Privacy states plainly: Gink never trains AI on your chats and uses no tracking cookies
+
 ## 0.1.10 (October 2026)
 
 Security fixes from an audit of every server route:

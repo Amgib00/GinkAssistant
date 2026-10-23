@@ -483,6 +483,7 @@ def _new_session(email: str) -> str:
             con.commit()
         finally:
             con.close()
+    _security_event(email, "signin")
     return sid
 
 
@@ -559,6 +560,8 @@ def login(data: dict = Body(...)):
     if not user or not user["pw_hash"] or not _check_password(data.get("password", ""), user["pw_hash"]):
         with _otp_lock:
             _login_failures.setdefault(email, []).append(now)
+        if user and user["pw_hash"]:
+            _security_event(email, "signin_failed")          # "did someone try to get in?"
         if user and not user["pw_hash"] and user["providers"]:
             raise HTTPException(status_code=401, detail=f"This account signs in with {user['providers'].split(',')[0].title()}.")
         raise HTTPException(status_code=401, detail="Email or password is incorrect.")
@@ -589,6 +592,7 @@ def reset(data: dict = Body(...)):
         _login_failures.pop(email, None)
     user = _get_user(email) or {"name": ""}
     _upsert_user(email, user["name"], _hash_password(password), "password")
+    _security_event(email, "password_reset")
     return _login_response(email, user["name"])
 
 
@@ -1981,6 +1985,12 @@ async def ai_chat(request: Request):
         if blocked is not None:
             return blocked
     if web:
+        _refuse_in_lockdown(email, "web search")
+    if any(isinstance(part, dict) and part.get("type") == "image_url"
+           and str((part.get("image_url") or {}).get("url", "")).startswith(("http://", "https://"))
+           for m in body.get("messages") or [] if isinstance(m.get("content"), list) for part in m["content"]):
+        _refuse_in_lockdown(email, "images from web addresses")
+    if web:
         blocked = _count_search(email, plan, turn)
         if blocked is not None:
             return blocked
@@ -2099,7 +2109,9 @@ def delete_account(request: Request, data: dict = Body(...)):
             con.execute(_API_LOG_TABLE)
             con.execute(_BATCH_TABLE)
             con.execute(_CONN_TABLE)
-            for table in ("connections", "api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
+            con.execute(_SEC_EVENTS_TABLE)
+            con.execute(_FLAGS_TABLE)
+            for table in ("security_events", "account_flags", "connections", "api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
                           "search_usage", "search_turns", "sessions", "account_security"):
                 con.execute(f"DELETE FROM {table} WHERE email=?", (email,))
             con.execute("UPDATE payments SET email=? WHERE email=?", (anon, email))
@@ -2665,6 +2677,7 @@ def api_keys_create(request: Request, data: dict = Body(default={})):
             con.commit()
         finally:
             con.close()
+    _security_event(email, "api_key_created", name)
     return {"id": key_id, "name": name, "key": key, "note": "Copy this key now: it won't be shown again."}
 
 
@@ -2681,6 +2694,7 @@ def api_keys_revoke(key_id: str, request: Request):
     if not n:
         raise HTTPException(status_code=404, detail="That key doesn't exist.")
     _api_recent.pop(key_id, None)
+    _security_event(email, "api_key_revoked")
     return {"revoked": key_id}
 
 
@@ -2773,6 +2787,7 @@ async def web_search(request: Request, data: dict = Body(...)):
         raise HTTPException(status_code=422, detail="What should Gink search for?")
     if not _env("GROQ_API_KEY"):
         return _ai_error(503, "Web search isn't set up on this server yet.", "not_configured")
+    _refuse_in_lockdown(email, "web search")
     plan = _plan_status(email)["plan"]
     blocked = _count_search(email, plan, request.headers.get("x-gink-turn", ""))
     if blocked is not None:
@@ -2939,6 +2954,7 @@ def _revoke(email: str, sids=None, keep=None, everything_older=False):
 def account_session_revoke(sid: str, request: Request):
     email = _email_from_auth(request)
     _revoke(email, sids=[sid])
+    _security_event(email, "signed_out_device")
     return {"ok": True}
 
 
@@ -2946,6 +2962,7 @@ def account_session_revoke(sid: str, request: Request):
 def account_sign_out_others(request: Request):
     email = _email_from_auth(request)
     _revoke(email, keep=getattr(request.state, "gink_sid", None), everything_older=True)
+    _security_event(email, "signed_out_others")
     return {"ok": True}
 
 
@@ -3142,6 +3159,7 @@ def account_twofa_enable(request: Request, data: dict = Body(...)):
             con.commit()
         finally:
             con.close()
+    _security_event(email, "twofa_on")
     return {"enabled": True, "recovery_codes": codes}
 
 
@@ -3157,6 +3175,7 @@ def account_twofa_disable(request: Request, data: dict = Body(...)):
             con.commit()
         finally:
             con.close()
+    _security_event(email, "twofa_off")
     return {"enabled": False}
 
 
@@ -3886,6 +3905,7 @@ def connected_list(request: Request):
 @app.post("/connected/{service}/begin")
 def connected_begin(service: str, request: Request):
     email = _email_from_auth(request)
+    _refuse_in_lockdown(email, "connected apps")
     svc = _service(service)
     cid, secret = _google_keys()
     if not (cid and secret):
@@ -3943,6 +3963,7 @@ async def connected_callback(request: Request, code: str = "", state: str = "", 
         (entry["email"], entry["service"], _seal(tokens["refresh_token"]), " ".join(sorted(granted)), now)))
     if tokens.get("access_token"):
         _access_tokens[(entry["email"], entry["service"])] = (tokens["access_token"], now + int(tokens.get("expires_in") or 3000) - 60)
+    _security_event(entry["email"], "app_connected", svc["label"])
     return _connected_page(f"{svc['label']} is connected", "You can close this window and go back to Gink.")
 
 
@@ -3963,6 +3984,7 @@ async def connected_disconnect(service: str, request: Request):
     if row:
         await _revoke_google(row[0])
         _conn_db(lambda con: con.execute("DELETE FROM connections WHERE email=? AND service=?", (email, service)))
+        _security_event(email, "app_disconnected", CONNECT_SERVICES[service]["label"])
     _access_tokens.pop((email, service), None)
     return {"ok": True}
 
@@ -4006,6 +4028,7 @@ async def _google_token(email: str, service: str, fresh: bool = False) -> str:
 
 async def _gapi(email: str, service: str, method: str, url: str, **kw):
     """A Google API call with the person's connection (refreshes the access token once if needed)."""
+    _refuse_in_lockdown(email, "connected apps")
     import httpx
     for attempt in (0, 1):
         token = await _google_token(email, service, fresh=attempt == 1)
@@ -4170,3 +4193,93 @@ def _forget_connections_sync(email: str):
             pass
         _access_tokens.pop((email, service), None)
     _conn_db(lambda con: con.execute("DELETE FROM connections WHERE email=?", (email,)))
+
+
+# ================================================================ Security history + Lockdown mode
+_SEC_EVENTS_TABLE = ("CREATE TABLE IF NOT EXISTS security_events (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL, "
+                     "ts REAL NOT NULL, kind TEXT NOT NULL, detail TEXT, device TEXT)")
+_FLAGS_TABLE = "CREATE TABLE IF NOT EXISTS account_flags (email TEXT PRIMARY KEY, lockdown INTEGER NOT NULL DEFAULT 0)"
+SECURITY_TEXT = {
+    "signin": "Signed in", "signin_failed": "Wrong password entered", "password_reset": "Password reset",
+    "twofa_on": "Two-step verification turned on", "twofa_off": "Two-step verification turned off",
+    "signed_out_device": "A device was signed out", "signed_out_others": "Signed out of all other devices",
+    "api_key_created": "API key created", "api_key_revoked": "API key revoked",
+    "app_connected": "App connected", "app_disconnected": "App disconnected",
+    "lockdown_on": "Lockdown mode turned on", "lockdown_off": "Lockdown mode turned off",
+}
+
+
+def _security_event(email: str, kind: str, detail: str = ""):
+    """Remember a security-relevant moment (never passwords, codes or contents). Kept 180 days."""
+    now = time.time()
+    def write(con):
+        con.execute(_SEC_EVENTS_TABLE)
+        con.execute("INSERT INTO security_events (email, ts, kind, detail, device) VALUES (?, ?, ?, ?, ?)",
+                    (email, now, kind, str(detail or "")[:120], _device_label(_current_request.get())))
+        if int(now) % 40 == 0:
+            con.execute("DELETE FROM security_events WHERE ts < ?", (now - 180 * 86400,))
+    try:
+        with _db_lock:
+            con = _db()
+            try:
+                write(con); con.commit()
+            finally:
+                con.close()
+    except Exception:
+        pass                                          # never breaks what the person was doing
+
+
+@app.get("/account/security-history")
+def security_history(request: Request):
+    email = _email_from_auth(request)
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(_SEC_EVENTS_TABLE)
+            rows = con.execute("SELECT ts, kind, detail, device FROM security_events WHERE email=? ORDER BY id DESC LIMIT 50",
+                               (email,)).fetchall()
+        finally:
+            con.close()
+    return {"events": [{"ts": ts, "kind": kind, "text": SECURITY_TEXT.get(kind, kind) + (f": {detail}" if detail else ""),
+                        "device": device or ""} for ts, kind, detail, device in rows]}
+
+
+def _lockdown(email: str) -> bool:
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(_FLAGS_TABLE)
+            row = con.execute("SELECT lockdown FROM account_flags WHERE email=?", (email,)).fetchone()
+        finally:
+            con.close()
+    return bool(row and row[0])
+
+
+LOCKDOWN_MSG = ("Lockdown mode is on, so Gink doesn't use {what}. You can turn it off in Settings > Privacy.")
+
+
+def _refuse_in_lockdown(email: str, what: str):
+    if _lockdown(email):
+        raise HTTPException(status_code=403, detail=LOCKDOWN_MSG.format(what=what))
+
+
+@app.get("/account/lockdown")
+def lockdown_get(request: Request):
+    return {"on": _lockdown(_email_from_auth(request))}
+
+
+@app.post("/account/lockdown")
+def lockdown_set(request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    on = bool(data.get("on"))
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(_FLAGS_TABLE)
+            con.execute("INSERT INTO account_flags (email, lockdown) VALUES (?, ?) ON CONFLICT(email) DO UPDATE SET lockdown=excluded.lockdown",
+                        (email, 1 if on else 0))
+            con.commit()
+        finally:
+            con.close()
+    _security_event(email, "lockdown_on" if on else "lockdown_off")
+    return {"on": on}

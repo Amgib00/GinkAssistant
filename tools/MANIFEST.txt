@@ -84,6 +84,7 @@ openspec/specs/developer-api/spec.md
 openspec/specs/email-delivery/spec.md
 openspec/specs/languages-voice/spec.md
 openspec/specs/location/spec.md
+openspec/specs/personalization/spec.md
 openspec/specs/releases/spec.md
 openspec/specs/web-search/spec.md
 openspec/specs/websites/spec.md
@@ -129,6 +130,7 @@ src/ginkassistant/services/markdown_render.py
 src/ginkassistant/services/memory.py
 src/ginkassistant/services/news.py
 src/ginkassistant/services/paths.py
+src/ginkassistant/services/personality.py
 src/ginkassistant/services/platform_utils.py
 src/ginkassistant/services/prefs.py
 src/ginkassistant/services/profile.py
@@ -204,6 +206,7 @@ tests/test_natural_voice.py
 tests/test_offline_song_engine.py
 tests/test_owner_dashboard.py
 tests/test_screens_and_server.py
+tests/test_security_lockdown_style.py
 tests/test_sessions_security.py
 tests/test_settings_and_account.py
 tests/test_signin_name_and_history.py
