@@ -9,7 +9,7 @@ def srv(tmp_path, monkeypatch):
     monkeypatch.setenv("GINK_DB_PATH", str(tmp_path / "t.db"))
     from fastapi.testclient import TestClient
     from ginkassistant.services import backend_server as b
-    b._twofa_attempts.clear()
+    b._twofa_attempts.clear(); b._code_sends.clear(); b._no_account_notices.clear(); b._otp_store.clear()
     b._upsert_user("ib@example.com", "Ibrahim", b._hash_password("correct horse 42"), "password")
     return b, TestClient(b.app), str(tmp_path / "t.db")
 
@@ -153,6 +153,47 @@ def test_email_code_sign_in_is_gated_and_has_a_session(srv, monkeypatch):
     auth = {"Authorization": "Bearer " + plain["token"]}
     assert len(c.get("/account/sessions", headers=auth).json()["sessions"]) == 1     # a real session now
     turn_on(b, c, auth)
-    b._otp_store.clear()
+    b._otp_store.clear(); b._code_sends.clear()                                        # as if the cooldown passed
     gated = code_login()
     assert gated.get("twofa_required") and "token" not in gated                       # code alone isn't enough
+
+
+def test_email_codes_only_for_existing_accounts(srv, monkeypatch):
+    """An unknown email used to get a working account-less ("ghost") sign-in."""
+    b, c, db = srv
+    notes = []
+    monkeypatch.setattr(b, "_send_email", lambda to, subject, text, html="": notes.append((to, subject)) or "")
+    monkeypatch.setattr(b, "_dispatch_otp", lambda email, otp: None)
+    b._no_account_notices.clear()
+    known = c.post("/send-otp", params={"email": "ib@example.com"})
+    stranger = c.post("/send-otp", params={"email": "nobody@example.com"})
+    assert known.status_code == stranger.status_code == 200 and known.json() == stranger.json()   # can't tell apart
+    assert "nobody@example.com" not in b._otp_store and notes == [("nobody@example.com", "Gink - no account for this email")]
+    c.post("/send-otp", params={"email": "nobody@example.com"})
+    assert len(notes) == 1                                                            # no spamming
+    assert c.post("/verify-otp", params={"email": "nobody@example.com", "otp": "123456"}).status_code == 401
+    code = b._otp_store["ib@example.com"]["otp"]
+    assert len(code) == 6 and code.isdigit()
+
+
+def test_code_emails_are_limited(srv, monkeypatch):
+    """Sign-up / reset / email sign-in used to send a code on every request (inbox flooding)."""
+    b, c, db = srv
+    monkeypatch.setattr(b, "_send_code_email", lambda *a, **k: None)
+    monkeypatch.setattr(b, "_dispatch_otp", lambda *a, **k: None)
+    monkeypatch.setattr(b, "_send_email", lambda *a, **k: "")
+    b._code_sends.clear(); b._otp_store.clear(); b._no_account_notices.clear()
+    first = c.post("/auth/forgot", json={"email": "ib@example.com"})
+    again = c.post("/auth/forgot", json={"email": "ib@example.com"})
+    assert first.status_code == 200 and again.status_code == 429 and "Wait" in again.json()["detail"]
+    for _ in range(5):                                                                 # pretend the cooldowns passed
+        b._code_sends[("reset", "ib@example.com")] = [t - 31 for t in b._code_sends[("reset", "ib@example.com")]]
+        assert c.post("/auth/forgot", json={"email": "ib@example.com"}).status_code == 200
+    b._code_sends[("reset", "ib@example.com")] = [t - 31 for t in b._code_sends[("reset", "ib@example.com")]]
+    seventh = c.post("/auth/forgot", json={"email": "ib@example.com"})
+    assert seventh.status_code == 429 and "last hour" in seventh.json()["detail"]
+    # an unknown email is treated exactly the same (the limit can't reveal who has an account)
+    assert [c.post("/auth/forgot", json={"email": "ghost@example.com"}).status_code for _ in range(2)] == [200, 429]
+    assert [c.post("/send-otp", params={"email": "ghost@example.com"}).status_code for _ in range(2)] == [200, 429]
+    assert [c.post("/auth/register", json={"name": "N", "email": "new@example.com", "password": "abc12345!"}).status_code
+            for _ in range(2)] == [200, 429]

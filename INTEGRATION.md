@@ -992,3 +992,16 @@ New services/live_info.py (all free, no API keys):
   from localStorage or sessionStorage. Console: Sign in / Create an account -> back to /developers.
 - Browser-tested: every path (signup with pasted code, wrong password, Remember me off, reset with
   mismatch, email code + two-step, next=//evil.example blocked, console round trip).
+
+## Latest (0.1.10): security audit of every route
+- Every route called without a sign-in: 17 answer, all intended (pages, health/info/version,
+  /auth/providers, /auth/logout no-op, /v1/openapi.json, billing notify/return). CinetPay notify
+  only triggers _settle(ref), which asks CinetPay server-to-server and checks amount + currency
+  (Paystack: HMAC signature) -> notifications can't be faked.
+- FIX: /send-otp + /verify-otp gave a working token for ANY readable email without an account
+  ("ghost" sign-in: no account row, no Terms). Now existing accounts only; unknown -> identical
+  answer, no code, a "no account" note at most every 10 min.
+- FIX: /send-otp used random.randint -> secrets.randbelow (sign-up/reset already did).
+- FIX: no limit on code emails (5 requests = 5 emails). _throttle_code(kind, email): 30 s cooldown,
+  CODES_PER_HOUR = 6, applied before the account lookup (identical for unknown addresses).
+- accounts-security spec: two new requirements (validated, strict).

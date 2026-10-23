@@ -244,10 +244,47 @@ async def health():
     return {"status": "ok", "service": "gink-backend"}
 
 
+_code_sends = {}              # (kind, email) -> recent send times: no flooding anyone's inbox
+CODES_PER_HOUR = 6
+
+
+def _throttle_code(kind: str, email: str):
+    """Before any code email (sign-up, reset, email sign-in): a cooldown between codes and at most
+    CODES_PER_HOUR an hour per address -- checked before looking up the account, so it can't reveal
+    who has one."""
+    now = time.time()
+    with _otp_lock:
+        recent = [t for t in _code_sends.get((kind, email), []) if now - t < 3600]
+        if recent and now - recent[-1] < RESEND_COOLDOWN_SECONDS:
+            wait = int(RESEND_COOLDOWN_SECONDS - (now - recent[-1])) + 1
+            raise HTTPException(status_code=429, detail=f"Wait {wait}s before requesting another code.")
+        if len(recent) >= CODES_PER_HOUR:
+            raise HTTPException(status_code=429, detail="Too many codes for this email in the last hour. Try again later.")
+        _code_sends[(kind, email)] = recent + [now]
+
+
+_no_account_notices = {}      # email -> when we last said "there's no account" (at most every 10 minutes)
+
+
 @app.post("/send-otp")
 def send_otp(email: str):
-    email = _validate_email(email)
-    otp = str(random.randint(100000, 999999))
+    """Email sign-in codes are for EXISTING accounts. For an unknown address the answer looks the same
+    (no way to probe who has an account), but the inbox gets a note pointing to sign-up instead of a
+    code -- no account-less "ghost" sign-ins."""
+    email = _validate_email(email).lower()
+    _throttle_code("signin", email)
+    if _get_user(email) is None:
+        now = time.time()
+        if now - _no_account_notices.get(email, 0) > 600:
+            _no_account_notices[email] = now
+            reason = _send_email(email, "Gink - no account for this email",
+                                 "Someone (hopefully you) asked to sign in to Gink with this email address, but there's no "
+                                 "Gink account for it yet.\n\nCreate one here: https://gink-server.onrender.com/signup\n\n"
+                                 "If it wasn't you, you can ignore this email.")
+            if reason:
+                print(f"[Gink] No-account notice not emailed ({reason}) -- for {email}")
+        return {"status": "success"}
+    otp = f"{secrets.randbelow(1_000_000):06d}"               # cryptographic, like sign-up and reset codes
 
     with _otp_lock:
         _sweep_expired_locked()
@@ -490,6 +527,7 @@ def register(data: dict = Body(...)):
     existing = _get_user(email)
     if existing and existing["pw_hash"]:
         raise HTTPException(status_code=409, detail="An account with this email already exists. Log in instead.")
+    _throttle_code("signup", email)
     code = f"{secrets.randbelow(1_000_000):06d}"
     with _otp_lock:
         _pending_signups[email] = {"name": name, "pw_hash": _hash_password(password), "code": code,
@@ -532,7 +570,8 @@ def login(data: dict = Body(...)):
 @app.post("/auth/forgot")
 def forgot(data: dict = Body(...)):
     email = _validate_email(data.get("email", "")).lower()
-    # Same answer whether or not the account exists (no account probing).
+    # Same answer whether or not the account exists (no account probing) -- the limit included.
+    _throttle_code("reset", email)
     if _get_user(email):
         code = f"{secrets.randbelow(1_000_000):06d}"
         with _otp_lock:

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.10 (October 2026)
+
+Security fixes from an audit of every server route:
+- Email sign-in codes only sign in existing accounts (an unknown address used to get an
+  account-less sign-in); such addresses get a note about creating an account instead
+- Code emails (sign-up, password reset, email sign-in) are limited per address: no flooding
+  anyone's inbox. Sign-in codes now use a cryptographic random generator
+- Checked: every route that should need a sign-in does, and payment notifications can't be faked
+
 ## 0.1.9 (October 2026)
 
 - A full sign-in page for the web (/login, /signup, /forgot): log in, create an account (with

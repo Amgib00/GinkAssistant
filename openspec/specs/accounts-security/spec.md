@@ -72,3 +72,21 @@ Deleting an account SHALL require typing DELETE and SHALL remove the account and
 #### Scenario: Deleted account
 - **WHEN** the person confirms with DELETE
 - **THEN** their websites stop being served and their tokens stop working
+
+### Requirement: Code emails can't flood an inbox
+Sign-up, password-reset and email sign-in codes SHALL be limited per email address (a 30-second cooldown and at most 6 an hour), applied before looking up the account, and SHALL be generated with a cryptographic random generator.
+
+#### Scenario: Repeated requests
+- **WHEN** someone requests codes for one address again and again
+- **THEN** a second code within 30 seconds is refused with how long to wait, and the seventh within an hour is refused
+
+#### Scenario: Probing for accounts
+- **WHEN** the same requests are made for an address without an account
+- **THEN** the answers are exactly the same as for an existing account
+
+### Requirement: Email sign-in only for existing accounts
+An email sign-in code SHALL only sign in an existing account; for an unknown address the server SHALL answer as if a code was sent, send no code, and instead email at most one note every 10 minutes pointing to sign-up.
+
+#### Scenario: Unknown address
+- **WHEN** someone asks for a sign-in code for an address with no Gink account
+- **THEN** no code exists to sign in with, and the inbox receives a note about creating an account
