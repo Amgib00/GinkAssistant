@@ -164,12 +164,14 @@ tests/test_formatting_security.py
 tests/test_gink_cloud.py
 tests/test_gink_dataset.py
 tests/test_ios_startup.py
+tests/test_languages_auto.py
 tests/test_live_info.py
 tests/test_location.py
 tests/test_main_screen.py
 tests/test_media_files_profile.py
 tests/test_model_upgrade.py
 tests/test_natural_voice.py
+tests/test_offline_song_engine.py
 tests/test_owner_dashboard.py
 tests/test_screens_and_server.py
 tests/test_sessions_security.py

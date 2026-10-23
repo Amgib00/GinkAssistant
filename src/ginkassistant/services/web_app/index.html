@@ -3186,7 +3186,8 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
   }
   function narrow(t) { return String(t).replace(/[\u202f\u2009\u200a\u2006\u2005\u2007]/g, " "); }
   function systemPrompt(voice) {
-    var lang = W.prefs.reply_language && W.prefs.reply_language !== "auto" ? " Always answer in this language: " + W.prefs.reply_language + "." : "";
+    var lang = W.prefs.reply_language && W.prefs.reply_language !== "auto" ? " Always answer in this language: " + W.prefs.reply_language + "." :
+      " Reply in the same language the user writes in (for example French to French, Wolof to Wolof). If they mix languages, use the main one.";
     var who = W.name ? " The user's name is " + W.name.split(" ")[0] + "." : "";
     return "You are Gink, a warm, capable AI assistant. Answer clearly and helpfully, using Markdown for structure when it helps. " +
            "It is now " + new Date().toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric",

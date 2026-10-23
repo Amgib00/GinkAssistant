@@ -25,7 +25,7 @@ DEFAULTS = {
     "use_memory": True,           # use saved memories in answers
     "web_search": True,           # let Gink search the web
     "video_suggestions": True,    # add YouTube guides to how-to answers
-    "speech_lang": "en-US",       # Settings -> Voice -> Language (speech recognition)
+    "speech_lang": "auto",        # Settings -> Voice -> Language (speech recognition); auto = any language
     "voice_intro_seen": False,    # "Meet Voice" shown once
     "send_key": "enter",          # Settings -> Keyboard: enter | mod (Cmd/Ctrl+Enter)
     "single_keys": True,          # "/" focus, Space mutes in voice

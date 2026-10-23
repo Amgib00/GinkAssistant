@@ -872,3 +872,20 @@ New services/live_info.py (all free, no API keys):
   turn on (QR + key), recovery codes once, turn off.
 - tests/test_two_step.py (RFC vector, flow, encryption, reuse, recovery, limits, reset/social,
   app sign-in logic against a real server); browser journey.
+
+## Latest (0.1.3): automatic language + a full problem hunt
+- languages.reply_note("auto") is now an explicit "reply in the user's language" (it was "",
+  and models drifted into English); same in the web app.
+- POST /voice/transcribe (auth; <= 4 MB; 20/min/person): Groq Whisper (whisper-large-v3-turbo,
+  falls back to whisper-large-v3 if retired), verbose_json -> {text, language}. Apps: speech
+  language "auto" (new default) sends the clip there, else Google in the device locale.
+- Hunt: pyflakes (no undefined names), all tests on Python 3.10, JS of every page, pip-audit
+  (server clean). Mac app: shazamio resolved to 0.3.0.0 (2021) -> pytest in the app + anyio 3.7.1
+  (PYSEC-2026-4024/4025). Now shazamio>=0.8.1, anyio>=4.14.2, numpy>=2.2.2,<2.3 (works with
+  numba 0.62.1; resolved for Intel/Apple Silicon x Py3.12/3.10, Windows, Linux).
+  cryptography >=49 on arm64; Intel stays <49 (no Intel builds; local built-in server only).
+- Offline song engine (shazam_engine.py) never worked: no way to add songs (add_song added),
+  threshold > MIN_AMPLITUDE on dB<=0 values rejected every peak, XOR with background, pairs in
+  loudness order. Now: peaks > -25 dB, pairs in time order, confidence = >=10 aligned AND >=6%
+  of the clip's hashes AND >=2x the runner-up. tests/test_offline_song_engine.py (needs librosa).
+  Import guard also catches OSError (sounddevice without PortAudio).

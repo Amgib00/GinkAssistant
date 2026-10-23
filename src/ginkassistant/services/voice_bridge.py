@@ -76,7 +76,7 @@ class VoiceUnavailable(Exception):
 from .voice_profiles import VOICE_PROFILES as _PROFILES
 
 VOICES = {v["key"]: v["id"] for v in _PROFILES}      # services/voice_profiles.py
-listen_language = ["en-US"]                           # Settings -> Voice -> Language
+listen_language = ["auto"]                            # Settings -> Voice -> Language ("auto": any language)
 
 
 def _speakable(text: str) -> str:
@@ -96,6 +96,40 @@ def _speakable(text: str) -> str:
 cloud = {"base_url_fn": None, "token_fn": None}      # main_screen: your Gink server + the session token
 _current_voice = ["Female (Jenny)"]                  # the Gink voice speaking now (fallback voices match it)
 last_cloud_error = [""]                              # why the natural voice last failed (Settings -> Voice -> Test)
+last_heard_language = [""]                           # what Whisper detected last ("french"...)
+
+
+def _device_language() -> str:
+    """'fr-SN' style tag from the computer's locale, for when the server can't be used."""
+    import locale
+    try:
+        loc = (locale.getlocale()[0] or locale.getdefaultlocale()[0] or "en_US")
+    except Exception:
+        loc = "en_US"
+    return loc.replace("_", "-") if "_" in loc else "en-US"
+
+
+def _google_language() -> str:
+    return _device_language() if listen_language[0] == "auto" else listen_language[0]
+
+
+def _transcribe_any_language(wav: bytes):
+    """Whisper on the Gink server (detects the language itself). None -> use Google instead."""
+    base, token = cloud.get("base_url_fn"), cloud.get("token_fn")
+    if not (base and token and token()):
+        return None
+    import base64 as _b64
+    import httpx
+    try:
+        r = httpx.post(base().rstrip("/") + "/voice/transcribe", json={"audio_b64": _b64.b64encode(wav).decode()},
+                       headers={"Authorization": f"Bearer {token()}"}, timeout=30)
+        if r.status_code != 200:
+            return None
+        j = r.json()
+        last_heard_language[0] = j.get("language", "")
+        return (j.get("text") or "").strip()
+    except Exception:
+        return None
 
 
 def _note_cloud_error(reason: str):
@@ -309,8 +343,12 @@ else:
         if on_amplitude:
             on_amplitude(_amplitude_from_raw(audio.get_raw_data()))
 
+        if listen_language[0] == "auto":
+            text = _transcribe_any_language(audio.get_wav_data(convert_rate=16000, convert_width=2))
+            if text is not None:
+                return text                          # the server understood it (any language)
         try:
-            return _recognizer.recognize_google(audio, language=listen_language[0])
+            return _recognizer.recognize_google(audio, language=_google_language())
         except sr.UnknownValueError:
             return ""  # see module docstring
 

@@ -12,6 +12,11 @@
 - Two-step verification: Settings > Account. After your password (or email code, or Google,
   GitHub, Microsoft, Apple -- and after a password reset), Gink asks for a code from an
   authenticator app. 10 one-time recovery codes. The authenticator key is stored encrypted
+- Languages: Gink answers in the language you write in (it used to drift into English), and voice
+  understands any language: Settings > Voice > Language > "Automatic" (the new default) uses
+  Whisper on your server, which detects the language itself
+- Offline song recognition works: it can learn songs and recognise them (it never could before)
+- Security updates: newer anyio and cryptography (Apple Silicon); the app no longer ships pytest
 - Email works on Render's free plan: codes are sent through Brevo's web API (Render blocks
   email ports there). The owner dashboard can send a test email and shows why one failed
 - Settings > Location: see your area, detect your approximate location, and turn location off

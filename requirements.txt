@@ -43,8 +43,9 @@ pygame
 pyttsx3; sys_platform != "darwin"       # Mac uses the built-in `say` voice instead
 vosk
 sounddevice
-shazamio
-numpy<2.0.0
+shazamio>=0.8.1             # older versions pull in pytest and pin a vulnerable anyio
+anyio>=4.14.2
+numpy>=2.2.2,<2.3           # shazamio 0.8 needs 2.2+; 2.3 drops Python 3.10
 librosa
 scipy
 numba==0.62.1; sys_platform == "darwin" and platform_machine == "x86_64"     # Intel Mac: newest with a ready-made build

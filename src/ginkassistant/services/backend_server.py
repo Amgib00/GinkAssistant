@@ -3110,3 +3110,47 @@ def account_twofa_disable(request: Request, data: dict = Body(...)):
         finally:
             con.close()
     return {"enabled": False}
+
+
+# ---- Speech to text in ANY language (apps' voice when Settings > Voice > Language is "Automatic"):
+#   POST /voice/transcribe (auth) {"audio_b64": "<wav>"} -> {"text", "language"}
+# Whisper on Groq detects the spoken language by itself. Short clips only; 20 a minute per person.
+STT_MODELS = ("whisper-large-v3-turbo", "whisper-large-v3")
+_stt_recent = {}
+
+
+@app.post("/voice/transcribe")
+async def voice_transcribe(request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    if not _env("GROQ_API_KEY"):
+        return _ai_error(503, "Speech recognition isn't set up on this server yet.", "not_configured")
+    try:
+        raw = base64.b64decode(str(data.get("audio_b64") or ""), validate=True)
+    except Exception:
+        raise HTTPException(status_code=422, detail="That recording couldn't be read.")
+    if not raw or len(raw) > 4_000_000:
+        raise HTTPException(status_code=422, detail="Recordings must be short (under about a minute).")
+    now = time.time()
+    recent = [t for t in _stt_recent.get(email, []) if now - t < 60]
+    if len(recent) >= 20:
+        return _ai_error(429, "That's a lot of speaking in one minute. Try again in a moment.", "rate_limited")
+    _stt_recent[email] = recent + [now]
+    import httpx
+    hint = str(data.get("language") or "")[:5]
+    async with httpx.AsyncClient(timeout=httpx.Timeout(60, connect=15)) as client:
+        for model in STT_MODELS:
+            form = {"model": model, "response_format": "verbose_json", "temperature": "0"}
+            if hint and hint != "auto":
+                form["language"] = hint.split("-")[0]
+            try:
+                r = await client.post(f"{GROQ_BASE}/audio/transcriptions", data=form,
+                                      files={"file": ("speech.wav", raw, "audio/wav")},
+                                      headers={"Authorization": f"Bearer {_env('GROQ_API_KEY')}"})
+            except Exception:
+                return _ai_error(502, "The speech service didn't answer. Please try again.", "upstream")
+            if r.status_code == 200:
+                j = r.json()
+                return {"text": (j.get("text") or "").strip(), "language": j.get("language") or ""}
+            if r.status_code not in (400, 404) or "model" not in r.text.lower():
+                break                                   # not a "this model is gone" answer: stop here
+    return _ai_error(502, "The speech service had a problem. Please try again.", "upstream")

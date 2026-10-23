@@ -25,7 +25,6 @@ import logging
 import os
 import pickle
 from collections import defaultdict
-from operator import itemgetter
 
 import toga
 
@@ -38,7 +37,7 @@ try:
     from scipy.ndimage import generate_binary_structure, iterate_structure, maximum_filter
 
     HAS_SHAZAM_DEPS = True
-except ImportError:
+except (ImportError, OSError):      # OSError: sounddevice without the PortAudio library (some Linux systems)
     HAS_SHAZAM_DEPS = False
 
 logger = logging.getLogger("ShazamEngine")
@@ -53,9 +52,12 @@ class ShazamEngine:
     N_FFT = 4096
     N_HOP = 2048
     PEAK_NEIGHBORHOOD_SIZE = 20
-    MIN_AMPLITUDE = 10
+    MIN_DB = -25            # peaks within 25 dB of the loudest point (amplitude_to_db(ref=max) is <= 0);
+                            # stricter values keep background noise from breaking the peak pairs
     FAN_VALUE = 15
-    MATCH_THRESHOLD = 5
+    MATCH_THRESHOLD = 10    # aligned fingerprints needed, and also:
+    MIN_SHARE = 0.06        # ... at least this share of the recording's fingerprints agree
+    MIN_LEAD = 2.0          # ... and at least twice the runner-up (coincidences spread out; real matches line up)
 
     def __init__(self, app: toga.App):
         self.db_path = data_dir(app) / "shazam_db.pkl"
@@ -103,26 +105,31 @@ class ShazamEngine:
         samples = await loop.run_in_executor(None, _record)
         return await loop.run_in_executor(None, self.identify, samples)
 
+    def add_song(self, samples, title: str, artist: str = "") -> int:
+        """Learn a song (mono samples at SAMPLE_RATE) so identify() can recognise it offline.
+        Returns how many fingerprints were stored; call save_database() to keep them."""
+        track_id = hashlib.sha1(f"{title}|{artist}".encode("utf-8")).hexdigest()[:16]
+        hashes = self._generate_fingerprints(samples)
+        for h, offset in hashes:
+            self.fingerprints[h].append((track_id, offset))
+        self.song_metadata[track_id] = {"title": title, "artist": artist}
+        return len(hashes)
+
     def identify(self, audio_data):
         hashes = self._generate_fingerprints(audio_data)
-        matches = defaultdict(list)
+        aligned = defaultdict(int)                      # (song, position in the song) -> votes
         for h, offset in hashes:
             for track_id, track_offset in self.fingerprints.get(h, []):
-                matches[track_id].append((track_offset, offset))
-
-        best_track_id, best_offset, max_alignment = None, 0, 0
-        for track_id, offsets in matches.items():
-            diffs = defaultdict(int)
-            for t_off, s_off in offsets:
-                diffs[t_off - s_off] += 1
-            if diffs:
-                current_max = max(diffs.values())
-                if current_max > max_alignment:
-                    max_alignment = current_max
-                    best_track_id = track_id
-                    best_offset = max(diffs, key=diffs.get)
-
-        if best_track_id is not None and max_alignment >= self.MATCH_THRESHOLD:
+                aligned[(track_id, track_offset - offset)] += 1
+        if not aligned:
+            return None, None
+        ranked = sorted(aligned.items(), key=lambda kv: kv[1], reverse=True)
+        (best_track_id, best_offset), max_alignment = ranked[0]
+        runner_up = ranked[1][1] if len(ranked) > 1 else 0
+        confident = (max_alignment >= self.MATCH_THRESHOLD
+                     and max_alignment >= self.MIN_SHARE * len(hashes)
+                     and max_alignment >= self.MIN_LEAD * max(runner_up, 1))
+        if confident:
             time_offset = (best_offset * self.N_HOP) / self.SAMPLE_RATE
             return self.song_metadata[best_track_id], round(time_offset, 2)
         return None, None
@@ -134,24 +141,21 @@ class ShazamEngine:
         struct = generate_binary_structure(2, 1)
         neighborhood = iterate_structure(struct, self.PEAK_NEIGHBORHOOD_SIZE)
         local_max = maximum_filter(spectrogram, footprint=neighborhood) == spectrogram
-        background = spectrogram < -70
-        detected_peaks = local_max ^ background
+        detected_peaks = local_max & (spectrogram > self.MIN_DB)       # loud local maxima only
 
         freqs, times = np.where(detected_peaks)
-        amps = spectrogram[freqs, times]
-        peaks = sorted(
-            [(t, f, a) for t, f, a in zip(times, freqs, amps) if a > self.MIN_AMPLITUDE],
-            key=itemgetter(2), reverse=True,
-        )
+        # Pair each peak with the next ones IN TIME (not by loudness, which shifts with noise and
+        # volume): the same song then gives the same hashes from any recording of it.
+        peaks = sorted(zip(times.tolist(), freqs.tolist()))
 
         hashes = []
         for i in range(len(peaks)):
             for j in range(1, self.FAN_VALUE):
                 if (i + j) < len(peaks):
-                    t1, f1, _ = peaks[i]
-                    t2, f2, _ = peaks[i + j]
+                    t1, f1 = peaks[i]
+                    t2, f2 = peaks[i + j]
                     t_delta = t2 - t1
-                    if 0 <= t_delta <= 200:
+                    if 0 < t_delta <= 200:
                         h_str = f"{f1}|{f2}|{t_delta}"
                         h = hashlib.sha1(h_str.encode("utf-8")).hexdigest()[:20]
                         hashes.append((h, t1))

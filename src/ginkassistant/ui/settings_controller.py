@@ -64,7 +64,7 @@ class SettingsController:
     def apply_all(self):
         """Make the saved settings take effect (at startup and after changes)."""
         p = self.p()
-        voice_bridge.listen_language[0] = p.get("speech_lang") if p.get("speech_lang") in SPEECH_LANG_CODES else "en-US"
+        voice_bridge.listen_language[0] = p.get("speech_lang") if p.get("speech_lang") in SPEECH_LANG_CODES else "auto"
         voice = p.get("voice")
         if voice in voice_bridge.VOICES:
             self.selected_voice["value"] = voice

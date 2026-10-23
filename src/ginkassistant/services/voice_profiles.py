@@ -63,6 +63,7 @@ def sample_text(key: str) -> str:
 
 
 SPEECH_LANGS = [
+    ("auto", "Automatic (any language)"),
     ("en-US", "English (United States)"), ("en-GB", "English (United Kingdom)"), ("en-NG", "English (Nigeria)"),
     ("en-GH", "English (Ghana)"), ("en-KE", "English (Kenya)"), ("en-ZA", "English (South Africa)"),
     ("fr-FR", "Fran\u00e7ais (France)"), ("fr-SN", "Fran\u00e7ais (S\u00e9n\u00e9gal)"), ("fr-CI", "Fran\u00e7ais (C\u00f4te d'Ivoire)"),

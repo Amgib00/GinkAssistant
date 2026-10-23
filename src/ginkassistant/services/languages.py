@@ -70,7 +70,8 @@ def normalise(code: str) -> str:
 def reply_note(code: str) -> str:
     code = normalise(code)
     if code == "auto":
-        return ""
+        return ("\n\nReply in the same language the user writes in (for example French to French, Wolof to Wolof, "
+                "Pidgin to Pidgin). If they mix languages, use the main one. Keep names and quoted text as they are.")
     native, english, _ = BY_CODE[code]
     return f"\n\nAlways reply in {english} ({native}), whatever language the user writes in."
 

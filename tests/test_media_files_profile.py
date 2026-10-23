@@ -107,7 +107,7 @@ def test_profile_prompt_photo_and_sync(tmp_path):
 def test_languages():
     from ginkassistant.services import languages as L
     assert len(L.LANGUAGES) > 120 and L.normalise("fr") == "fr" and L.normalise("en") == "en-US"
-    assert L.normalise("klingon") == "auto" and L.reply_note("auto") == ""
+    assert L.normalise("klingon") == "auto" and "same language the user writes in" in L.reply_note("auto")
     assert "French (France)" in L.reply_note("fr") and L.label("wo").endswith("experimental")
     assert len({c for c, *_ in L.LANGUAGES}) == len(L.LANGUAGES)                 # no duplicate codes
 

@@ -79,7 +79,10 @@ requires = [
     "uvicorn",
     "python-multipart",     # form posts (payments, Apple sign-in)
     "PyJWT",
-    "cryptography<49",      # Sign in with Apple (ES256) via PyJWT; 49+ has no Intel-Mac builds
+    # Sign in with Apple (ES256) + two-step encryption on the built-in server. 49+ fixes security issues
+    # but has no Intel-Mac builds, so Intel Macs keep 48 (only the local built-in server uses it).
+    "cryptography>=49; platform_machine == 'arm64'",
+    "cryptography<49; platform_machine == 'x86_64'",
     # voice, wake word, music
     "edge-tts",             # online voice fallback
     "SpeechRecognition",    # speech to text
@@ -87,8 +90,9 @@ requires = [
     "pygame",               # playing speech audio
     "vosk",                 # offline "Hey Gink" wake word
     "sounddevice",          # song recognition recording
-    "shazamio",             # song recognition
-    "numpy<2.0.0",
+    "shazamio>=0.8.1",      # song recognition. Older ones wrongly pull in pytest and pin anyio < 4 (vulnerable)
+    "anyio>=4.14.2",        # security fixes (PYSEC-2026-4024/4025)
+    "numpy>=2.2.2,<2.3",     # shazamio 0.8+ needs 2.2+; 2.3 drops Python 3.10 (Catalina builds); works with numba 0.62.1
     "librosa",              # offline song fingerprinting (services/shazam_engine.py)
     "scipy",
     "numba==0.62.1",        # newest numba with a ready-made Intel Mac build (0.63+ compiles and fails)
@@ -125,8 +129,9 @@ requires = [
     "pyttsx3",              # offline fallback voice (Windows SAPI)
     "vosk",
     "sounddevice",
-    "shazamio",
-    "numpy<2.0.0",
+    "shazamio>=0.8.1",
+    "anyio>=4.14.2",
+    "numpy>=2.2.2,<2.3",     # shazamio 0.8+ needs 2.2+; 2.3 drops Python 3.10 (Catalina builds); works with numba 0.62.1
     "librosa",
     "scipy",
     "duckduckgo-search",
@@ -154,8 +159,9 @@ requires = [
     "pyttsx3",              # offline fallback voice (espeak)
     "vosk",
     "sounddevice",
-    "shazamio",
-    "numpy<2.0.0",
+    "shazamio>=0.8.1",
+    "anyio>=4.14.2",
+    "numpy>=2.2.2,<2.3",     # shazamio 0.8+ needs 2.2+; 2.3 drops Python 3.10 (Catalina builds); works with numba 0.62.1
     "librosa",
     "scipy",
     "duckduckgo-search",
