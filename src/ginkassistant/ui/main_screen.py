@@ -1216,13 +1216,13 @@ def build_main_screen(app: toga.App, email: str):
 
     # -- "Hey Gink" wake word (services/wake_word.py + ui/wake_ui.py) ---------
     from ..services import wake_word
-    from ..services.platform_utils import is_mobile as _is_mobile
+    from ..services.platform_utils import is_android as _is_android, is_mobile as _is_mobile
     wake = {"listener": None, "status": "Off", "busy": False, "downloading": False}
     _loop = asyncio.get_event_loop()
 
     def wake_status() -> str:
-        if _is_mobile():
-            return "Not available on phones yet"
+        if _is_mobile() and not _is_android():
+            return "Not available on iPhone yet"
         if not prefs.load(app).get("wake_enabled"):
             return "Off"
         lst = wake["listener"]
@@ -1259,13 +1259,19 @@ def build_main_screen(app: toga.App, email: str):
     async def configure_wake():
         """Start / stop listening to match Settings (downloads the offline model once)."""
         lst = wake["listener"]
-        if not prefs.load(app).get("wake_enabled") or _is_mobile():
+        if not prefs.load(app).get("wake_enabled") or (_is_mobile() and not _is_android()):
             if lst is not None:
                 lst.stop()
                 wake["listener"] = None
             await settings.push()
             return
         if lst is not None and lst.running:
+            await settings.push()
+            return
+        if _is_android():                          # the phone's own recognizer (services/android_voice.py)
+            from ..services.android_voice import AndroidWakeListener
+            wake["listener"] = AndroidWakeListener(on_wake_detected, language=voice_bridge.listen_language[0])
+            wake["listener"].start()
             await settings.push()
             return
         engine, reason = await _loop.run_in_executor(None, wake_word.best_engine, data_dir(app))
@@ -1350,8 +1356,12 @@ def build_main_screen(app: toga.App, email: str):
             play_chime()
             await take_mic()
             await web_chat.wake_glow("listening")
+            # "Hey Gink, what's the weather?" said in one go (Android): use the question straight away
+            said = getattr(wake["listener"], "heard_after_wake", "") if wake["listener"] is not None else ""
+            if wake["listener"] is not None:
+                wake["listener"].heard_after_wake = ""
             for turn in range(5):
-                text = await voice_bridge.listen()
+                text = said if (turn == 0 and said) else await voice_bridge.listen()
                 if not text:
                     break
                 await web_chat.wake_caption(text)
@@ -1369,7 +1379,7 @@ def build_main_screen(app: toga.App, email: str):
 
     settings.on_wake_change = configure_wake
     settings.wake_status_fn = wake_status
-    settings.wake_supported = not _is_mobile()
+    settings.wake_supported = not _is_mobile() or _is_android()
     app.wake = wake
 
     running = {"task": None}

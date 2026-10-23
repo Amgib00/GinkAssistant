@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4 (October 2026)
+
+- Android: voice works -- speak to Gink (the mic button and voice conversations), hear answers in
+  the natural Gink voices (the phone's own voice when offline), and say "Hey Gink" while Gink is
+  open (Settings > Voice). Say it in one go -- "Hey Gink, what's the weather?" -- and Gink answers
+
 ## 0.1.3 (October 2026)
 
 - Agent mode: Gink carries out multi-step tasks and shows each step as it goes, and asks before

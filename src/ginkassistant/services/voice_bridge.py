@@ -264,28 +264,46 @@ def _stop_queues():
 
 
 if _is_android():
+    # Android: services/android_voice.py (the phone's recognizer; natural Gink voices from your
+    # server, the phone's own voice offline).
+    from . import android_voice as _av
+
+    def _cloud_auth():
+        base_fn, token_fn = cloud.get("base_url_fn"), cloud.get("token_fn")
+        return (base_fn() if base_fn else "") or "", (token_fn() if token_fn else "") or ""
 
     async def listen(on_amplitude: Optional[Callable[[float], None]] = None) -> str:
-        raise VoiceUnavailable(
-            "voice input isn't wired up on Android yet -- type your question instead"
-        )
+        try:
+            return await _av.listen(listen_language[0], on_amplitude=on_amplitude)
+        except _av.VoiceProblem as exc:
+            raise VoiceUnavailable(str(exc))
 
     async def speak(
         text: str,
         voice_key: str = "Female (Jenny)",
         on_amplitude: Optional[Callable[[float], None]] = None,
     ) -> None:
-        pass  # TODO: bridge to android.speech.tts.TextToSpeech
+        base, token = _cloud_auth()
+        try:
+            used = await _av.speak(text, voice_key, base, token, speed[0], on_amplitude)
+            if used == "phone":
+                _note_cloud_error("the natural voice wasn't available, so the phone's voice was used")
+        except _av.VoiceProblem as exc:
+            _note_cloud_error(str(exc))
 
     def stop_speaking() -> None:
-        pass
-
+        _av.stop_speaking()
 
     async def _synth_sentence(text, voice_key):
         return None
 
     async def test_natural_voice(voice_key):
-        return "voice output isn't available on phones yet"
+        base, token = _cloud_auth()
+        path = await _av._natural_wav("This is how I sound.", voice_key, base, token, speed[0])
+        if not path:
+            return "the natural voice isn't available right now \u2014 the phone's own voice will be used"
+        await _av._play_file(path)
+        return ""
 
     def _cleanup_item(item):
         pass

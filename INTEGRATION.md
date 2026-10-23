@@ -889,3 +889,18 @@ New services/live_info.py (all free, no API keys):
   loudness order. Now: peaks > -25 dB, pairs in time order, confidence = >=10 aligned AND >=6%
   of the clip's hashes AND >=2x the runner-up. tests/test_offline_song_engine.py (needs librosa).
   Import guard also catches OSError (sounddevice without PortAudio).
+
+## Latest (0.1.4): voice and "Hey Gink" on Android
+- Android had no voice at all (voice_bridge: listen raised, speak was a TODO). New
+  services/android_voice.py (Chaquopy): runtime RECORD_AUDIO request; android.speech
+  SpeechRecognizer via a dynamic_proxy RecognitionListener (partials, RMS -> orb level, error
+  codes -> clear messages; language from Settings, "auto" = the phone's); natural voice from
+  /voice/speak played with MediaPlayer, android.speech.tts as the offline fallback.
+- AndroidWakeListener: recognizer loop (prefer offline) while Gink is open; WAKE_RE for how phones
+  write "Hey Gink"; same interface as WakeWordListener (running/error/detections/engine/pause/
+  resume/stop; pause(wait=True) from a worker thread schedules the stop on the main loop and
+  waits). "Hey Gink, <question>" in one go -> heard_after_wake answered directly (wake_turn).
+- pyproject android_manifest_extra_content: <queries> for RecognitionService and TTS_SERVICE
+  (Android 11+ package visibility).
+- tests/fake_android.py (stand-in for Chaquopy's java module) + tests/test_android_voice.py.
+  Not yet run on a real phone: the first test on the TECNO may need adjustments.

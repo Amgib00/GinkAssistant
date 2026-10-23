@@ -85,6 +85,7 @@ src/ginkassistant/services/actions/scheduler.py
 src/ginkassistant/services/actions/system_alarms.py
 src/ginkassistant/services/actions/task_store.py
 src/ginkassistant/services/actions/tools.py
+src/ginkassistant/services/android_voice.py
 src/ginkassistant/services/api_client.py
 src/ginkassistant/services/attachments.py
 src/ginkassistant/services/audio_engine.py
@@ -145,11 +146,13 @@ src/ginkassistant/ui/viewer_util.py
 src/ginkassistant/ui/voice_ui.py
 src/ginkassistant/ui/wake_ui.py
 src/ginkassistant/ui/web_chat_view.py
+tests/fake_android.py
 tests/test_actions.py
 tests/test_actions_briefing_mic.py
 tests/test_agent_mode.py
 tests/test_android_32bit.py
 tests/test_android_startup.py
+tests/test_android_voice.py
 tests/test_app_icons.py
 tests/test_billing.py
 tests/test_chat_extras.py
