@@ -70,7 +70,7 @@ def test_wrong_key_is_explained(server):
     r = gink(["hi"], "gink_live_not-a-real-key", stdin="")
     assert r.returncode == 1 and "isn't valid" in r.stderr and "gink login" in r.stderr
     r = gink(["hi"], "", stdin="", tmp="/tmp/gink-cli-empty")
-    assert r.returncode == 1 and "No API key yet" in r.stderr
+    assert r.returncode == 1 and "not signed in yet" in r.stderr and "gink login" in r.stderr
 
 
 def test_chat_and_login(server, tmp_path, monkeypatch, capsys):

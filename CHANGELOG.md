@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.16 (October 2026)
+
+- gink CLI 0.2.1: when you're not signed in it simply says "Run: gink login" (which signs you in
+  through your browser). Publishing the CLI checks PyPI first and explains if the version is taken
+
 ## 0.1.15 (October 2026)
 
 - Releases are more reliable: publishing works when the update commands are pasted all at once,

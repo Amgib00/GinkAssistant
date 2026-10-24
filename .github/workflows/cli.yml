@@ -20,6 +20,14 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
+      - name: Is this CLI version new? (PyPI never accepts the same version twice)
+        run: |
+          V=$(python -c "import tomllib; print(tomllib.load(open('cli/pyproject.toml','rb'))['project']['version'])")
+          if curl -sf "https://pypi.org/pypi/gink-ai/$V/json" >/dev/null; then
+            echo "::error::gink-ai $V is already on PyPI. Change version in cli/pyproject.toml (and cli/gink_cli/__init__.py), publish, then run this again."
+            exit 1
+          fi
+          echo "Publishing gink-ai $V"
       - name: Test the CLI against the server code
         run: |
           python -m pip install -r requirements-test.txt

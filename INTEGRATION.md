@@ -1081,3 +1081,10 @@ New services/live_info.py (all free, no API keys):
   "released by another run" message. v0.1.5 deliberately NOT created now: it would become
   "latest" and the website's /releases/latest/download links would serve old installers; its
   changes shipped in 0.1.6 (noted in CHANGELOG). Publish script uses github.com/Amgib00/GinkAssistant.
+
+## Live checks after the first full pipeline
+- v0.1.14 release has all six installers; PyPI has gink-ai 0.2.0 (wheel + sdist) and a fresh
+  `pip install gink-ai` works. The live Render server can't be reached from the build sandbox
+  (network allow-list) -> the owner checks /login, /device, /developers in a browser.
+- CLI 0.2.1: the no-key message points to `gink login` (it creates the key now). cli.yml checks
+  pypi.org/pypi/gink-ai/<version>/json first (PyPI rejects re-uploads with a confusing error).

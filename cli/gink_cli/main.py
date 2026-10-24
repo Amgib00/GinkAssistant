@@ -94,7 +94,7 @@ def _network(exc) -> GinkError:
 
 def need_key(key: str):
     if not key:
-        raise GinkError("No API key yet. Create one in Gink (Settings > Developers), then run: gink login")
+        raise GinkError("You're not signed in yet. Run: gink login")
 
 
 def list_models(key: str, base: str) -> list:
