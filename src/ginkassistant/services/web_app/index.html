@@ -1130,6 +1130,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     <button data-row="rename"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Rename</button>
     <button data-row="pin" id="row-pin"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 6 4 3v2h-5v5l-1 1-1-1v-5H6v-2l4-3z"/></svg><span>Pin</span></button>
     <button data-row="export"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5"/><path d="M5 19h14"/></svg>Export chat</button>
+    <button data-row="archive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:16px;height:16px" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"/></svg>Archive</button>
     <button class="danger" data-row="delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:16px;height:16px" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>Delete</button>
   </div>
   <div id="modal-back">
@@ -1933,7 +1934,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 
   // ======================= settings window & account menu =======================
   var S = {values: {}, info: {}, lists: {}, open: false, panel: 'general'};
-  var SICON = {"general": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z\"/><path d=\"M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z\"/></svg>", "account": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21a8 8 0 0 1 16 0\"/></svg>", "privacy": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"/><path d=\"M8 11V7a4 4 0 0 1 8 0v4\"/></svg>", "billing": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"M3 10h18M7 15h3\"/></svg>", "usage": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 21a9 9 0 1 1 9-9\"/><path d=\"M12 12l4-4\"/><circle cx=\"12\" cy=\"12\" r=\"1.2\"/></svg>", "capabilities": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"7\" width=\"18\" height=\"13\" rx=\"2\"/><path d=\"M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/></svg>", "memory": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4a4 4 0 0 0-4 4v1a3 3 0 0 0-2 5 3 3 0 0 0 3 5h6a3 3 0 0 0 3-5 3 3 0 0 0-2-5V8a4 4 0 0 0-4-4z\"/><path d=\"M12 4v16\"/></svg>", "personalization": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6l-5 3.6 1.9-5.8L4 8.8h6.1z\"/></svg>", "location": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z\"/><circle cx=\"12\" cy=\"9\" r=\"2.5\"/></svg>", "connected": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7\"/><path d=\"M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7\"/></svg>", "briefing": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4\"/></svg>", "sync": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 11a8 8 0 0 0-14.3-4.9L4 8\"/><path d=\"M4 4v4h4\"/><path d=\"M4 13a8 8 0 0 0 14.3 4.9L20 16\"/><path d=\"M20 20v-4h-4\"/></svg>", "advanced": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg>", "help": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14\"/><circle cx=\"12\" cy=\"17.2\" r=\".6\"/></svg>", "about": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 11v6\"/><circle cx=\"12\" cy=\"7.8\" r=\".6\"/></svg>", "voice": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4\"/></svg>", "keyboard": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2.5\" y=\"6\" width=\"19\" height=\"12\" rx=\"2.5\"/><path d=\"M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10\"/></svg>", "language": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18\"/></svg>", "upgrade": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 16V8M8.5 11.5L12 8l3.5 3.5\"/></svg>", "logout": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3\"/><path d=\"M10 17l-5-5 5-5M5 12h11\"/></svg>", "search": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"6.5\"/><path d=\"M20 20l-4.2-4.2\"/></svg>", "close": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 6l12 12M18 6L6 18\"/></svg>", "monitor": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"12\" rx=\"2\"/><path d=\"M8 20h8M12 16v4\"/></svg>", "sun": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4\"/></svg>", "moon": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z\"/></svg>"};
+  var SICON = {"general": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z\"/><path d=\"M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z\"/></svg>", "account": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21a8 8 0 0 1 16 0\"/></svg>", "privacy": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"/><path d=\"M8 11V7a4 4 0 0 1 8 0v4\"/></svg>", "billing": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"M3 10h18M7 15h3\"/></svg>", "usage": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 21a9 9 0 1 1 9-9\"/><path d=\"M12 12l4-4\"/><circle cx=\"12\" cy=\"12\" r=\"1.2\"/></svg>", "capabilities": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"7\" width=\"18\" height=\"13\" rx=\"2\"/><path d=\"M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/></svg>", "memory": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4a4 4 0 0 0-4 4v1a3 3 0 0 0-2 5 3 3 0 0 0 3 5h6a3 3 0 0 0 3-5 3 3 0 0 0-2-5V8a4 4 0 0 0-4-4z\"/><path d=\"M12 4v16\"/></svg>", "storage": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><ellipse cx=\"12\" cy=\"6\" rx=\"8\" ry=\"3\"/><path d=\"M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6\"/></svg>", "personalization": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6l-5 3.6 1.9-5.8L4 8.8h6.1z\"/></svg>", "location": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z\"/><circle cx=\"12\" cy=\"9\" r=\"2.5\"/></svg>", "connected": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7\"/><path d=\"M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7\"/></svg>", "briefing": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4\"/></svg>", "sync": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 11a8 8 0 0 0-14.3-4.9L4 8\"/><path d=\"M4 4v4h4\"/><path d=\"M4 13a8 8 0 0 0 14.3 4.9L20 16\"/><path d=\"M20 20v-4h-4\"/></svg>", "advanced": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg>", "help": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14\"/><circle cx=\"12\" cy=\"17.2\" r=\".6\"/></svg>", "about": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 11v6\"/><circle cx=\"12\" cy=\"7.8\" r=\".6\"/></svg>", "voice": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4\"/></svg>", "keyboard": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2.5\" y=\"6\" width=\"19\" height=\"12\" rx=\"2.5\"/><path d=\"M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10\"/></svg>", "language": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18\"/></svg>", "upgrade": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 16V8M8.5 11.5L12 8l3.5 3.5\"/></svg>", "logout": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3\"/><path d=\"M10 17l-5-5 5-5M5 12h11\"/></svg>", "search": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"6.5\"/><path d=\"M20 20l-4.2-4.2\"/></svg>", "close": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 6l12 12M18 6L6 18\"/></svg>", "monitor": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"12\" rx=\"2\"/><path d=\"M8 20h8M12 16v4\"/></svg>", "sun": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4\"/></svg>", "moon": "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z\"/></svg>"};
   var LANGS = [['auto','Same as my message'],['en','English'],['fr','Fran\u00e7ais'],['wo','Wolof (experimental)'],
                ['kri','Krio (experimental)'],['ar','\u0627\u0644\u0639\u0631\u0628\u064a\u0629'],['pt','Portugu\u00eas'],['es','Espa\u00f1ol']];
 
@@ -2008,6 +2009,11 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
           {type: 'toggle', key: 'use_memory', label: 'Use memories in answers', desc: 'When off, Gink ignores what you asked it to remember (they stay saved \u2014 manage them under Memory).'},
           {type: 'button', label: 'Export my data', desc: 'Save your chats, Workspace, memories and settings as a file.', action: 'export', text: 'Export'},
           {type: 'button', label: 'Delete all chats', desc: 'Removes every conversation from this device and your other devices.', action: 'delete_chats', text: 'Delete all', style: 'danger-ghost'}]},
+        {title: 'Archived chats', rows: [
+          {type: 'list', items: (L.archived || []).map(function (c) {
+            return {t: c.title || 'Untitled chat', m: '', button: {text: 'Unarchive', action: 'unarchive_chat', value: c.id, style: 'plain'}}; }),
+           empty: 'No archived chats. Archive one from its \u22ef menu in the sidebar.'},
+          {type: 'button', label: 'Archive all chats', desc: 'Moves every chat out of Recents. Nothing is deleted.', action: 'archive_all', text: 'Archive all'}]},
         {title: 'Your chats and AI training', rows: [
           {type: 'note', text: 'Gink never uses your chats, files or voice to train AI models, and doesn\u2019t use tracking or advertising cookies.'}]},
         {title: 'Lockdown mode', rows: [
@@ -2055,6 +2061,18 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
           {type: 'select', key: 'style_enthusiasm', label: 'Enthusiasm', options: [['less', 'Less'], ['default', 'Default'], ['more', 'More']]},
           {type: 'select', key: 'style_emoji', label: 'Emoji', options: [['less', 'Less'], ['default', 'Default'], ['more', 'More']]},
           {type: 'select', key: 'style_headers', label: 'Headers and lists', options: [['less', 'Less'], ['default', 'Default'], ['more', 'More']]}]}]},
+      {id: 'storage', group: 'Settings', title: 'Storage', sections: info.web ? [
+        {title: 'Storage', rows: [{type: 'note', text: 'Gink on the web keeps your chats in this browser and syncs them to your account. To free space, archive or delete chats in Settings > Privacy.'}]}] : [
+        {title: 'Storage', rows: [
+          {type: 'meter', label: (info.storage ? info.storage.total : '\u2026') + ' used by Gink on this device', used: info.storage ? info.storage.pct : 0, limit: 100,
+           desc: info.storage ? info.storage.free + ' free on this device' : ''}]},
+        {title: 'Manage storage', rows: info.storage ? [
+          {type: 'info', label: 'Chats', value: info.storage.parts.chats},
+          {type: 'button', label: 'Images', desc: info.storage.parts.images + ' \u00b7 ' + info.storage.counts.images + ' images Gink made', action: 'free_storage', value: 'images', text: 'Delete', style: 'danger-ghost'},
+          {type: 'button', label: 'Files', desc: info.storage.parts.files + ' \u00b7 ' + info.storage.counts.files + ' files Gink made (PDF, Word, Excel\u2026)', action: 'free_storage', value: 'files', text: 'Delete', style: 'danger-ghost'},
+          {type: 'button', label: 'Offline AI model', desc: info.storage.parts.offline_ai + ' \u00b7 downloads again if you use offline mode', action: 'free_storage', value: 'offline_ai', text: 'Remove', style: 'danger-ghost'},
+          {type: 'button', label: '\u201cHey Gink\u201d speech model', desc: info.storage.parts.wake_model + ' \u00b7 downloads again when \u201cHey Gink\u201d is on', action: 'free_storage', value: 'wake_model', text: 'Remove', style: 'danger-ghost'},
+          {type: 'button', label: 'Song recognition data', desc: info.storage.parts.songs, action: 'free_storage', value: 'songs', text: 'Remove', style: 'danger-ghost'}] : []}]},
       {id: 'connected', group: 'Settings', title: 'Connected apps', sections: [
         {title: 'Connected apps', rows: [
           {type: 'note', text: 'Let Gink use your Google apps to answer and help. Each one is connected separately; Gink asks before it adds an event or writes or sends an email, and never keeps what it reads.'},
@@ -2684,6 +2702,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     var s = sessions.filter(function (x) { return x.id === id; })[0] || {};
     if (what === 'rename') { closeMenus(); promptRename(id, s.title || ''); }
     else if (what === 'pin') { closeMenus(); s.pinned = !s.pinned; renderRecents(); ginkEmit('pin_session', {id: id, pinned: !!s.pinned}); }
+    else if (what === 'archive') { closeMenus(); ginkEmit('archive_session', {id: id, archived: true}); }
     else if (what === 'export') { closeMenus(); ginkEmit('export_session', id); }
   });
   function promptRename(id, current) {
@@ -3039,8 +3058,44 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
         return r;
       });
   }
+  // ---- usage limit: the reset time in the person's own time, and a notice when it has reset
+  function localReset(at) {
+    var d = new Date(at * 1000), t = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    var today = new Date(), tomorrow = new Date(today.getTime() + 86400000);
+    var day = d.toDateString() === today.toDateString() ? "today" : d.toDateString() === tomorrow.toDateString() ? "tomorrow"
+            : d.toLocaleDateString([], { weekday: "long" });
+    return t + " " + day;
+  }
+  function notice(text) {
+    var old = document.getElementById("gink-notice"); if (old) old.remove();
+    var box = document.createElement("div"); box.id = "gink-notice"; box.setAttribute("role", "status");
+    box.style.cssText = "position:fixed;right:18px;bottom:18px;z-index:9999;max-width:340px;display:flex;gap:12px;align-items:flex-start;" +
+      "padding:14px 16px;border-radius:14px;background:var(--surface, #fff);color:var(--text, #151D23);" +
+      "border:1px solid var(--border, rgba(0,0,0,.12));box-shadow:0 8px 28px rgba(0,0,0,.18);font:14px/1.45 system-ui,sans-serif";
+    var msg = document.createElement("div"); msg.textContent = text; msg.style.flex = "1";
+    var x = document.createElement("button"); x.textContent = "\u00d7"; x.setAttribute("aria-label", "Close");
+    x.style.cssText = "border:0;background:none;color:inherit;font-size:18px;line-height:1;cursor:pointer;padding:0 2px";
+    x.onclick = function () { box.remove(); };
+    box.appendChild(msg); box.appendChild(x); document.body.appendChild(box);
+  }
+  function watchReset(at) {
+    try { LS.setItem("gink_limit_reset", String(at)); } catch (e) {}
+    var wait = at * 1000 - Date.now();
+    if (wait <= 0) {
+      try { LS.removeItem("gink_limit_reset"); } catch (e) {}
+      return notice("Your usage limit has reset \u2014 you can send new messages. Pick up where you left off?");
+    }
+    if (wait < 2147483647) setTimeout(function () { watchReset(at); }, wait + 1500);
+  }
+  (function () { var at = Number(LS.getItem("gink_limit_reset") || 0); if (at) watchReset(at); })();
+
   function errorText(r) {
     return r.json().then(function (j) {
+      var e = j.error || {};
+      if (e.code === "daily_limit" && e.resets_at) {
+        watchReset(e.resets_at);
+        return String(e.message || "").replace(/at midnight \(UTC\)|midnight \(UTC\)/, "at " + localReset(e.resets_at));
+      }
       return (j.error && (j.error.message || j.error)) || j.detail || ("Something went wrong (" + r.status + ").");
     }).catch(function () { return "Something went wrong (" + r.status + ")."; });
   }
@@ -3180,7 +3235,7 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
   }
   function refreshSidebar() {
     var list = Object.keys(W.sessions).map(function (k) { return W.sessions[k]; })
-      .filter(function (s) { return !s.deleted && (s.messages || []).length; })
+      .filter(function (s) { return !s.deleted && !s.archived && (s.messages || []).length; })
       .sort(function (a, b) { return (b.pinned - a.pinned) || (b.updated - a.updated); })
       .map(function (s) { return { id: s.id, title: titleOf(s), current: s.id === W.current, pinned: !!s.pinned }; });
     setSessions(list);
@@ -3498,7 +3553,7 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     var push = Object.keys(W.dirty).map(function (id) {
       var s = W.sessions[id]; if (!s) return null;
       return { id: s.id, updated: s.updated, deleted: !!s.deleted,
-               payload: { messages: s.deleted ? [] : s.messages, title: s.title || "", pinned: !!s.pinned } };
+               payload: { messages: s.deleted ? [] : s.messages, title: s.title || "", pinned: !!s.pinned, archived: !!s.archived } };
     }).filter(Boolean);
     api("/sync", { since: W.since, push: { chats: push } }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
       if (!j) return;
@@ -3509,7 +3564,7 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
         if (mine && mine.updated >= d.updated) return;                          // newest copy wins
         var p = d.payload || {};
         W.sessions[d.id] = { id: d.id, updated: d.updated, deleted: !!d.deleted, messages: p.messages || [],
-                             title: p.title || "", pinned: !!p.pinned };
+                             title: p.title || "", pinned: !!p.pinned, archived: !!p.archived };
         if (d.id === W.current) changedCurrent = true;
       });
       W.since = j.now || W.since; LS.setItem("gink_since", String(W.since)); persist();
@@ -3555,10 +3610,14 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
       pushSettings({ connected: j.services || [] }, { connected_configured: j.configured });
     }).catch(function () { pushSettings({ connected: [] }, { connected_error: "Connected apps aren\u2019t available right now." }); });
   }
-  function loadLockdown() {
-    pushSettings();
+  function archivedList() {
+    return Object.keys(W.sessions).map(function (k) { return W.sessions[k]; })
+      .filter(function (s) { return s.archived && !s.deleted; }).map(function (s) { return { id: s.id, title: titleOf(s) }; });
+  }
+  function loadLockdown() {                              // Settings > Privacy (archived chats + Lockdown mode)
+    pushSettings({ archived: archivedList() });
     api("/account/lockdown").then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-      .then(function (j) { pushSettings({}, { lockdown_on: !!j.on }); }).catch(function () {});
+      .then(function (j) { pushSettings({ archived: archivedList() }, { lockdown_on: !!j.on }); }).catch(function () {});
   }
   function connectApp(service) {
     var win = window.open("about:blank", "_blank");           // opened during the click, so it isn't blocked
@@ -3604,6 +3663,12 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     },
     rename_session: function (v) { var s = v && W.sessions[v.id]; if (s) { s.title = String(v.title || "").slice(0, 80); touch(s.id); refreshSidebar(); sync(); } },
     pin_session: function (v) { var s = v && W.sessions[v.id]; if (s) { s.pinned = !!v.pinned; touch(s.id); refreshSidebar(); sync(); } },
+    archive_session: function (v) {
+      var s = v && W.sessions[v.id]; if (!s) return;
+      s.archived = v.archived !== false; touch(s.id);
+      if (s.archived && W.current === s.id) newChat();
+      refreshSidebar(); sync();
+    },
     branch: function (i) {
       var s = W.sessions[W.current]; if (!s) return;
       var id = uid();
@@ -3643,6 +3708,15 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
       var name = v && v.name;
       if (name === "refresh") return (v.value === "account" ? loadDevices() : v.value === "connected" ? loadConnected()
                                       : v.value === "privacy" ? loadLockdown() : pushSettings());
+      if (name === "unarchive_chat" && v.value && W.sessions[v.value]) {
+        W.sessions[v.value].archived = false; touch(v.value); refreshSidebar(); sync(); settingsToast("Back in Recents."); return loadLockdown();
+      }
+      if (name === "archive_all") {
+        var n = 0;
+        Object.keys(W.sessions).forEach(function (k) { var x = W.sessions[k]; if (!x.deleted && !x.archived && (x.messages || []).length) { x.archived = true; touch(k); n++; } });
+        if (W.sessions[W.current] && W.sessions[W.current].archived) newChat();
+        refreshSidebar(); sync(); settingsToast("Archived " + n + " chat" + (n === 1 ? "" : "s") + "."); return loadLockdown();
+      }
       if (name === "lockdown_on" || name === "lockdown_off") {
         return api("/account/lockdown", { on: name === "lockdown_on" }).then(function () {
           settingsToast(name === "lockdown_on" ? "Lockdown mode is on." : "Lockdown mode is off."); loadLockdown(); });

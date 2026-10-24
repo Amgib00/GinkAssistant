@@ -34,6 +34,14 @@ CHOICES = {"theme": {"system", "light", "dark"}, "chat_font": {"sans", "serif", 
            "style_enthusiasm": personality.LEVELS, "style_emoji": personality.LEVELS, "style_headers": personality.LEVELS}
 
 
+def _first_words(session: dict) -> str:
+    for m in session.get("messages", []):
+        if m.get("role") == "user" and m.get("content"):
+            text = " ".join(str(m["content"]).split())
+            return text[:50] + ("\u2026" if len(text) > 50 else "")
+    return "Untitled chat"
+
+
 def _active_text(s: dict) -> str:
     if s.get("current"):
         return "This device"
@@ -51,6 +59,7 @@ class SettingsController:
                  models_fn, push_models, open_pro, on_log_out, refresh_sidebar, clear_all_chats,
                  brief_now, sync_fn, open_url):
         self.app, self.web, self.brain = app, web_chat, brain
+        self.on_history_changed = None          # main_screen: refresh Recents after archive changes
         self.selected_voice, self.audio_engine = selected_voice, audio_engine
         self.email, self.display_name = email, display_name
         self.models_fn, self.push_models, self.open_pro = models_fn, push_models, open_pro
@@ -209,6 +218,18 @@ class SettingsController:
                 extra_lists["security"] = await asyncio.wait_for(api.security_history(token), timeout=8)
             except Exception:
                 extra_lists["security"] = []
+        if panel == "storage":                                # Settings > Storage (this device only)
+            from ..services import storage
+            u = storage.usage(str(data_dir(self.app)))
+            extra_info["storage"] = {"total": storage.human(u["total"]), "free": storage.human(u["free"]),
+                                     "pct": round(100 * u["total"] / max(u["total"] + u["free"], 1), 1),
+                                     "parts": {k: storage.human(v) for k, v in u["parts"].items()},
+                                     "bytes": u["parts"], "counts": u["counts"]}
+        if panel == "privacy":                                # archived chats (on this device, synced)
+            meta = self.brain.history.get_meta()
+            sessions = self.brain.history.get_all_sessions()
+            extra_lists["archived"] = [{"id": sid, "title": m["title"] or _first_words(sessions.get(sid, {}))}
+                                       for sid, m in meta.items() if m["archived"]]
         if token and panel == "privacy":                      # Lockdown mode
             try:
                 extra_info["lockdown_on"] = await asyncio.wait_for(api.lockdown(token), timeout=8)
@@ -402,6 +423,36 @@ class SettingsController:
     async def _a_twofa_done(self, _):
         self._twofa.clear()                    # the codes are never shown again
         await self.refresh("account")
+
+    async def _a_free_storage(self, kind):
+        """Two clicks within 6 seconds: deleting files can't be undone."""
+        import time as _t
+        pending = getattr(self, "_free_pending", {})
+        if _t.time() - pending.get(kind, 0) > 6:
+            self._free_pending = {kind: _t.time()}
+            return await self.web.settings_toast("Click again to delete. This can't be undone.")
+        self._free_pending = {}
+        from ..services import storage
+        try:
+            freed = storage.free_up(str(data_dir(self.app)), str(kind))
+        except (ValueError, OSError) as exc:
+            return await self.web.settings_toast(f"Couldn't free that space ({exc}).")
+        await self.web.settings_toast(f"Freed {storage.human(freed)}.")
+        await self.refresh("storage")
+
+    async def _a_unarchive_chat(self, sid):
+        self.brain.history.set_archived(str(sid), False)
+        await self.web.settings_toast("Back in Recents.")
+        if self.on_history_changed:
+            self.on_history_changed()
+        await self.refresh("privacy")
+
+    async def _a_archive_all(self, _):
+        n = self.brain.history.archive_all()
+        await self.web.settings_toast(f"Archived {n} chat{'s' if n != 1 else ''}.")
+        if self.on_history_changed:
+            self.on_history_changed()
+        await self.refresh("privacy")
 
     async def _a_lockdown_on(self, _):
         await self._set_lockdown(True)

@@ -640,6 +640,7 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     <button data-row="rename">__ICON_RENAME__Rename</button>
     <button data-row="pin" id="row-pin">__ICON_PIN__<span>Pin</span></button>
     <button data-row="export">__ICON_EXPORT__Export chat</button>
+    <button data-row="archive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:16px;height:16px" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"/></svg>Archive</button>
     <button class="danger" data-row="delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:16px;height:16px" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>Delete</button>
   </div>
   <div id="modal-back">

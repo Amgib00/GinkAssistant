@@ -35,8 +35,44 @@
         return r;
       });
   }
+  // ---- usage limit: the reset time in the person's own time, and a notice when it has reset
+  function localReset(at) {
+    var d = new Date(at * 1000), t = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    var today = new Date(), tomorrow = new Date(today.getTime() + 86400000);
+    var day = d.toDateString() === today.toDateString() ? "today" : d.toDateString() === tomorrow.toDateString() ? "tomorrow"
+            : d.toLocaleDateString([], { weekday: "long" });
+    return t + " " + day;
+  }
+  function notice(text) {
+    var old = document.getElementById("gink-notice"); if (old) old.remove();
+    var box = document.createElement("div"); box.id = "gink-notice"; box.setAttribute("role", "status");
+    box.style.cssText = "position:fixed;right:18px;bottom:18px;z-index:9999;max-width:340px;display:flex;gap:12px;align-items:flex-start;" +
+      "padding:14px 16px;border-radius:14px;background:var(--surface, #fff);color:var(--text, #151D23);" +
+      "border:1px solid var(--border, rgba(0,0,0,.12));box-shadow:0 8px 28px rgba(0,0,0,.18);font:14px/1.45 system-ui,sans-serif";
+    var msg = document.createElement("div"); msg.textContent = text; msg.style.flex = "1";
+    var x = document.createElement("button"); x.textContent = "\u00d7"; x.setAttribute("aria-label", "Close");
+    x.style.cssText = "border:0;background:none;color:inherit;font-size:18px;line-height:1;cursor:pointer;padding:0 2px";
+    x.onclick = function () { box.remove(); };
+    box.appendChild(msg); box.appendChild(x); document.body.appendChild(box);
+  }
+  function watchReset(at) {
+    try { LS.setItem("gink_limit_reset", String(at)); } catch (e) {}
+    var wait = at * 1000 - Date.now();
+    if (wait <= 0) {
+      try { LS.removeItem("gink_limit_reset"); } catch (e) {}
+      return notice("Your usage limit has reset \u2014 you can send new messages. Pick up where you left off?");
+    }
+    if (wait < 2147483647) setTimeout(function () { watchReset(at); }, wait + 1500);
+  }
+  (function () { var at = Number(LS.getItem("gink_limit_reset") || 0); if (at) watchReset(at); })();
+
   function errorText(r) {
     return r.json().then(function (j) {
+      var e = j.error || {};
+      if (e.code === "daily_limit" && e.resets_at) {
+        watchReset(e.resets_at);
+        return String(e.message || "").replace(/at midnight \(UTC\)|midnight \(UTC\)/, "at " + localReset(e.resets_at));
+      }
       return (j.error && (j.error.message || j.error)) || j.detail || ("Something went wrong (" + r.status + ").");
     }).catch(function () { return "Something went wrong (" + r.status + ")."; });
   }
@@ -176,7 +212,7 @@
   }
   function refreshSidebar() {
     var list = Object.keys(W.sessions).map(function (k) { return W.sessions[k]; })
-      .filter(function (s) { return !s.deleted && (s.messages || []).length; })
+      .filter(function (s) { return !s.deleted && !s.archived && (s.messages || []).length; })
       .sort(function (a, b) { return (b.pinned - a.pinned) || (b.updated - a.updated); })
       .map(function (s) { return { id: s.id, title: titleOf(s), current: s.id === W.current, pinned: !!s.pinned }; });
     setSessions(list);
@@ -494,7 +530,7 @@
     var push = Object.keys(W.dirty).map(function (id) {
       var s = W.sessions[id]; if (!s) return null;
       return { id: s.id, updated: s.updated, deleted: !!s.deleted,
-               payload: { messages: s.deleted ? [] : s.messages, title: s.title || "", pinned: !!s.pinned } };
+               payload: { messages: s.deleted ? [] : s.messages, title: s.title || "", pinned: !!s.pinned, archived: !!s.archived } };
     }).filter(Boolean);
     api("/sync", { since: W.since, push: { chats: push } }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
       if (!j) return;
@@ -505,7 +541,7 @@
         if (mine && mine.updated >= d.updated) return;                          // newest copy wins
         var p = d.payload || {};
         W.sessions[d.id] = { id: d.id, updated: d.updated, deleted: !!d.deleted, messages: p.messages || [],
-                             title: p.title || "", pinned: !!p.pinned };
+                             title: p.title || "", pinned: !!p.pinned, archived: !!p.archived };
         if (d.id === W.current) changedCurrent = true;
       });
       W.since = j.now || W.since; LS.setItem("gink_since", String(W.since)); persist();
@@ -551,10 +587,14 @@
       pushSettings({ connected: j.services || [] }, { connected_configured: j.configured });
     }).catch(function () { pushSettings({ connected: [] }, { connected_error: "Connected apps aren\u2019t available right now." }); });
   }
-  function loadLockdown() {
-    pushSettings();
+  function archivedList() {
+    return Object.keys(W.sessions).map(function (k) { return W.sessions[k]; })
+      .filter(function (s) { return s.archived && !s.deleted; }).map(function (s) { return { id: s.id, title: titleOf(s) }; });
+  }
+  function loadLockdown() {                              // Settings > Privacy (archived chats + Lockdown mode)
+    pushSettings({ archived: archivedList() });
     api("/account/lockdown").then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-      .then(function (j) { pushSettings({}, { lockdown_on: !!j.on }); }).catch(function () {});
+      .then(function (j) { pushSettings({ archived: archivedList() }, { lockdown_on: !!j.on }); }).catch(function () {});
   }
   function connectApp(service) {
     var win = window.open("about:blank", "_blank");           // opened during the click, so it isn't blocked
@@ -600,6 +640,12 @@
     },
     rename_session: function (v) { var s = v && W.sessions[v.id]; if (s) { s.title = String(v.title || "").slice(0, 80); touch(s.id); refreshSidebar(); sync(); } },
     pin_session: function (v) { var s = v && W.sessions[v.id]; if (s) { s.pinned = !!v.pinned; touch(s.id); refreshSidebar(); sync(); } },
+    archive_session: function (v) {
+      var s = v && W.sessions[v.id]; if (!s) return;
+      s.archived = v.archived !== false; touch(s.id);
+      if (s.archived && W.current === s.id) newChat();
+      refreshSidebar(); sync();
+    },
     branch: function (i) {
       var s = W.sessions[W.current]; if (!s) return;
       var id = uid();
@@ -639,6 +685,15 @@
       var name = v && v.name;
       if (name === "refresh") return (v.value === "account" ? loadDevices() : v.value === "connected" ? loadConnected()
                                       : v.value === "privacy" ? loadLockdown() : pushSettings());
+      if (name === "unarchive_chat" && v.value && W.sessions[v.value]) {
+        W.sessions[v.value].archived = false; touch(v.value); refreshSidebar(); sync(); settingsToast("Back in Recents."); return loadLockdown();
+      }
+      if (name === "archive_all") {
+        var n = 0;
+        Object.keys(W.sessions).forEach(function (k) { var x = W.sessions[k]; if (!x.deleted && !x.archived && (x.messages || []).length) { x.archived = true; touch(k); n++; } });
+        if (W.sessions[W.current] && W.sessions[W.current].archived) newChat();
+        refreshSidebar(); sync(); settingsToast("Archived " + n + " chat" + (n === 1 ? "" : "s") + "."); return loadLockdown();
+      }
       if (name === "lockdown_on" || name === "lockdown_off") {
         return api("/account/lockdown", { on: name === "lockdown_on" }).then(function () {
           settingsToast(name === "lockdown_on" ? "Lockdown mode is on." : "Lockdown mode is off."); loadLockdown(); });

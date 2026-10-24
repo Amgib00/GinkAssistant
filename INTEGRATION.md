@@ -1019,3 +1019,16 @@ New services/live_info.py (all free, no API keys):
 - Specs: accounts-security (+2 requirements), new personalization spec. Next batches: archive chats,
   storage, usage-limit UX, passkeys; needing decisions: phone sign-in (SMS provider), pricing tiers,
   parental controls; separate projects: GitHub code review, cloud computer.
+
+## Latest (0.1.12): from the settings screenshots, batch 2
+- Archive: chat_meta.archived (migration), set_archived / archive_all, in changes_since and
+  apply_remote (syncs like pinned); Recents skip archived (except the open chat); menu "Archive"
+  (chat_extras -> archive_session); Settings > Privacy > Archived chats (+ Archive all). Web: the
+  same with s.archived in the sync payload both ways.
+- services/storage.py: usage() by kind + free space; free_up(kind) for images / files / offline_ai /
+  wake_model / songs (not chats). Settings > Storage (apps; the web panel explains browser storage);
+  deleting needs a second click within 6 s.
+- Limits: _ai_error(..., "daily_limit") adds resets_at (next UTC midnight) + Retry-After.
+  groq_worker.local_reset_time and bridge.localReset show local time; bridge watchReset remembers
+  gink_limit_reset and shows a notice card when it has passed (also after reload).
+- New spec chats-storage-limits. Next: passkeys (batch 3).

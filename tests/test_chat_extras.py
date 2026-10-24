@@ -32,10 +32,10 @@ def test_rename_and_pin_survive_new_messages_and_sync(tmp_path):
     h.set_title("s1", "Exam plan")
     h.set_pinned("s1", True)
     h.save_message("s1", "assistant", "Here's a plan")          # must not wipe title/pin
-    assert h.get_meta()["s1"] == {"title": "Exam plan", "pinned": True}
+    assert h.get_meta()["s1"] == {"title": "Exam plan", "pinned": True, "archived": False}
     other = _Hist(tmp_path / "b.db")
     other.apply_remote(h.changes_since(0))
-    assert other.get_meta()["s1"] == {"title": "Exam plan", "pinned": True}
+    assert other.get_meta()["s1"] == {"title": "Exam plan", "pinned": True, "archived": False}
     h.clear_history("s1")
     assert "s1" not in h.get_meta()
 
@@ -90,7 +90,7 @@ def test_agent_answer_shows_spinner_steps_and_events(tmp_path, monkeypatch):
     assert any(s.startswith("finalizeMessage(") and "sunny" in s for s in js)
     assert sent == [("down", "too_long", 11)]
     from ginkassistant.services.history import HistoryStore
-    assert HistoryStore(app).get_meta()[sid] == {"title": "Dakar weather", "pinned": True}
+    assert HistoryStore(app).get_meta()[sid] == {"title": "Dakar weather", "pinned": True, "archived": False}
     last = [s for s in js if s.startswith("setSessions(")][-1]
     assert '"title": "Dakar weather"' in last and '"pinned": true' in last
 

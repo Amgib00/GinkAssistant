@@ -23,6 +23,7 @@ ICONS = {
     "usage": '<path d="M12 21a9 9 0 1 1 9-9"/><path d="M12 12l4-4"/><circle cx="12" cy="12" r="1.2"/>',
     "capabilities": '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
     "memory": '<path d="M12 4a4 4 0 0 0-4 4v1a3 3 0 0 0-2 5 3 3 0 0 0 3 5h6a3 3 0 0 0 3-5 3 3 0 0 0-2-5V8a4 4 0 0 0-4-4z"/><path d="M12 4v16"/>',
+    "storage": '<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
     "personalization": '<path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6l-5 3.6 1.9-5.8L4 8.8h6.1z"/>',
     "location": '<path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/>',
     "connected": '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
@@ -319,6 +320,11 @@ SETTINGS_JS = r"""
           {type: 'toggle', key: 'use_memory', label: 'Use memories in answers', desc: 'When off, Gink ignores what you asked it to remember (they stay saved \u2014 manage them under Memory).'},
           {type: 'button', label: 'Export my data', desc: 'Save your chats, Workspace, memories and settings as a file.', action: 'export', text: 'Export'},
           {type: 'button', label: 'Delete all chats', desc: 'Removes every conversation from this device and your other devices.', action: 'delete_chats', text: 'Delete all', style: 'danger-ghost'}]},
+        {title: 'Archived chats', rows: [
+          {type: 'list', items: (L.archived || []).map(function (c) {
+            return {t: c.title || 'Untitled chat', m: '', button: {text: 'Unarchive', action: 'unarchive_chat', value: c.id, style: 'plain'}}; }),
+           empty: 'No archived chats. Archive one from its \u22ef menu in the sidebar.'},
+          {type: 'button', label: 'Archive all chats', desc: 'Moves every chat out of Recents. Nothing is deleted.', action: 'archive_all', text: 'Archive all'}]},
         {title: 'Your chats and AI training', rows: [
           {type: 'note', text: 'Gink never uses your chats, files or voice to train AI models, and doesn\u2019t use tracking or advertising cookies.'}]},
         {title: 'Lockdown mode', rows: [
@@ -366,6 +372,18 @@ SETTINGS_JS = r"""
           {type: 'select', key: 'style_enthusiasm', label: 'Enthusiasm', options: [['less', 'Less'], ['default', 'Default'], ['more', 'More']]},
           {type: 'select', key: 'style_emoji', label: 'Emoji', options: [['less', 'Less'], ['default', 'Default'], ['more', 'More']]},
           {type: 'select', key: 'style_headers', label: 'Headers and lists', options: [['less', 'Less'], ['default', 'Default'], ['more', 'More']]}]}]},
+      {id: 'storage', group: 'Settings', title: 'Storage', sections: info.web ? [
+        {title: 'Storage', rows: [{type: 'note', text: 'Gink on the web keeps your chats in this browser and syncs them to your account. To free space, archive or delete chats in Settings > Privacy.'}]}] : [
+        {title: 'Storage', rows: [
+          {type: 'meter', label: (info.storage ? info.storage.total : '\u2026') + ' used by Gink on this device', used: info.storage ? info.storage.pct : 0, limit: 100,
+           desc: info.storage ? info.storage.free + ' free on this device' : ''}]},
+        {title: 'Manage storage', rows: info.storage ? [
+          {type: 'info', label: 'Chats', value: info.storage.parts.chats},
+          {type: 'button', label: 'Images', desc: info.storage.parts.images + ' \u00b7 ' + info.storage.counts.images + ' images Gink made', action: 'free_storage', value: 'images', text: 'Delete', style: 'danger-ghost'},
+          {type: 'button', label: 'Files', desc: info.storage.parts.files + ' \u00b7 ' + info.storage.counts.files + ' files Gink made (PDF, Word, Excel\u2026)', action: 'free_storage', value: 'files', text: 'Delete', style: 'danger-ghost'},
+          {type: 'button', label: 'Offline AI model', desc: info.storage.parts.offline_ai + ' \u00b7 downloads again if you use offline mode', action: 'free_storage', value: 'offline_ai', text: 'Remove', style: 'danger-ghost'},
+          {type: 'button', label: '\u201cHey Gink\u201d speech model', desc: info.storage.parts.wake_model + ' \u00b7 downloads again when \u201cHey Gink\u201d is on', action: 'free_storage', value: 'wake_model', text: 'Remove', style: 'danger-ghost'},
+          {type: 'button', label: 'Song recognition data', desc: info.storage.parts.songs, action: 'free_storage', value: 'songs', text: 'Remove', style: 'danger-ghost'}] : []}]},
       {id: 'connected', group: 'Settings', title: 'Connected apps', sections: [
         {title: 'Connected apps', rows: [
           {type: 'note', text: 'Let Gink use your Google apps to answer and help. Each one is connected separately; Gink asks before it adds an event or writes or sends an email, and never keeps what it reads.'},

@@ -95,6 +95,18 @@ SPOKEN_REPLY_PROMPT = (
 )
 
 
+def local_reset_time(info: dict) -> str:
+    """'...resets at midnight (UTC)' -> '...resets at 12:00 AM' in the person's own time."""
+    message, at = str(info.get("message") or ""), info.get("resets_at")
+    if not at:
+        return message
+    import datetime as _dt
+    local = _dt.datetime.fromtimestamp(int(at))
+    day = "today" if local.date() == _dt.date.today() else "tomorrow" if local.date() == _dt.date.today() + _dt.timedelta(days=1) else local.strftime("%A")
+    when = f"{local.strftime('%H:%M')} {day}"
+    return message.replace("at midnight (UTC)", f"at {when}").replace("midnight (UTC)", when)
+
+
 def _limit_message(err) -> str:
     """Gink Cloud limit / Pro-only answers -> a friendly message with an upgrade link."""
     try:
@@ -104,7 +116,7 @@ def _limit_message(err) -> str:
     except Exception:
         return ""
     if code in ("daily_limit", "pro_required"):
-        return f"{info.get('message')}\n\n[\u2728 Upgrade to Gink Pro](gink://pro)"
+        return f"{local_reset_time(info)}\n\n[\u2728 Upgrade to Gink Pro](gink://pro)"
     if code in ("turn_limit", "not_configured", "too_large"):
         return info.get("message", "")
     if getattr(err, "status_code", 0) == 401:

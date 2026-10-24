@@ -57,6 +57,8 @@ class HistoryStore:
                 conn.execute("ALTER TABLE chat_meta ADD COLUMN title TEXT DEFAULT ''")
             if "pinned" not in cols:
                 conn.execute("ALTER TABLE chat_meta ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0")
+            if "archived" not in cols:
+                conn.execute("ALTER TABLE chat_meta ADD COLUMN archived INTEGER NOT NULL DEFAULT 0")
             conn.execute(
                 "INSERT OR IGNORE INTO chat_meta (session_id, updated, deleted)"
                 " SELECT DISTINCT session_id, ?, 0 FROM chat_history", (time.time(),)
@@ -145,23 +147,38 @@ class HistoryStore:
             conn.commit()
         self._changed()
 
+    def set_archived(self, session_id: str, archived: bool) -> None:
+        """Archived chats leave Recents but are kept (Settings > Privacy > Archived chats)."""
+        with self._connect() as conn:
+            self._touch(conn, session_id)
+            conn.execute("UPDATE chat_meta SET archived=? WHERE session_id=?", (int(bool(archived)), session_id))
+            conn.commit()
+        self._changed()
+
+    def archive_all(self) -> int:
+        ids = [sid for sid, m in self.get_meta().items() if not m["archived"]]
+        for sid in ids:
+            self.set_archived(sid, True)
+        return len(ids)
+
     def get_meta(self) -> Dict[str, Dict[str, Any]]:
         with self._connect() as conn:
-            rows = conn.execute("SELECT session_id, title, pinned FROM chat_meta WHERE deleted=0").fetchall()
-        return {sid: {"title": t or "", "pinned": bool(p)} for sid, t, p in rows}
+            rows = conn.execute("SELECT session_id, title, pinned, archived FROM chat_meta WHERE deleted=0").fetchall()
+        return {sid: {"title": t or "", "pinned": bool(p), "archived": bool(a)} for sid, t, p, a in rows}
 
     def changes_since(self, ts: float) -> List[Dict[str, Any]]:
         with self._connect() as conn:
-            metas = conn.execute("SELECT session_id, updated, deleted, title, pinned FROM chat_meta WHERE updated > ?",
+            metas = conn.execute("SELECT session_id, updated, deleted, title, pinned, archived FROM chat_meta WHERE updated > ?",
                                  (ts,)).fetchall()
             docs = []
-            for sid, updated, deleted, title, pinned in metas:
+            for sid, updated, deleted, title, pinned, archived in metas:
                 msgs = [] if deleted else [
                     {"role": r, "content": c, "ts": t} for r, c, t in conn.execute(
                         "SELECT role, content, timestamp FROM chat_history WHERE session_id = ? ORDER BY id",
                         (sid,)).fetchall()]
                 docs.append({"id": sid, "updated": updated, "deleted": bool(deleted),
-                             "payload": {"messages": msgs, "title": title or "", "pinned": bool(pinned)}})
+                             "payload": {"messages": msgs, "title": title or "", "pinned": bool(pinned),
+                                         "archived": bool(archived)}})
         return docs
 
     def apply_remote(self, docs: List[Dict[str, Any]]) -> int:
@@ -181,10 +198,10 @@ class HistoryStore:
                                          " VALUES (?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))",
                                          (d["id"], m.get("role", "user"), m["content"], m.get("ts")))
                 p = d.get("payload") or {}
-                conn.execute("INSERT OR REPLACE INTO chat_meta (session_id, updated, deleted, title, pinned)"
-                             " VALUES (?, ?, ?, ?, ?)",
+                conn.execute("INSERT OR REPLACE INTO chat_meta (session_id, updated, deleted, title, pinned, archived)"
+                             " VALUES (?, ?, ?, ?, ?, ?)",
                              (d["id"], d["updated"], int(bool(d.get("deleted"))), p.get("title") or "",
-                              int(bool(p.get("pinned")))))
+                              int(bool(p.get("pinned"))), int(bool(p.get("archived")))))
                 applied += 1
             conn.commit()
         if applied:

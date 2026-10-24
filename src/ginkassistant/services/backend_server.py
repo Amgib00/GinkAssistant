@@ -1358,8 +1358,13 @@ def _ai_error(status: int, message: str, code: str):
     from fastapi.responses import JSONResponse
     # x-should-retry: false -- the groq library otherwise retries 429s, which
     # can't help with a daily limit (it only slows the answer down)
-    return JSONResponse(status_code=status, content={"error": {"message": message, "type": "gink_" + code, "code": code}},
-                        headers={"x-should-retry": "false"})
+    error = {"message": message, "type": "gink_" + code, "code": code}
+    headers = {"x-should-retry": "false"}
+    if code == "daily_limit":                      # daily allowances reset at midnight UTC: say exactly when
+        resets_at = (int(time.time()) // 86400 + 1) * 86400
+        error["resets_at"] = resets_at
+        headers["Retry-After"] = str(max(1, resets_at - int(time.time())))
+    return JSONResponse(status_code=status, content={"error": error}, headers=headers)
 
 
 def _usage_for(email: str) -> dict:

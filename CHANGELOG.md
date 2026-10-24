@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.12 (October 2026)
+
+- Archive chats (from a chat's menu, or "Archive all" in Settings > Privacy): they leave Recents,
+  sync to your other devices, and come back with Unarchive
+- Settings > Storage: what Gink keeps on this device (chats, images, files, offline AI, "Hey Gink"
+  model, song data) and freeing space
+- Usage limits say when they reset in your own time, and the web app tells you when you can send
+  messages again
+
 ## 0.1.11 (October 2026)
 
 - Settings > Personalization: choose Gink's style (professional, friendly, concise, candid, playful)

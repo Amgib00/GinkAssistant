@@ -513,6 +513,7 @@ JS = r"""
     var s = sessions.filter(function (x) { return x.id === id; })[0] || {};
     if (what === 'rename') { closeMenus(); promptRename(id, s.title || ''); }
     else if (what === 'pin') { closeMenus(); s.pinned = !s.pinned; renderRecents(); ginkEmit('pin_session', {id: id, pinned: !!s.pinned}); }
+    else if (what === 'archive') { closeMenus(); ginkEmit('archive_session', {id: id, archived: true}); }
     else if (what === 'export') { closeMenus(); ginkEmit('export_session', id); }
   });
   function promptRename(id, current) {

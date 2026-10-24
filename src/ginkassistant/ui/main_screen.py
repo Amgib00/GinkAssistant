@@ -955,6 +955,11 @@ def build_main_screen(app: toga.App, email: str):
         elif kind == "pin_session" and isinstance(value, dict) and value.get("id"):
             brain.history.set_pinned(value["id"], bool(value.get("pinned")))
             refresh_sidebar()
+        elif kind == "archive_session" and isinstance(value, dict) and value.get("id"):
+            brain.history.set_archived(value["id"], bool(value.get("archived", True)))
+            if value.get("archived", True) and value["id"] == current_session["id"]:
+                on_select_session(None)                # leave the chat you just archived (like New chat)
+            refresh_sidebar()
         elif kind == "export_session" and value:
             await export_chat(str(value))
         elif kind == "branch" and value is not None:
@@ -1595,8 +1600,10 @@ def build_main_screen(app: toga.App, email: str):
         meta = brain.history.get_meta()
         items = [{"id": sid, "title": (meta.get(sid, {}).get("title") or _chat_title(msgs)),
                   "pinned": meta.get(sid, {}).get("pinned", False), "current": sid == current_session["id"]}
-                 for _ts, sid, msgs in rows]
+                 for _ts, sid, msgs in rows
+                 if not meta.get(sid, {}).get("archived") or sid == current_session["id"]]   # archived: not in Recents
         asyncio.create_task(web_chat.set_sessions(items))
+    settings.on_history_changed = refresh_sidebar
 
     def on_log_out(widget=None):
         # Lives in Settings now (removed from the main screen header).

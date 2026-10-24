@@ -80,6 +80,7 @@ openspec/config.yaml
 openspec/specs/accounts-security/spec.md
 openspec/specs/agent-mode/spec.md
 openspec/specs/app-updates/spec.md
+openspec/specs/chats-storage-limits/spec.md
 openspec/specs/developer-api/spec.md
 openspec/specs/email-delivery/spec.md
 openspec/specs/languages-voice/spec.md
@@ -138,6 +139,7 @@ src/ginkassistant/services/server_config.py
 src/ginkassistant/services/shazam_engine.py
 src/ginkassistant/services/skills.py
 src/ginkassistant/services/song_recognition.py
+src/ginkassistant/services/storage.py
 src/ginkassistant/services/sync.py
 src/ginkassistant/services/updates.py
 src/ginkassistant/services/video_search.py
@@ -180,6 +182,7 @@ tests/test_android_32bit.py
 tests/test_android_startup.py
 tests/test_android_voice.py
 tests/test_app_icons.py
+tests/test_archive_storage_limits.py
 tests/test_billing.py
 tests/test_chat_extras.py
 tests/test_check_project.py
