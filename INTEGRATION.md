@@ -1058,3 +1058,20 @@ New services/live_info.py (all free, no API keys):
 - OpenSpec proposals awaiting the owner: add-phone-signin (provider + budget + SIM-swap note),
   add-plan-tiers (prices, currencies, limits; Max / Team), add-parental-controls (age, safety
   notices, legal review). All validate strictly.
+
+## Release failures #19-#33 + CLI to PyPI (diagnosed from the GitHub pages)
+- Every failed Release stopped in the `check` job (no build failed): old commands with an old
+  version (#19 v0.1.3, #23 v0.1.7, #27 v0.1.5), a mistyped one (#21), and releases started while
+  GitHub still had the previous code (#25, #33: pyproject 0.1.13 vs v0.1.14).
+- Root cause of the last kind: publish_to_github.sh ASKED "Push this to main?" -- with the update
+  block pasted at once, `read` took the NEXT pasted line as the answer -> "Nothing pushed." (exit 0).
+  Now: no questions by default (--ask brings them back; branches never deleted without it), commit
+  message "Gink <version>" + its CHANGELOG section (was always the same old text), push failure and
+  "GitHub doesn't have the version" both STOP with exit 1, success prints "GitHub now has version X"
+  and the release command; the stale first-upload reminders are gone.
+- release.yml: version optional (empty -> pyproject.toml's), a clearer mismatch message, publish job
+  needs `check` to read its version output.
+- CLI to PyPI #1: build + tests passed; PyPI answered invalid-publisher (no matching trusted publisher
+  for repo:Amgib00/GinkAssistant:environment:pypi). Owner fixes it on pypi.org; name gink-ai is free.
+- tests/test_release_tooling.py runs the publish script against a stand-in GitHub with more pasted
+  lines, and the check step in its four cases.

@@ -14,6 +14,7 @@
 set -euo pipefail
 
 REPO="${GINK_REPO:-https://github.com/amgib00/ginkassistant.git}"
+REPO_SLUG=$(echo "$REPO" | sed -E 's#^https://github.com/##; s#\.git$##')
 BRANCH="${GINK_BRANCH:-main}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PUBLISH=(.github .gitignore .env.example README.md SECURITY.md INTEGRATION.md LICENSE CHANGELOG.md AGENTS.md openspec cli pyproject.toml
@@ -21,8 +22,12 @@ PUBLISH=(.github .gitignore .env.example README.md SECURITY.md INTEGRATION.md LI
 KEEP_FROM_REPO=(LICENSE .github/ISSUE_TEMPLATE)      # kept as they are on GitHub
 SECRET_RE='hf_[A-Za-z0-9]{30,}|gsk_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|sk-(proj-)?[A-Za-z0-9]{32,}|sk_live_[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_-]{35}|-----BEGIN [A-Z ]*PRIVATE KEY'
 
+# No questions by default: the update commands are usually pasted all at once, and a question would
+# swallow the NEXT pasted line as its answer ("Nothing pushed."). --ask brings the questions back.
+ASK=0
+for arg in "$@"; do [ "$arg" = "--ask" ] && ASK=1; done
 ask() {                                   # ask "question" -> 0 for yes
-  if [ "${ASSUME_YES:-}" = "1" ]; then return 0; fi
+  if [ "$ASK" != "1" ] || [ "${ASSUME_YES:-}" = "1" ]; then return 0; fi
   read -r -p "$1 [y/N] " a; [ "$a" = "y" ] || [ "$a" = "Y" ]
 }
 
@@ -95,27 +100,34 @@ echo "Old files being removed (first 25):"
 git diff --cached --name-only --diff-filter=D | head -25 | sed 's/^/   - /'
 echo "Kept from GitHub: ${KEEP_FROM_REPO[*]}"
 echo "Size of the new version: $(du -sh --exclude=.git . 2>/dev/null | cut -f1 || du -sh . | cut -f1)"
-if [ "$ADDED$CHANGED$REMOVED" = "000" ]; then echo "GitHub already has exactly this version."; exit 0; fi
+VERSION=$(grep -m1 '^version' "$ROOT/pyproject.toml" | sed -E 's/.*"(.*)".*/\1/')
+if [ "$ADDED$CHANGED$REMOVED" = "000" ]; then echo "GitHub already has exactly this version ($VERSION)."; exit 0; fi
 echo
-ask "Push this to $BRANCH on GitHub?" || { echo "Nothing pushed."; exit 0; }
+ask "Push version $VERSION to $BRANCH on GitHub?" || { echo "Nothing pushed."; exit 1; }
 
-git commit --quiet -m "Replace the old PyQt version with Gink (Toga + Briefcase)
-
-Current app: macOS, Windows, Linux, Android, iOS. Tests + Android/iOS builds on
-GitHub Actions. Old code, compiled files and the old workflow removed."
-git push --quiet origin "HEAD:$BRANCH"
-echo "Pushed. GitHub -> Actions shows the tests running."
+git commit --quiet -m "Gink $VERSION" -m "$(awk '/^## /{n++} n==1' "$ROOT/CHANGELOG.md" | head -30)"
+if ! git push --quiet origin "HEAD:$BRANCH"; then
+  echo; echo "STOP: the push to GitHub failed (see the message above). Nothing was published, so don't run Release yet."
+  exit 1
+fi
+# make sure GitHub really has it before anyone starts a release
+git fetch --quiet origin "$BRANCH"
+ON_GITHUB=$(git show "origin/$BRANCH:pyproject.toml" | grep -m1 '^version' | sed -E 's/.*"(.*)".*/\1/')
+if [ "$ON_GITHUB" != "$VERSION" ]; then
+  echo; echo "STOP: GitHub has version $ON_GITHUB, not $VERSION. Don't run Release yet."; exit 1
+fi
+echo
+echo "================================================================"
+echo "  GitHub now has version $VERSION."
+echo "  Release it:  gh workflow run release.yml -R ${REPO_SLUG:-<owner>/<repo>} -f version=v$VERSION"
+echo "================================================================"
 
 # 5) old Dependabot branches (made from the old version)
 OLD=$(git ls-remote --heads origin 'dependabot/*' | sed 's#.*refs/heads/##')
 if [ -n "$OLD" ]; then
   echo; echo "Old Dependabot branches:"; echo "$OLD" | sed 's/^/   - /'
-  if ask "Delete these branches on GitHub?"; then
+  if [ "$ASK" = "1" ] && ask "Delete these branches on GitHub?"; then
     for b in $OLD; do git push --quiet origin --delete "$b" && echo "   deleted $b"; done
   fi
 fi
 
-echo
-echo "Still to do in your browser:"
-echo " 1. Revoke the old Hugging Face token: huggingface.co -> Settings -> Access Tokens."
-echo " 2. Close the old pull requests: $(echo "$REPO" | sed 's/\.git$//')/pulls"

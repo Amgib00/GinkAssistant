@@ -1,5 +1,6 @@
 # Publishes a GitHub Release with the Mac and Android installers.
-# Run it: GitHub -> Actions -> "Release" -> Run workflow -> type a version (e.g. v0.1.0).
+# Run it: GitHub -> Actions -> "Release" -> Run workflow (leave the version empty to release the version in
+# pyproject.toml), or: gh workflow run release.yml -R <owner>/<repo> [-f version=vX.Y.Z]
 # The files keep fixed names, so these links always point to the NEWEST release (the website uses them):
 #   https://github.com/<owner>/<repo>/releases/latest/download/Gink-mac-arm64.dmg
 #   https://github.com/<owner>/<repo>/releases/latest/download/Gink-mac-x86_64.dmg
@@ -10,8 +11,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version, like v0.1.0"
-        required: true
+        description: "Version like v0.1.0 -- leave empty to use the version in pyproject.toml"
+        required: false
+        default: ""
 
 permissions:
   contents: write        # create the release and its tag
@@ -19,20 +21,24 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
     steps:
       - uses: actions/checkout@v7
       - name: Check the version (format, pyproject.toml, not released yet)
+        id: v
         env:
           VERSION: ${{ inputs.version }}
           GH_TOKEN: ${{ github.token }}
         run: |
+          IN_PYPROJECT=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          if [ -z "$VERSION" ]; then VERSION="v$IN_PYPROJECT"; echo "No version given: using pyproject.toml's $VERSION"; fi
           if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Version must look like v0.1.0 (got: $VERSION)"; exit 1
           fi
           # the apps compare their own version with the release's: they must match
-          IN_PYPROJECT=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
           if [ "v$IN_PYPROJECT" != "$VERSION" ]; then
-            echo "::error::pyproject.toml says version $IN_PYPROJECT, but you asked to release $VERSION. Change version = \"...\" in BOTH places in pyproject.toml (and add it to CHANGELOG.md), publish, then run Release again."
+            echo "::error::The code on GitHub is version $IN_PYPROJECT, but you asked to release $VERSION. Usually the new code wasn't published yet: run 'bash tools/publish_to_github.sh' and check it says 'GitHub now has version ${VERSION#v}', then run Release again (the version can be left out)."
             exit 1
           fi
           # stop now, not after 30 minutes of building
@@ -42,6 +48,7 @@ jobs:
           fi
           grep -q "^## ${VERSION#v} " CHANGELOG.md || echo "::warning::CHANGELOG.md has no '## ${VERSION#v}' section yet."
           echo "OK: releasing $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
   mac:
     needs: check
     uses: ./.github/workflows/macos.yml
@@ -55,7 +62,7 @@ jobs:
     needs: check
     uses: ./.github/workflows/linux.yml
   publish:
-    needs: [mac, android, windows, linux]
+    needs: [check, mac, android, windows, linux]      # check: for its version output
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/download-artifact@v8
@@ -68,7 +75,7 @@ jobs:
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ needs.check.outputs.version }}
         run: |
           cat > notes.md <<'NOTES'
           ## Download Gink
