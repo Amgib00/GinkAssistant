@@ -75,6 +75,15 @@ openspec/changes/add-connected-apps/design.md
 openspec/changes/add-connected-apps/proposal.md
 openspec/changes/add-connected-apps/specs/connected-apps/spec.md
 openspec/changes/add-connected-apps/tasks.md
+openspec/changes/add-parental-controls/proposal.md
+openspec/changes/add-parental-controls/specs/parental-controls/spec.md
+openspec/changes/add-parental-controls/tasks.md
+openspec/changes/add-phone-signin/proposal.md
+openspec/changes/add-phone-signin/specs/phone-signin/spec.md
+openspec/changes/add-phone-signin/tasks.md
+openspec/changes/add-plan-tiers/proposal.md
+openspec/changes/add-plan-tiers/specs/plan-tiers/spec.md
+openspec/changes/add-plan-tiers/tasks.md
 openspec/changes/archive/.gitkeep
 openspec/config.yaml
 openspec/specs/accounts-security/spec.md
@@ -149,6 +158,7 @@ src/ginkassistant/services/wake_word.py
 src/ginkassistant/services/web_app/admin.html
 src/ginkassistant/services/web_app/auth.html
 src/ginkassistant/services/web_app/console.html
+src/ginkassistant/services/web_app/device.html
 src/ginkassistant/services/web_app/index.html
 src/ginkassistant/ui/__init__.py
 src/ginkassistant/ui/agent_ui.py
@@ -194,6 +204,7 @@ tests/test_connected_apps.py
 tests/test_dark_theme.py
 tests/test_dev_platform.py
 tests/test_developer_api.py
+tests/test_device_signin.py
 tests/test_email_delivery.py
 tests/test_formatting_security.py
 tests/test_gink_cloud.py

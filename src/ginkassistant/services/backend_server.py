@@ -2666,10 +2666,9 @@ def api_keys_list(request: Request):
                      for r in rows], "per_minute": API_PER_MINUTE}
 
 
-@app.post("/account/api-keys")
-def api_keys_create(request: Request, data: dict = Body(default={})):
-    email = _email_from_auth(request)
-    name = " ".join(str((data or {}).get("name") or "My key").split())[:60] or "My key"
+def _create_api_key(email: str, name: str) -> dict:
+    """A new key for the account (shown once; only its hash is kept). Settings and device sign-in use it."""
+    name = " ".join(str(name or "My key").split())[:60] or "My key"
     key = API_KEY_PREFIX + secrets.token_urlsafe(32)
     key_id = secrets.token_hex(8)
     with _db_lock:
@@ -2685,6 +2684,11 @@ def api_keys_create(request: Request, data: dict = Body(default={})):
             con.close()
     _security_event(email, "api_key_created", name)
     return {"id": key_id, "name": name, "key": key, "note": "Copy this key now: it won't be shown again."}
+
+
+@app.post("/account/api-keys")
+def api_keys_create(request: Request, data: dict = Body(default={})):
+    return _create_api_key(_email_from_auth(request), (data or {}).get("name") or "My key")
 
 
 @app.delete("/account/api-keys/{key_id}")
@@ -4213,6 +4217,7 @@ SECURITY_TEXT = {
     "app_connected": "App connected", "app_disconnected": "App disconnected",
     "lockdown_on": "Lockdown mode turned on", "lockdown_off": "Lockdown mode turned off",
     "passkey_added": "Passkey added", "passkey_removed": "Passkey removed",
+    "device_approved": "Device sign-in approved",
 }
 
 
@@ -4429,3 +4434,103 @@ def passkey_signin_finish(request: Request, data: dict = Body(...)):
     _pk_db(lambda con: con.execute("UPDATE passkeys SET sign_count=?, last_used=? WHERE id=?", (v.new_sign_count, time.time(), cid)))
     user = _get_user(email) or {"name": ""}
     return _token_response(email, user.get("name") or "")     # device + fingerprint/face/PIN: two factors already
+
+
+# ================================================================ Device sign-in (the CLI: "gink login")
+# Like RFC 8628: the CLI shows a short code, the person approves it in a signed-in browser at /device,
+# and the CLI receives a new API key once. Codes expire in 10 minutes; guessing is limited.
+DEVICE_ALPHABET = "BCDFGHJKLMNPQRSTVWXZ"          # no vowels (no words), nothing easy to confuse
+_device_codes = {}                                 # device_code -> entry
+_device_by_user = {}                               # user_code -> device_code
+_device_starts, _device_lookups = {}, {}
+
+
+def _device_sweep():
+    now = time.time()
+    for dc in [d for d, e in _device_codes.items() if now - e["created"] > 600]:
+        _device_by_user.pop(_device_codes[dc]["user_code"], None)
+        _device_codes.pop(dc, None)
+
+
+@app.post("/auth/device/start")
+def device_start(request: Request, data: dict = Body(default={})):
+    ip = request.client.host if request.client else "?"
+    now = time.time()
+    with _otp_lock:
+        _device_sweep()
+        recent = [t for t in _device_starts.get(ip, []) if now - t < 600]
+        if len(recent) >= 10:
+            raise HTTPException(status_code=429, detail="Too many sign-in attempts. Try again in a few minutes.")
+        _device_starts[ip] = recent + [now]
+        user_code = "".join(secrets.choice(DEVICE_ALPHABET) for _ in range(8))
+        user_code = user_code[:4] + "-" + user_code[4:]
+        device_code = secrets.token_urlsafe(32)
+        client = " ".join(str((data or {}).get("client") or "gink CLI").split())[:60]
+        _device_codes[device_code] = {"user_code": user_code, "client": client, "created": now, "status": "pending",
+                                      "key": None, "email": None, "polled": 0.0}
+        _device_by_user[user_code] = device_code
+    base = _public_base(request).rstrip("/")
+    return {"device_code": device_code, "user_code": user_code, "verification_uri": base + "/device",
+            "verification_uri_complete": base + "/device?code=" + user_code, "expires_in": 600, "interval": 5}
+
+
+def _device_entry(request: Request, user_code: str):
+    email = _email_from_auth(request)
+    now = time.time()
+    with _otp_lock:
+        recent = [t for t in _device_lookups.get(email, []) if now - t < 600]
+        if len(recent) >= 20:
+            raise HTTPException(status_code=429, detail="Too many codes tried. Wait a few minutes.")
+        _device_lookups[email] = recent + [now]
+        _device_sweep()
+        code = re.sub(r"[^A-Z]", "", str(user_code or "").upper())
+        dc = _device_by_user.get(code[:4] + "-" + code[4:8]) if len(code) == 8 else None
+        entry = _device_codes.get(dc) if dc else None
+    if not entry or entry["status"] != "pending":
+        raise HTTPException(status_code=404, detail="That code isn't valid or has expired. Check it, or start again in your terminal.")
+    return email, entry
+
+
+@app.post("/auth/device/lookup")
+def device_lookup(request: Request, data: dict = Body(...)):
+    _email, entry = _device_entry(request, data.get("user_code"))
+    return {"client": entry["client"], "created": entry["created"]}
+
+
+@app.post("/auth/device/approve")
+def device_approve(request: Request, data: dict = Body(...)):
+    email, entry = _device_entry(request, data.get("user_code"))
+    if not data.get("approve"):
+        entry["status"] = "denied"
+        return {"status": "denied"}
+    made = _create_api_key(email, f"{entry['client']}"[:60])
+    entry.update(status="approved", key=made["key"], email=email)
+    _security_event(email, "device_approved", entry["client"])
+    return {"status": "approved", "key_name": made["name"]}
+
+
+@app.post("/auth/device/poll")
+def device_poll(data: dict = Body(...)):
+    dc = str((data or {}).get("device_code") or "")
+    now = time.time()
+    with _otp_lock:
+        _device_sweep()
+        entry = _device_codes.get(dc)
+        if not entry:
+            return {"status": "expired"}
+        if now - entry["polled"] < 4:                 # politely: once every 5 seconds
+            return {"status": "slow_down"}
+        entry["polled"] = now
+        if entry["status"] == "approved":             # the key is handed over once
+            _device_codes.pop(dc, None); _device_by_user.pop(entry["user_code"], None)
+            return {"status": "approved", "api_key": entry["key"], "email": entry["email"]}
+        if entry["status"] == "denied":
+            _device_codes.pop(dc, None); _device_by_user.pop(entry["user_code"], None)
+            return {"status": "denied"}
+    return {"status": "pending"}
+
+
+@app.get("/device", response_class=HTMLResponse)
+def device_page():
+    with open(os.path.join(WEB_APP_DIR, "device.html"), encoding="utf-8") as f:
+        return HTMLResponse(f.read(), headers=_WEB_HEADERS)

@@ -6,7 +6,8 @@ gink -- Gink in your terminal (the Gink Developer API, OpenAI-compatible).
     cat file | gink "summarise"     send a file's text with the question
     gink -s "question"              search the web (answers list their sources)
     gink --image "prompt" -o x.png  make an image
-    gink login | logout | models | version
+    gink login                      sign in through your browser (or: gink login --key to paste a key)
+    gink logout | models | version
 """
 import argparse
 import base64
@@ -224,7 +225,51 @@ def chat(key: str, base: str, model: str, system: str = "") -> int:
             history.pop()
 
 
-def login(base: str) -> int:
+def device_login(base: str, open_browser: bool = True, sleep=time.sleep, say=print) -> str:
+    """Sign in through the browser: show a code, the person approves it at /device, we get a key."""
+    import socket
+    import httpx
+    root = base[:-3] if base.endswith("/v1") else base
+    client = f"gink CLI on {socket.gethostname()[:40]}"
+    try:
+        with httpx.Client(timeout=60) as c:
+            r = c.post(root + "/auth/device/start", json={"client": client})
+            if r.status_code != 200:
+                raise _explain(r)
+            d = r.json()
+            say(f"To sign in, open  {d['verification_uri']}  and enter:  {d['user_code']}")
+            if open_browser:
+                try:
+                    import webbrowser
+                    webbrowser.open(d["verification_uri_complete"])
+                except Exception:
+                    pass
+            say("Waiting for you to approve in the browser\u2026  (Ctrl+C to cancel)")
+            deadline = time.time() + int(d.get("expires_in", 600))
+            while time.time() < deadline:
+                sleep(int(d.get("interval", 5)))
+                p = c.post(root + "/auth/device/poll", json={"device_code": d["device_code"]}).json()
+                if p.get("status") == "approved":
+                    return p["api_key"]
+                if p.get("status") == "denied":
+                    raise GinkError("The sign-in was denied in the browser.")
+                if p.get("status") == "expired":
+                    break
+    except httpx.HTTPError as exc:
+        raise _network(exc)
+    raise GinkError("The code expired. Run gink login again.")
+
+
+def login(base: str, paste_key: bool = False) -> int:
+    if not paste_key:
+        key = device_login(base)
+        cfg = load_config()
+        cfg["api_key"] = key
+        if base != DEFAULT_BASE:
+            cfg["base_url"] = base
+        save_config(cfg)
+        print("\u2713 Signed in. Try: gink \"hello\"")
+        return 0
     print("Paste your Gink API key (Gink > Settings > Developers > Create key). It starts with gink_live_")
     key = getpass.getpass("API key: ").strip()
     if not key.startswith("gink_live_"):
@@ -245,7 +290,7 @@ def main(argv=None) -> int:
     key, base = settings()
     try:
         if argv[:1] == ["login"]:
-            return login(base)
+            return login(base, paste_key="--key" in argv)
         if argv[:1] == ["logout"]:
             cfg = load_config()
             cfg.pop("api_key", None)

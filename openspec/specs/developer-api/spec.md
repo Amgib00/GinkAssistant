@@ -65,3 +65,10 @@ POST /v1/batches SHALL accept up to 100 chat requests (each with a unique custom
 #### Scenario: Someone else's batch
 - **WHEN** another account asks for a batch's results or cancels it
 - **THEN** the answer is 404
+
+### Requirement: Device sign-in for the CLI
+`gink login` SHALL sign in through the browser: the CLI shows a short code (no vowels, expiring in 10 minutes), the signed-in person sees at /device what is asking with a warning to continue only if they started it, and on approval the CLI receives a new API key exactly once; code guessing and starts SHALL be limited and approvals recorded in Security history.
+
+#### Scenario: Someone else's code
+- **WHEN** a person is asked by someone else to enter a code
+- **THEN** the page tells them to choose Deny, and Deny gives the device nothing

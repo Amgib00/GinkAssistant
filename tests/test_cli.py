@@ -85,7 +85,7 @@ def test_chat_and_login(server, tmp_path, monkeypatch, capsys):
 
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path)); monkeypatch.setenv("GINK_BASE_URL", base)
     monkeypatch.setattr(m.getpass, "getpass", lambda prompt="": server)
-    assert m.login(base) == 0
+    assert m.login(base, paste_key=True) == 0                                   # "gink login --key"
     path = m.config_path()
     assert json.load(open(path))["api_key"] == server and stat.S_IMODE(os.stat(path).st_mode) == 0o600
 

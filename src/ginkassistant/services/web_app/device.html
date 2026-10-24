@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Connect a device to Gink</title>
+<style>
+  :root { --bg:#F6F7F4; --card:#FFFFFF; --text:#151D23; --muted:#5D6B64; --line:#E1E5E0; --accent:#3F7D12; --bad:#C42B1C; --ok:#2E7D32;
+          --warnbg:#FFF4E5; --warn:#8A4B00; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0F1519; --card:#18222A; --text:#E9EFEA; --muted:#9AABA3; --line:rgba(233,239,234,.14);
+          --accent:#A8F03C; --bad:#FF8A80; --ok:#7BD88F; --warnbg:rgba(255,181,71,.12); --warn:#FFB547; } }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg); color:var(--text);
+         font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; padding:20px; }
+  .card { width:100%; max-width:440px; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:28px; }
+  h1 { font-size:22px; margin:0 0 6px; } .sub { color:var(--muted); margin:0 0 18px; }
+  input { width:100%; font:700 22px/1 ui-monospace,Menlo,monospace; letter-spacing:4px; text-align:center; text-transform:uppercase;
+          padding:14px; border-radius:12px; border:1.5px solid var(--line); background:var(--bg); color:var(--text); }
+  button { font:inherit; font-weight:700; padding:12px; border-radius:999px; border:0; cursor:pointer; width:100%; margin-top:12px; }
+  .go { background:var(--text); color:var(--bg); } .no { background:transparent; color:var(--text); box-shadow:inset 0 0 0 1.5px var(--line); }
+  .warn { background:var(--warnbg); color:var(--warn); border-radius:12px; padding:12px 14px; font-size:14px; margin:16px 0 4px; }
+  .who { font-size:17px; font-weight:700; } .msg { min-height:22px; margin-top:12px; font-size:14px; } .err { color:var(--bad); } .ok { color:var(--ok); }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<div class="card">
+  <form id="step-code">
+    <h1>Connect a device</h1>
+    <p class="sub">Enter the code shown in your terminal or app.</p>
+    <label for="code" class="sub" style="display:block;margin:0 0 6px">Code</label>
+    <input id="code" autocomplete="one-time-code" maxlength="9" placeholder="ABCD-EFGH" required>
+    <button class="go" type="submit">Continue</button>
+  </form>
+
+  <div id="step-approve" hidden>
+    <h1>Allow this device?</h1>
+    <p class="sub">It will get its own API key for your account. You can revoke it anytime in the developer console.</p>
+    <div class="who" id="who"></div>
+    <div class="warn"><b>Only continue if you started this yourself</b>, just now, on your own device. If someone sent you this code or asked you to enter it, choose Deny.</div>
+    <button class="go" id="approve">Approve</button>
+    <button class="no" id="deny">Deny</button>
+  </div>
+
+  <div id="step-done" hidden><h1 id="done-title"></h1><p class="sub" id="done-text"></p></div>
+  <p class="msg" id="msg" role="alert" aria-live="assertive"></p>
+</div>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var token = ""; try { token = localStorage.getItem("gink_token") || sessionStorage.getItem("gink_token") || ""; } catch (e) {}
+  var code = (new URLSearchParams(location.search).get("code") || "").toUpperCase();
+  if (!token) { location.replace("/login?next=" + encodeURIComponent("/device" + (code ? "?code=" + code : ""))); return; }
+  function say(t, ok) { $("msg").textContent = t || ""; $("msg").className = "msg " + (ok ? "ok" : "err"); }
+  function post(path, body) {
+    return fetch(path, { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify(body) })
+      .then(function (r) {
+        if (r.status === 401) { location.replace("/login?next=" + encodeURIComponent("/device?code=" + $("code").value)); throw new Error(""); }
+        return r.json().then(function (j) { if (!r.ok) throw new Error(typeof j.detail === "string" ? j.detail : "Something went wrong."); return j; });
+      });
+  }
+  $("code").value = code;
+  $("code").addEventListener("input", function () {
+    var v = this.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 8);
+    this.value = v.length > 4 ? v.slice(0, 4) + "-" + v.slice(4) : v;
+  });
+  $("step-code").onsubmit = function (e) {
+    e.preventDefault(); say("");
+    post("/auth/device/lookup", { user_code: $("code").value }).then(function (j) {
+      $("who").textContent = j.client; $("step-code").hidden = true; $("step-approve").hidden = false;
+    }).catch(function (err) { if (err.message) say(err.message); });
+  };
+  function decide(approve) {
+    $("approve").disabled = $("deny").disabled = true;
+    post("/auth/device/approve", { user_code: $("code").value, approve: approve }).then(function (j) {
+      $("step-approve").hidden = true; $("step-done").hidden = false;
+      $("done-title").textContent = approve ? "Device connected" : "Denied";
+      $("done-text").textContent = approve ? "Go back to your terminal \u2014 it's signed in. Its key is \u201c" + j.key_name + "\u201d."
+                                           : "Nothing was shared. You can close this page.";
+    }).catch(function (err) { $("approve").disabled = $("deny").disabled = false; if (err.message) say(err.message); });
+  }
+  $("approve").onclick = function () { decide(true); };
+  $("deny").onclick = function () { decide(false); };
+  if (code.replace(/[^A-Z]/g, "").length === 8) $("step-code").requestSubmit();
+})();
+</script>
+</body>
+</html>

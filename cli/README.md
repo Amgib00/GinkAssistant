@@ -2,7 +2,7 @@
 
 ```bash
 pip install gink-ai
-gink login                                   # paste your API key (Gink > Settings > Developers)
+gink login                                   # opens your browser to approve (or: gink login --key)
 gink "What's the weather in Dakar?"
 gink                                         # chat: /new, /model NAME, /models, /search on|off, /exit
 cat notes.txt | gink "summarise this"

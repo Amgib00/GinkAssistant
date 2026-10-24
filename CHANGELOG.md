@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.14 (October 2026)
+
+- "gink login" signs in through your browser: approve a short code at /device and the CLI gets
+  its own key (gink CLI 0.2.0; "gink login --key" still lets you paste a key)
+
 ## 0.1.13 (October 2026)
 
 - Passkeys: sign in on the web with your fingerprint, face or device PIN -- no password, and

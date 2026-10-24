@@ -1046,3 +1046,15 @@ New services/live_info.py (all free, no API keys):
   Settings > Account > Passkeys (add on web; list/remove on web + apps). Verified end to end with
   Chromium's virtual authenticator (real WebAuthn crypto). WebAuthn needs "localhost" or a real
   host name -- never an IP address.
+
+## Latest (0.1.14): device sign-in + decisions as proposals
+- Device sign-in (RFC 8628-like): POST /auth/device/start (10/10 min per IP) -> user_code
+  XXXX-XXXX from DEVICE_ALPHABET (no vowels), 10 min; /device page (signed-in; else /login?next=)
+  -> /auth/device/lookup (20 tries/10 min per account) -> /auth/device/approve (creates a key via the
+  new shared _create_api_key) -> /auth/device/poll (slow_down < 4 s; key handed over ONCE).
+  Security history "Device sign-in approved". CLI 0.2.0: gink login = browser flow (opens
+  verification_uri_complete), --key = paste. Refactor caught: the route decorator first landed on the
+  helper (would have broken POST /account/api-keys) -- fixed before tests.
+- OpenSpec proposals awaiting the owner: add-phone-signin (provider + budget + SIM-swap note),
+  add-plan-tiers (prices, currencies, limits; Max / Team), add-parental-controls (age, safety
+  notices, legal review). All validate strictly.
