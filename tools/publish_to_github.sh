@@ -13,7 +13,7 @@
 # or a personal access token when git asks for a password).
 set -euo pipefail
 
-REPO="${GINK_REPO:-https://github.com/amgib00/ginkassistant.git}"
+REPO="${GINK_REPO:-https://github.com/Amgib00/GinkAssistant.git}"
 REPO_SLUG=$(echo "$REPO" | sed -E 's#^https://github.com/##; s#\.git$##')
 BRANCH="${GINK_BRANCH:-main}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

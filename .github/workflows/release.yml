@@ -18,6 +18,13 @@ on:
 permissions:
   contents: write        # create the release and its tag
 
+# One release at a time: a second run (e.g. the command run twice) waits for the first, then its
+# check stops it in seconds ("already released") -- runs #34 and #35 both built v0.1.14 at once and
+# the slower one failed at the very end.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   check:
     runs-on: ubuntu-24.04
@@ -97,5 +104,9 @@ jobs:
           **Linux:** `sudo apt install ./Gink-linux-amd64.deb` (installs what Gink needs automatically).
           This is a test build.
           NOTES
+          if gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::$VERSION was released by another run while this one was building. Nothing is wrong with Gink: the release already exists."
+            exit 1
+          fi
           gh release create "$VERSION" dist/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
             --title "Gink $VERSION" --notes-file notes.md

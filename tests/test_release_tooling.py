@@ -43,6 +43,8 @@ def test_release_check_step(tmp_path):
     wf = yaml.safe_load(open(os.path.join(ROOT, ".github", "workflows", "release.yml")))
     step = [s for s in wf["jobs"]["check"]["steps"] if s.get("id") == "v"][0]
     assert "check" in wf["jobs"]["publish"]["needs"]                               # it reads check's version
+    assert wf["concurrency"] == {"group": "release", "cancel-in-progress": False}  # one release at a time (#34/#35)
+    assert "was released by another run" in wf["jobs"]["publish"]["steps"][-1]["run"]
     (tmp_path / "check.sh").write_text(step["run"])
     (tmp_path / "pyproject.toml").write_text('[project]\nversion = "1.2.3"\n')
     (tmp_path / "CHANGELOG.md").write_text("## 1.2.3 (x)\n")

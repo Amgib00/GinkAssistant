@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.15 (October 2026)
+
+- Releases are more reliable: publishing works when the update commands are pasted all at once,
+  releases run one at a time, and the release reads its version from the code
+
 ## 0.1.14 (October 2026)
 
 - "gink login" signs in through your browser: approve a short code at /device and the CLI gets
@@ -70,6 +75,8 @@ Security fixes from an audit of every server route:
   "Made with Gink"
 
 ## 0.1.5 (October 2026)
+
+(Not released on its own -- these changes reached everyone in 0.1.6.)
 
 - Gink in your terminal: `pip install gink-ai`, then `gink "question"`, a chat (`gink`), piped files,
   web search (`-s`) and images (`--image`), with your Developer API key

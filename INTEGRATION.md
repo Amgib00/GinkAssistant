@@ -1075,3 +1075,9 @@ New services/live_info.py (all free, no API keys):
   for repo:Amgib00/GinkAssistant:environment:pypi). Owner fixes it on pypi.org; name gink-ai is free.
 - tests/test_release_tooling.py runs the publish script against a stand-in GitHub with more pasted
   lines, and the check step in its four cases.
+- Runs #34/#35: the release command ran twice for v0.1.14 (two uploads, a05949d and 61f0ea3); both
+  passed `check`, built in parallel, #35 created the release, #34's `gh release create` then failed
+  (exists). Fix: workflow-level `concurrency: release` (queued, not cancelled) + an explicit
+  "released by another run" message. v0.1.5 deliberately NOT created now: it would become
+  "latest" and the website's /releases/latest/download links would serve old installers; its
+  changes shipped in 0.1.6 (noted in CHANGELOG). Publish script uses github.com/Amgib00/GinkAssistant.
