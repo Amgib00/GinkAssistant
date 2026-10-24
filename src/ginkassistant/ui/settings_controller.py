@@ -213,6 +213,12 @@ class SettingsController:
             except Exception:
                 extra_lists["connected"] = []
                 extra_info["connected_error"] = "Connected apps aren't available right now."
+        if token and panel == "account":                      # phone number
+            try:
+                extra_info["phone"] = dict(await asyncio.wait_for(api.phone(token), timeout=8),
+                                           pending=getattr(self, "_phone_pending", ""))
+            except Exception:
+                pass
         if token and panel == "account":                      # passkeys (added on the web; listed and removed here too)
             try:
                 extra_lists["passkeys"] = await asyncio.wait_for(api.passkeys(token), timeout=8)
@@ -458,6 +464,40 @@ class SettingsController:
         if self.on_history_changed:
             self.on_history_changed()
         await self.refresh("privacy")
+
+    async def _a_phone_send(self, phone):
+        token = getattr(self.app, "session_token", None)
+        if not token:
+            return
+        try:
+            await ApiClient(self.app.state.base_url).phone_send(token, str(phone or ""))
+        except ApiError as exc:
+            return await self.web.settings_toast(str(exc))
+        self._phone_pending = str(phone).strip()
+        await self.web.settings_toast("Code sent by SMS.")
+        await self.refresh("account")
+
+    async def _a_phone_verify(self, code):
+        token = getattr(self.app, "session_token", None)
+        if not token or not getattr(self, "_phone_pending", ""):
+            return
+        try:
+            await ApiClient(self.app.state.base_url).phone_verify(token, self._phone_pending, str(code or ""))
+        except ApiError as exc:
+            return await self.web.settings_toast(str(exc))
+        self._phone_pending = ""
+        await self.web.settings_toast("Phone number added.")
+        await self.refresh("account")
+
+    async def _a_phone_remove(self, _):
+        token = getattr(self.app, "session_token", None)
+        if token:
+            try:
+                await ApiClient(self.app.state.base_url).phone_remove(token)
+            except ApiError as exc:
+                return await self.web.settings_toast(str(exc))
+            await self.web.settings_toast("Phone number removed.")
+            await self.refresh("account")
 
     async def _a_passkey_remove(self, pid):
         token = getattr(self.app, "session_token", None)

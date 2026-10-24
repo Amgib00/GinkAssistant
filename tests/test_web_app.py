@@ -105,3 +105,12 @@ def test_the_shadow_check_itself_catches_the_old_bug():
     import re
     pattern = "^" + re.sub(r"\{[^}]+\}", "[^/]+", "/auth/{provider}/begin") + "$"
     assert re.match(pattern, "/auth/passkey/begin") and not re.match(pattern, "/auth/passkey/signin/begin")
+
+
+def test_no_server_function_is_defined_twice():
+    """A second `_check_code` (phone) silently replaced the email one and froze email sign-up: Python
+    keeps the last definition, and pyflakes stays quiet when the first one is used."""
+    import ast, collections
+    tree = ast.parse(open(os.path.join(ROOT, "src", "ginkassistant", "services", "backend_server.py"), encoding="utf-8").read())
+    names = collections.Counter(n.name for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)))
+    assert [n for n, c in names.items() if c > 1] == []

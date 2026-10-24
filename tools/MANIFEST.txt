@@ -219,6 +219,7 @@ tests/test_model_upgrade.py
 tests/test_natural_voice.py
 tests/test_offline_song_engine.py
 tests/test_owner_dashboard.py
+tests/test_phone_signin.py
 tests/test_release_tooling.py
 tests/test_screens_and_server.py
 tests/test_security_lockdown_style.py

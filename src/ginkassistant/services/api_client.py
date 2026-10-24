@@ -251,6 +251,18 @@ class ApiClient:
     async def security_history(self, token: str) -> list:
         return (await self._authed("GET", "/account/security-history", token)).get("events", [])
 
+    async def phone(self, token: str) -> dict:
+        return await self._authed("GET", "/account/phone", token)
+
+    async def phone_send(self, token: str, phone: str) -> dict:
+        return await self._authed("POST", "/account/phone/send", token, json={"phone": phone})
+
+    async def phone_verify(self, token: str, phone: str, code: str) -> dict:
+        return await self._authed("POST", "/account/phone/verify", token, json={"phone": phone, "code": code})
+
+    async def phone_remove(self, token: str) -> None:
+        await self._authed("DELETE", "/account/phone", token)
+
     async def passkeys(self, token: str) -> list:
         return (await self._authed("GET", "/account/passkeys", token)).get("passkeys", [])
 

@@ -171,6 +171,8 @@ def _send_email(to: str, subject: str, text: str, html: str = "") -> str:
     1) Brevo's HTTPS API (BREVO_API_KEY + a sender verified in Brevo: EMAIL_FROM, or GMAIL_USER)
        -- works on Render's free plan, which blocks SMTP ports 25/465/587 since September 2025.
     2) Gmail SMTP (GMAIL_USER + GMAIL_APP_PASSWORD) -- paid Render plans, or your own computer."""
+    if str(to).endswith("@phone.gink.invalid"):
+        return "this account signs in with a phone number and has no email address"
     how = _email_status()
     if how == "brevo":
         import httpx
@@ -2117,7 +2119,8 @@ def delete_account(request: Request, data: dict = Body(...)):
             con.execute(_SEC_EVENTS_TABLE)
             con.execute(_FLAGS_TABLE)
             con.execute(_PASSKEY_TABLE)
-            for table in ("passkeys", "security_events", "account_flags", "connections", "api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
+            con.execute(_PHONES_TABLE)
+            for table in ("phone_numbers", "passkeys", "security_events", "account_flags", "connections", "api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
                           "search_usage", "search_turns", "sessions", "account_security"):
                 con.execute(f"DELETE FROM {table} WHERE email=?", (email,))
             con.execute("UPDATE payments SET email=? WHERE email=?", (anon, email))
@@ -2891,7 +2894,9 @@ def admin_stats(request: Request):
                        "pro_search_daily": int(os.environ.get("GINK_PRO_SEARCH_DAILY", "100"))},
             "services": {"groq": bool(_env("GROQ_API_KEY")), "anthropic": bool(_env("ANTHROPIC_API_KEY")),
                          "gemini": bool(_env("GEMINI_API_KEY")), "email": bool(_email_status()), "email_service": _email_status(),
-                         "storage": "disk" if _env("GINK_DB_PATH").startswith("/var/data") else "temporary"}}
+                         "storage": "disk" if _env("GINK_DB_PATH").startswith("/var/data") else "temporary",
+                         "sms": bool(_sms_provider()), "sms_provider": _sms_provider(),
+                         "sms_month": _sms_sent_this_month(), "sms_limit": _sms_limit()}}
 
 
 
@@ -4218,6 +4223,7 @@ SECURITY_TEXT = {
     "lockdown_on": "Lockdown mode turned on", "lockdown_off": "Lockdown mode turned off",
     "passkey_added": "Passkey added", "passkey_removed": "Passkey removed",
     "device_approved": "Device sign-in approved",
+    "phone_added": "Phone number added", "phone_removed": "Phone number removed",
 }
 
 
@@ -4534,3 +4540,210 @@ def device_poll(data: dict = Body(...)):
 def device_page():
     with open(os.path.join(WEB_APP_DIR, "device.html"), encoding="utf-8") as f:
         return HTMLResponse(f.read(), headers=_WEB_HEADERS)
+
+
+# ================================================================ Phone sign-in (openspec/changes/add-phone-signin)
+# A 6-digit code by SMS. Providers (set on Render): Africa's Talking (AT_USERNAME + AT_API_KEY [+ AT_SENDER_ID])
+# or Twilio (TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + TWILIO_FROM). GINK_SMS_PROVIDER picks one when both are set.
+# GINK_SMS_MONTHLY_LIMIT caps how many SMS are sent a month (default 500) -- each SMS costs money.
+# Phone-only accounts are keyed by "<digits>@phone.gink.invalid" (.invalid can never receive email).
+PHONE_DOMAIN = "@phone.gink.invalid"
+_PHONES_TABLE = "CREATE TABLE IF NOT EXISTS phone_numbers (phone TEXT PRIMARY KEY, email TEXT NOT NULL, added REAL NOT NULL)"
+_SMS_LOG_TABLE = "CREATE TABLE IF NOT EXISTS sms_log (id INTEGER PRIMARY KEY AUTOINCREMENT, ts REAL NOT NULL, month TEXT NOT NULL)"
+_phone_codes = {}              # (purpose, phone) -> {"code", "expiry", "attempts", "email"}
+
+
+def _phone_db(fn):
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(_PHONES_TABLE)
+            con.execute(_SMS_LOG_TABLE)
+            out = fn(con)
+            con.commit()
+            return out
+        finally:
+            con.close()
+
+
+def _sms_provider() -> str:
+    has_at = bool(_env("AT_USERNAME") and _env("AT_API_KEY"))
+    has_tw = bool(_env("TWILIO_ACCOUNT_SID") and _env("TWILIO_AUTH_TOKEN") and _env("TWILIO_FROM"))
+    chosen = (_env("GINK_SMS_PROVIDER") or "").lower()
+    if chosen == "twilio" and has_tw:
+        return "twilio"
+    if chosen in ("africastalking", "africas_talking", "at") and has_at:
+        return "africastalking"
+    return "africastalking" if has_at else "twilio" if has_tw else ""
+
+
+def _sms_limit() -> int:
+    try:
+        return max(0, int(_env("GINK_SMS_MONTHLY_LIMIT") or 500))
+    except ValueError:
+        return 500
+
+
+def _sms_sent_this_month() -> int:
+    month = time.strftime("%Y-%m", time.gmtime())
+    return _phone_db(lambda con: con.execute("SELECT COUNT(*) FROM sms_log WHERE month=?", (month,)).fetchone()[0])
+
+
+def _normalize_phone(raw: str) -> str:
+    """'+221 77 123 45 67' -> '+221771234567' (international format, 8-15 digits)."""
+    s = str(raw or "").strip()
+    digits = re.sub(r"\D", "", s)
+    if s.startswith("00"):
+        digits = digits[2:]
+    elif not s.startswith("+"):
+        raise HTTPException(status_code=422, detail="Enter your number with its country code, like +221 77 123 45 67.")
+    if not 8 <= len(digits) <= 15 or digits.startswith("0"):
+        raise HTTPException(status_code=422, detail="That phone number doesn't look right. Include the country code, like +221.")
+    return "+" + digits
+
+
+def _send_sms(to: str, text: str) -> str:
+    """Send one SMS. Returns "" when sent, otherwise the reason."""
+    import httpx
+    provider = _sms_provider()
+    try:
+        if provider == "africastalking":
+            user = _env("AT_USERNAME")
+            host = "api.sandbox.africastalking.com" if user == "sandbox" else "api.africastalking.com"
+            form = {"username": user, "to": to, "message": text}
+            if _env("AT_SENDER_ID"):
+                form["from"] = _env("AT_SENDER_ID")
+            r = httpx.post(f"https://{host}/version1/messaging", data=form, timeout=20,
+                           headers={"apiKey": _env("AT_API_KEY"), "Accept": "application/json"})
+            if r.status_code not in (200, 201):
+                return f"Africa's Talking answered {r.status_code}: {r.text[:160]}"
+            recipients = (r.json().get("SMSMessageData") or {}).get("Recipients") or []
+            if not recipients or str(recipients[0].get("status", "")).lower() != "success":
+                return f"Africa's Talking didn't send it: {(recipients[0].get('status') if recipients else r.text[:160])}"
+            return ""
+        if provider == "twilio":
+            sid = _env("TWILIO_ACCOUNT_SID")
+            r = httpx.post(f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json", timeout=20,
+                           data={"To": to, "From": _env("TWILIO_FROM"), "Body": text}, auth=(sid, _env("TWILIO_AUTH_TOKEN")))
+            if r.status_code not in (200, 201):
+                try:
+                    return f"Twilio answered {r.status_code}: {r.json().get('message', '')[:160]}"
+                except Exception:
+                    return f"Twilio answered {r.status_code}"
+            return ""
+        return "no SMS provider is set up (AT_USERNAME/AT_API_KEY or TWILIO_* on Render)"
+    except Exception as exc:
+        return f"couldn't reach the SMS provider ({type(exc).__name__})"
+
+
+def _text_code(purpose: str, phone: str, email: str = ""):
+    """Throttle, check the monthly cap, make a code and send it."""
+    if not _sms_provider():
+        raise HTTPException(status_code=503, detail="Phone codes aren't set up on this server yet. Use your email instead.")
+    _throttle_code("phone", phone)
+    if _sms_sent_this_month() >= _sms_limit():
+        raise HTTPException(status_code=503, detail="Phone codes are paused for the rest of this month. "
+                                                    "Sign in with your email or a passkey instead.")
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    with _otp_lock:
+        _phone_codes[(purpose, phone)] = {"code": code, "expiry": time.time() + 600, "attempts": 0, "email": email}
+    reason = _send_sms(phone, f"Your Gink code is {code}. It expires in 10 minutes. Never share it.")
+    if reason:
+        print(f"[Gink] SMS not sent to {phone[:5]}... ({reason})")
+        raise HTTPException(status_code=502, detail="We couldn't send the SMS right now. Please try again or use your email.")
+    month = time.strftime("%Y-%m", time.gmtime())
+    _phone_db(lambda con: con.execute("INSERT INTO sms_log (ts, month) VALUES (?, ?)", (time.time(), month)))
+
+
+def _check_phone_code(purpose: str, phone: str, code: str, consume: bool = True) -> dict:
+    with _otp_lock:
+        entry = _phone_codes.get((purpose, phone))
+        if not entry or time.time() > entry["expiry"]:
+            raise HTTPException(status_code=401, detail="That code expired. Ask for a new one.")
+        if entry["attempts"] >= 5:
+            _phone_codes.pop((purpose, phone), None)
+            raise HTTPException(status_code=401, detail="Too many wrong codes. Ask for a new one.")
+        if not secrets.compare_digest(str(code or "").strip(), entry["code"]):
+            entry["attempts"] += 1
+            raise HTTPException(status_code=401, detail="That code isn't right. Check the SMS and try again.")
+        if consume:
+            _phone_codes.pop((purpose, phone), None)
+        return entry
+
+
+def _account_for_phone(phone: str):
+    row = _phone_db(lambda con: con.execute("SELECT email FROM phone_numbers WHERE phone=?", (phone,)).fetchone())
+    return row[0] if row else None
+
+
+@app.get("/auth/phone/status")
+def phone_status():
+    return {"enabled": bool(_sms_provider())}
+
+
+@app.post("/auth/phone/send")
+def phone_send(data: dict = Body(...)):
+    """Sign in or sign up with a phone number: same answer either way."""
+    _text_code("signin", _normalize_phone(data.get("phone")))
+    return {"status": "code_sent"}
+
+
+@app.post("/auth/phone/verify")
+def phone_verify(data: dict = Body(...)):
+    phone = _normalize_phone(data.get("phone"))
+    email = _account_for_phone(phone)
+    name = " ".join(str(data.get("name") or "").split())[:80]
+    if not email and not name:
+        _check_phone_code("signin", phone, data.get("code"), consume=False)    # right code: now the name
+        return {"need_name": True}
+    _check_phone_code("signin", phone, data.get("code"))
+    if not email:                                                        # a new account with this phone
+        email = phone[1:] + PHONE_DOMAIN
+        _upsert_user(email, name, None, "phone")
+        _phone_db(lambda con: con.execute("INSERT OR REPLACE INTO phone_numbers (phone, email, added) VALUES (?, ?, ?)",
+                                          (phone, email, time.time())))
+    user = _get_user(email) or {"name": name}
+    return _login_response(email, user.get("name") or name)
+
+
+@app.get("/account/phone")
+def account_phone(request: Request):
+    email = _email_from_auth(request)
+    row = _phone_db(lambda con: con.execute("SELECT phone FROM phone_numbers WHERE email=?", (email,)).fetchone())
+    return {"phone": row[0] if row else "", "enabled": bool(_sms_provider()), "phone_only": email.endswith(PHONE_DOMAIN)}
+
+
+@app.post("/account/phone/send")
+def account_phone_send(request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    phone = _normalize_phone(data.get("phone"))
+    owner = _account_for_phone(phone)
+    if owner and owner != email:
+        raise HTTPException(status_code=409, detail="That number is already used by another Gink account.")
+    _text_code("add", phone, email)
+    return {"status": "code_sent"}
+
+
+@app.post("/account/phone/verify")
+def account_phone_verify(request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    phone = _normalize_phone(data.get("phone"))
+    entry = _check_phone_code("add", phone, data.get("code"))
+    if entry["email"] != email:
+        raise HTTPException(status_code=401, detail="That code was for another account.")
+    _phone_db(lambda con: (con.execute("DELETE FROM phone_numbers WHERE email=?", (email,)),
+                           con.execute("INSERT OR REPLACE INTO phone_numbers (phone, email, added) VALUES (?, ?, ?)",
+                                       (phone, email, time.time()))))
+    _security_event(email, "phone_added", phone[:4] + "\u2026" + phone[-2:])
+    return {"phone": phone}
+
+
+@app.delete("/account/phone")
+def account_phone_remove(request: Request):
+    email = _email_from_auth(request)
+    if email.endswith(PHONE_DOMAIN):
+        raise HTTPException(status_code=409, detail="Your account signs in with this number, so it can't be removed. "
+                                                    "Add a passkey or two-step verification for extra safety.")
+    _phone_db(lambda con: con.execute("DELETE FROM phone_numbers WHERE email=?", (email,)))
+    _security_event(email, "phone_removed")
+    return {"ok": True}

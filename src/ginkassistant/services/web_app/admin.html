@@ -99,6 +99,7 @@
   <h2>Email</h2>
   <div class="card">
     <p class="note" id="email-service"></p>
+    <p class="note" id="sms-service"></p>
     <form id="test-form" style="display:flex;gap:8px;flex-wrap:wrap">
       <input id="test-to" type="email" required placeholder="Your email address" aria-label="Send a test email to" style="flex:1;min-width:220px">
       <button>Send a test email</button>
@@ -142,8 +143,12 @@
     $("email-service").textContent = s.email_service === "brevo" ? "Emails are sent with Brevo." :
       s.email_service === "gmail" ? "Emails are sent with Gmail (SMTP). On Render\u2019s free plan this is blocked \u2014 use Brevo instead." :
       "No email service is set up yet.";
+    $("sms-service").textContent = s.sms
+      ? "Phone codes: " + (s.sms_provider === "twilio" ? "Twilio" : "Africa\u2019s Talking") + " \u00b7 " + s.sms_month + " of " + s.sms_limit +
+        " SMS this month" + (s.sms_month >= s.sms_limit ? " \u2014 PAUSED until next month (raise GINK_SMS_MONTHLY_LIMIT in Render)" : "")
+      : "Phone codes: not set up (add AT_USERNAME + AT_API_KEY, or TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + TWILIO_FROM, in Render).";
     var sv = $("services"); sv.innerHTML = "";
-    [["groq", "Groq AI"], ["anthropic", "Claude"], ["gemini", "Images + voices"], ["email", "Email codes"]].forEach(function (p) {
+    [["groq", "Groq AI"], ["anthropic", "Claude"], ["gemini", "Images + voices"], ["email", "Email codes"], ["sms", "Phone codes"]].forEach(function (p) {
       sv.appendChild(el("span", "pill " + (s[p[0]] ? "on" : "off"), p[1] + (s[p[0]] ? "" : ": not set")));
     });
     var u = d.users, pp = $("people"); pp.innerHTML = "";

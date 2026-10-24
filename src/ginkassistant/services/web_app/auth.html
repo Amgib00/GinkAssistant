@@ -70,6 +70,7 @@
       <div class="row"><label><input type="checkbox" id="li-remember" checked> Remember me</label><button type="button" class="link" data-go="forgot">Forgot password?</button></div>
       <button class="go" type="submit">Log in</button>
       <div class="row" style="justify-content:center"><button type="button" class="link" id="li-codebtn">Email me a sign-in code instead</button></div>
+      <button type="button" class="go" id="li-phone" style="background:transparent;color:var(--text);box-shadow:inset 0 0 0 1.5px var(--line);margin-top:10px" hidden>Continue with phone</button>
       <button type="button" class="go" id="li-passkey" style="background:transparent;color:var(--text);box-shadow:inset 0 0 0 1.5px var(--line);margin-top:10px" hidden>Sign in with a passkey</button>
     </form>
 
@@ -99,6 +100,23 @@
       <button class="go" type="submit" id="cd-go">Continue</button>
       <div class="row"><button type="button" class="link" id="cd-resend">Resend code</button><button type="button" class="link" id="cd-change">Use a different email</button></div>
       <p class="note">Can't find it? Check your spam folder.</p>
+    </form>
+
+    <!-- PHONE -->
+    <form id="v-phone" novalidate hidden>
+      <h1>Continue with phone</h1><p class="sub">We'll text you a 6-digit code. Standard SMS rates may apply.</p>
+      <label for="ph-num">Phone number (with country code)</label>
+      <input id="ph-num" type="tel" autocomplete="tel" placeholder="+221 77 123 45 67" required>
+      <button class="go" type="submit">Send the code</button>
+      <div class="switch"><button type="button" class="link" data-go="login">Use email instead</button></div>
+    </form>
+
+    <!-- NEW PHONE ACCOUNT: name -->
+    <form id="v-name" novalidate hidden>
+      <h1>Welcome to Gink</h1><p class="sub">One last thing: what should we call you?</p>
+      <label for="nm-name">Name</label><input id="nm-name" type="text" autocomplete="name" maxlength="80" required>
+      <div class="row" style="justify-content:flex-start"><label><input type="checkbox" id="nm-agree"> I agree to the <a href="https://amgib00.github.io/GinkAssistant/terms.html" target="_blank" rel="noopener">Terms</a> and <a href="https://amgib00.github.io/GinkAssistant/privacy.html" target="_blank" rel="noopener">Privacy Policy</a></label></div>
+      <button class="go" type="submit">Create my account</button>
     </form>
 
     <!-- FORGOT -->
@@ -201,7 +219,7 @@
   // ---- views
   function show(view, opts) {
     S.view = view; opts = opts || {};
-    ["login", "signup", "code", "forgot", "twofa"].forEach(function (v) { $("v-" + v).hidden = v !== view; });
+    ["login", "signup", "code", "forgot", "twofa", "phone", "name"].forEach(function (v) { $("v-" + v).hidden = v !== view; });
     $("sw-login").hidden = view !== "login"; $("sw-signup").hidden = view !== "signup";
     $("social-wrap").hidden = !(view === "login" || view === "signup") || !$("social").children.length;
     if (!opts.keepMsg) say("");
@@ -261,8 +279,9 @@
   // ---- the code screen, for three purposes
   function codeScreen(mode, email) {
     S.mode = mode; S.email = email;
-    $("cd-title").textContent = mode === "reset" ? "Choose a new password" : mode === "otp" ? "Check your email" : "Confirm your email";
-    $("cd-sub").textContent = "We sent a 6-digit code to " + email + ".";
+    $("cd-title").textContent = mode === "reset" ? "Choose a new password" : mode === "phone" ? "Check your messages"
+                              : mode === "otp" ? "Check your email" : "Confirm your email";
+    $("cd-sub").textContent = (mode === "phone" ? "We texted a 6-digit code to " : "We sent a 6-digit code to ") + email + ".";
     $("cd-newpass").hidden = mode !== "reset"; $("rs-pass").value = ""; $("rs-pass2").value = "";
     $("cd-go").textContent = mode === "reset" ? "Save the new password" : "Continue";
     show("code"); startCooldown(30);
@@ -275,6 +294,7 @@
   function sendCode(mode, email) {
     if (mode === "verify") return post("/auth/register", { name: $("su-name").value.trim(), email: email, password: $("su-pass").value });
     if (mode === "reset") return post("/auth/forgot", { email: email });
+    if (mode === "phone") return post("/auth/phone/send", { phone: email });
     return post("/send-otp", null, { email: email });
   }
 
@@ -320,11 +340,17 @@
       req = post("/auth/reset", { email: S.email, code: code, password: $("rs-pass").value });
     } else if (S.mode === "verify") {
       req = post("/auth/register/verify", { email: S.email, code: code });
+    } else if (S.mode === "phone") {
+      S.phoneCode = code;
+      req = post("/auth/phone/verify", { phone: S.email, code: code }).then(function (res) {
+        if (res && res.need_name) { show("name"); return null; }         // a new account: ask the name first
+        return res;
+      });
     } else {
       req = post("/verify-otp", null, { email: S.email, otp: code });
     }
     busy(f, true); say("");
-    req.then(finish).catch(function (err) {
+    req.then(function (res) { if (res) finish(res); }).catch(function (err) {
       say(err.message); $("cd-boxes").querySelectorAll("input").forEach(function (b) { b.value = ""; });
       $("cd-boxes").querySelector("input").focus();
     }).then(function () { busy(f, false); if (S.cooldown > 0) $("cd-resend").disabled = true; });
@@ -332,7 +358,24 @@
   $("cd-resend").onclick = function () {
     sendCode(S.mode, S.email).then(function () { say("A new code is on its way.", true); startCooldown(30); }).catch(function (err) { say(err.message); });
   };
-  $("cd-change").onclick = function () { show(S.mode === "verify" ? "signup" : S.mode === "reset" ? "forgot" : "login"); };
+  $("cd-change").onclick = function () { show(S.mode === "verify" ? "signup" : S.mode === "reset" ? "forgot" : S.mode === "phone" ? "phone" : "login"); };
+  $("li-phone").onclick = function () { S.remember = $("li-remember").checked; show("phone"); };
+  $("v-phone").onsubmit = function (e) {
+    e.preventDefault(); var f = this, num = $("ph-num").value.trim();
+    if (!/^(\+|00)[\d\s().-]{7,}$/.test(num)) return say("Enter your number with its country code, like +221 77 123 45 67.");
+    busy(f, true); say("");
+    sendCode("phone", num).then(function () { codeScreen("phone", num); }).catch(function (err) { say(err.message); })
+      .then(function () { busy(f, false); });
+  };
+  $("v-name").onsubmit = function (e) {
+    e.preventDefault(); var f = this;
+    if (!$("nm-name").value.trim()) return say("Enter your name.");
+    if (!$("nm-agree").checked) return say("Please agree to the Terms and Privacy Policy to continue.");
+    busy(f, true); say("");
+    post("/auth/phone/verify", { phone: S.email, code: S.phoneCode, name: $("nm-name").value.trim() }).then(finish)
+      .catch(function (err) { say(err.message); }).then(function () { busy(f, false); });
+  };
+  fetch("/auth/phone/status").then(function (r) { return r.json(); }).then(function (j) { $("li-phone").hidden = !j.enabled; }).catch(function () {});
 
   function setRecovery(on) {
     S.recovery = on; $("tf-boxes").hidden = on; $("tf-recwrap").hidden = !on;

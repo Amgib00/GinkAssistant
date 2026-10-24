@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.17 (October 2026)
+
+- Continue with phone: sign up and sign in with a phone number and an SMS code (on the web
+  sign-in page), and add a phone number to your account in Settings > Account. Works with
+  Africa's Talking or Twilio; the owner dashboard shows this month's SMS against a monthly cap
+
 ## 0.1.16 (October 2026)
 
 - gink CLI 0.2.1: when you're not signed in it simply says "Run: gink login" (which signs you in

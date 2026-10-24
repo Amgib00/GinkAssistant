@@ -1986,6 +1986,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
           {type: 'info', label: 'Email', value: info.email || ''},
           {type: 'html', label: 'Plan', html: pro ? '<span class="badge pro">Gink Pro</span>' : '<span class="badge">Free</span>'},
           {type: 'button', label: 'Log out', desc: 'Sign out of Gink on this device.', action: 'logout', text: 'Log out'}]},
+        {title: 'Phone number', rows: phoneRows(info.phone || {})},
         {title: 'Passkeys', rows: [
           {type: 'note', text: 'Sign in with your fingerprint, face or device PIN instead of a password. Passkeys only work on the real Gink site, so they can\u2019t be phished.'},
           {type: 'list', items: (L.passkeys || []).map(function (k) {
@@ -2138,6 +2139,17 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
             ['Mute during voice', ['Space']], ['End a voice conversation', ['Esc']]];
   }
   function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+  function phoneRows(p) {
+    if (p.phone) {
+      return [{type: 'info', label: 'Phone number', value: p.phone},
+              p.phone_only ? {type: 'note', text: 'Your account signs in with this number.'}
+                           : {type: 'button', label: 'Remove this number', desc: 'You can still sign in with your email.', action: 'phone_remove', text: 'Remove', style: 'danger-ghost'}];
+    }
+    if (!p.enabled) return [{type: 'note', text: 'Signing in with a phone number isn\u2019t set up on this server yet.'}];
+    var rows = [{type: 'input', key: 'phone_new', label: 'Add a phone number', desc: 'With its country code. We\u2019ll text you a code to confirm it.', placeholder: '+221 77 123 45 67', action: 'phone_send', text: 'Send code'}];
+    if (p.pending) rows.push({type: 'input', key: 'phone_code', label: 'Code sent to ' + p.pending, placeholder: '123456', action: 'phone_verify', text: 'Confirm'});
+    return rows;
+  }
   function twofaRows(t) {
     if (t.codes && t.codes.length) {                       // shown once, right after turning it on
       return [{type: 'note', text: 'Two-step verification is on. Save these recovery codes somewhere safe \u2014 each one signs you in once if you lose your phone. They won\u2019t be shown again.'},
@@ -3634,10 +3646,11 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
                  api("/account/2fa").then(json).catch(function () { return {}; }),
                  api("/sites").then(json).catch(function () { return { sites: [] }; }),
                  api("/account/security-history").then(json).catch(function () { return { events: [] }; }),
-                 api("/account/passkeys").then(json).catch(function () { return { passkeys: [] }; })]).then(function (res) {
+                 api("/account/passkeys").then(json).catch(function () { return { passkeys: [] }; }),
+                 api("/account/phone").then(json).catch(function () { return {}; })]).then(function (res) {
       var lists = { sessions: res[0] ? (res[0].sessions || []).map(function (d) { return Object.assign({}, d, { when: activeText(d) }); }) : [],
                     sites: (res[2].sites || []), security: (res[3].events || []), passkeys: (res[4].passkeys || []) };
-      var extra = { twofa: Object.assign({}, res[1] || {}, W.twofa) };
+      var extra = { twofa: Object.assign({}, res[1] || {}, W.twofa), phone: Object.assign({}, res[5] || {}, { pending: W.phonePending || "" }) };
       if (!res[0]) extra.sessions_error = "Your devices aren\u2019t available right now.";
       pushSettings(lists, extra);
     });
@@ -3747,6 +3760,25 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
       var name = v && v.name;
       if (name === "refresh") return (v.value === "account" ? loadDevices() : v.value === "connected" ? loadConnected()
                                       : v.value === "privacy" ? loadLockdown() : pushSettings());
+      if (name === "phone_send") {
+        var num = String(v.value || "").trim();
+        return api("/account/phone/send", { phone: num }).then(function (r) {
+          if (!r.ok) return errorText(r).then(settingsToast);
+          W.phonePending = num; settingsToast("Code sent by SMS."); loadDevices();
+        });
+      }
+      if (name === "phone_verify") {
+        return api("/account/phone/verify", { phone: W.phonePending || "", code: String(v.value || "").trim() }).then(function (r) {
+          if (!r.ok) return errorText(r).then(settingsToast);
+          W.phonePending = ""; settingsToast("Phone number added."); loadDevices();
+        });
+      }
+      if (name === "phone_remove") {
+        return fetch("/account/phone", { method: "DELETE", headers: { Authorization: "Bearer " + W.token } }).then(function (r) {
+          if (!r.ok) return errorText(r).then(settingsToast);
+          settingsToast("Phone number removed."); loadDevices();
+        });
+      }
       if (name === "passkey_add") {
         if (!WA.supported()) return settingsToast("This browser doesn\u2019t support passkeys.");
         return api("/account/passkeys/register/begin", {}).then(function (r) { return r.ok ? r.json() : errorText(r).then(function (t) { throw new Error(t); }); })

@@ -603,10 +603,11 @@
                  api("/account/2fa").then(json).catch(function () { return {}; }),
                  api("/sites").then(json).catch(function () { return { sites: [] }; }),
                  api("/account/security-history").then(json).catch(function () { return { events: [] }; }),
-                 api("/account/passkeys").then(json).catch(function () { return { passkeys: [] }; })]).then(function (res) {
+                 api("/account/passkeys").then(json).catch(function () { return { passkeys: [] }; }),
+                 api("/account/phone").then(json).catch(function () { return {}; })]).then(function (res) {
       var lists = { sessions: res[0] ? (res[0].sessions || []).map(function (d) { return Object.assign({}, d, { when: activeText(d) }); }) : [],
                     sites: (res[2].sites || []), security: (res[3].events || []), passkeys: (res[4].passkeys || []) };
-      var extra = { twofa: Object.assign({}, res[1] || {}, W.twofa) };
+      var extra = { twofa: Object.assign({}, res[1] || {}, W.twofa), phone: Object.assign({}, res[5] || {}, { pending: W.phonePending || "" }) };
       if (!res[0]) extra.sessions_error = "Your devices aren\u2019t available right now.";
       pushSettings(lists, extra);
     });
@@ -716,6 +717,25 @@
       var name = v && v.name;
       if (name === "refresh") return (v.value === "account" ? loadDevices() : v.value === "connected" ? loadConnected()
                                       : v.value === "privacy" ? loadLockdown() : pushSettings());
+      if (name === "phone_send") {
+        var num = String(v.value || "").trim();
+        return api("/account/phone/send", { phone: num }).then(function (r) {
+          if (!r.ok) return errorText(r).then(settingsToast);
+          W.phonePending = num; settingsToast("Code sent by SMS."); loadDevices();
+        });
+      }
+      if (name === "phone_verify") {
+        return api("/account/phone/verify", { phone: W.phonePending || "", code: String(v.value || "").trim() }).then(function (r) {
+          if (!r.ok) return errorText(r).then(settingsToast);
+          W.phonePending = ""; settingsToast("Phone number added."); loadDevices();
+        });
+      }
+      if (name === "phone_remove") {
+        return fetch("/account/phone", { method: "DELETE", headers: { Authorization: "Bearer " + W.token } }).then(function (r) {
+          if (!r.ok) return errorText(r).then(settingsToast);
+          settingsToast("Phone number removed."); loadDevices();
+        });
+      }
       if (name === "passkey_add") {
         if (!WA.supported()) return settingsToast("This browser doesn\u2019t support passkeys.");
         return api("/account/passkeys/register/begin", {}).then(function (r) { return r.ok ? r.json() : errorText(r).then(function (t) { throw new Error(t); }); })

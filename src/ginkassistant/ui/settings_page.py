@@ -297,6 +297,7 @@ SETTINGS_JS = r"""
           {type: 'info', label: 'Email', value: info.email || ''},
           {type: 'html', label: 'Plan', html: pro ? '<span class="badge pro">Gink Pro</span>' : '<span class="badge">Free</span>'},
           {type: 'button', label: 'Log out', desc: 'Sign out of Gink on this device.', action: 'logout', text: 'Log out'}]},
+        {title: 'Phone number', rows: phoneRows(info.phone || {})},
         {title: 'Passkeys', rows: [
           {type: 'note', text: 'Sign in with your fingerprint, face or device PIN instead of a password. Passkeys only work on the real Gink site, so they can\u2019t be phished.'},
           {type: 'list', items: (L.passkeys || []).map(function (k) {
@@ -449,6 +450,17 @@ SETTINGS_JS = r"""
             ['Mute during voice', ['Space']], ['End a voice conversation', ['Esc']]];
   }
   function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+  function phoneRows(p) {
+    if (p.phone) {
+      return [{type: 'info', label: 'Phone number', value: p.phone},
+              p.phone_only ? {type: 'note', text: 'Your account signs in with this number.'}
+                           : {type: 'button', label: 'Remove this number', desc: 'You can still sign in with your email.', action: 'phone_remove', text: 'Remove', style: 'danger-ghost'}];
+    }
+    if (!p.enabled) return [{type: 'note', text: 'Signing in with a phone number isn\u2019t set up on this server yet.'}];
+    var rows = [{type: 'input', key: 'phone_new', label: 'Add a phone number', desc: 'With its country code. We\u2019ll text you a code to confirm it.', placeholder: '+221 77 123 45 67', action: 'phone_send', text: 'Send code'}];
+    if (p.pending) rows.push({type: 'input', key: 'phone_code', label: 'Code sent to ' + p.pending, placeholder: '123456', action: 'phone_verify', text: 'Confirm'});
+    return rows;
+  }
   function twofaRows(t) {
     if (t.codes && t.codes.length) {                       // shown once, right after turning it on
       return [{type: 'note', text: 'Two-step verification is on. Save these recovery codes somewhere safe \u2014 each one signs you in once if you lose your phone. They won\u2019t be shown again.'},

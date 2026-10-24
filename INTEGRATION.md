@@ -1088,3 +1088,22 @@ New services/live_info.py (all free, no API keys):
   (network allow-list) -> the owner checks /login, /device, /developers in a browser.
 - CLI 0.2.1: the no-key message points to `gink login` (it creates the key now). cli.yml checks
   pypi.org/pypi/gink-ai/<version>/json first (PyPI rejects re-uploads with a confusing error).
+
+## Latest (0.1.17): phone sign-in (add-phone-signin, owner said yes)
+- Server: _send_sms via Africa's Talking (AT_USERNAME/AT_API_KEY[/AT_SENDER_ID]; "sandbox" ->
+  api.sandbox host) or Twilio (TWILIO_ACCOUNT_SID/AUTH_TOKEN/FROM); GINK_SMS_PROVIDER picks one.
+  _normalize_phone (E.164, needs a country code), _throttle_code("phone"), GINK_SMS_MONTHLY_LIMIT
+  (default 500; sms_log per month), secrets codes, 5 tries, 10 min. /auth/phone/status|send|verify
+  (new number -> {"need_name"} with the code kept until the name comes), /account/phone (+send/
+  verify/DELETE; phone-only accounts can't remove theirs). Phone-only accounts =
+  "<digits>@phone.gink.invalid"; _send_email skips them. _login_response -> two-step still applies.
+  Security history + account deletion. Owner dashboard: provider + SMS this month / cap.
+- Web: auth.html "Continue with phone" (only when a provider is set), code screen mode "phone",
+  name + Terms step. Settings > Account > Phone number (apps + web).
+- Tests: test_phone_signin.py (providers, sign-up/in, formats, limits, cap, two-step, accounts,
+  dashboard); browser check. Open: a real SMS on the TECNO; optional per-country limits.
+- BUG caught by the full suite (it hung): the phone code's `_check_code` silently REPLACED the
+  existing email `_check_code` (same name; Python keeps the last def) -> register_verify called the
+  phone version, which took _otp_lock while register_verify already held it -> deadlock: email
+  sign-up would have frozen on the server. Renamed to _check_phone_code; new test fails if any
+  top-level function in backend_server.py is defined twice (pyflakes misses used redefinitions).

@@ -31,6 +31,21 @@ services:
       # Settings > SMTP & API > API keys; verify your sender address under Senders.
       - key: BREVO_API_KEY
         sync: false
+      # Phone sign-in (SMS). Fill in ONE provider. Each SMS costs money: GINK_SMS_MONTHLY_LIMIT caps them.
+      - key: AT_USERNAME           # Africa's Talking app username ("sandbox" for free testing)
+        sync: false
+      - key: AT_API_KEY
+        sync: false
+      - key: AT_SENDER_ID          # optional: your approved sender name
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_FROM           # your Twilio phone number, like +15550001111
+        sync: false
+      - key: GINK_SMS_MONTHLY_LIMIT
+        value: "500"
       - key: EMAIL_FROM          # the sender you verified in Brevo (e.g. your Gmail address)
         sync: false
       - key: GMAIL_USER            # sends sign-up / login codes (a Gmail address)
