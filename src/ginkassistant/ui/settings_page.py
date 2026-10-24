@@ -297,6 +297,14 @@ SETTINGS_JS = r"""
           {type: 'info', label: 'Email', value: info.email || ''},
           {type: 'html', label: 'Plan', html: pro ? '<span class="badge pro">Gink Pro</span>' : '<span class="badge">Free</span>'},
           {type: 'button', label: 'Log out', desc: 'Sign out of Gink on this device.', action: 'logout', text: 'Log out'}]},
+        {title: 'Passkeys', rows: [
+          {type: 'note', text: 'Sign in with your fingerprint, face or device PIN instead of a password. Passkeys only work on the real Gink site, so they can\u2019t be phished.'},
+          {type: 'list', items: (L.passkeys || []).map(function (k) {
+            return {t: k.name || 'Passkey', m: 'Added ' + new Date(k.created * 1000).toLocaleDateString() + (k.last_used ? ' \u00b7 last used ' + new Date(k.last_used * 1000).toLocaleDateString() : ''),
+                    button: {text: 'Remove', action: 'passkey_remove', value: k.id}}; }),
+           empty: 'No passkeys yet.'},
+          info.web ? {type: 'button', label: 'Add a passkey', desc: 'Your browser or phone will ask for your fingerprint, face or PIN.', action: 'passkey_add', text: 'Add', style: 'plain'}
+                   : {type: 'note', text: 'Add passkeys in Gink on the web (sign in at your Gink server\u2019s /app in a browser). Passkeys work in browsers; the apps keep their usual sign-in.'}]},
         {title: 'Two-step verification', rows: twofaRows(info.twofa || {})},
         {title: 'Your websites', rows: [
           {type: 'list', items: (L.sites || []).map(function (w) {

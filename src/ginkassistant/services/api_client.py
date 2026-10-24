@@ -251,6 +251,12 @@ class ApiClient:
     async def security_history(self, token: str) -> list:
         return (await self._authed("GET", "/account/security-history", token)).get("events", [])
 
+    async def passkeys(self, token: str) -> list:
+        return (await self._authed("GET", "/account/passkeys", token)).get("passkeys", [])
+
+    async def remove_passkey(self, token: str, pid: str) -> None:
+        await self._authed("DELETE", f"/account/passkeys/{pid}", token)
+
     async def lockdown(self, token: str, on=None) -> bool:
         if on is None:
             return bool((await self._authed("GET", "/account/lockdown", token)).get("on"))

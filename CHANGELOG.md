@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.13 (October 2026)
+
+- Passkeys: sign in on the web with your fingerprint, face or device PIN -- no password, and
+  phishing-proof. Add them in Settings > Account > Passkeys (in a browser); see and remove them
+  in the apps too
+
 ## 0.1.12 (October 2026)
 
 - Archive chats (from a chat's menu, or "Archive all" in Settings > Privacy): they leave Recents,

@@ -35,6 +35,36 @@
         return r;
       });
   }
+  // ---- passkeys (WebAuthn): the browser works with bytes, the server with base64url JSON
+  var WA = {
+    toBuf: function (s) { s = String(s).replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "=";
+      var b = atob(s), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a.buffer; },
+    toStr: function (buf) { if (!buf) return null; var b = new Uint8Array(buf), s = "";
+      for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); },
+    create: function (o) {
+      o.challenge = WA.toBuf(o.challenge); o.user.id = WA.toBuf(o.user.id);
+      (o.excludeCredentials || []).forEach(function (c) { c.id = WA.toBuf(c.id); });
+      return navigator.credentials.create({ publicKey: o }).then(function (c) {
+        return { id: c.id, rawId: WA.toStr(c.rawId), type: c.type, authenticatorAttachment: c.authenticatorAttachment || undefined,
+                 clientExtensionResults: c.getClientExtensionResults ? c.getClientExtensionResults() : {},
+                 response: { clientDataJSON: WA.toStr(c.response.clientDataJSON), attestationObject: WA.toStr(c.response.attestationObject),
+                             transports: c.response.getTransports ? c.response.getTransports() : [] } };
+      });
+    },
+    get: function (o) {
+      o.challenge = WA.toBuf(o.challenge);
+      (o.allowCredentials || []).forEach(function (c) { c.id = WA.toBuf(c.id); });
+      return navigator.credentials.get({ publicKey: o }).then(function (c) {
+        return { id: c.id, rawId: WA.toStr(c.rawId), type: c.type, authenticatorAttachment: c.authenticatorAttachment || undefined,
+                 clientExtensionResults: c.getClientExtensionResults ? c.getClientExtensionResults() : {},
+                 response: { clientDataJSON: WA.toStr(c.response.clientDataJSON), authenticatorData: WA.toStr(c.response.authenticatorData),
+                             signature: WA.toStr(c.response.signature), userHandle: WA.toStr(c.response.userHandle) } };
+      });
+    },
+    supported: function () { return !!(window.PublicKeyCredential && navigator.credentials); },
+    cancelled: function (e) { return e && (e.name === "NotAllowedError" || e.name === "AbortError"); }
+  };
+
   // ---- usage limit: the reset time in the person's own time, and a notice when it has reset
   function localReset(at) {
     var d = new Date(at * 1000), t = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -572,9 +602,10 @@
     Promise.all([api("/account/sessions").then(json).catch(function () { return null; }),
                  api("/account/2fa").then(json).catch(function () { return {}; }),
                  api("/sites").then(json).catch(function () { return { sites: [] }; }),
-                 api("/account/security-history").then(json).catch(function () { return { events: [] }; })]).then(function (res) {
+                 api("/account/security-history").then(json).catch(function () { return { events: [] }; }),
+                 api("/account/passkeys").then(json).catch(function () { return { passkeys: [] }; })]).then(function (res) {
       var lists = { sessions: res[0] ? (res[0].sessions || []).map(function (d) { return Object.assign({}, d, { when: activeText(d) }); }) : [],
-                    sites: (res[2].sites || []), security: (res[3].events || []) };
+                    sites: (res[2].sites || []), security: (res[3].events || []), passkeys: (res[4].passkeys || []) };
       var extra = { twofa: Object.assign({}, res[1] || {}, W.twofa) };
       if (!res[0]) extra.sessions_error = "Your devices aren\u2019t available right now.";
       pushSettings(lists, extra);
@@ -685,6 +716,18 @@
       var name = v && v.name;
       if (name === "refresh") return (v.value === "account" ? loadDevices() : v.value === "connected" ? loadConnected()
                                       : v.value === "privacy" ? loadLockdown() : pushSettings());
+      if (name === "passkey_add") {
+        if (!WA.supported()) return settingsToast("This browser doesn\u2019t support passkeys.");
+        return api("/account/passkeys/register/begin", {}).then(function (r) { return r.ok ? r.json() : errorText(r).then(function (t) { throw new Error(t); }); })
+          .then(WA.create).then(function (cred) { return api("/account/passkeys/register/finish", { credential: cred }); })
+          .then(function (r) { return r.ok ? r.json() : errorText(r).then(function (t) { throw new Error(t); }); })
+          .then(function () { settingsToast("Passkey added. Next time, choose \u201cSign in with a passkey\u201d."); loadDevices(); })
+          .catch(function (e) { settingsToast(WA.cancelled(e) ? "Cancelled." : e.message); });
+      }
+      if (name === "passkey_remove" && v.value) {
+        return fetch("/account/passkeys/" + encodeURIComponent(v.value), { method: "DELETE", headers: { Authorization: "Bearer " + W.token } })
+          .then(function () { settingsToast("Passkey removed."); loadDevices(); });
+      }
       if (name === "unarchive_chat" && v.value && W.sessions[v.value]) {
         W.sessions[v.value].archived = false; touch(v.value); refreshSidebar(); sync(); settingsToast("Back in Recents."); return loadLockdown();
       }

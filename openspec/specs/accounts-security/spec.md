@@ -104,3 +104,14 @@ When the person turns on Lockdown mode, the server SHALL refuse web search, conn
 #### Scenario: Web search in Lockdown mode
 - **WHEN** a question would search the web while Lockdown mode is on
 - **THEN** it is refused with "Lockdown mode is on, so Gink doesn't use web search"
+
+### Requirement: Passkeys
+People SHALL be able to add passkeys in a browser (Settings > Account > Passkeys), see and remove them in the apps and the web, and sign in with one on the sign-in page without typing anything; registration and sign-in SHALL require user verification (fingerprint, face or PIN), be bound to the site's own address, use one-time challenges, and check the signature counter. A passkey sign-in SHALL count as two factors and not ask for the authenticator code.
+
+#### Scenario: Signing in with a passkey
+- **WHEN** a person with a passkey chooses "Sign in with a passkey" and unlocks it
+- **THEN** they are signed in without typing an email, a password or a code
+
+#### Scenario: Removed passkey
+- **WHEN** a passkey removed in Settings is used
+- **THEN** sign-in is refused with "That passkey isn't linked to a Gink account"

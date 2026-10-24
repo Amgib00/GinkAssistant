@@ -70,6 +70,7 @@
       <div class="row"><label><input type="checkbox" id="li-remember" checked> Remember me</label><button type="button" class="link" data-go="forgot">Forgot password?</button></div>
       <button class="go" type="submit">Log in</button>
       <div class="row" style="justify-content:center"><button type="button" class="link" id="li-codebtn">Email me a sign-in code instead</button></div>
+      <button type="button" class="go" id="li-passkey" style="background:transparent;color:var(--text);box-shadow:inset 0 0 0 1.5px var(--line);margin-top:10px" hidden>Sign in with a passkey</button>
     </form>
 
     <!-- CREATE ACCOUNT -->
@@ -131,6 +132,36 @@
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
   var S = { view: "login", email: "", mode: "", remember: true, ticket: "", cooldown: 0, timer: null, recovery: false };
+
+  // ---- passkeys (WebAuthn): the browser works with bytes, the server with base64url JSON
+  var WA = {
+    toBuf: function (s) { s = String(s).replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "=";
+      var b = atob(s), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a.buffer; },
+    toStr: function (buf) { if (!buf) return null; var b = new Uint8Array(buf), s = "";
+      for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); },
+    create: function (o) {
+      o.challenge = WA.toBuf(o.challenge); o.user.id = WA.toBuf(o.user.id);
+      (o.excludeCredentials || []).forEach(function (c) { c.id = WA.toBuf(c.id); });
+      return navigator.credentials.create({ publicKey: o }).then(function (c) {
+        return { id: c.id, rawId: WA.toStr(c.rawId), type: c.type, authenticatorAttachment: c.authenticatorAttachment || undefined,
+                 clientExtensionResults: c.getClientExtensionResults ? c.getClientExtensionResults() : {},
+                 response: { clientDataJSON: WA.toStr(c.response.clientDataJSON), attestationObject: WA.toStr(c.response.attestationObject),
+                             transports: c.response.getTransports ? c.response.getTransports() : [] } };
+      });
+    },
+    get: function (o) {
+      o.challenge = WA.toBuf(o.challenge);
+      (o.allowCredentials || []).forEach(function (c) { c.id = WA.toBuf(c.id); });
+      return navigator.credentials.get({ publicKey: o }).then(function (c) {
+        return { id: c.id, rawId: WA.toStr(c.rawId), type: c.type, authenticatorAttachment: c.authenticatorAttachment || undefined,
+                 clientExtensionResults: c.getClientExtensionResults ? c.getClientExtensionResults() : {},
+                 response: { clientDataJSON: WA.toStr(c.response.clientDataJSON), authenticatorData: WA.toStr(c.response.authenticatorData),
+                             signature: WA.toStr(c.response.signature), userHandle: WA.toStr(c.response.userHandle) } };
+      });
+    },
+    supported: function () { return !!(window.PublicKeyCredential && navigator.credentials); },
+    cancelled: function (e) { return e && (e.name === "NotAllowedError" || e.name === "AbortError"); }
+  };
 
   // ---- where to go afterwards: only Gink's own pages
   function nextPath() {
@@ -318,6 +349,17 @@
     busy(f, true); say("");
     post("/auth/2fa", { ticket: S.ticket, code: code }).then(finish).catch(function (err) { say(err.message); })
       .then(function () { busy(f, false); });
+  };
+
+  // ---- passkey sign-in (fingerprint, face or PIN; no email needed)
+  if (WA.supported()) $("li-passkey").hidden = false;
+  $("li-passkey").onclick = function () {
+    say(""); var btn = this; btn.disabled = true;
+    post("/auth/passkey/signin/begin").then(function (b) {
+      return WA.get(b.options).then(function (cred) { return post("/auth/passkey/signin/finish", { request_id: b.request_id, credential: cred }); });
+    }).then(function (res) { S.remember = $("li-remember").checked; finish(res); })
+      .catch(function (e) { say(WA.cancelled(e) ? "Passkey sign-in was cancelled." : e.message); })
+      .then(function () { btn.disabled = false; });
   };
 
   // ---- Google, GitHub, Microsoft, Apple (those switched on in Render)

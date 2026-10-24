@@ -213,6 +213,11 @@ class SettingsController:
             except Exception:
                 extra_lists["connected"] = []
                 extra_info["connected_error"] = "Connected apps aren't available right now."
+        if token and panel == "account":                      # passkeys (added on the web; listed and removed here too)
+            try:
+                extra_lists["passkeys"] = await asyncio.wait_for(api.passkeys(token), timeout=8)
+            except Exception:
+                extra_lists["passkeys"] = []
         if token and panel == "account":                      # security history
             try:
                 extra_lists["security"] = await asyncio.wait_for(api.security_history(token), timeout=8)
@@ -453,6 +458,13 @@ class SettingsController:
         if self.on_history_changed:
             self.on_history_changed()
         await self.refresh("privacy")
+
+    async def _a_passkey_remove(self, pid):
+        token = getattr(self.app, "session_token", None)
+        if token and pid:
+            await ApiClient(self.app.state.base_url).remove_passkey(token, str(pid))
+            await self.web.settings_toast("Passkey removed.")
+            await self.refresh("account")
 
     async def _a_lockdown_on(self, _):
         await self._set_lockdown(True)

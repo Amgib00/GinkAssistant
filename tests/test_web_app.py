@@ -82,3 +82,26 @@ def test_full_sign_in_page_is_served_safely(client):
     assert "/^\\/(?!\\/)[^\\\\\\s]*$/" in page                     # next= only to Gink's own pages (no //evil.example)
     bridge = open(os.path.join(ROOT, "webapp", "bridge.js"), encoding="utf-8").read()
     assert 'location.replace("/login?next="' in bridge and 'sessionStorage.getItem("gink_token")' in bridge
+
+
+def test_no_route_is_shadowed_by_an_earlier_pattern():
+    """/auth/{provider}/begin once caught /auth/passkey/begin: an earlier route with a {parameter}
+    must never match a later fixed route with the same method (it would never be reached)."""
+    import re
+    from ginkassistant.services import backend_server as b
+    routes = [(r.path, m) for r in b.app.routes for m in (getattr(r, "methods", None) or set()) if m not in ("HEAD", "OPTIONS")]
+    shadowed = []
+    for i, (path, method) in enumerate(routes):
+        for earlier, m2 in routes[:i]:
+            if m2 != method or "{" not in earlier or earlier == path:
+                continue
+            pattern = "^" + re.sub(r"\{[^}]+\}", "[^/]+", earlier.replace(".", r"\.")) + "$"
+            if re.match(pattern, path):
+                shadowed.append(f"{method} {path} is caught by {earlier}")
+    assert shadowed == [], shadowed
+
+
+def test_the_shadow_check_itself_catches_the_old_bug():
+    import re
+    pattern = "^" + re.sub(r"\{[^}]+\}", "[^/]+", "/auth/{provider}/begin") + "$"
+    assert re.match(pattern, "/auth/passkey/begin") and not re.match(pattern, "/auth/passkey/signin/begin")

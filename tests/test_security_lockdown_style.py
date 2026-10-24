@@ -86,3 +86,27 @@ def test_personalization():
     finally:
         prefs.load = orig
     assert "same language the user writes in" in note and "warm, friendly" in note
+
+
+def test_passkey_server_rules(srv):
+    b, c = srv
+    me = login(c)
+    opts = c.post("/account/passkeys/register/begin", headers=me).json()
+    assert opts["rp"]["name"] == "Gink" and opts["authenticatorSelection"]["userVerification"] == "required"
+    assert opts["authenticatorSelection"]["residentKey"] == "required" and opts["user"]["name"] == "ib@example.com"
+    fake = {"id": "abc", "rawId": "abc", "type": "public-key", "response": {"clientDataJSON": "e30", "attestationObject": "oA"}}
+    r = c.post("/account/passkeys/register/finish", headers=me, json={"credential": fake})
+    assert r.status_code == 400 and "couldn't be added" in r.json()["detail"]
+    assert c.post("/account/passkeys/register/finish", headers=me, json={"credential": fake}).status_code == 400   # challenge used up
+    begin = c.post("/auth/passkey/signin/begin").json()
+    assert begin["options"]["userVerification"] == "required" and begin["request_id"]
+    r = c.post("/auth/passkey/signin/finish", json={"request_id": begin["request_id"], "credential": {"id": "nobody"}})
+    assert r.status_code == 401 and "isn't linked" in r.json()["detail"]
+    assert c.post("/auth/passkey/signin/finish", json={"request_id": begin["request_id"], "credential": {"id": "x"}}).status_code == 400
+    b._pk_db(lambda con: con.execute("INSERT INTO passkeys (id, email, public_key, created) VALUES ('k1', 'ib@example.com', 'pk', 1)"))
+    assert [k["id"] for k in c.get("/account/passkeys", headers=me).json()["passkeys"]] == ["k1"]
+    b._upsert_user("eve@example.com", "Eve", b._hash_password("another pass 42"), "password")
+    eve = {"Authorization": "Bearer " + b._token_response("eve@example.com", "Eve")["token"]}
+    assert c.delete("/account/passkeys/k1", headers=eve).status_code == 404                                       # not hers
+    c.post("/account/delete", headers=me, json={"confirm": "DELETE"})
+    assert b._pk_db(lambda con: con.execute("SELECT COUNT(*) FROM passkeys").fetchone()[0]) == 0

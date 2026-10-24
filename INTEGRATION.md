@@ -1032,3 +1032,17 @@ New services/live_info.py (all free, no API keys):
   groq_worker.local_reset_time and bridge.localReset show local time; bridge watchReset remembers
   gink_limit_reset and shows a notice card when it has passed (also after reload).
 - New spec chats-storage-limits. Next: passkeys (batch 3).
+
+## Latest (0.1.13): passkeys (batch 3)
+- Server (webauthn 3.0.1, server-only; needs cryptography>=49 -- fine on Render, not in the apps):
+  /account/passkeys/register/begin|finish (UV + resident key REQUIRED, exclude existing, max 10),
+  GET/DELETE /account/passkeys, /auth/passkey/signin/begin|finish (discoverable; one-time
+  challenges, 5 min; sign-count check). rp_id = the public host, origin = public base. Passkey
+  sign-in -> _token_response (device + UV = two factors; no TOTP). Security history + deletion.
+- BUG found by the browser run: /auth/passkey/begin was caught by /auth/{provider}/begin (route
+  shadowing) -> moved to /auth/passkey/signin/*; new test checks EVERY route for shadowing (and a
+  second test proves the check works -- its first version could never fail).
+- Browser: WA helpers (base64url <-> bytes) in auth.html and bridge.js; "Sign in with a passkey";
+  Settings > Account > Passkeys (add on web; list/remove on web + apps). Verified end to end with
+  Chromium's virtual authenticator (real WebAuthn crypto). WebAuthn needs "localhost" or a real
+  host name -- never an IP address.

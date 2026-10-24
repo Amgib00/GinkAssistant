@@ -2116,7 +2116,8 @@ def delete_account(request: Request, data: dict = Body(...)):
             con.execute(_CONN_TABLE)
             con.execute(_SEC_EVENTS_TABLE)
             con.execute(_FLAGS_TABLE)
-            for table in ("security_events", "account_flags", "connections", "api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
+            con.execute(_PASSKEY_TABLE)
+            for table in ("passkeys", "security_events", "account_flags", "connections", "api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
                           "search_usage", "search_turns", "sessions", "account_security"):
                 con.execute(f"DELETE FROM {table} WHERE email=?", (email,))
             con.execute("UPDATE payments SET email=? WHERE email=?", (anon, email))
@@ -4211,6 +4212,7 @@ SECURITY_TEXT = {
     "api_key_created": "API key created", "api_key_revoked": "API key revoked",
     "app_connected": "App connected", "app_disconnected": "App disconnected",
     "lockdown_on": "Lockdown mode turned on", "lockdown_off": "Lockdown mode turned off",
+    "passkey_added": "Passkey added", "passkey_removed": "Passkey removed",
 }
 
 
@@ -4288,3 +4290,142 @@ def lockdown_set(request: Request, data: dict = Body(...)):
             con.close()
     _security_event(email, "lockdown_on" if on else "lockdown_off")
     return {"on": on}
+
+
+# ================================================================ Passkeys (WebAuthn): sign in with a fingerprint, face or PIN
+# Verified with the `webauthn` library. User verification is REQUIRED, so a passkey is two factors on
+# its own (the device + the person's fingerprint/face/PIN): passkey sign-ins skip the authenticator code.
+_PASSKEY_TABLE = ("CREATE TABLE IF NOT EXISTS passkeys (id TEXT PRIMARY KEY, email TEXT NOT NULL, public_key TEXT NOT NULL, "
+                  "sign_count INTEGER NOT NULL DEFAULT 0, name TEXT, transports TEXT, created REAL NOT NULL, last_used REAL)")
+_pk_challenges = {}          # key -> (challenge bytes, email or "", created)
+PASSKEYS_PER_ACCOUNT = 10
+
+
+def _pk_db(fn):
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(_PASSKEY_TABLE)
+            out = fn(con)
+            con.commit()
+            return out
+        finally:
+            con.close()
+
+
+def _rp(request: Request):
+    """(rp_id, origin): the site's own host -- a passkey only works on the real Gink site."""
+    base = _public_base(request).rstrip("/")
+    return urllib.parse.urlparse(base).hostname or "localhost", base
+
+
+def _pk_remember(key: str, challenge: bytes, email: str = ""):
+    now = time.time()
+    with _otp_lock:
+        for k in [k for k, v in _pk_challenges.items() if now - v[2] > 300]:
+            _pk_challenges.pop(k, None)
+        _pk_challenges[key] = (challenge, email, now)
+
+
+def _pk_take(key: str):
+    with _otp_lock:
+        entry = _pk_challenges.pop(key, None)          # one use only
+    if not entry or time.time() - entry[2] > 300:
+        raise HTTPException(status_code=400, detail="That passkey request expired. Please try again.")
+    return entry
+
+
+@app.post("/account/passkeys/register/begin")
+def passkey_register_begin(request: Request):
+    import webauthn
+    from webauthn.helpers import structs
+    email = _email_from_auth(request)
+    existing = _pk_db(lambda con: con.execute("SELECT id FROM passkeys WHERE email=?", (email,)).fetchall())
+    if len(existing) >= PASSKEYS_PER_ACCOUNT:
+        raise HTTPException(status_code=409, detail=f"You have {PASSKEYS_PER_ACCOUNT} passkeys already. Remove one first.")
+    rp_id, _origin = _rp(request)
+    user = _get_user(email) or {"name": ""}
+    options = webauthn.generate_registration_options(
+        rp_id=rp_id, rp_name="Gink", user_name=email, user_display_name=user.get("name") or email,
+        user_id=hashlib.sha256(("gink-user:" + email).encode()).digest()[:16],
+        authenticator_selection=structs.AuthenticatorSelectionCriteria(
+            resident_key=structs.ResidentKeyRequirement.REQUIRED,
+            user_verification=structs.UserVerificationRequirement.REQUIRED),
+        exclude_credentials=[structs.PublicKeyCredentialDescriptor(id=webauthn.base64url_to_bytes(r[0])) for r in existing])
+    _pk_remember("reg:" + email, options.challenge, email)
+    return _json.loads(webauthn.options_to_json(options))
+
+
+@app.post("/account/passkeys/register/finish")
+def passkey_register_finish(request: Request, data: dict = Body(...)):
+    import webauthn
+    from webauthn.helpers import bytes_to_base64url
+    email = _email_from_auth(request)
+    challenge, _e, _t = _pk_take("reg:" + email)
+    rp_id, origin = _rp(request)
+    try:
+        v = webauthn.verify_registration_response(credential=data.get("credential"), expected_challenge=challenge,
+                                                  expected_rp_id=rp_id, expected_origin=origin,
+                                                  require_user_verification=True)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"That passkey couldn't be added ({type(exc).__name__}).")
+    name = " ".join(str(data.get("name") or "").split())[:60] or _device_label(request)
+    transports = ",".join((data.get("credential") or {}).get("response", {}).get("transports") or [])
+    cid = bytes_to_base64url(v.credential_id)
+    _pk_db(lambda con: con.execute("INSERT OR REPLACE INTO passkeys (id, email, public_key, sign_count, name, transports, created) "
+                                   "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                   (cid, email, bytes_to_base64url(v.credential_public_key), v.sign_count, name, transports, time.time())))
+    _security_event(email, "passkey_added", name)
+    return {"id": cid, "name": name}
+
+
+@app.get("/account/passkeys")
+def passkey_list(request: Request):
+    email = _email_from_auth(request)
+    rows = _pk_db(lambda con: con.execute("SELECT id, name, created, last_used FROM passkeys WHERE email=? ORDER BY created",
+                                          (email,)).fetchall())
+    return {"passkeys": [{"id": r[0], "name": r[1], "created": r[2], "last_used": r[3]} for r in rows]}
+
+
+@app.delete("/account/passkeys/{pid}")
+def passkey_delete(pid: str, request: Request):
+    email = _email_from_auth(request)
+    n = _pk_db(lambda con: con.execute("DELETE FROM passkeys WHERE id=? AND email=?", (pid, email)).rowcount)
+    if not n:
+        raise HTTPException(status_code=404, detail="That passkey wasn't found.")
+    _security_event(email, "passkey_removed")
+    return {"ok": True}
+
+
+@app.post("/auth/passkey/signin/begin")   # not /auth/passkey/begin: /auth/{provider}/begin would catch it
+def passkey_signin_begin(request: Request):
+    """Discoverable sign-in: the browser shows the person's Gink passkeys; nobody types an email."""
+    import webauthn
+    from webauthn.helpers import structs
+    rp_id, _origin = _rp(request)
+    options = webauthn.generate_authentication_options(rp_id=rp_id, user_verification=structs.UserVerificationRequirement.REQUIRED)
+    request_id = secrets.token_urlsafe(18)
+    _pk_remember("auth:" + request_id, options.challenge)
+    return {"request_id": request_id, "options": _json.loads(webauthn.options_to_json(options))}
+
+
+@app.post("/auth/passkey/signin/finish")
+def passkey_signin_finish(request: Request, data: dict = Body(...)):
+    import webauthn
+    challenge, _e, _t = _pk_take("auth:" + str(data.get("request_id") or ""))
+    credential = data.get("credential") or {}
+    cid = str(credential.get("id") or "")
+    row = _pk_db(lambda con: con.execute("SELECT email, public_key, sign_count FROM passkeys WHERE id=?", (cid,)).fetchone())
+    if not row:
+        raise HTTPException(status_code=401, detail="That passkey isn't linked to a Gink account (it may have been removed).")
+    email, public_key, sign_count = row
+    rp_id, origin = _rp(request)
+    try:
+        v = webauthn.verify_authentication_response(credential=credential, expected_challenge=challenge, expected_rp_id=rp_id,
+                                                    expected_origin=origin, credential_public_key=webauthn.base64url_to_bytes(public_key),
+                                                    credential_current_sign_count=sign_count, require_user_verification=True)
+    except Exception as exc:
+        raise HTTPException(status_code=401, detail=f"Passkey sign-in didn't work ({type(exc).__name__}). Try again or use your password.")
+    _pk_db(lambda con: con.execute("UPDATE passkeys SET sign_count=?, last_used=? WHERE id=?", (v.new_sign_count, time.time(), cid)))
+    user = _get_user(email) or {"name": ""}
+    return _token_response(email, user.get("name") or "")     # device + fingerprint/face/PIN: two factors already
