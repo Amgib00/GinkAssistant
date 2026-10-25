@@ -39,3 +39,10 @@ The workspace SHALL run the open .py or .js file, and pytest when the project ha
 #### Scenario: Code tries to read the sign-in
 - **WHEN** code being run reads Gink's localStorage
 - **THEN** it gets a security error and the sign-in stays private
+
+### Requirement: Upload to GitHub
+People SHALL be able to connect GitHub separately from signing in (repository permission, the token stored encrypted and never sent to the browser or to another service), push a project to a new or existing repository (private by default) as one commit on top of the branch with files deleted in Genie removed, and disconnect, which revokes the token at GitHub; account deletion SHALL revoke it too.
+
+#### Scenario: Pushing twice
+- **WHEN** a project is pushed, a file is deleted in Genie, and it is pushed again
+- **THEN** the second commit builds on the first and the deleted file is gone from the repository

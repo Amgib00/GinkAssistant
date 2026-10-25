@@ -1165,3 +1165,17 @@ New services/live_info.py (all free, no API keys):
   (SecurityError), Stop. Fixed: Pyodide's batched output has no line breaks. NOT testable here:
   pytest (its wheel downloads from the CDN) -- check on the live site.
 - GENIE_SYSTEM tells the AI how running works. Next: GitHub upload (phase 2, part 2).
+
+## 0.1.24: Genie -> GitHub (phase 2, part 2)
+- "Connect GitHub" (scope repo) with the existing GitHub OAuth app; return address
+  /auth/github/callback/connect (under the registered callback, so no GitHub setup; route-shadow
+  test confirms /auth/{provider}/callback doesn't catch it). Token sealed in connections
+  (service "github", scopes column = login). POST /genie/projects/{pid}/github: create the repo
+  (auto_init, private by default) if needed, then one tree (full snapshot: deletions apply) + commit on
+  the branch head + PATCH the ref. 401 -> forget the token, ask to reconnect. DELETE /genie/github and
+  account deletion revoke via DELETE /applications/{client_id}/token.
+- FIX found while adding it: account deletion sent EVERY connection's token to Google's revoke
+  endpoint -- a GitHub token would have gone to Google. Each token now goes only to its own service
+  (sync and async versions); test asserts Google never receives the GitHub token.
+- genie.html: GitHub dialog (connect + auto-detect, repo remembered per project, private, message,
+  result link). Browser-checked with GitHub simulated.

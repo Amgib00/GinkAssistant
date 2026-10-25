@@ -60,6 +60,12 @@
   .working { display:flex; align-items:center; gap:8px; color:var(--muted); }
   .dot { width:9px; height:9px; border-radius:50%; background:var(--accent); animation:p 1s infinite ease-in-out; }
   @keyframes p { 50% { opacity:.25; transform:scale(.7); } }
+  dialog { border:1px solid var(--line); border-radius:16px; padding:22px; background:var(--panel); color:var(--text); width:min(440px, 92vw); }
+  dialog::backdrop { background:rgba(0,0,0,.35); }
+  dialog h2 { margin:0 0 6px; font-size:19px; } dialog label { display:block; font-weight:600; font-size:13px; margin:12px 0 4px; }
+  dialog input[type=text] { width:100%; border:1px solid var(--line); border-radius:10px; padding:8px 10px; background:var(--bg); }
+  dialog .row { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; flex-wrap:wrap; }
+  dialog .result a { color:var(--accent); font-weight:650; word-break:break-all; }
   [hidden] { display:none !important; }
   @media (max-width: 900px) { main { grid-template-columns:1fr; grid-template-rows:auto 45vh auto; } .files { max-height:160px; border-right:0; border-bottom:1px solid var(--line); }
     .editor { border-right:0; } .chat { min-height:380px; } }
@@ -73,6 +79,7 @@
   <div class="grow"></div>
   <button class="ghost" id="preview" hidden>Preview</button>
   <button class="ghost" id="download" hidden>Download ZIP</button>
+  <button class="ghost" id="github" hidden>GitHub</button>
   <label class="ghost" style="display:inline-block;padding:7px 14px;border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--line);font-weight:650;cursor:pointer">
     Upload ZIP<input type="file" id="upload" accept=".zip" hidden></label>
   <button class="danger" id="del" hidden>Delete</button>
@@ -112,6 +119,24 @@
     </div>
   </section>
 </main>
+
+<dialog id="ghdlg">
+  <h2>Push to GitHub</h2>
+  <p class="note" id="gh-who"></p>
+  <div id="gh-connect" hidden>
+    <p>Connect your GitHub account so Genie can create a repository and upload this project. GitHub will ask you to allow access to your repositories; you can disconnect anytime.</p>
+    <div class="row"><button class="ghost" id="gh-cancel1">Cancel</button><button id="gh-connect-btn">Connect GitHub</button></div>
+  </div>
+  <div id="gh-push" hidden>
+    <label for="gh-repo">Repository name</label><input type="text" id="gh-repo" maxlength="90">
+    <label><input type="checkbox" id="gh-private" checked> Private repository</label>
+    <label for="gh-msg">What changed (commit message)</label><input type="text" id="gh-msg" value="Update from Gink Genie" maxlength="200">
+    <p class="note">Uploads the whole project as one commit. Files you deleted here are removed from the repository too.</p>
+    <p class="result" id="gh-result" aria-live="polite"></p>
+    <div class="row"><button class="danger" id="gh-disconnect">Disconnect GitHub</button><div class="grow"></div>
+      <button class="ghost" id="gh-cancel2">Close</button><button id="gh-push-btn">Push to GitHub</button></div>
+  </div>
+</dialog>
 
 <script>
 (function () {
@@ -153,13 +178,13 @@
   }
   function showStart() {
     S.project = null; $("start").hidden = false; $("work").hidden = true;
-    ["preview", "download", "del"].forEach(function (id) { $(id).hidden = true; });
+    ["preview", "download", "del", "github"].forEach(function (id) { $(id).hidden = true; });
   }
   function openProject(id) {
     return api("/genie/projects/" + encodeURIComponent(id)).then(function (j) {
       S.project = j.project; S.files = j.files || []; S.path = ""; S.saved = "";
       $("start").hidden = true; $("work").hidden = false;
-      ["preview", "download", "del"].forEach(function (x) { $(x).hidden = false; });
+      ["preview", "download", "del", "github"].forEach(function (x) { $(x).hidden = false; });
       $("msgs").innerHTML = ""; (S.log[id] || []).forEach(function (m) { draw(m); }); renderTree(); clearEditor();
       var first = S.files.filter(function (f) { return f.path === "index.html"; })[0] || S.files[0];
       if (first) openFile(first.path);
@@ -337,6 +362,52 @@
   $("del").onclick = function () {
     if (!confirm("Delete the project \u201c" + S.project.name + "\u201d and all its files? This can't be undone.")) return;
     api("/genie/projects/" + encodeURIComponent(S.project.id), { method: "DELETE" }).then(function () { S.project = null; return loadProjects(); });
+  };
+  // ---- GitHub
+  var GH = { timer: null };
+  function slug(t) { return String(t || "gink-project").toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^[-.]+|[-.]+$/g, "").slice(0, 90) || "gink-project"; }
+  function ghShow() {
+    $("gh-result").textContent = "";
+    return api("/genie/github").then(function (st) {
+      $("gh-connect").hidden = st.connected; $("gh-push").hidden = !st.connected;
+      $("gh-who").textContent = !st.configured ? "GitHub isn\u2019t set up on this server yet." : st.connected ? "Connected as " + st.login + "." : "";
+      $("gh-connect-btn").disabled = !st.configured;
+      if (st.connected) {
+        var saved = ""; try { saved = localStorage.getItem("gink_genie_repo_" + S.project.id) || ""; } catch (e) {}
+        $("gh-repo").value = saved || slug(S.project.name);
+      }
+      return st;
+    });
+  }
+  $("github").onclick = function () { ghShow().then(function () { $("ghdlg").showModal(); }); };
+  $("gh-cancel1").onclick = $("gh-cancel2").onclick = function () { clearInterval(GH.timer); $("ghdlg").close(); };
+  $("gh-connect-btn").onclick = function () {
+    var win = window.open("about:blank", "_blank");
+    api("/genie/github/begin", { body: {} }).then(function (j) {
+      if (win) win.location.href = j.url; else location.href = j.url;
+      $("gh-who").textContent = "Finish in the new window \u2014 Genie will notice when you\u2019re done.";
+      var tries = 0; clearInterval(GH.timer);
+      GH.timer = setInterval(function () {
+        if (++tries > 60) return clearInterval(GH.timer);
+        api("/genie/github").then(function (st) { if (st.connected) { clearInterval(GH.timer); ghShow(); } });
+      }, 3000);
+    }).catch(function (e) { if (win) win.close(); $("gh-who").textContent = e.message; });
+  };
+  $("gh-push-btn").onclick = function () {
+    var btn = this, repo = $("gh-repo").value.trim(); btn.disabled = true; $("gh-result").textContent = "Uploading\u2026";
+    if (dirty()) saveFile();
+    api("/genie/projects/" + encodeURIComponent(S.project.id) + "/github", { body: { repo: repo, private: $("gh-private").checked, message: $("gh-msg").value } })
+      .then(function (j) {
+        try { localStorage.setItem("gink_genie_repo_" + S.project.id, repo); } catch (e) {}
+        var r = $("gh-result"); r.textContent = "Uploaded " + j.files + (j.files === 1 ? " file" : " files") + " to ";
+        var a = el("a", "", j.repo); a.href = /^https:\/\/github\.com\//.test(j.url) ? j.url : "#"; a.target = "_blank"; a.rel = "noopener";
+        r.appendChild(a); r.appendChild(document.createTextNode("."));
+      }).catch(function (e) { $("gh-result").textContent = e.message; if (/Connect GitHub/.test(e.message)) ghShow(); })
+      .then(function () { btn.disabled = false; });
+  };
+  $("gh-disconnect").onclick = function () {
+    if (!confirm("Disconnect GitHub? Genie will no longer be able to upload. Your repositories stay on GitHub.")) return;
+    api("/genie/github", { method: "DELETE" }).then(ghShow);
   };
   window.addEventListener("beforeunload", function (e) { if (dirty()) { e.preventDefault(); e.returnValue = ""; } });
   loadProjects().catch(function () {});

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.24 (October 2026)
+
+- Gink Genie uploads to GitHub: connect GitHub once, then push a project to a new or existing
+  repository (private by default) as a commit -- push again after changes and it adds a new commit
+
 ## 0.1.23 (October 2026)
 
 - Gink Genie runs your code: press Run on a Python or JavaScript file, or Run tests (pytest), and

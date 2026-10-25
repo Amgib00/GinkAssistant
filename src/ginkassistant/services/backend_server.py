@@ -4037,6 +4037,9 @@ async def _forget_connections(email: str):
     """Account deletion: revoke and delete every connection."""
     rows = _conn_db(lambda con: con.execute("SELECT service, refresh FROM connections WHERE email=?", (email,)).fetchall())
     for service, refresh in rows:
+        if service == "github":                      # each token goes only to its own service
+            _gh_revoke(_unseal(refresh))
+            continue
         await _revoke_google(refresh)
         _access_tokens.pop((email, service), None)
     _conn_db(lambda con: con.execute("DELETE FROM connections WHERE email=?", (email,)))
@@ -4231,6 +4234,9 @@ def _forget_connections_sync(email: str):
     import httpx
     rows = _conn_db(lambda con: con.execute("SELECT service, refresh FROM connections WHERE email=?", (email,)).fetchall())
     for service, refresh in rows:
+        if service == "github":                      # each token goes only to its own service
+            _gh_revoke(_unseal(refresh))
+            continue
         try:
             httpx.post(GOOGLE_REVOKE, data={"token": _unseal(refresh)}, timeout=10)
         except Exception:
@@ -5136,3 +5142,152 @@ def genie_preview(key: str, request: Request, path: str = ""):
     return Response(content, media_type=MIME.get(ext, "text/plain") + "; charset=utf-8",
                     headers={"Content-Security-Policy": csp, "X-Content-Type-Options": "nosniff",
                              "Referrer-Policy": "no-referrer", "Cache-Control": "no-store"})
+
+
+# ================================================================ Gink Genie -> GitHub ("Connect GitHub", "Push to GitHub")
+# Separate from "Sign in with GitHub" (which never gets repository access). Uses the same GitHub OAuth app;
+# the return address is under its registered callback, as GitHub requires. Token sealed in `connections`.
+GITHUB_API = "https://api.github.com"
+_gh_states = {}
+
+
+def _gh_headers(token: str) -> dict:
+    return {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "Gink-Genie"}
+
+
+def _gh_token(email: str):
+    row = _conn_db(lambda con: con.execute("SELECT refresh, scopes FROM connections WHERE email=? AND service='github'",
+                                           (email,)).fetchone())
+    return (_unseal(row[0]), row[1]) if row else (None, None)
+
+
+def _gh_revoke(token: str):
+    """Tell GitHub to forget the token (the OAuth app's own credentials authorise this)."""
+    import httpx
+    cid, secret = _env("GITHUB_CLIENT_ID"), _env("GITHUB_CLIENT_SECRET")
+    if not (cid and secret and token):
+        return
+    try:
+        httpx.request("DELETE", f"{GITHUB_API}/applications/{cid}/token", auth=(cid, secret), json={"access_token": token},
+                      headers={"Accept": "application/vnd.github+json", "User-Agent": "Gink-Genie"}, timeout=10)
+    except Exception:
+        pass
+
+
+@app.get("/genie/github")
+def genie_github_status(request: Request):
+    email = _email_from_auth(request)
+    token, login = _gh_token(email)
+    return {"configured": bool(_env("GITHUB_CLIENT_ID") and _env("GITHUB_CLIENT_SECRET")), "connected": bool(token),
+            "login": login or ""}
+
+
+@app.post("/genie/github/begin")
+def genie_github_begin(request: Request):
+    email = _email_from_auth(request)
+    if not (_env("GITHUB_CLIENT_ID") and _env("GITHUB_CLIENT_SECRET")):
+        raise HTTPException(status_code=503, detail="GitHub isn't set up on this server yet (GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET).")
+    now = time.time()
+    with _otp_lock:
+        for k in [k for k, v in _gh_states.items() if now - v["created"] > 600]:
+            _gh_states.pop(k, None)
+        state = secrets.token_urlsafe(24)
+        _gh_states[state] = {"email": email, "created": now}
+    params = {"client_id": _env("GITHUB_CLIENT_ID"), "redirect_uri": _public_base(request).rstrip("/") + "/auth/github/callback/connect",
+              "scope": "repo", "state": state, "allow_signup": "false"}
+    return {"url": PROVIDERS["github"]["authorize"] + "?" + urllib.parse.urlencode(params)}
+
+
+@app.get("/auth/github/callback/connect", response_class=HTMLResponse)
+async def genie_github_callback(request: Request, code: str = "", state: str = "", error: str = ""):
+    import httpx
+    with _otp_lock:
+        entry = _gh_states.pop(state, None)
+    if not entry or time.time() - entry["created"] > 600:
+        return _connected_page("That link expired", "Go back to Gink Genie and try connecting again.", 400)
+    if error or not code:
+        return _connected_page("Not connected", "GitHub wasn't connected. You can try again from Gink Genie.", 400)
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            r = await client.post(PROVIDERS["github"]["token"], headers={"Accept": "application/json"}, data={
+                "client_id": _env("GITHUB_CLIENT_ID"), "client_secret": _env("GITHUB_CLIENT_SECRET"), "code": code,
+                "redirect_uri": _public_base(request).rstrip("/") + "/auth/github/callback/connect"})
+            token = (r.json() if r.status_code == 200 else {}).get("access_token")
+            user = (await client.get(f"{GITHUB_API}/user", headers=_gh_headers(token))).json() if token else {}
+    except Exception:
+        token, user = None, {}
+    if not token or not user.get("login"):
+        return _connected_page("Not connected", "GitHub didn't confirm the connection. Please try again.", 502)
+    email = entry["email"]
+    _conn_db(lambda con: con.execute(
+        "INSERT INTO connections (email, service, refresh, scopes, created) VALUES (?, 'github', ?, ?, ?) "
+        "ON CONFLICT(email, service) DO UPDATE SET refresh=excluded.refresh, scopes=excluded.scopes, created=excluded.created",
+        (email, _seal(token), user["login"], time.time())))           # scopes column holds the GitHub username
+    _security_event(email, "app_connected", "GitHub")
+    return _connected_page("GitHub is connected", f"Connected as {user['login']}. You can close this window and go back to Gink Genie.")
+
+
+@app.delete("/genie/github")
+def genie_github_disconnect(request: Request):
+    email = _email_from_auth(request)
+    token, _login = _gh_token(email)
+    if token:
+        _gh_revoke(token)
+        _conn_db(lambda con: con.execute("DELETE FROM connections WHERE email=? AND service='github'", (email,)))
+        _security_event(email, "app_disconnected", "GitHub")
+    return {"ok": True}
+
+
+@app.post("/genie/projects/{pid}/github")
+async def genie_push(pid: str, request: Request, data: dict = Body(...)):
+    """Upload the whole project as one commit (files deleted in Genie disappear from the repository too)."""
+    import httpx
+    email = _email_from_auth(request)
+    project = _genie_project(email, pid)
+    token, login = _gh_token(email)
+    if not token:
+        raise HTTPException(status_code=409, detail="Connect GitHub first.")
+    repo = re.sub(r"[^A-Za-z0-9._-]+", "-", str(data.get("repo") or project["name"])).strip("-.")[:90] or "gink-project"
+    message = " ".join(str(data.get("message") or "Update from Gink Genie").split())[:200]
+    files = _genie_files(pid)
+    if not files:
+        raise HTTPException(status_code=422, detail="The project is empty: nothing to upload.")
+    h = _gh_headers(token)
+
+    async def gh(client, method, path, **kw):
+        r = await client.request(method, GITHUB_API + path, headers=h, **kw)
+        if r.status_code == 401:
+            _conn_db(lambda con: con.execute("DELETE FROM connections WHERE email=? AND service='github'", (email,)))
+            raise HTTPException(status_code=409, detail="GitHub access ended. Connect GitHub again.")
+        return r
+
+    async with httpx.AsyncClient(timeout=60) as client:
+        r = await gh(client, "GET", f"/repos/{login}/{repo}")
+        if r.status_code == 404:
+            r = await gh(client, "POST", "/user/repos", json={"name": repo, "private": bool(data.get("private")), "auto_init": True,
+                                                           "description": f"{project['name']} -- made with Gink Genie"})
+            if r.status_code not in (200, 201):
+                raise HTTPException(status_code=502, detail=f"GitHub couldn't create the repository ({r.json().get('message', r.status_code)}).")
+        elif r.status_code != 200:
+            raise HTTPException(status_code=502, detail="GitHub didn't answer as expected. Please try again.")
+        info = r.json()
+        branch = info.get("default_branch") or "main"
+        ref = await gh(client, "GET", f"/repos/{login}/{repo}/git/ref/heads/{branch}")
+        if ref.status_code != 200:
+            raise HTTPException(status_code=502, detail="Couldn't read the repository's main branch.")
+        head = ref.json()["object"]["sha"]
+        tree = await gh(client, "POST", f"/repos/{login}/{repo}/git/trees", json={"tree": [
+            {"path": p, "mode": "100644", "type": "blob", "content": c} for p, c in sorted(files.items())]})
+        if tree.status_code != 201:
+            raise HTTPException(status_code=502, detail="GitHub refused the files.")
+        commit = await gh(client, "POST", f"/repos/{login}/{repo}/git/commits",
+                          json={"message": message, "tree": tree.json()["sha"], "parents": [head]})
+        if commit.status_code != 201:
+            raise HTTPException(status_code=502, detail="GitHub refused the commit.")
+        sha = commit.json()["sha"]
+        upd = await gh(client, "PATCH", f"/repos/{login}/{repo}/git/refs/heads/{branch}", json={"sha": sha})
+        if upd.status_code != 200:
+            raise HTTPException(status_code=502, detail="GitHub didn't accept the update (was the branch changed elsewhere? Try again).")
+    url = info.get("html_url") or f"https://github.com/{login}/{repo}"
+    return {"repo": f"{login}/{repo}", "url": url, "commit": sha, "commit_url": f"{url}/commit/{sha}", "files": len(files)}
