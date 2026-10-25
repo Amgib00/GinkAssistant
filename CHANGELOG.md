@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.19 (October 2026)
+
+New abilities (ask Gink in a chat):
+- A money book: "I sold 3 bags of rice for 45,000 CFA", "I spent 5,000 on fuel", "how much did I
+  spend this month?" -- totals by category, every currency kept separate, kept on your device
+- Invoices as PDF: "make an invoice for Awa: 2 dresses at 15,000 each"
+- Loan calculator, splitting a bill (with tip), converting units (km/miles, kg/lb, °C/°F,
+  hectares/acres, litres/gallons...), strong passwords, coin / dice / random picks
+- QR codes for links, phone numbers and Wi-Fi
+
+## 0.1.18 (October 2026)
+
+- New support address: gink@ginkaisupport.com (website, privacy policy, terms, account deletion
+  and Settings > Help)
+
 ## 0.1.17 (October 2026)
 
 - Continue with phone: sign up and sign in with a phone number and an SMS code (on the web

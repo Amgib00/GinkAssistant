@@ -1107,3 +1107,20 @@ New services/live_info.py (all free, no API keys):
   phone version, which took _otp_lock while register_verify already held it -> deadlock: email
   sign-up would have frozen on the server. Renamed to _check_phone_code; new test fails if any
   top-level function in backend_server.py is defined twice (pyflakes misses used redefinitions).
+
+## 0.1.18: support address
+- contact@ginkai.com was never the owner's domain: replaced with gink@ginkaisupport.com in the
+  website (contact, download, pricing, privacy, terms, delete-account) and render.yaml
+  GINK_SUPPORT_EMAIL (Settings > Help). The Render dashboard value must be changed by hand if the
+  service wasn't created from the blueprint.
+
+## 0.1.19: nine new abilities (agent tools, 57 -> 67)
+- services/money.py MoneyBook (money.db next to files/): income/expense per currency (never
+  converted), categories, periods today/week/month/year/all, undo_last. services/everyday.py:
+  convert_units (length/mass/volume/area/speed/temperature + aliases), loan (amortised), split_bill
+  (rounded up), password (secrets, every class), random_choice (SystemRandom), qr_png (segno, now in
+  the apps' shared requires; pure Python, fine on 32-bit Android) + wifi_qr_text.
+- tools.py: record_money, money_summary, undo_last_money, make_invoice (file_maker PDF with a table),
+  loan_calculator, split_bill, convert_units, generate_password, random_choice, make_qr_code.
+- tests/test_everyday_money.py (QR read back with OpenCV when available). The agent runs in the apps'
+  typed chats; the web app has no agent yet.

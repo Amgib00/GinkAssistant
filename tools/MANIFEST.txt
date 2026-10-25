@@ -128,6 +128,7 @@ src/ginkassistant/services/billing_catalog.py
 src/ginkassistant/services/briefing.py
 src/ginkassistant/services/data_export.py
 src/ginkassistant/services/device_region.py
+src/ginkassistant/services/everyday.py
 src/ginkassistant/services/file_maker.py
 src/ginkassistant/services/groq_worker.py
 src/ginkassistant/services/history.py
@@ -138,6 +139,7 @@ src/ginkassistant/services/live_info.py
 src/ginkassistant/services/local_llm.py
 src/ginkassistant/services/markdown_render.py
 src/ginkassistant/services/memory.py
+src/ginkassistant/services/money.py
 src/ginkassistant/services/news.py
 src/ginkassistant/services/paths.py
 src/ginkassistant/services/personality.py
@@ -206,6 +208,7 @@ tests/test_dev_platform.py
 tests/test_developer_api.py
 tests/test_device_signin.py
 tests/test_email_delivery.py
+tests/test_everyday_money.py
 tests/test_formatting_security.py
 tests/test_gink_cloud.py
 tests/test_gink_dataset.py

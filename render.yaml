@@ -69,7 +69,7 @@ services:
       - key: GINK_PRO_CLAUDE_DAILY  # Claude messages per Pro user per day (Claude costs more than Groq)
         value: "50"
       - key: GINK_SUPPORT_EMAIL     # shown in Settings -> Help
-        value: contact@ginkai.com
+        value: gink@ginkaisupport.com
       - key: GINK_PRIVACY_URL       # Settings -> Privacy (required by app stores)
         value: https://amgib00.github.io/GinkAssistant/privacy.html
       - key: GINK_TERMS_URL

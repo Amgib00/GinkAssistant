@@ -75,3 +75,4 @@ briefcase>=0.4.4; python_version >= "3.11" and (sys_platform != "darwin" or plat
 pytest
 toga-dummy
 tomli; python_version < "3.11"     # tools/check_project.py on Python 3.10
+segno                      # QR codes

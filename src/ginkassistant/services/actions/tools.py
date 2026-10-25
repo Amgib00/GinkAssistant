@@ -148,6 +148,32 @@ TOOL_SPECS = [
     _fn("email_draft", "Write a Gmail draft for the user (not sent).", {"to": S, "subject": S, "body": S}, ["to", "subject", "body"]),
     _fn("email_send", "Send an email from the user's Gmail.", {"to": S, "subject": S, "body": S}, ["to", "subject", "body"]),
     _fn("drive_search", "Find files in the user's Google Drive by name.", {"query": S}, ["query"]),
+    # Money and small business (kept on this device)
+    _fn("record_money", "Record income (a sale, salary...) or an expense in the user's money book. currency: ISO code "
+        "like XOF, SLE, NGN, GHS, USD (ask if unclear). when: YYYY-MM-DD, default today.",
+        {"kind": {"type": "string", "enum": ["income", "expense"]}, "amount": {"type": "number"}, "currency": S,
+         "category": S, "note": S, "when": S}, ["kind", "amount", "currency"]),
+    _fn("money_summary", "Totals of the user's recorded income and expenses (by category) for a period.",
+        {"period": {"type": "string", "enum": ["today", "week", "month", "year", "all"]}}),
+    _fn("undo_last_money", "Remove the last income or expense recorded (when the user says it was a mistake).", {}),
+    _fn("make_invoice", "Create a PDF invoice. items: [{description, quantity, unit_price}].",
+        {"client": S, "items": {"type": "array", "items": {"type": "object", "properties": {
+            "description": S, "quantity": {"type": "number"}, "unit_price": {"type": "number"}}}},
+         "currency": S, "business_name": S, "due_date": S, "notes": S, "invoice_number": S}, ["client", "items", "currency"]),
+    _fn("loan_calculator", "Monthly payment, total paid and total interest for a loan with equal monthly payments.",
+        {"amount": {"type": "number"}, "annual_rate_percent": {"type": "number"}, "months": {"type": "integer"}}, ["amount", "annual_rate_percent", "months"]),
+    _fn("split_bill", "Split a bill between people, with an optional tip.",
+        {"total": {"type": "number"}, "people": {"type": "integer"}, "tip_percent": {"type": "number"}}, ["total", "people"]),
+    # Everyday tools
+    _fn("convert_units", "Convert length, weight, volume, area (hectares, acres), speed or temperature.",
+        {"value": {"type": "number"}, "from_unit": S, "to_unit": S}, ["value", "from_unit", "to_unit"]),
+    _fn("generate_password", "Create a strong random password on this device.",
+        {"length": {"type": "integer"}, "symbols": {"type": "boolean"}}),
+    _fn("random_choice", "Flip a coin, roll dice, or pick at random from options.",
+        {"kind": {"type": "string", "enum": ["coin", "dice", "pick"]}, "options": {"type": "array", "items": S},
+         "sides": {"type": "integer"}, "count": {"type": "integer"}}),
+    _fn("make_qr_code", "Make a QR code image for a link, text or phone number, or for Wi-Fi (wifi_name + wifi_password).",
+        {"text": S, "wifi_name": S, "wifi_password": S, "title": S}),
 ]
 
 
@@ -543,6 +569,130 @@ class ToolRunner:
 
     async def _t_drive_search(self, query):
         return await self._connected("drive/search", {"query": query})
+
+    # ---- money and small business
+    def _money(self):
+        from ..money import MoneyBook
+        if not self.files_dir:
+            raise ValueError("The money book isn't available here.")
+        if getattr(self, "_money_book", None) is None:
+            import os
+            self._money_book = MoneyBook(os.path.join(os.path.dirname(os.path.abspath(self.files_dir)), "money.db"))
+        return self._money_book
+
+    def _t_record_money(self, kind, amount, currency, category="", note="", when=""):
+        try:
+            r = self._money().add(kind, amount, currency, category, note, when)
+        except ValueError as exc:
+            return {"ok": False, "message": str(exc)}
+        word = "Income" if r["kind"] == "income" else "Expense"
+        return {"ok": True, **r, "message": f"{word} recorded: {r['amount']:,.2f} {r['currency']} ({r['category']})."}
+
+    def _t_money_summary(self, period="month"):
+        try:
+            s = self._money().summary(period or "month")
+        except ValueError as exc:
+            return {"ok": False, "message": str(exc)}
+        if not s["entries"]:
+            return {"ok": True, **s, "message": f"Nothing recorded for this {s['period']} yet."}
+        lines = []
+        for cur, c in s["currencies"].items():
+            lines.append(f"{cur}: income {c['income']:,.2f}, expenses {c['expense']:,.2f}, balance {c['balance']:,.2f}")
+            if c["expense_by_category"]:
+                lines.append("  spent on: " + ", ".join(f"{k} {v:,.2f}" for k, v in c["expense_by_category"].items()))
+        return {"ok": True, **s, "message": "\n".join(lines)}
+
+    def _t_undo_last_money(self):
+        try:
+            done = self._money().undo_last()
+        except ValueError as exc:
+            return {"ok": False, "message": str(exc)}
+        return {"ok": done, "message": "Removed the last entry." if done else "There's nothing to remove."}
+
+    def _t_make_invoice(self, client, items, currency, business_name="", due_date="", notes="", invoice_number=""):
+        import datetime as _dt
+        from ..file_maker import FileMakerError, make_file
+        if not self.files_dir:
+            return {"ok": False, "message": "Files can't be created here."}
+        rows, total = [], 0.0
+        for it in items or []:
+            try:
+                q, price = float(it.get("quantity") or 1), float(it.get("unit_price") or 0)
+            except (TypeError, ValueError):
+                return {"ok": False, "message": "Each item needs a number for quantity and price."}
+            total += q * price
+            rows.append(f"| {str(it.get('description') or 'Item')[:80]} | {q:g} | {price:,.2f} | {q * price:,.2f} |")
+        if not rows:
+            return {"ok": False, "message": "An invoice needs at least one item."}
+        cur = (currency or "").upper()[:5]
+        number = invoice_number or _dt.date.today().strftime("INV-%Y%m%d-%H%M")
+        md = "\n".join([
+            f"**{business_name}**" if business_name else "", f"**Invoice {number}**",
+            f"Date: {_dt.date.today().isoformat()}" + (f" \u00b7 Due: {due_date}" if due_date else ""), "",
+            f"**Bill to:** {client}", "",
+            f"| Description | Qty | Unit price ({cur}) | Amount ({cur}) |", "|---|---|---|---|", *rows,
+            f"| **Total** | | | **{total:,.2f} {cur}** |", "", notes or "Thank you for your business."])
+        try:
+            made = make_file(self.files_dir, "pdf", f"Invoice {number} {client}"[:60], md)
+        except FileMakerError as exc:
+            return {"ok": False, "message": str(exc)}
+        return {"ok": True, "file": made.name, "path": made.path, "total": round(total, 2),
+                "message": f"Invoice for {client}: {total:,.2f} {cur}.\n\n{made.card_markdown()}"}
+
+    def _t_loan_calculator(self, amount, annual_rate_percent, months):
+        from ..everyday import loan
+        try:
+            r = loan(amount, annual_rate_percent, months)
+        except (ValueError, TypeError) as exc:
+            return {"ok": False, "message": str(exc)}
+        return {"ok": True, **r, "message": f"{r['monthly_payment']:,.2f} a month for {r['months']} months: "
+                                            f"{r['total_paid']:,.2f} in total, of which {r['total_interest']:,.2f} is interest."}
+
+    def _t_split_bill(self, total, people, tip_percent=0):
+        from ..everyday import split_bill
+        try:
+            r = split_bill(total, people, tip_percent)
+        except (ValueError, TypeError) as exc:
+            return {"ok": False, "message": str(exc)}
+        return {"ok": True, **r, "message": f"{r['each']:,.2f} each ({r['people']} people, total {r['total_with_tip']:,.2f})."}
+
+    # ---- everyday tools
+    def _t_convert_units(self, value, from_unit, to_unit):
+        from ..everyday import convert_units
+        try:
+            r = convert_units(value, from_unit, to_unit)
+        except (ValueError, TypeError) as exc:
+            return {"ok": False, "message": str(exc)}
+        return {"ok": True, **r, "message": f"{r['value']:g} {r['from']} = {r['result']:g} {r['to']}"}
+
+    def _t_generate_password(self, length=16, symbols=True):
+        from ..everyday import password
+        pw = password(length, symbols if symbols is not None else True)
+        return {"ok": True, "password": pw, "message": f"Here's a strong password: `{pw}` (made on this device; it isn't saved)."}
+
+    def _t_random_choice(self, kind="coin", options=None, sides=6, count=1):
+        from ..everyday import random_choice
+        try:
+            got = random_choice(kind or "coin", options, sides, count)
+        except (ValueError, TypeError) as exc:
+            return {"ok": False, "message": str(exc)}
+        return {"ok": True, "result": got, "message": ", ".join(str(g) for g in got)}
+
+    def _t_make_qr_code(self, text="", wifi_name="", wifi_password="", title=""):
+        from ..everyday import qr_png, wifi_qr_text
+        from ..file_maker import MadeFile
+        import os
+        if not self.files_dir:
+            return {"ok": False, "message": "Files can't be created here."}
+        content = wifi_qr_text(wifi_name, wifi_password) if wifi_name else text
+        try:
+            path = qr_png(self.files_dir, content, title or ("Wi-Fi " + wifi_name if wifi_name else "QR code"))
+        except ImportError:
+            return {"ok": False, "message": "QR codes aren't available in this version of Gink."}
+        except ValueError as exc:
+            return {"ok": False, "message": str(exc)}
+        made = MadeFile(path=path, name=os.path.basename(path), kind="png", size=os.path.getsize(path))
+        return {"ok": True, "file": made.name, "path": path, "message": f"Here's your QR code:\n\n{made.card_markdown()}"}
 
     async def _t_web_search(self, query):
         researcher = getattr(self, "web_researcher", None)     # set by the app: real web search via the Gink server
