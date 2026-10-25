@@ -114,3 +114,14 @@ def test_no_server_function_is_defined_twice():
     tree = ast.parse(open(os.path.join(ROOT, "src", "ginkassistant", "services", "backend_server.py"), encoding="utf-8").read())
     names = collections.Counter(n.name for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)))
     assert [n for n, c in names.items() if c > 1] == []
+
+
+def test_old_chats_show_answers_without_waiting_for_the_server():
+    """Opening an old chat showed every answer as "Thinking..." until /render answered -- forever when
+    the (free-plan) server was slow. Answers must appear as text first, with a time limit on /render."""
+    bridge = open(os.path.join(ROOT, "webapp", "bridge.js"), encoding="utf-8").read()
+    i = bridge.index("function openSession(")
+    body = bridge[i:bridge.index("\n  }\n", i)]
+    assert body.index("setPlainText(a[0]") < body.index('api("/render"')          # text first, then formatting
+    assert "Promise.race" in body and "10000" in body                             # never waits forever
+    assert "Array.isArray(j.html)" in body and "W.current !== opened" in body     # no "undefined", no wrong chat

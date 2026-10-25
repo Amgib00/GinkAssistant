@@ -1124,3 +1124,10 @@ New services/live_info.py (all free, no API keys):
   loan_calculator, split_bill, convert_units, generate_password, random_choice, make_qr_code.
 - tests/test_everyday_money.py (QR read back with OpenCV when available). The agent runs in the apps'
   typed chats; the web app has no agent yet.
+
+## 0.1.20: old chats stuck on "Thinking..." (from the owner's screen recording)
+- openSession drew every saved answer as an empty message (spinner + logo) and filled them only when
+  POST /render answered; on Render's free plan that can take very long or never -> answers looked
+  stuck. Reproduced in Chromium with /render hanging (old: "Thinking... | Thinking..."). Now: plain
+  text first, /render raced against 10 s, applied only if the same chat is still open and html is
+  an array (a 500 used to put "undefined" into answers). Apps unaffected (they render locally).

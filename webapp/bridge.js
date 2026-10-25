@@ -263,9 +263,17 @@
       else { var aid = "w" + i + "-" + uid().slice(0, 8); addAssistantMessage(aid); answers.push([aid, m.content]); }
     });
     if (answers.length) {
-      api("/render", { items: answers.map(function (a) { return a[1]; }) }).then(function (r) { return r.json(); }).then(function (j) {
-        answers.forEach(function (a, i) { finalizeMessage(a[0], j.html[i]); });
-      }).catch(function () { answers.forEach(function (a) { setPlainText(a[0], a[1]); }); });
+      // Saved answers show at once as text (never "Thinking..."), then get the server's formatting
+      // when it arrives -- on Render's free plan /render can take a long time or not answer at all.
+      answers.forEach(function (a) { setPlainText(a[0], a[1] || ""); });
+      var opened = id;
+      var slow = new Promise(function (_, reject) { setTimeout(function () { reject(new Error("slow")); }, 10000); });
+      Promise.race([api("/render", { items: answers.map(function (a) { return a[1] || ""; }) }), slow])
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("render " + r.status)); })
+        .then(function (j) {
+          if (W.current !== opened || !j || !Array.isArray(j.html)) return;      // another chat is open now
+          answers.forEach(function (a, i) { if (typeof j.html[i] === "string") finalizeMessage(a[0], j.html[i]); });
+        }).catch(function () { /* the plain text stays: still readable */ });
     }
     setComposerText((load("gink_drafts", {}))[id] || "");
     refreshSidebar();

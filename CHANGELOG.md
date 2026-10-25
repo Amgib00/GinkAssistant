@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.20 (October 2026)
+
+- Web app: opening an older chat could show its answers stuck on "Thinking..." when the server was
+  slow to respond. Answers now appear straight away, and get their formatting when the server answers
+
 ## 0.1.19 (October 2026)
 
 New abilities (ask Gink in a chat):
