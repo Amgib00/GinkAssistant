@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.22 (October 2026)
+
+- Gink Genie (sidebar > Gink Genie): describe an app, website, game or script and Genie builds the
+  whole project, file by file. Keep changing it together in the chat, edit files yourself, preview
+  web projects, download them as a ZIP, or upload your own project for Genie to work on
+
 ## 0.1.21 (October 2026)
 
 - Web app: after Gink builds your website, follow-ups like "good, add more to it" or "make it blue"

@@ -92,6 +92,7 @@ openspec/specs/app-updates/spec.md
 openspec/specs/chats-storage-limits/spec.md
 openspec/specs/developer-api/spec.md
 openspec/specs/email-delivery/spec.md
+openspec/specs/gink-genie/spec.md
 openspec/specs/languages-voice/spec.md
 openspec/specs/location/spec.md
 openspec/specs/personalization/spec.md
@@ -161,6 +162,7 @@ src/ginkassistant/services/web_app/admin.html
 src/ginkassistant/services/web_app/auth.html
 src/ginkassistant/services/web_app/console.html
 src/ginkassistant/services/web_app/device.html
+src/ginkassistant/services/web_app/genie.html
 src/ginkassistant/services/web_app/index.html
 src/ginkassistant/ui/__init__.py
 src/ginkassistant/ui/agent_ui.py
@@ -210,6 +212,7 @@ tests/test_device_signin.py
 tests/test_email_delivery.py
 tests/test_everyday_money.py
 tests/test_formatting_security.py
+tests/test_genie.py
 tests/test_gink_cloud.py
 tests/test_gink_dataset.py
 tests/test_ios_startup.py

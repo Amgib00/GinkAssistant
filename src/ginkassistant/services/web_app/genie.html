@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gink Genie</title>
+<style>
+  :root { --bg:#F6F7F4; --panel:#FFFFFF; --side:#EEF1EC; --text:#151D23; --muted:#5D6B64; --line:#E1E5E0; --accent:#3F7D12;
+          --code:#FBFCFA; --lime:#A8F03C; --bad:#C42B1C; --sel:rgba(63,125,18,.10); }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0F1519; --panel:#151E24; --side:#121A1F; --text:#E9EFEA; --muted:#9AABA3;
+          --line:rgba(233,239,234,.12); --accent:#A8F03C; --code:#0E1519; --bad:#FF8A80; --sel:rgba(168,240,60,.10); } }
+  * { box-sizing:border-box; }
+  html, body { height:100%; margin:0; }
+  body { background:var(--bg); color:var(--text); font:14.5px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; display:flex; flex-direction:column; }
+  button, select, input, textarea { font:inherit; color:var(--text); }
+  button { border:0; border-radius:999px; padding:7px 14px; font-weight:650; cursor:pointer; background:var(--text); color:var(--bg); }
+  button.ghost { background:transparent; color:var(--text); box-shadow:inset 0 0 0 1.5px var(--line); }
+  button.danger { background:transparent; color:var(--bad); box-shadow:inset 0 0 0 1.5px var(--line); }
+  button:disabled { opacity:.5; cursor:default; }
+  header { display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid var(--line); background:var(--panel); flex-wrap:wrap; }
+  .brand { font-weight:800; font-size:17px; display:flex; align-items:center; gap:8px; margin-right:6px; }
+  .brand span { width:26px; height:26px; border-radius:8px; background:#151D23; color:var(--lime); display:grid; place-items:center; font-size:14px; }
+  select { border:1px solid var(--line); border-radius:10px; padding:6px 10px; background:var(--bg); max-width:240px; }
+  .grow { flex:1; }
+  main { flex:1; display:grid; grid-template-columns:230px 1fr 360px; min-height:0; }
+  .files { background:var(--side); border-right:1px solid var(--line); overflow:auto; padding:10px 6px; }
+  .files .t { font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); padding:4px 8px 8px; font-weight:700;
+              display:flex; justify-content:space-between; align-items:center; }
+  .files .t button { padding:2px 9px; font-size:12px; }
+  .file { display:block; width:100%; text-align:left; background:none; color:var(--text); border-radius:8px; padding:5px 8px; font-weight:500;
+          font-family:ui-monospace,Menlo,monospace; font-size:12.8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .file:hover { background:rgba(127,127,127,.10); } .file.on { background:var(--sel); color:var(--accent); }
+  .dir { color:var(--muted); font-size:12px; padding:6px 8px 2px; font-family:ui-monospace,Menlo,monospace; }
+  .editor { display:flex; flex-direction:column; min-width:0; border-right:1px solid var(--line); }
+  .ebar { display:flex; align-items:center; gap:10px; padding:8px 12px; border-bottom:1px solid var(--line); background:var(--panel); min-height:46px; }
+  .ebar .name { font-family:ui-monospace,Menlo,monospace; font-size:13px; } .dirty { color:var(--accent); font-weight:800; }
+  textarea.code { flex:1; width:100%; border:0; outline:none; resize:none; padding:14px 16px; background:var(--code); tab-size:2;
+                  font:13px/1.55 ui-monospace,Menlo,Consolas,monospace; white-space:pre; overflow:auto; }
+  .chat { display:flex; flex-direction:column; min-height:0; background:var(--panel); }
+  .msgs { flex:1; overflow:auto; padding:14px; display:flex; flex-direction:column; gap:10px; }
+  .m { border-radius:12px; padding:10px 12px; white-space:pre-wrap; word-wrap:break-word; }
+  .m.u { background:var(--sel); align-self:flex-end; max-width:90%; } .m.g { border:1px solid var(--line); }
+  .m .ch { margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
+  .m .ch button { padding:2px 9px; font-size:12px; font-family:ui-monospace,Menlo,monospace; font-weight:500; }
+  .m.err { color:var(--bad); border-color:var(--bad); }
+  .ask { border-top:1px solid var(--line); padding:10px; }
+  .ask textarea { width:100%; min-height:70px; max-height:200px; border:1px solid var(--line); border-radius:12px; padding:10px; background:var(--bg); resize:vertical; }
+  .ask .row { display:flex; justify-content:space-between; align-items:center; margin-top:8px; gap:8px; }
+  .note { color:var(--muted); font-size:12.5px; }
+  .start { flex:1; display:grid; place-items:center; padding:24px; }
+  .start .box { width:100%; max-width:680px; }
+  .start h1 { font-size:30px; margin:0 0 6px; } .start p { color:var(--muted); margin:0 0 16px; }
+  .start textarea { width:100%; min-height:120px; border:1.5px solid var(--line); border-radius:16px; padding:14px; background:var(--panel); font-size:15px; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 16px; }
+  .chips button { padding:6px 12px; font-weight:500; font-size:13px; }
+  .working { display:flex; align-items:center; gap:8px; color:var(--muted); }
+  .dot { width:9px; height:9px; border-radius:50%; background:var(--accent); animation:p 1s infinite ease-in-out; }
+  @keyframes p { 50% { opacity:.25; transform:scale(.7); } }
+  [hidden] { display:none !important; }
+  @media (max-width: 900px) { main { grid-template-columns:1fr; grid-template-rows:auto 45vh auto; } .files { max-height:160px; border-right:0; border-bottom:1px solid var(--line); }
+    .editor { border-right:0; } .chat { min-height:380px; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span>&#10052;</span> Gink Genie</div>
+  <select id="pick" aria-label="Project"></select>
+  <button class="ghost" id="new">New project</button>
+  <div class="grow"></div>
+  <button class="ghost" id="preview" hidden>Preview</button>
+  <button class="ghost" id="download" hidden>Download ZIP</button>
+  <label class="ghost" style="display:inline-block;padding:7px 14px;border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--line);font-weight:650;cursor:pointer">
+    Upload ZIP<input type="file" id="upload" accept=".zip" hidden></label>
+  <button class="danger" id="del" hidden>Delete</button>
+  <a href="/app" style="color:var(--muted);font-size:13px">Back to Gink</a>
+</header>
+
+<section class="start" id="start" hidden>
+  <div class="box">
+    <h1>What should Genie build?</h1>
+    <p>Describe an app, a website, a game or a script. Genie writes every file, and you can keep changing it together.</p>
+    <textarea id="idea" placeholder="A school app where teachers add students, classes and grades, with a report card page"></textarea>
+    <div class="chips" id="chips"></div>
+    <button id="go">Build it</button> <span class="note" id="start-note"></span>
+  </div>
+</section>
+
+<main id="work" hidden>
+  <nav class="files" aria-label="Files">
+    <div class="t">Files <button class="ghost" id="newfile">+ New</button></div>
+    <div id="tree"></div>
+  </nav>
+  <section class="editor">
+    <div class="ebar"><span class="name" id="fname">Choose a file</span><span class="dirty" id="dirty" hidden>&bull;</span>
+      <div class="grow"></div><button class="ghost" id="delfile" hidden>Delete file</button><button id="save" disabled>Save</button></div>
+    <textarea class="code" id="code" spellcheck="false" placeholder="Pick a file on the left, or ask Genie to build something." disabled></textarea>
+  </section>
+  <section class="chat" aria-label="Genie">
+    <div class="msgs" id="msgs" aria-live="polite"></div>
+    <div class="ask">
+      <textarea id="instr" placeholder="Ask Genie: add a login page, fix a bug, explain app.js…"></textarea>
+      <div class="row"><span class="note">Ctrl+Enter to send</span><button id="send">Ask Genie</button></div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var token = ""; try { token = localStorage.getItem("gink_token") || sessionStorage.getItem("gink_token") || ""; } catch (e) {}
+  if (!token) { location.replace("/login?next=/genie"); return; }
+  var S = { projects: [], project: null, files: [], path: "", saved: "", busy: false, log: {} };    // log: each project's Genie chat
+  var IDEAS = ["A school app: students, classes and grades", "A shop website with a cart", "A budget tracker for my small business",
+               "A quiz game about African capitals", "A Python script that renames my photos by date"];
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function api(path, opts) {
+    opts = opts || {};
+    var h = { Authorization: "Bearer " + token };
+    if (opts.body !== undefined) h["Content-Type"] = "application/json";
+    return fetch(path, { method: opts.method || (opts.body !== undefined ? "POST" : "GET"), headers: h,
+                         body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined }).then(function (r) {
+      if (r.status === 401) { location.replace("/login?next=/genie"); throw new Error("signed out"); }
+      if (opts.raw) return r;
+      return r.json().then(function (j) { if (!r.ok) throw new Error(typeof j.detail === "string" ? j.detail : "Something went wrong."); return j; });
+    });
+  }
+  function dirty() { return S.path && $("code").value !== S.saved; }
+  function setDirty() { $("dirty").hidden = !dirty(); $("save").disabled = !dirty(); }
+
+  // ---- projects
+  function loadProjects(selectId, listOnly) {
+    return api("/genie/projects").then(function (j) {
+      S.projects = j.projects || [];
+      var pick = $("pick"); pick.innerHTML = "";
+      S.projects.forEach(function (p) { var o = el("option", "", p.name + " (" + p.files + " files)"); o.value = p.id; pick.appendChild(o); });
+      pick.hidden = !S.projects.length;
+      if (listOnly && S.project) { pick.value = S.project.id; return; }     // just refresh the list: keep the chat
+      var want = selectId || (S.project && S.project.id) || (S.projects[0] && S.projects[0].id);
+      if (want) { pick.value = want; return openProject(want); }
+      showStart();
+    });
+  }
+  function showStart() {
+    S.project = null; $("start").hidden = false; $("work").hidden = true;
+    ["preview", "download", "del"].forEach(function (id) { $(id).hidden = true; });
+  }
+  function openProject(id) {
+    return api("/genie/projects/" + encodeURIComponent(id)).then(function (j) {
+      S.project = j.project; S.files = j.files || []; S.path = ""; S.saved = "";
+      $("start").hidden = true; $("work").hidden = false;
+      ["preview", "download", "del"].forEach(function (x) { $(x).hidden = false; });
+      $("msgs").innerHTML = ""; (S.log[id] || []).forEach(function (m) { draw(m); }); renderTree(); clearEditor();
+      var first = S.files.filter(function (f) { return f.path === "index.html"; })[0] || S.files[0];
+      if (first) openFile(first.path);
+    });
+  }
+  function renderTree() {
+    var tree = $("tree"); tree.innerHTML = ""; var lastDir = null;
+    if (!S.files.length) tree.appendChild(el("div", "note", "No files yet. Ask Genie to build something."));
+    S.files.forEach(function (f) {
+      var dir = f.path.indexOf("/") > 0 ? f.path.slice(0, f.path.lastIndexOf("/")) : "";
+      if (dir && dir !== lastDir) tree.appendChild(el("div", "dir", dir + "/"));
+      lastDir = dir;
+      var b = el("button", "file" + (f.path === S.path ? " on" : ""), (dir ? "\u2003" : "") + f.path.slice(dir ? dir.length + 1 : 0));
+      b.title = f.path + " \u00b7 " + f.size + " bytes"; b.onclick = function () { openFile(f.path); };
+      tree.appendChild(b);
+    });
+  }
+  function clearEditor() { $("fname").textContent = "Choose a file"; $("code").value = ""; $("code").disabled = true; $("delfile").hidden = true; setDirty(); }
+  function openFile(path) {
+    if (dirty() && !confirm("You have unsaved changes in " + S.path + ". Leave without saving?")) return;
+    loadFile(path);
+  }
+  function loadFile(path) {                                   // no unsaved-changes question (e.g. after Genie changed files)
+    api("/genie/projects/" + encodeURIComponent(S.project.id) + "/file?path=" + encodeURIComponent(path)).then(function (j) {
+      S.path = j.path; S.saved = j.content; $("code").value = j.content; $("code").disabled = false;
+      $("fname").textContent = j.path; $("delfile").hidden = false; setDirty(); renderTree();
+    }).catch(function (e) { say(e.message, true); });
+  }
+  function saveFile() {
+    if (!dirty()) return;
+    var content = $("code").value;
+    api("/genie/projects/" + encodeURIComponent(S.project.id) + "/file", { method: "PUT", body: { path: S.path, content: content } })
+      .then(function (j) { S.saved = content; S.files = j.files; setDirty(); renderTree(); }).catch(function (e) { say(e.message, true); });
+  }
+
+  // ---- Genie chat
+  function say(text, isError, changes) {
+    var entry = { kind: isError ? "err" : "g", text: text, changes: changes || [] };
+    if (S.project) (S.log[S.project.id] = S.log[S.project.id] || []).push(entry);
+    return draw(entry);
+  }
+  function said(text) {                                       // the person's own message
+    var entry = { kind: "u", text: text, changes: [] };
+    if (S.project) (S.log[S.project.id] = S.log[S.project.id] || []).push(entry);
+    return draw(entry);
+  }
+  function draw(entry) {
+    var changes = entry.changes, isError = entry.kind === "err";
+    var m = el("div", "m " + (entry.kind === "u" ? "u" : isError ? "g err" : "g"), entry.text);
+    if (changes && changes.length) {
+      var ch = el("div", "ch");
+      changes.forEach(function (c) {
+        var b = el("button", "ghost", (c.action === "created" ? "+ " : c.action === "deleted" ? "\u2212 " : "\u270e ") + c.path);
+        b.disabled = c.action === "deleted"; b.onclick = function () { openFile(c.path); }; ch.appendChild(b);
+      });
+      m.appendChild(ch);
+    }
+    $("msgs").appendChild(m); $("msgs").scrollTop = 1e9; return m;
+  }
+  function working(on) {
+    S.busy = on; $("send").disabled = on; $("go").disabled = on;
+    var w = $("genie-working"); if (w) w.remove();
+    if (on) { var d = el("div", "m g working"); d.id = "genie-working"; d.appendChild(el("span", "dot")); d.appendChild(el("span", "", "Genie is working\u2026 this can take a minute.")); $("msgs").appendChild(d); $("msgs").scrollTop = 1e9; }
+  }
+  function ask() {
+    var text = $("instr").value.trim(); if (!text || S.busy || !S.project) return;
+    if (dirty()) saveFile();
+    $("instr").value = ""; said(text); working(true);
+    api("/genie/projects/" + encodeURIComponent(S.project.id) + "/ask", { body: { instruction: text } }).then(function (j) {
+      working(false); S.files = j.files; renderTree(); say(j.reply, false, j.changes);
+      if (S.path) { var still = S.files.some(function (f) { return f.path === S.path; }); if (still) loadFile(S.path); else { S.path = ""; S.saved = ""; clearEditor(); } }
+      else if (S.files.length) loadFile((S.files.filter(function (f) { return f.path === "index.html"; })[0] || S.files[0]).path);
+      loadProjects(S.project.id, true);
+    }).catch(function (e) { working(false); if (e.message !== "signed out") say(e.message, true); });
+  }
+  function build() {
+    var idea = $("idea").value.trim(); if (!idea || S.busy) return;
+    $("start-note").textContent = "Genie is building\u2026 this can take a minute or two."; working(true); $("go").disabled = true;
+    api("/genie/projects", { body: { prompt: idea, name: idea.slice(0, 50) } }).then(function (j) {
+      $("start-note").textContent = ""; $("idea").value = "";
+      return loadProjects(j.project.id).then(function () { said(idea); say(j.result.reply, false, j.result.changes); });
+    }).catch(function (e) { $("start-note").textContent = e.message; }).then(function () { working(false); });
+  }
+
+  // ---- wiring
+  IDEAS.forEach(function (t) { var b = el("button", "ghost", t); b.onclick = function () { $("idea").value = t; $("idea").focus(); }; $("chips").appendChild(b); });
+  $("go").onclick = build;
+  $("send").onclick = ask;
+  $("instr").onkeydown = function (e) { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); ask(); } };
+  $("code").oninput = setDirty;
+  $("code").onkeydown = function (e) {
+    if (e.key === "Tab") { e.preventDefault(); var t = this, s = t.selectionStart; t.setRangeText("  ", s, t.selectionEnd, "end"); setDirty(); }
+    if (e.key === "s" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveFile(); }
+  };
+  $("save").onclick = saveFile;
+  $("pick").onchange = function () { if (dirty() && !confirm("Leave without saving?")) { this.value = S.project.id; return; } openProject(this.value); };
+  $("new").onclick = function () { if (dirty() && !confirm("Leave without saving?")) return; showStart(); $("idea").focus(); };
+  $("preview").onclick = function () { window.open(S.project.preview_url, "_blank", "noopener"); };
+  $("download").onclick = function () {
+    api("/genie/projects/" + encodeURIComponent(S.project.id) + "/zip", { raw: true }).then(function (r) { return r.blob(); }).then(function (b) {
+      var a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = (S.project.name || "project").replace(/[^A-Za-z0-9_-]+/g, "-") + ".zip";
+      document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    });
+  };
+  $("upload").onchange = function () {
+    var f = this.files[0]; this.value = ""; if (!f) return;
+    var target = S.project ? Promise.resolve(S.project.id)
+                           : api("/genie/projects", { body: { name: f.name.replace(/\.zip$/i, "") } }).then(function (j) { return j.project.id; });
+    var reader = new FileReader();
+    reader.onload = function () {
+      var b64 = String(reader.result).split(",")[1];
+      target.then(function (id) { return api("/genie/projects/" + encodeURIComponent(id) + "/import", { body: { zip_b64: b64 } }).then(function (j) {
+        return loadProjects(id).then(function () {
+          say("Imported " + j.imported.length + " files" + (j.skipped.length ? " (skipped: " + j.skipped.join(", ") + ")" : "") + ". Ask me anything about this project.");
+        }); }); }).catch(function (e) { say(e.message, true); });
+    };
+    reader.readAsDataURL(f);
+  };
+  $("newfile").onclick = function () {
+    var p = prompt("New file name (for example about.html or src/utils.js):"); if (!p) return;
+    api("/genie/projects/" + encodeURIComponent(S.project.id) + "/file", { method: "PUT", body: { path: p.trim(), content: "" } })
+      .then(function (j) { S.files = j.files; renderTree(); openFile(j.path); }).catch(function (e) { say(e.message, true); });
+  };
+  $("delfile").onclick = function () {
+    if (!S.path || !confirm("Delete " + S.path + "?")) return;
+    api("/genie/projects/" + encodeURIComponent(S.project.id) + "/file?path=" + encodeURIComponent(S.path), { method: "DELETE" })
+      .then(function (j) { S.files = j.files; S.path = ""; S.saved = ""; clearEditor(); renderTree(); });
+  };
+  $("del").onclick = function () {
+    if (!confirm("Delete the project \u201c" + S.project.name + "\u201d and all its files? This can't be undone.")) return;
+    api("/genie/projects/" + encodeURIComponent(S.project.id), { method: "DELETE" }).then(function () { S.project = null; return loadProjects(); });
+  };
+  window.addEventListener("beforeunload", function (e) { if (dirty()) { e.preventDefault(); e.returnValue = ""; } });
+  loadProjects().catch(function () {});
+})();
+</script>
+</body>
+</html>

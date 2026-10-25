@@ -726,7 +726,8 @@
     },
     play_video: function (v) { var u = (v && (v.url || v)) || ""; if (/^https?:\/\//i.test(u)) window.open(u, "_blank", "noopener"); },
     save_code: function (v) { if (v && v.code != null) download(String(v.name || "code.txt"), String(v.code)); },
-    open: function (what) { if (what === "settings") { openSettings("general"); pushSettings(); } else { setStatus(DESKTOP_ONLY); setTimeout(function () { setStatus(""); }, 3000); } },
+    open: function (what) { if (what === "genie") { window.open("/genie", "_blank"); return; }
+      if (what === "settings") { openSettings("general"); pushSettings(); } else { setStatus(DESKTOP_ONLY); setTimeout(function () { setStatus(""); }, 3000); } },
     menu: function (what) { HANDLERS.open(what); },
     setting: function (v) {
       if (!v || !v.key) return;

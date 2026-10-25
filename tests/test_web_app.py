@@ -140,3 +140,14 @@ def test_website_follow_ups_change_that_website():
         assert not is_edit(t), t
     assert "siteFollowUp(s, text) ? makeSite(text, aid, true, s.site, s)" in bridge
     assert "never say you can't change their website" in bridge
+
+
+def test_no_javascript_escapes_inside_html():
+    """'\\u2026' in an HTML attribute shows literally ("explain app.js\\u2026") -- only JavaScript decodes it."""
+    import re, glob
+    for path in glob.glob(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "*.html")):
+        if path.endswith("index.html"):
+            continue                                     # built from webapp/, checked there
+        html = open(path, encoding="utf-8").read()
+        html = re.sub(r"<script>.*?</script>", "", html, flags=re.S)        # escapes are fine inside scripts
+        assert not re.search(r"\\u[0-9a-fA-F]{4}", html), os.path.basename(path)

@@ -1138,3 +1138,17 @@ New services/live_info.py (all free, no API keys):
   siteFollowUp(s, text) -- last assistant message in this chat is a website result + SITE_HINT_RE
   (instruction words) and not NOT_EDIT_RE (questions, thanks) -> edit THAT site (session.site, set by
   makeSite). systemPrompt says Gink builds/edits websites. Replayed in Chromium; spec updated.
+
+## 0.1.22: Gink Genie (phase 1 of "a large codebase for everything")
+- Server: genie_projects / genie_files; /genie/projects (list, create [+prompt], get, delete),
+  /file (GET/PUT/DELETE), /ask (the loop: GPT-OSS 120B + 5 file tools, <= 24 rounds, counts as a
+  message), /zip, /import (ZIP b64; strips one top folder; skips node_modules/.git/venv/build and
+  binaries), /genie/p/<preview_key>/<path> (sandboxed CSP with the explicit server origin so the
+  project's own JS/CSS load). Limits: 30 projects, 200 files, 300 KB/file, 3 MB/project. _genie_path
+  rejects .., absolute, odd characters. Account deletion removes projects.
+- web_app/genie.html at /genie; sidebar "Gink Genie" (apps open it in the browser; web opens a tab);
+  console link. Browser-tested: build -> preview RUNS (JS + CSS, storage blocked) -> ask -> edit + Ctrl+S
+  -> ZIP. Bugs found by that test and fixed: the chat vanished after each answer (list refresh
+  reopened the project); a bogus "unsaved changes" prompt after Genie answered blocked file clicks.
+  Also: literal "\u2026" placeholders in genie.html and console.html (+ a test for every page).
+- Next: phase 2 (Genie in the apps, running code/tests, GitHub upload), phase 3 (more features).

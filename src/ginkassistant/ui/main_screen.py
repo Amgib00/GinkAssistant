@@ -254,6 +254,11 @@ def build_main_screen(app: toga.App, email: str):
             viewer.close()
         app.main_window.content = build_pro_screen(app, on_back=back_to_main)
 
+    def open_genie(widget=None):
+        """Gink Genie (multi-file projects) runs in the browser, signed in with the web app."""
+        from .login_screen import _open_in_browser
+        _open_in_browser(app, app.state.base_url.rstrip("/") + "/genie")
+
     def open_media_studio(widget=None):
         def back_to_main():
             app.main_window.content = root_box
@@ -974,7 +979,7 @@ def build_main_screen(app: toga.App, email: str):
             on_delete_session(value)
         elif kind == "open":
             {"settings": open_settings, "tasks": open_tasks, "media": open_media_studio,
-             "livetv": open_live_tv, "pro": open_pro}.get(value, lambda: None)()
+             "livetv": open_live_tv, "pro": open_pro, "genie": open_genie}.get(value, lambda: None)()
         elif kind == "menu":
             if value == "tasks":
                 open_tasks()

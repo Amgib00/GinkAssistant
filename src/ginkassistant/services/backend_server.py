@@ -2120,7 +2120,10 @@ def delete_account(request: Request, data: dict = Body(...)):
             con.execute(_FLAGS_TABLE)
             con.execute(_PASSKEY_TABLE)
             con.execute(_PHONES_TABLE)
-            for table in ("phone_numbers", "passkeys", "security_events", "account_flags", "connections", "api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
+            for t in _GENIE_TABLES:
+                con.execute(t)
+            con.execute("DELETE FROM genie_files WHERE project_id IN (SELECT id FROM genie_projects WHERE email=?)", (email,))
+            for table in ("genie_projects", "phone_numbers", "passkeys", "security_events", "account_flags", "connections", "api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
                           "search_usage", "search_turns", "sessions", "account_security"):
                 con.execute(f"DELETE FROM {table} WHERE email=?", (email,))
             con.execute("UPDATE payments SET email=? WHERE email=?", (anon, email))
@@ -2519,6 +2522,13 @@ def web_app_page():
     if not os.path.isfile(path):
         return HTMLResponse("Gink on the web isn't built yet: run  python tools/build_web_app.py", status_code=503)
     with open(path, encoding="utf-8") as f:
+        return HTMLResponse(f.read(), headers=_WEB_HEADERS)
+
+
+@app.get("/genie", response_class=HTMLResponse)
+def genie_page():
+    """Gink Genie: the coding workspace (web_app/genie.html)."""
+    with open(os.path.join(WEB_APP_DIR, "genie.html"), encoding="utf-8") as f:
         return HTMLResponse(f.read(), headers=_WEB_HEADERS)
 
 
@@ -4747,3 +4757,352 @@ def account_phone_remove(request: Request):
     _phone_db(lambda con: con.execute("DELETE FROM phone_numbers WHERE email=?", (email,)))
     _security_event(email, "phone_removed")
     return {"ok": True}
+
+
+# ================================================================ Gink Genie: multi-file projects built and changed by AI
+# Projects live on the server (genie_projects / genie_files). Genie works like an agent: the AI gets
+# tools (list, read, write, delete, search files) and loops until the job is done. Web projects can be
+# previewed at /genie/p/<secret key>/..., sandboxed like websites (they can't touch Gink sign-ins).
+GENIE_MAX_PROJECTS, GENIE_MAX_FILES = 30, 200
+GENIE_MAX_FILE, GENIE_MAX_PROJECT = 300_000, 3_000_000
+GENIE_ROUNDS = 24
+_GENIE_TABLES = (
+    "CREATE TABLE IF NOT EXISTS genie_projects (id TEXT PRIMARY KEY, email TEXT NOT NULL, name TEXT NOT NULL, "
+    "preview_key TEXT NOT NULL, created REAL NOT NULL, updated REAL NOT NULL)",
+    "CREATE TABLE IF NOT EXISTS genie_files (project_id TEXT NOT NULL, path TEXT NOT NULL, content TEXT NOT NULL, "
+    "updated REAL NOT NULL, PRIMARY KEY (project_id, path))")
+GENIE_SYSTEM = (
+    "You are Gink Genie, an expert software engineer working inside the user's project. Use the tools to look at "
+    "and change files: list_files, read_file, write_file (always the COMPLETE new content of the file), delete_file, "
+    "search_files. Build complete, working, well-organised projects -- several files when that is clearer (for a "
+    "web app: index.html, styles.css, app.js...). Web projects must run by opening index.html: no build step, no "
+    "frameworks from the internet, relative paths only. Read a file before changing it. Keep each file under "
+    "250 KB. Never include passwords, API keys or secrets. When done, reply with a short summary of what you "
+    "built or changed and how to use it, in the user's language.")
+GENIE_TOOLS = [
+    {"type": "function", "function": {"name": "list_files", "description": "List the project's files with sizes.",
+                                      "parameters": {"type": "object", "properties": {}}}},
+    {"type": "function", "function": {"name": "read_file", "description": "Read one file.",
+                                      "parameters": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}}},
+    {"type": "function", "function": {"name": "write_file", "description": "Create or replace a file with its complete content.",
+                                      "parameters": {"type": "object", "properties": {"path": {"type": "string"}, "content": {"type": "string"}},
+                                                     "required": ["path", "content"]}}},
+    {"type": "function", "function": {"name": "delete_file", "description": "Delete a file.",
+                                      "parameters": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}}},
+    {"type": "function", "function": {"name": "search_files", "description": "Find files containing some text (case-insensitive).",
+                                      "parameters": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}}},
+]
+MIME = {".html": "text/html", ".htm": "text/html", ".css": "text/css", ".js": "text/javascript", ".mjs": "text/javascript",
+        ".json": "application/json", ".svg": "image/svg+xml", ".txt": "text/plain", ".md": "text/plain", ".py": "text/plain",
+        ".csv": "text/plain", ".xml": "text/plain"}
+
+
+def _genie_db(fn):
+    with _db_lock:
+        con = _db()
+        try:
+            for t in _GENIE_TABLES:
+                con.execute(t)
+            out = fn(con)
+            con.commit()
+            return out
+        finally:
+            con.close()
+
+
+def _genie_path(raw: str) -> str:
+    """A safe relative path inside the project ('src/app.js'), or an error."""
+    p = str(raw or "").strip().replace("\\", "/")
+    while p.startswith("./"):
+        p = p[2:]
+    parts = p.split("/")
+    if (not p or p.startswith("/") or len(p) > 200 or len(parts) > 8
+            or any(x in ("", ".", "..") or not re.fullmatch(r"[A-Za-z0-9._@+ -]+", x) for x in parts)):
+        raise ValueError(f"\u201c{raw}\u201d isn't a valid file path in this project (use letters, numbers, . _ - and folders like src/app.js).")
+    return p
+
+
+def _genie_project(email: str, pid: str):
+    row = _genie_db(lambda con: con.execute("SELECT id, name, preview_key, created, updated FROM genie_projects WHERE id=? AND email=?",
+                                            (pid, email)).fetchone())
+    if not row:
+        raise HTTPException(status_code=404, detail="That project wasn't found.")
+    return {"id": row[0], "name": row[1], "preview_key": row[2], "created": row[3], "updated": row[4]}
+
+
+def _genie_files(pid: str) -> dict:
+    return dict(_genie_db(lambda con: con.execute("SELECT path, content FROM genie_files WHERE project_id=? ORDER BY path",
+                                                  (pid,)).fetchall()))
+
+
+def _genie_write(pid: str, path: str, content: str):
+    path = _genie_path(path)
+    content = str(content if content is not None else "")
+    if len(content.encode()) > GENIE_MAX_FILE:
+        raise ValueError(f"{path} is too large (over {GENIE_MAX_FILE // 1000} KB). Split it into smaller files.")
+    files = _genie_files(pid)
+    if path not in files and len(files) >= GENIE_MAX_FILES:
+        raise ValueError(f"A project can have up to {GENIE_MAX_FILES} files.")
+    total = sum(len(c.encode()) for p, c in files.items() if p != path) + len(content.encode())
+    if total > GENIE_MAX_PROJECT:
+        raise ValueError("The project is too large (over 3 MB). Remove something first.")
+    now = time.time()
+    _genie_db(lambda con: (con.execute("INSERT OR REPLACE INTO genie_files (project_id, path, content, updated) VALUES (?, ?, ?, ?)",
+                                       (pid, path, content, now)),
+                           con.execute("UPDATE genie_projects SET updated=? WHERE id=?", (now, pid))))
+    return path
+
+
+def _genie_delete_file(pid: str, path: str) -> bool:
+    path = _genie_path(path)
+    return bool(_genie_db(lambda con: con.execute("DELETE FROM genie_files WHERE project_id=? AND path=?", (pid, path)).rowcount))
+
+
+def _genie_summary(pid: str) -> list:
+    rows = _genie_db(lambda con: con.execute("SELECT path, length(content), updated FROM genie_files WHERE project_id=? ORDER BY path",
+                                             (pid,)).fetchall())
+    return [{"path": p, "size": n, "updated": u} for p, n, u in rows]
+
+
+def _genie_tool(pid: str, name: str, args: dict, changes: list) -> str:
+    try:
+        if name == "list_files":
+            files = _genie_summary(pid)
+            return "\n".join(f"{f['path']} ({f['size']} bytes)" for f in files) or "(the project is empty)"
+        if name == "read_file":
+            content = _genie_files(pid).get(_genie_path(args.get("path")))
+            if content is None:
+                return f"No file called {args.get('path')}."
+            return content[:60000] + ("\n[... cut: the file is longer]" if len(content) > 60000 else "")
+        if name == "write_file":
+            existed = _genie_path(args.get("path")) in _genie_files(pid)
+            path = _genie_write(pid, args.get("path"), args.get("content", ""))
+            changes.append({"path": path, "action": "changed" if existed else "created"})
+            return f"Saved {path}."
+        if name == "delete_file":
+            if _genie_delete_file(pid, args.get("path")):
+                changes.append({"path": _genie_path(args.get("path")), "action": "deleted"})
+                return "Deleted."
+            return "There was no such file."
+        if name == "search_files":
+            needle = str(args.get("text") or "").lower()
+            hits = [f"{p}:{i + 1}: {line.strip()[:160]}" for p, c in _genie_files(pid).items()
+                    for i, line in enumerate(c.splitlines()) if needle and needle in line.lower()]
+            return "\n".join(hits[:60]) or "Nothing found."
+        return f"Unknown tool {name}."
+    except ValueError as exc:
+        return f"Error: {exc}"
+
+
+async def _genie_run(email: str, pid: str, instruction: str) -> dict:
+    """The AI coding loop for one request."""
+    import httpx
+    files = _genie_summary(pid)
+    listing = "\n".join(f"- {f['path']} ({f['size']} bytes)" for f in files) or "(empty project)"
+    messages = [{"role": "system", "content": GENIE_SYSTEM},
+                {"role": "user", "content": f"Project files:\n{listing}\n\nRequest: {instruction}"}]
+    changes, model = [], await _current_model("openai/gpt-oss-120b")
+    async with httpx.AsyncClient(timeout=httpx.Timeout(240, connect=15)) as client:
+        for rounds in range(1, GENIE_ROUNDS + 1):
+            body = {"model": model, "messages": messages, "tools": GENIE_TOOLS, "tool_choice": "auto",
+                    "max_tokens": 16000, "temperature": 0.3, "reasoning_effort": "medium"}
+            try:
+                r = await client.post(f"{GROQ_BASE}/chat/completions", json=body,
+                                      headers={"Authorization": f"Bearer {_env('GROQ_API_KEY')}"})
+            except Exception:
+                raise HTTPException(status_code=502, detail="The AI service didn't answer. Please try again.")
+            if r.status_code != 200:
+                raise HTTPException(status_code=502, detail="The AI service had a problem. Please try again.")
+            msg = ((r.json().get("choices") or [{}])[0].get("message")) or {}
+            calls = msg.get("tool_calls") or []
+            if not calls:
+                return {"reply": (msg.get("content") or "").strip() or "Done.", "changes": changes, "rounds": rounds}
+            messages.append({"role": "assistant", "content": msg.get("content") or "", "tool_calls": calls})
+            for call in calls:
+                try:
+                    args = _json.loads(call["function"].get("arguments") or "{}")
+                except ValueError:
+                    args = {}
+                result = _genie_tool(pid, call["function"].get("name"), args if isinstance(args, dict) else {}, changes)
+                messages.append({"role": "tool", "tool_call_id": call.get("id", ""), "content": result})
+    return {"reply": "I made progress but ran out of steps for one request. Ask me to continue.", "changes": changes,
+            "rounds": GENIE_ROUNDS}
+
+
+async def _genie_ask(request: Request, email: str, pid: str, instruction: str) -> dict:
+    instruction = str(instruction or "").strip()[:6000]
+    if len(instruction) < 2:
+        raise HTTPException(status_code=422, detail="Tell Genie what to build or change.")
+    if not _env("GROQ_API_KEY"):
+        raise HTTPException(status_code=503, detail="Gink Genie isn't set up on this server yet.")
+    blocked = _count_call(email, request.headers.get("x-gink-turn", ""), _plan_status(email)["plan"])
+    if blocked is not None:
+        detail = _json.loads(bytes(blocked.body))["error"]["message"]
+        raise HTTPException(status_code=429, detail=detail)
+    return await _genie_run(email, pid, instruction)
+
+
+def _genie_public(request: Request, p: dict) -> dict:
+    return {**{k: p[k] for k in ("id", "name", "created", "updated")},
+            "preview_url": f"{_public_base(request).rstrip('/')}/genie/p/{p['preview_key']}/"}
+
+
+@app.get("/genie/projects")
+def genie_list(request: Request):
+    email = _email_from_auth(request)
+    rows = _genie_db(lambda con: con.execute(
+        "SELECT p.id, p.name, p.preview_key, p.created, p.updated, COUNT(f.path) FROM genie_projects p "
+        "LEFT JOIN genie_files f ON f.project_id = p.id WHERE p.email=? GROUP BY p.id ORDER BY p.updated DESC", (email,)).fetchall())
+    return {"projects": [dict(_genie_public(request, {"id": r[0], "name": r[1], "preview_key": r[2], "created": r[3], "updated": r[4]}),
+                              files=r[5]) for r in rows], "limit": GENIE_MAX_PROJECTS}
+
+
+@app.post("/genie/projects")
+async def genie_create(request: Request, data: dict = Body(default={})):
+    email = _email_from_auth(request)
+    n = _genie_db(lambda con: con.execute("SELECT COUNT(*) FROM genie_projects WHERE email=?", (email,)).fetchone()[0])
+    if n >= GENIE_MAX_PROJECTS:
+        raise HTTPException(status_code=409, detail=f"You have {GENIE_MAX_PROJECTS} projects. Delete one to start another.")
+    prompt = str((data or {}).get("prompt") or "").strip()
+    name = " ".join(str((data or {}).get("name") or prompt[:50] or "My project").split())[:60] or "My project"
+    pid, now = "gp_" + secrets.token_hex(6), time.time()
+    _genie_db(lambda con: con.execute("INSERT INTO genie_projects (id, email, name, preview_key, created, updated) VALUES (?, ?, ?, ?, ?, ?)",
+                                      (pid, email, name, secrets.token_urlsafe(16), now, now)))
+    out = {"project": _genie_public(request, _genie_project(email, pid))}
+    if prompt:
+        out["result"] = await _genie_ask(request, email, pid, prompt)
+    out["files"] = _genie_summary(pid)
+    return out
+
+
+@app.get("/genie/projects/{pid}")
+def genie_get(pid: str, request: Request):
+    email = _email_from_auth(request)
+    return {"project": _genie_public(request, _genie_project(email, pid)), "files": _genie_summary(pid)}
+
+
+@app.delete("/genie/projects/{pid}")
+def genie_delete(pid: str, request: Request):
+    email = _email_from_auth(request)
+    _genie_project(email, pid)
+    _genie_db(lambda con: (con.execute("DELETE FROM genie_files WHERE project_id=?", (pid,)),
+                           con.execute("DELETE FROM genie_projects WHERE id=?", (pid,))))
+    return {"ok": True}
+
+
+@app.get("/genie/projects/{pid}/file")
+def genie_file_get(pid: str, request: Request, path: str = ""):
+    email = _email_from_auth(request)
+    _genie_project(email, pid)
+    try:
+        content = _genie_files(pid).get(_genie_path(path))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    if content is None:
+        raise HTTPException(status_code=404, detail="That file wasn't found.")
+    return {"path": _genie_path(path), "content": content}
+
+
+@app.put("/genie/projects/{pid}/file")
+def genie_file_put(pid: str, request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    _genie_project(email, pid)
+    try:
+        path = _genie_write(pid, data.get("path"), data.get("content", ""))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return {"path": path, "files": _genie_summary(pid)}
+
+
+@app.delete("/genie/projects/{pid}/file")
+def genie_file_delete(pid: str, request: Request, path: str = ""):
+    email = _email_from_auth(request)
+    _genie_project(email, pid)
+    try:
+        _genie_delete_file(pid, path)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return {"files": _genie_summary(pid)}
+
+
+@app.post("/genie/projects/{pid}/ask")
+async def genie_ask(pid: str, request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    _genie_project(email, pid)
+    result = await _genie_ask(request, email, pid, data.get("instruction"))
+    return {**result, "files": _genie_summary(pid)}
+
+
+@app.get("/genie/projects/{pid}/zip")
+def genie_zip(pid: str, request: Request):
+    import io
+    import zipfile
+    from fastapi.responses import Response
+    email = _email_from_auth(request)
+    p = _genie_project(email, pid)
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for path, content in _genie_files(pid).items():
+            z.writestr(path, content)
+    safe = re.sub(r"[^A-Za-z0-9_-]+", "-", p["name"]).strip("-") or "project"
+    return Response(buf.getvalue(), media_type="application/zip",
+                    headers={"Content-Disposition": f'attachment; filename="{safe}.zip"'})
+
+
+@app.post("/genie/projects/{pid}/import")
+def genie_import(pid: str, request: Request, data: dict = Body(...)):
+    """Open an existing project: a ZIP (base64). Text files are imported; others are listed as skipped."""
+    import io
+    import zipfile
+    email = _email_from_auth(request)
+    _genie_project(email, pid)
+    try:
+        raw = base64.b64decode(str(data.get("zip_b64") or ""), validate=True)
+        z = zipfile.ZipFile(io.BytesIO(raw))
+    except Exception:
+        raise HTTPException(status_code=422, detail="That isn't a ZIP file.")
+    if len(raw) > 10_000_000:
+        raise HTTPException(status_code=422, detail="The ZIP is too large (over 10 MB).")
+    names = [i for i in z.infolist() if not i.is_dir()]
+    roots = {n.filename.split("/")[0] for n in names}
+    strip = (roots.pop() + "/") if len(roots) == 1 and all("/" in n.filename for n in names) else ""
+    imported, skipped = [], []
+    for info in names:
+        rel = info.filename[len(strip):] if strip else info.filename
+        if any(part in ("node_modules", ".git", "__pycache__", ".venv", "venv", "dist", "build") for part in rel.split("/")):
+            continue
+        if info.file_size > GENIE_MAX_FILE:
+            skipped.append(f"{rel} (too large)"); continue
+        try:
+            text = z.read(info).decode("utf-8")
+            imported.append(_genie_write(pid, rel, text))
+        except UnicodeDecodeError:
+            skipped.append(f"{rel} (not a text file)")
+        except ValueError as exc:
+            skipped.append(f"{rel} ({exc})")
+    return {"imported": imported, "skipped": skipped[:50], "files": _genie_summary(pid)}
+
+
+@app.get("/genie/p/{key}/{path:path}")
+def genie_preview(key: str, request: Request, path: str = ""):
+    """A web project's preview: sandboxed (an empty origin), so it can't touch Gink sign-ins."""
+    from fastapi.responses import Response
+    row = _genie_db(lambda con: con.execute("SELECT id FROM genie_projects WHERE preview_key=?", (key,)).fetchone())
+    if not row:
+        return HTMLResponse("<!doctype html><title>Not found</title><p>This preview doesn't exist.</p>", status_code=404)
+    files = _genie_files(row[0])
+    try:
+        want = _genie_path(path) if path and not path.endswith("/") else ((path or "") + "index.html").lstrip("/")
+    except ValueError:
+        want = ""
+    content = files.get(want)
+    if content is None:
+        return HTMLResponse("<!doctype html><title>Not found</title><p>No such file in this project.</p>", status_code=404)
+    origin = _public_base(request).rstrip("/")
+    csp = (f"sandbox allow-scripts allow-forms allow-modals allow-popups; default-src {origin} data: blob:; "
+           f"script-src {origin} 'unsafe-inline'; style-src {origin} 'unsafe-inline'; img-src {origin} data: blob: https:; "
+           f"connect-src {origin}; form-action 'none'; base-uri 'none'")
+    ext = os.path.splitext(want)[1].lower()
+    return Response(content, media_type=MIME.get(ext, "text/plain") + "; charset=utf-8",
+                    headers={"Content-Security-Policy": csp, "X-Content-Type-Options": "nosniff",
+                             "Referrer-Policy": "no-referrer", "Cache-Control": "no-store"})
