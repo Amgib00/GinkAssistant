@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.26 (October 2026)
+
+- Gink Genie is now also its own app for Mac, Windows, Linux and Android (including 32-bit phones),
+  with the lamp icon: download it next to Gink. It signs in with your Gink account
+
 ## 0.1.25 (October 2026)
 
 - Gink Genie has its own look: a lamp in the sidebar and header, and the genie sitting on the

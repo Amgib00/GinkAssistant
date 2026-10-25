@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # Must be a valid package name (letters, digits, "-", "_", "."; no spaces).
 # Briefcase 0.4.6+ reads this name, so "gink ai assistant" could break builds.
 name = "ginkassistant"
-version = "0.1.25"
+version = "0.1.26"
 description = "AI Assistant powered to Help Humans"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -22,7 +22,7 @@ license = "MIT"          # Briefcase 0.3.15 reads this one (it can't read the [p
 # "Gink Ai Assistant" will become an error). Users see formal_name ("Gink") below.
 project_name = "ginkassistant"
 bundle = "com.amgib"
-version = "0.1.25"
+version = "0.1.26"
 url = "https://github.com/amgib00/ginkassistant"
 author = "Amgib00"
 author_email = "kargboi131ik667957@gmail.com"
@@ -301,3 +301,44 @@ microphone = "Gink uses the microphone for voice conversations and dictation."
 # server instead (see deploy/IOS_AND_WEB.md).
 [tool.briefcase.app.ginkassistant.web]
 supported = false
+
+
+# =============================================================================
+# Gink Genie -- the coding workspace as its own app (src/ginkgenie). It opens Genie from the Gink
+# server in a WebView, so it needs no AI, audio or file libraries. Build ONE app with
+# `briefcase build <platform> -a ginkgenie` (Briefcase 0.4+); Briefcase 0.3.15's create/build/
+# package build every app, while its dev/run take -a.
+# =============================================================================
+[tool.briefcase.app.ginkgenie]
+formal_name = "Gink Genie"
+description = "Build whole apps, websites and scripts with AI"
+long_description = """Describe an app, a website, a game or a script and Gink Genie builds the whole project,
+file by file. Keep changing it together, edit files yourself, run Python and JavaScript, preview web
+projects, and upload them to GitHub. Signed in with your Gink account."""
+sources = ["src/ginkgenie"]
+icon = "icons/ginkgenie"            # tools/make_genie_icons.py (from icons/genie-source/lamp.png)
+requires = []
+
+[tool.briefcase.app.ginkgenie.macOS]
+requires = ["toga-cocoa", "std-nslog"]
+
+[tool.briefcase.app.ginkgenie.windows]
+console = false
+requires = ["toga-winforms"]
+
+[tool.briefcase.app.ginkgenie.linux]
+requires = ["toga-gtk"]
+
+[tool.briefcase.app.ginkgenie.linux.system.debian]
+system_requires = ["libcairo2-dev", "libgirepository-2.0-dev", "pkg-config"]
+system_runtime_requires = [
+    "gir1.2-gtk-3.0", "gir1.2-webkit2-4.1", "libgirepository-2.0-0", "libcanberra-gtk3-module",
+    "libgtk-3-0", "libwebkit2gtk-4.1-0",
+]
+
+[tool.briefcase.app.ginkgenie.android]
+splash_background_color = "#151D23"
+requires = ["toga-android"]
+
+[tool.briefcase.app.ginkgenie.android.permission]
+"android.permission.INTERNET" = "Gink Genie works with your Gink server."

@@ -68,8 +68,11 @@ jobs:
   linux:
     needs: check
     uses: ./.github/workflows/linux.yml
+  genie:                                    # Gink Genie, the coding workspace app
+    needs: check
+    uses: ./.github/workflows/genie.yml
   publish:
-    needs: [check, mac, android, windows, linux]      # check: for its version output
+    needs: [check, mac, android, windows, linux, genie]      # check: for its version output
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/download-artifact@v8
@@ -102,6 +105,18 @@ jobs:
           If it says the app isn't compatible with your phone, use the 32-bit version.
           **Windows:** if SmartScreen warns you, choose **More info**, then **Run anyway** (the installer isn't signed yet).
           **Linux:** `sudo apt install ./Gink-linux-amd64.deb` (installs what Gink needs automatically).
+
+          ## Download Gink Genie (the coding workspace)
+
+          | | File |
+          |---|---|
+          | **Mac (Apple Silicon)** | `Gink-Genie-mac-arm64.dmg` |
+          | **Mac (Intel)** | `Gink-Genie-mac-x86_64.dmg` |
+          | **Android** | `Gink-Genie-android.apk` (32-bit phones: `Gink-Genie-android-32bit.apk`) |
+          | **Windows** | `Gink-Genie-windows-x64.msi` |
+          | **Linux** | `Gink-Genie-linux-amd64.deb` |
+
+          Gink Genie signs in with your Gink account. The same install tips apply.
           This is a test build.
           NOTES
           if gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then

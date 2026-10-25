@@ -57,8 +57,8 @@ jobs:
         run: |
           ARGS=()
           while IFS= read -r line; do [ -n "$line" ] && ARGS+=(-C "$line"); done < overrides.txt
-          briefcase create android --no-input "${ARGS[@]}"
-          briefcase build android --no-input "${ARGS[@]}"
+          briefcase create android -a ginkassistant --no-input "${ARGS[@]}"
+          briefcase build android -a ginkassistant --no-input "${ARGS[@]}"
           APK=$(find build/ginkassistant/android -name "*.apk" | head -1)
           echo "Built: $APK"
           cp "$APK" "${{ matrix.apk }}"

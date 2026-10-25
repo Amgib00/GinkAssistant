@@ -1185,3 +1185,21 @@ New services/live_info.py (all free, no API keys):
   rounded, data URI) and a round genie portrait (160x160, data URI) perched on the start composer
   (genie.html .genie-perch over the "+" upload button; teal glow). `.nav button > img` margin keeps
   the label aligned with SVG icons (21+10 = 19+12).
+
+## 0.1.26: two apps -- Gink and Gink Genie
+- pyproject: [tool.briefcase.app.ginkgenie] (src/ginkgenie; toga-* only; Android INTERNET; Linux
+  WebKit runtime). Shares the project version. Briefcase 0.4.x: -a <app> on create/build/package;
+  0.3.15 (Catalina) has -a only on dev/run (its builds make every app).
+- src/ginkgenie/app.py: WebView on <server>/genie (GINK_SERVER_URL > data/server.txt > public),
+  /health wake-up + status pages (Retry; Reload/Home also retry), toolbar Home/Back/Reload/Open in
+  browser, UA + " GinkGenieApp/1" (set after creation, so it's appended), on_navigation_starting
+  (Toga 0.5; TypeError fallback) sends other sites and /genie/p/ previews to the real browser.
+  NOT implemented by toga_gtk (Linux): there those pages open inside the app (fallback by design).
+- genie.html app mode (IN_APP): Preview/GitHub via same-window navigation; Download ZIP explains
+  "Open in browser". GitHub "connected" page links back to /genie.
+- Icons: tools/make_genie_icons.py (reuses make_icons.py styling; lamp faded into the dark tile) ->
+  icons/ginkgenie* (same 45 files as Gink) + src/ginkgenie/resources/ginkgenie.png.
+- CI: Gink's workflows now pass -a ginkassistant; new genie.yml (Mac arm64/x86_64, Windows, Linux,
+  Android 64/32) uploads Gink-Genie-*; release.yml runs it and lists the files; website download page.
+- Verified here: a REAL Briefcase 0.4.4 create + build + package for Linux (.deb 930 KB) and the built
+  app launched on a virtual display (menus, toolbar, woke the server, showed sign-in).

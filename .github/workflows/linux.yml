@@ -28,9 +28,9 @@ jobs:
           /usr/bin/python3 -m venv "$RUNNER_TEMP/venv"
           . "$RUNNER_TEMP/venv/bin/activate"
           python -m pip install --upgrade pip briefcase
-          briefcase create linux system --no-input
-          briefcase build linux system --no-input
-          briefcase package linux system --adhoc-sign --no-input
+          briefcase create linux system -a ginkassistant --no-input
+          briefcase build linux system -a ginkassistant --no-input
+          briefcase package linux system -a ginkassistant --adhoc-sign --no-input
           ls -l dist
           cp "$(ls dist/*.deb | head -1)" Gink-linux-amd64.deb
       - uses: actions/upload-artifact@v7

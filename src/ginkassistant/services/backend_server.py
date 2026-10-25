@@ -3966,12 +3966,13 @@ def connected_begin(service: str, request: Request):
     return {"url": PROVIDERS["google"]["authorize"] + "?" + urllib.parse.urlencode(params)}
 
 
-def _connected_page(title: str, text: str, status: int = 200) -> HTMLResponse:
+def _connected_page(title: str, text: str, status: int = 200, back: str = "") -> HTMLResponse:
     import html as _h
     return HTMLResponse(
         "<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><title>Gink</title>"
         "<body style='font-family:system-ui,sans-serif;max-width:460px;margin:15vh auto;padding:0 20px;text-align:center'>"
-        f"<h1 style='font-size:22px'>{_h.escape(title)}</h1><p style='color:#5D6B64'>{_h.escape(text)}</p></body>",
+        f"<h1 style='font-size:22px'>{_h.escape(title)}</h1><p style='color:#5D6B64'>{_h.escape(text)}</p>"
+        + (f"<p><a href='{_h.escape(back)}' style='color:#3F7D12;font-weight:700'>Back to Gink Genie</a></p>" if back else "") + "</body>",
         status_code=status, headers=_WEB_HEADERS)
 
 
@@ -5225,7 +5226,8 @@ async def genie_github_callback(request: Request, code: str = "", state: str = "
         "ON CONFLICT(email, service) DO UPDATE SET refresh=excluded.refresh, scopes=excluded.scopes, created=excluded.created",
         (email, _seal(token), user["login"], time.time())))           # scopes column holds the GitHub username
     _security_event(email, "app_connected", "GitHub")
-    return _connected_page("GitHub is connected", f"Connected as {user['login']}. You can close this window and go back to Gink Genie.")
+    return _connected_page("GitHub is connected", f"Connected as {user['login']}. You can close this window and go back to Gink Genie.",
+                           back="/genie")
 
 
 @app.delete("/genie/github")

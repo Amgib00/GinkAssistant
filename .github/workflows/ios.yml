@@ -40,9 +40,9 @@ jobs:
       - name: Install Briefcase
         run: python -m pip install --upgrade pip briefcase
       - name: Create the iOS project  (build/ginkassistant/ios/xcode)
-        run: briefcase create iOS --no-input
+        run: briefcase create iOS -a ginkassistant --no-input
       - name: Build for the iOS Simulator
-        run: briefcase build iOS --no-input
+        run: briefcase build iOS -a ginkassistant --no-input
       - name: Collect the app
         run: |
           APP=$(find build/ginkassistant/ios -name "*.app" -path "*iphonesimulator*" | head -1)

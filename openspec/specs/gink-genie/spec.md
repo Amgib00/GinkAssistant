@@ -46,3 +46,24 @@ People SHALL be able to connect GitHub separately from signing in (repository pe
 #### Scenario: Pushing twice
 - **WHEN** a project is pushed, a file is deleted in Genie, and it is pushed again
 - **THEN** the second commit builds on the first and the deleted file is gone from the repository
+
+### Requirement: Gink Genie app
+Gink Genie SHALL also be its own app for Mac, Windows, Linux and Android (64- and 32-bit), built from the same project, opening the workspace from the Gink server with the same account and offering Home, Back, Reload and Open in browser.
+
+#### Scenario: Server asleep
+- **WHEN** the app starts while the server is waking up or offline
+- **THEN** it shows "Opening Gink Genie" and then the workspace, or "Can't reach Gink" with Retry
+
+### Requirement: Links that leave the app
+The app SHALL add a "GinkGenieApp" mark to its browser identity (never replacing it) so the page opens Preview and GitHub in the same window, and SHALL open those pages in the real browser where the platform allows catching links.
+
+#### Scenario: Connecting GitHub from the app
+- **WHEN** the person connects GitHub in the app on Mac, Windows or Android
+- **THEN** GitHub's page opens in their browser and the app notices the connection
+
+### Requirement: Separate builds
+Each app's builds SHALL name their app, so building Gink never builds Gink Genie and the other way round, and a release SHALL publish both apps' installers.
+
+#### Scenario: A release
+- **WHEN** a release runs
+- **THEN** it publishes Gink's and Gink Genie's installers for every platform

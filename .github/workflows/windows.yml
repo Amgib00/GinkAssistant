@@ -33,9 +33,9 @@ jobs:
           python -m pip install briefcase
           WHEELS=$(cygpath -m "$GITHUB_WORKSPACE/wheels")
           OVERRIDES=(-C "requirement_installer_args=[\"--find-links\", \"$WHEELS\"]")
-          briefcase create windows app --no-input "${OVERRIDES[@]}"
-          briefcase build windows app --no-input "${OVERRIDES[@]}"
-          briefcase package windows app --adhoc-sign --no-input "${OVERRIDES[@]}"
+          briefcase create windows app -a ginkassistant --no-input "${OVERRIDES[@]}"
+          briefcase build windows app -a ginkassistant --no-input "${OVERRIDES[@]}"
+          briefcase package windows app -a ginkassistant --adhoc-sign --no-input "${OVERRIDES[@]}"
           ls -l dist
           cp "$(ls dist/*.msi | head -1)" Gink-windows-x64.msi
       - uses: actions/upload-artifact@v7

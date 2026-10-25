@@ -97,9 +97,9 @@ jobs:
           python -m pip install briefcase
           OVERRIDES=(-C "universal_build=false" -C "min_os_version=\"$MACOSX_DEPLOYMENT_TARGET\""
                      -C "requirement_installer_args=[\"--find-links\", \"$WHEELS\"]")
-          briefcase create macOS app --no-input "${OVERRIDES[@]}"
-          briefcase build macOS app --no-input "${OVERRIDES[@]}"
-          briefcase package macOS app --adhoc-sign --no-input "${OVERRIDES[@]}"
+          briefcase create macOS app -a ginkassistant --no-input "${OVERRIDES[@]}"
+          briefcase build macOS app -a ginkassistant --no-input "${OVERRIDES[@]}"
+          briefcase package macOS app -a ginkassistant --adhoc-sign --no-input "${OVERRIDES[@]}"
           ls -l dist
           DMG=$(ls dist/*.dmg | head -1)
           cp "$DMG" "Gink-mac-${{ matrix.arch }}.dmg"
