@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.25 (October 2026)
+
+- Gink Genie has its own look: a lamp in the sidebar and header, and the genie sitting on the
+  "Describe a task" box, whose + button uploads a project
+
 ## 0.1.24 (October 2026)
 
 - Gink Genie uploads to GitHub: connect GitHub once, then push a project to a new or existing

@@ -1179,3 +1179,9 @@ New services/live_info.py (all free, no API keys):
   (sync and async versions); test asserts Google never receives the GitHub token.
 - genie.html: GitHub dialog (connect + auto-detect, repo remembered per project, private, message,
   result link). Browser-checked with GitHub simulated.
+
+## 0.1.25: Genie's look (owner's images)
+- Owner-supplied art: the lamp (sidebar icon in web_chat_view rail + list, Genie header; 60x36 PNG,
+  rounded, data URI) and a round genie portrait (160x160, data URI) perched on the start composer
+  (genie.html .genie-perch over the "+" upload button; teal glow). `.nav button > img` margin keeps
+  the label aligned with SVG icons (21+10 = 19+12).
