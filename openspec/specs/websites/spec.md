@@ -29,3 +29,10 @@ The owner SHALL be able to remove any website with DELETE /admin/sites/{id} and 
 #### Scenario: Abuse report
 - **WHEN** the owner removes a website
 - **THEN** its link answers 404
+
+### Requirement: Follow-up changes
+Right after Gink builds or updates a website in a chat, an instruction about it ("add more to it", "make it blue") SHALL change that same website, while questions and thanks SHALL get a normal answer; Gink SHALL never claim it can't edit the user's website.
+
+#### Scenario: "Good, add more to it"
+- **WHEN** the person writes "good add more to it" just after their website was built
+- **THEN** the same website is updated and the reply links to it

@@ -321,6 +321,8 @@
            hour: "2-digit", minute: "2-digit" }) + " in the user's time zone (" +
            (Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown") + "). Use this for any question about the time or date." +
            who + lang + personalityNote() +
+           " Gink can build and edit websites for the user: never say you can't change their website. If they ask to" +
+           " change it, tell them to say what to change (for example \u201cchange my website: add a photo gallery\u201d) and Gink will update it." +
            " When you have web search results, use them and keep the facts accurate." +
            " You're running in a web browser: you can't set alarms, reminders or tasks or control the user's computer here; " +
            "if asked, say that the Gink app can do it." +
@@ -377,8 +379,9 @@
     setComposerBusy(true);
     var web = !atts.length && (W.model === "gink-search" || WEB_RE.test(text));
     if (web) setSpinLabel(aid, "Searching the web\u2026");
-    var job = SITE_EDIT_RE.test(text) && !atts.length ? makeSite(text, aid, true)
-            : SITE_RE.test(text) && !atts.length ? makeSite(text, aid, false)
+    var job = !atts.length && siteFollowUp(s, text) ? makeSite(text, aid, true, s.site, s)
+            : SITE_EDIT_RE.test(text) && !atts.length ? makeSite(text, aid, true, null, s)
+            : SITE_RE.test(text) && !atts.length ? makeSite(text, aid, false, null, s)
             : IMAGE_RE.test(text) && !atts.length ? makeImage(text, aid) : chat(s, aid, { voice: opts.voice, last: content, web: web });
     return job.then(function (reply) {
       if (reply) { s.messages.push({ role: "assistant", content: reply, ts: stamp() }); touch(s.id); }
@@ -444,18 +447,29 @@
            "</p><p>Ask me to change anything on it \u2014 for example \u201cmake the header green\u201d.</p>";
   }
   function escHtml(t) { var d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
-  function makeSite(text, aid, editing) {
+  // A follow-up right after Gink built or changed a website in this chat ("good, add more to it",
+  // "make it blue") changes THAT website -- it used to go to the plain chat, which said it couldn't.
+  var SITE_HINT_RE = /\b(add|change|make|remove|delete|put|include|update|edit|replace|use|set|move|insert|more|less|bigger|smaller|darker|lighter|colou?rs?|section|pages?|buttons?|images?|photos?|pictures?|logo|fonts?|text|title|header|footer|menu|gallery|contact|prices?|it)\b/i;
+  var NOT_EDIT_RE = /^\s*(what|why|how|who|when|where|which|is|are|do|does|can you explain|explain|thanks?|thank you|merci|ok(ay)?|great|nice|cool|perfect)\b|\?\s*$/i;
+  function siteFollowUp(s, text) {
+    var last = null;
+    (s.messages || []).forEach(function (m) { if (m.role === "assistant") last = m; });
+    var afterSite = last && /^(Your website is live:|Updated your website:)/.test(String(last.content || ""));
+    return !!afterSite && SITE_HINT_RE.test(text) && !NOT_EDIT_RE.test(text);
+  }
+  function makeSite(text, aid, editing, siteId, session) {
     W.busy = { abort: function () {} };
     setSpinLabel(aid, editing ? "Updating your website\u2026" : "Building your website\u2026 (about a minute)");
     var go = editing
-      ? api("/sites").then(function (r) { return r.json(); }).then(function (j) {
+      ? (siteId ? Promise.resolve(siteId) : api("/sites").then(function (r) { return r.json(); }).then(function (j) {
           if (!j.sites || !j.sites.length) throw new Error("You don\u2019t have a website yet \u2014 ask me to make one.");
-          return api("/sites/" + encodeURIComponent(j.sites[0].id) + "/edit", { instruction: text });
-        })
+          return j.sites[0].id;
+        })).then(function (id) { return api("/sites/" + encodeURIComponent(id) + "/edit", { instruction: text }); })
       : api("/sites", { prompt: text });
     return go.then(function (r) {
       if (!r.ok) return errorText(r).then(function (t) { setPlainText(aid, t); return ""; });
       return r.json().then(function (j) {
+        if (session && j.id) { session.site = j.id; touch(session.id); }         // the website of this chat
         finalizeMessage(aid, siteLink(j, editing ? "Updated:" : "Your website is live:"));
         return (editing ? "Updated your website: " : "Your website is live: ") + j.title + " " + j.url;
       });

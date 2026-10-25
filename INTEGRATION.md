@@ -1131,3 +1131,10 @@ New services/live_info.py (all free, no API keys):
   stuck. Reproduced in Chromium with /render hanging (old: "Thinking... | Thinking..."). Now: plain
   text first, /render raced against 10 s, applied only if the same chat is still open and html is
   an array (a 500 used to put "undefined" into answers). Apps unaffected (they render locally).
+
+## 0.1.21: website follow-ups (from the owner's 73-second recording)
+- "build me a website" worked; "good add more to it" matched neither SITE_RE nor SITE_EDIT_RE, went to
+  the plain chat, and the model (not told about websites) said it couldn't edit the page. Now:
+  siteFollowUp(s, text) -- last assistant message in this chat is a website result + SITE_HINT_RE
+  (instruction words) and not NOT_EDIT_RE (questions, thanks) -> edit THAT site (session.site, set by
+  makeSite). systemPrompt says Gink builds/edits websites. Replayed in Chromium; spec updated.

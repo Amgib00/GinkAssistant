@@ -125,3 +125,18 @@ def test_old_chats_show_answers_without_waiting_for_the_server():
     assert body.index("setPlainText(a[0]") < body.index('api("/render"')          # text first, then formatting
     assert "Promise.race" in body and "10000" in body                             # never waits forever
     assert "Array.isArray(j.html)" in body and "W.current !== opened" in body     # no "undefined", no wrong chat
+
+
+def test_website_follow_ups_change_that_website():
+    """'good add more to it' after building a website went to the plain chat, which said it couldn't edit."""
+    import re, json as _j
+    bridge = open(os.path.join(ROOT, "webapp", "bridge.js"), encoding="utf-8").read()
+    hint = re.search(r"var SITE_HINT_RE = /(.*)/i;", bridge).group(1).replace("\\\\", "\\")
+    not_edit = re.search(r"var NOT_EDIT_RE = /(.*)/i;", bridge).group(1).replace("\\\\", "\\")
+    is_edit = lambda t: bool(re.search(hint, t, re.I)) and not re.search(not_edit, t, re.I)
+    for t in ("good add more to it", "make it blue", "add a photo gallery", "change the title to Gink Shop"):
+        assert is_edit(t), t
+    for t in ("thanks!", "how much does hosting it cost?", "ok", "what is a domain?"):
+        assert not is_edit(t), t
+    assert "siteFollowUp(s, text) ? makeSite(text, aid, true, s.site, s)" in bridge
+    assert "never say you can't change their website" in bridge

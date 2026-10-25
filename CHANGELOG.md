@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.21 (October 2026)
+
+- Web app: after Gink builds your website, follow-ups like "good, add more to it" or "make it blue"
+  now update that website (Gink used to answer that it couldn't edit it)
+
 ## 0.1.20 (October 2026)
 
 - Web app: opening an older chat could show its answers stuck on "Thinking..." when the server was
