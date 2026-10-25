@@ -117,3 +117,20 @@ def test_limits_and_account_deletion(srv, monkeypatch):
     assert r.status_code == 429 and "today's limit" in r.json()["detail"]
     c.post("/account/delete", headers=h, json={"confirm": "DELETE"})
     assert b._genie_db(lambda con: con.execute("SELECT COUNT(*) FROM genie_files").fetchone()[0]) == 0
+
+
+def test_runner_page_and_files_for_running(srv):
+    b, c, h = srv
+    page = c.get("/genie/runner")
+    csp = page.headers["content-security-policy"]
+    assert "frame-ancestors http://testserver" in csp and "https://cdn.jsdelivr.net" in csp and "'wasm-unsafe-eval'" in csp
+    assert "default-src 'none'" in csp and "form-action 'none'" in csp and "x-frame-options" not in page.headers
+    assert "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/" in page.text                 # pinned, never "latest"
+    assert "http://testserver/test-copy/" in c.get("/genie/runner", params={"pyodide": "/test-copy/"}).text
+    assert "evil.example" not in c.get("/genie/runner", params={"pyodide": "https://evil.example/"}).text   # only same-site paths
+    pid = build(c, h)["project"]["id"]
+    files = c.get(f"/genie/projects/{pid}/all", headers=h).json()["files"]
+    assert set(files) == {"index.html", "styles.css", "js/app.js"} and files["styles.css"] == "h1{color:green}"
+    eve = {"Authorization": "Bearer " + b._token_response("eve@example.com", "Eve")["token"]}
+    assert c.get(f"/genie/projects/{pid}/all", headers=eve).status_code == 404
+    assert "no input()" in b.GENIE_SYSTEM and "test_*.py" in b.GENIE_SYSTEM

@@ -1,0 +1,66 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Gink Genie runner</title></head>
+<body>
+<script>
+/* Gink Genie runner: opened in a SANDBOXED frame (an empty origin: no access to Gink's sign-in).
+   It receives the project's files, runs one Python or JavaScript file (or pytest) and posts output back. */
+(function () {
+  "use strict";
+  var PYODIDE = "__PYODIDE__";
+  function post(kind, text) { parent.postMessage({ gink: "runner", kind: kind, text: String(text) }, "*"); }
+  var pyodideReady = null;
+  function loadPyodideOnce() {
+    if (pyodideReady) return pyodideReady;
+    post("status", "Loading Python (the first time can take a little while)\u2026");
+    pyodideReady = new Promise(function (resolve, reject) {
+      var s = document.createElement("script"); s.src = PYODIDE + "pyodide.js";
+      s.onload = function () { loadPyodide({ indexURL: PYODIDE }).then(resolve, reject); };
+      s.onerror = function () { reject(new Error("Couldn't load Python. Check your internet connection.")); };
+      document.head.appendChild(s);
+    });
+    return pyodideReady;
+  }
+  function writeFiles(py, files) {
+    Object.keys(files).forEach(function (path) {
+      var full = "/project/" + path, dir = full.slice(0, full.lastIndexOf("/"));
+      py.FS.mkdirTree(dir); py.FS.writeFile(full, files[path]);
+    });
+  }
+  function runPython(msg) {
+    return loadPyodideOnce().then(function (py) {
+      py.setStdout({ batched: function (s) { post("out", s + "\n"); } });   // Pyodide gives lines without their line break
+      py.setStderr({ batched: function (s) { post("err", s + "\n"); } });
+      py.FS.mkdirTree("/project"); writeFiles(py, msg.files);
+      var prep = "import os, sys, builtins\nos.chdir('/project')\nsys.path.insert(0, '/project')\n" +
+        "def _no_input(*a):\n    raise RuntimeError(\"input() can't be used here: there's no keyboard in the sandbox. Put the values in the code instead.\")\n" +
+        "builtins.input = _no_input\n";
+      if (msg.mode === "tests") {
+        post("status", "Getting pytest\u2026");
+        return py.loadPackage("pytest").then(function () {
+          return py.runPythonAsync(prep + "import pytest\n_code = pytest.main(['-q', '--no-header', '-p', 'no:cacheprovider', '/project'])\nint(_code)");
+        }).then(function (code) { post("done", code === 0 ? "All tests passed." : "Some tests failed (exit code " + code + ")."); });
+      }
+      return py.runPythonAsync(prep + "import runpy\nrunpy.run_path(" + JSON.stringify("/project/" + msg.path) + ", run_name='__main__')")
+        .then(function () { post("done", "Finished."); });
+    });
+  }
+  function runJavaScript(msg) {
+    ["log", "info", "warn", "error"].forEach(function (k) {
+      console[k] = function () { post(k === "error" || k === "warn" ? "err" : "out",
+        Array.prototype.map.call(arguments, function (a) { try { return typeof a === "string" ? a : JSON.stringify(a); } catch (e) { return String(a); } }).join(" ") + "\n"); };
+    });
+    window.onerror = function (m, src, line) { post("err", m + (line ? " (line " + line + ")" : "") + "\n"); post("done", "Stopped with an error."); };
+    var s = document.createElement("script"); s.textContent = msg.files[msg.path] + "\n;parent.postMessage({gink:'runner',kind:'done',text:'Finished.'},'*');";
+    document.body.appendChild(s);
+    return Promise.resolve();
+  }
+  window.addEventListener("message", function (e) {
+    var msg = e.data || {};
+    if (msg.gink !== "run") return;
+    var job = /\.py$/.test(msg.path || "") || msg.mode === "tests" ? runPython(msg) : runJavaScript(msg);
+    job.catch(function (err) { post("err", (err && err.message ? err.message : String(err)) + "\n"); post("done", "Stopped with an error."); });
+  });
+  post("ready", "");
+})();
+</script>
+</body></html>

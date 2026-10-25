@@ -2532,6 +2532,25 @@ def genie_page():
         return HTMLResponse(f.read(), headers=_WEB_HEADERS)
 
 
+PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/"     # pinned (Python 3.14.2); never "latest"
+
+
+@app.get("/genie/runner", response_class=HTMLResponse)
+def genie_runner(request: Request, pyodide: str = ""):
+    """Gink Genie's code runner. The workspace opens it in a SANDBOXED frame, so the code it runs
+    (in the person's browser, never on this server) can't touch Gink sign-ins."""
+    origin = _public_base(request).rstrip("/")
+    base = pyodide if re.fullmatch(r"/[A-Za-z0-9_/.-]*/", pyodide or "") else PYODIDE_URL   # tests: a same-site copy
+    if base.startswith("/"):
+        base = origin + base
+    with open(os.path.join(WEB_APP_DIR, "runner.html"), encoding="utf-8") as f:
+        page = f.read().replace("__PYODIDE__", base)
+    csp = (f"default-src 'none'; script-src 'unsafe-inline' 'wasm-unsafe-eval' {origin} https://cdn.jsdelivr.net; "
+           f"connect-src {origin} https://cdn.jsdelivr.net; worker-src blob:; frame-ancestors {origin}; base-uri 'none'; form-action 'none'")
+    return HTMLResponse(page, headers={"Content-Security-Policy": csp, "X-Content-Type-Options": "nosniff",
+                                       "Referrer-Policy": "no-referrer", "Cache-Control": "no-store"})
+
+
 @app.get("/login", response_class=HTMLResponse)
 @app.get("/signup", response_class=HTMLResponse)
 @app.get("/forgot", response_class=HTMLResponse)
@@ -4777,8 +4796,11 @@ GENIE_SYSTEM = (
     "search_files. Build complete, working, well-organised projects -- several files when that is clearer (for a "
     "web app: index.html, styles.css, app.js...). Web projects must run by opening index.html: no build step, no "
     "frameworks from the internet, relative paths only. Read a file before changing it. Keep each file under "
-    "250 KB. Never include passwords, API keys or secrets. When done, reply with a short summary of what you "
-    "built or changed and how to use it, in the user's language.")
+    "250 KB. Never include passwords, API keys or secrets. The user can run .py and .js files and pytest tests "
+    "in their browser (Python 3.14 via Pyodide: the standard library and pure-Python packages; no input(), no "
+    "servers, no internet access, only the project's files) -- write code that works there, and put Python tests "
+    "in test_*.py files. When done, reply with a short summary of what you built or changed and how to use or "
+    "run it, in the user's language.")
 GENIE_TOOLS = [
     {"type": "function", "function": {"name": "list_files", "description": "List the project's files with sizes.",
                                       "parameters": {"type": "object", "properties": {}}}},
@@ -5023,6 +5045,14 @@ def genie_file_delete(pid: str, request: Request, path: str = ""):
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     return {"files": _genie_summary(pid)}
+
+
+@app.get("/genie/projects/{pid}/all")
+def genie_all_files(pid: str, request: Request):
+    """Every file's content at once (the in-browser runner needs the whole project)."""
+    email = _email_from_auth(request)
+    _genie_project(email, pid)
+    return {"files": _genie_files(pid)}
 
 
 @app.post("/genie/projects/{pid}/ask")

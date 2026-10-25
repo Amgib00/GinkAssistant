@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.23 (October 2026)
+
+- Gink Genie runs your code: press Run on a Python or JavaScript file, or Run tests (pytest), and
+  see the output below the editor. It runs safely inside your browser, never on the server
+
 ## 0.1.22 (October 2026)
 
 - Gink Genie (sidebar > Gink Genie): describe an app, website, game or script and Genie builds the

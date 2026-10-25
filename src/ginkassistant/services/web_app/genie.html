@@ -34,6 +34,10 @@
   .editor { display:flex; flex-direction:column; min-width:0; border-right:1px solid var(--line); }
   .ebar { display:flex; align-items:center; gap:10px; padding:8px 12px; border-bottom:1px solid var(--line); background:var(--panel); min-height:46px; }
   .ebar .name { font-family:ui-monospace,Menlo,monospace; font-size:13px; } .dirty { color:var(--accent); font-weight:800; }
+  .console { border-top:1px solid var(--line); background:var(--code); max-height:34%; display:flex; flex-direction:column; }
+  .console .cbar { display:flex; align-items:center; gap:8px; padding:6px 12px; border-bottom:1px solid var(--line); font-size:12.5px; color:var(--muted); }
+  .console pre { margin:0; padding:10px 14px; overflow:auto; font:12.5px/1.5 ui-monospace,Menlo,monospace; white-space:pre-wrap; flex:1; }
+  .console .e { color:var(--bad); }
   textarea.code { flex:1; width:100%; border:0; outline:none; resize:none; padding:14px 16px; background:var(--code); tab-size:2;
                   font:13px/1.55 ui-monospace,Menlo,Consolas,monospace; white-space:pre; overflow:auto; }
   .chat { display:flex; flex-direction:column; min-height:0; background:var(--panel); }
@@ -92,8 +96,13 @@
   </nav>
   <section class="editor">
     <div class="ebar"><span class="name" id="fname">Choose a file</span><span class="dirty" id="dirty" hidden>&bull;</span>
-      <div class="grow"></div><button class="ghost" id="delfile" hidden>Delete file</button><button id="save" disabled>Save</button></div>
+      <div class="grow"></div><button class="ghost" id="run" hidden>&#9654; Run</button><button class="ghost" id="tests" hidden>Run tests</button>
+      <button class="ghost" id="delfile" hidden>Delete file</button><button id="save" disabled>Save</button></div>
     <textarea class="code" id="code" spellcheck="false" placeholder="Pick a file on the left, or ask Genie to build something." disabled></textarea>
+    <div class="console" id="console" hidden>
+      <div class="cbar"><b>Output</b><span id="cstatus"></span><div class="grow"></div><button class="danger" id="stop" hidden>Stop</button><button class="ghost" id="cclose">Close</button></div>
+      <pre id="cout" aria-live="polite"></pre>
+    </div>
   </section>
   <section class="chat" aria-label="Genie">
     <div class="msgs" id="msgs" aria-live="polite"></div>
@@ -157,6 +166,7 @@
     });
   }
   function renderTree() {
+    setTimeout(runButtons, 0);
     var tree = $("tree"); tree.innerHTML = ""; var lastDir = null;
     if (!S.files.length) tree.appendChild(el("div", "note", "No files yet. Ask Genie to build something."));
     S.files.forEach(function (f) {
@@ -168,6 +178,47 @@
       tree.appendChild(b);
     });
   }
+  // ---- running code: in a sandboxed frame in this browser (Python via Pyodide, or JavaScript); never on the server
+  var RUN = { frame: null, timer: null };
+  var TEST_RE = /(^|\/)(test_[^\/]*\.py|[^\/]*_test\.py)$/;
+  function runButtons() {
+    $("run").hidden = !/\.(py|js)$/.test(S.path || "");
+    $("tests").hidden = !S.files.some(function (f) { return TEST_RE.test(f.path); });
+  }
+  function out(text, isErr) {
+    var span = el("span", isErr ? "e" : "", text); $("cout").appendChild(span); $("cout").scrollTop = 1e9;
+  }
+  function stopRun(message) {
+    if (RUN.frame) { RUN.frame.remove(); RUN.frame = null; }
+    clearTimeout(RUN.timer); $("stop").hidden = true; $("run").disabled = $("tests").disabled = false;
+    if (message) $("cstatus").textContent = message;
+  }
+  function run(mode) {
+    if (dirty()) saveFile();
+    stopRun(); $("console").hidden = false; $("cout").textContent = ""; $("cstatus").textContent = "Starting\u2026";
+    $("stop").hidden = false; $("run").disabled = $("tests").disabled = true;
+    var path = S.path;
+    api("/genie/projects/" + encodeURIComponent(S.project.id) + "/all").then(function (j) {
+      if (dirty()) j.files[S.path] = $("code").value;
+      var f = document.createElement("iframe");
+      f.setAttribute("sandbox", "allow-scripts");                 // an empty origin: no access to Gink's sign-in
+      f.style.display = "none";
+      var test = new URLSearchParams(location.search).get("pyodide");
+      f.src = "/genie/runner" + (test ? "?pyodide=" + encodeURIComponent(test) : "");
+      RUN.frame = f; RUN.files = j.files; RUN.mode = mode; RUN.path = path;
+      document.body.appendChild(f);
+      RUN.timer = setTimeout(function () { stopRun("Stopped after 2 minutes."); }, 120000);
+    }).catch(function (e) { stopRun(e.message); });
+  }
+  window.addEventListener("message", function (e) {
+    if (!RUN.frame || e.source !== RUN.frame.contentWindow || !e.data || e.data.gink !== "runner") return;
+    var m = e.data;
+    if (m.kind === "ready") RUN.frame.contentWindow.postMessage({ gink: "run", mode: RUN.mode, path: RUN.path, files: RUN.files }, "*");
+    else if (m.kind === "status") $("cstatus").textContent = m.text;
+    else if (m.kind === "out") { $("cstatus").textContent = "Running\u2026"; out(m.text); }
+    else if (m.kind === "err") out(m.text, true);
+    else if (m.kind === "done") stopRun(m.text);
+  });
   function clearEditor() { $("fname").textContent = "Choose a file"; $("code").value = ""; $("code").disabled = true; $("delfile").hidden = true; setDirty(); }
   function openFile(path) {
     if (dirty() && !confirm("You have unsaved changes in " + S.path + ". Leave without saving?")) return;
@@ -176,7 +227,7 @@
   function loadFile(path) {                                   // no unsaved-changes question (e.g. after Genie changed files)
     api("/genie/projects/" + encodeURIComponent(S.project.id) + "/file?path=" + encodeURIComponent(path)).then(function (j) {
       S.path = j.path; S.saved = j.content; $("code").value = j.content; $("code").disabled = false;
-      $("fname").textContent = j.path; $("delfile").hidden = false; setDirty(); renderTree();
+      $("fname").textContent = j.path; $("delfile").hidden = false; setDirty(); renderTree(); runButtons();
     }).catch(function (e) { say(e.message, true); });
   }
   function saveFile() {
@@ -246,6 +297,10 @@
     if (e.key === "s" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveFile(); }
   };
   $("save").onclick = saveFile;
+  $("run").onclick = function () { run("file"); };
+  $("tests").onclick = function () { run("tests"); };
+  $("stop").onclick = function () { stopRun("Stopped."); };
+  $("cclose").onclick = function () { stopRun(); $("console").hidden = true; };
   $("pick").onchange = function () { if (dirty() && !confirm("Leave without saving?")) { this.value = S.project.id; return; } openProject(this.value); };
   $("new").onclick = function () { if (dirty() && !confirm("Leave without saving?")) return; showStart(); $("idea").focus(); };
   $("preview").onclick = function () { window.open(S.project.preview_url, "_blank", "noopener"); };

@@ -1152,3 +1152,16 @@ New services/live_info.py (all free, no API keys):
   reopened the project); a bogus "unsaved changes" prompt after Genie answered blocked file clicks.
   Also: literal "\u2026" placeholders in genie.html and console.html (+ a test for every page).
 - Next: phase 2 (Genie in the apps, running code/tests, GitHub upload), phase 3 (more features).
+
+## 0.1.23: Genie runs code (phase 2, part 1)
+- /genie/runner (web_app/runner.html) in an iframe sandbox="allow-scripts" (opaque origin): Pyodide
+  314.0.7 (Python 3.14.2) from cdn.jsdelivr.net, pinned; its own CSP (script/connect: server origin +
+  jsdelivr, 'wasm-unsafe-eval', frame-ancestors = server origin, no XFO). ?pyodide=/same/site/path/
+  only for tests. Parent posts the project (GET /genie/projects/{pid}/all) after "ready"; runner posts
+  out/err/status/done. Python: files in /project, cwd + sys.path, runpy or pytest.main (pytest loaded
+  from the CDN), input() explains; JS: console captured. Stop removes the frame; 2-minute limit.
+- Browser-tested with a local copy of the npm package served with jsDelivr's CORS header (the opaque
+  origin needs it for the ES module): multi-file Python, tracebacks, input(), JS, localStorage blocked
+  (SecurityError), Stop. Fixed: Pyodide's batched output has no line breaks. NOT testable here:
+  pytest (its wheel downloads from the CDN) -- check on the live site.
+- GENIE_SYSTEM tells the AI how running works. Next: GitHub upload (phase 2, part 2).

@@ -32,3 +32,10 @@ The /genie page SHALL offer the person's projects, a file list with folders, an 
 #### Scenario: After Genie answers
 - **WHEN** Genie changes files
 - **THEN** the chat keeps every message and the open file reloads without asking about unsaved changes
+
+### Requirement: Running code in the browser
+The workspace SHALL run the open .py or .js file, and pytest when the project has test files, inside a sandboxed frame in the person's browser (Python via a pinned Pyodide release), never on the server; output and errors SHALL appear in a console panel, input() SHALL explain that there is no keyboard, Stop SHALL end a run at once, and runs SHALL stop after 2 minutes.
+
+#### Scenario: Code tries to read the sign-in
+- **WHEN** code being run reads Gink's localStorage
+- **THEN** it gets a security error and the sign-in stays private

@@ -164,6 +164,7 @@ src/ginkassistant/services/web_app/console.html
 src/ginkassistant/services/web_app/device.html
 src/ginkassistant/services/web_app/genie.html
 src/ginkassistant/services/web_app/index.html
+src/ginkassistant/services/web_app/runner.html
 src/ginkassistant/ui/__init__.py
 src/ginkassistant/ui/agent_ui.py
 src/ginkassistant/ui/branding.py
