@@ -4995,6 +4995,17 @@ GENIE_COMMAND_TOOL = {"type": "function", "function": {
                     "`pytest [args]`, `node FILE`, `ls`, or `cat FILE`. Returns the output and exit code."),
     "parameters": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]}}}
 _genie_runs = {}                     # paused requests waiting for a command's output: run_id -> state
+_genie_progress = {}                 # live steps for the page while it waits: progress id -> {email, pid, steps, updated}
+
+
+def _genie_report(state: dict):
+    pid_ = state.get("progress")
+    if pid_:
+        now = time.time()
+        for k in [k for k, v in _genie_progress.items() if now - v["updated"] > 1800]:
+            _genie_progress.pop(k, None)
+        _genie_progress[pid_] = {"email": state["email"], "pid": state["pid"], "steps": list(state["steps"]),
+                                 "rounds": state["rounds"], "updated": now}
 
 
 def _genie_diff(path: str, old: str, new: str):
@@ -5056,6 +5067,7 @@ def _genie_process_queue(state: dict):
         result = _genie_tool(state["pid"], name, args, state["changes"])
         state["messages"].append({"role": "tool", "tool_call_id": call.get("id", ""), "content": result})
         state["steps"].append(_genie_step(name, args, result, state["changes"], old))
+        _genie_report(state)
     return None
 
 
@@ -5087,6 +5099,7 @@ async def _genie_drive(state: dict) -> dict:
             if r.status_code != 200:
                 raise HTTPException(status_code=502, detail="The AI service had a problem. Please try again.")
             state["rounds"] += 1
+            _genie_report(state)
             msg = ((r.json().get("choices") or [{}])[0].get("message")) or {}
             calls = msg.get("tool_calls") or []
             if not calls:
@@ -5098,7 +5111,7 @@ async def _genie_drive(state: dict) -> dict:
             state["queue"] = list(calls)
 
 
-async def _genie_run(email: str, pid: str, instruction: str) -> dict:
+async def _genie_run(email: str, pid: str, instruction: str, progress: str = "") -> dict:
     """The AI coding loop for one request (it pauses while the browser runs a command)."""
     files = _genie_summary(pid)
     listing = "\n".join(f"- {f['path']} ({f['size']} bytes)" for f in files) or "(empty project)"
@@ -5107,6 +5120,7 @@ async def _genie_run(email: str, pid: str, instruction: str) -> dict:
     history = [{"role": "user" if r == "user" else "assistant", "content": t[:1500]} for r, t in earlier]
     state = {"email": email, "pid": pid, "instruction": instruction, "changes": [], "steps": [], "rounds": 0, "queue": [],
              "checkpoint": _genie_checkpoint(pid, instruction),
+             "progress": re.sub(r"[^A-Za-z0-9_-]", "", str(progress or ""))[:40],
              "pending": None, "model": await _current_model("openai/gpt-oss-120b"),
              "messages": [{"role": "system", "content": GENIE_SYSTEM}] + history +
                          [{"role": "user", "content": f"Project files:\n{listing}\n\nRequest: {instruction}"}]}
@@ -5126,7 +5140,7 @@ def _genie_remember(state: dict, reply: str):
                     "ORDER BY id DESC LIMIT 400)", (state["pid"], state["pid"]))))
 
 
-async def _genie_ask(request: Request, email: str, pid: str, instruction: str) -> dict:
+async def _genie_ask(request: Request, email: str, pid: str, instruction: str, progress: str = "") -> dict:
     instruction = str(instruction or "").strip()[:6000]
     if len(instruction) < 2:
         raise HTTPException(status_code=422, detail="Tell Genie what to build or change.")
@@ -5136,7 +5150,7 @@ async def _genie_ask(request: Request, email: str, pid: str, instruction: str) -
     if blocked is not None:
         detail = _json.loads(bytes(blocked.body))["error"]["message"]
         raise HTTPException(status_code=429, detail=detail)
-    return await _genie_run(email, pid, instruction)
+    return await _genie_run(email, pid, instruction, progress)
 
 
 def _genie_public(request: Request, p: dict) -> dict:
@@ -5282,8 +5296,18 @@ def genie_all_files(pid: str, request: Request):
 async def genie_ask(pid: str, request: Request, data: dict = Body(...)):
     email = _email_from_auth(request)
     _genie_project(email, pid)
-    result = await _genie_ask(request, email, pid, data.get("instruction"))
+    result = await _genie_ask(request, email, pid, data.get("instruction"), data.get("progress", ""))
     return {**result, "files": _genie_summary(pid)}
+
+
+@app.get("/genie/projects/{pid}/progress")
+def genie_progress(pid: str, request: Request, id: str = ""):
+    """The steps so far of a request that is still running (only for its owner)."""
+    email = _email_from_auth(request)
+    p = _genie_progress.get(id)
+    if not p or p["email"] != email or p["pid"] != pid:
+        return {"steps": [], "rounds": 0}
+    return {"steps": p["steps"], "rounds": p["rounds"]}
 
 
 @app.post("/genie/projects/{pid}/ask/continue")

@@ -1299,3 +1299,10 @@ New services/live_info.py (all free, no API keys):
 - _genie_process_queue reads the file's old content before write_file; _genie_step -> _genie_diff
   (difflib unified, n=2, header dropped, 6000 chars) titled "Updated PATH (+A -R)" with diff:true;
   pictures and new files unchanged. genie.html colours .dl lines (add/del/hunk). Browser-checked.
+
+## 0.1.38: live progress in Genie
+- _genie_progress (in memory, 30 min): _genie_report(state) after each step and AI round; the ask body
+  carries "progress" (sanitised id); GET /genie/projects/{pid}/progress?id= (owner + project only).
+- genie.html: uid() (the page had none -- would have broken every request), startProgress/stopProgress
+  polling every 1.5 s while busy. Browser-tested with an ASYNC slow mock: 0 -> 1 -> 2 -> 3 live
+  (a time.sleep mock blocks the event loop and hides progress; real Groq calls are async).

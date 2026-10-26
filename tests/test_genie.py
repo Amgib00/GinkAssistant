@@ -257,3 +257,15 @@ def test_updates_show_a_diff(srv):
     assert upd["title"] == "Updated js/app.js (+2 \u22121)" and upd["diff"] is True
     assert "-console.log('grades')" in upd["detail"] and "+console.log('grades v2')" in upd["detail"] and "+++" not in upd["detail"]
     assert new["title"] == "Created new.js" and new["detail"] == "x()" and "diff" not in new
+
+
+def test_live_progress_is_private(srv):
+    b, c, h = srv
+    pid = c.post("/genie/projects", headers=h, json={"name": "Live"}).json()["project"]["id"]
+    SCRIPT[:] = [{"content": "", "tool_calls": [call("write_file", path="a.txt", content="a")]}, {"content": "Done."}]
+    c.post(f"/genie/projects/{pid}/ask", headers=h, json={"instruction": "go", "progress": "abc123"})
+    got = c.get(f"/genie/projects/{pid}/progress", headers=h, params={"id": "abc123"}).json()
+    assert [s["title"] for s in got["steps"]] == ["Created a.txt"] and got["rounds"] == 2
+    eve = {"Authorization": "Bearer " + b._token_response("eve@example.com", "Eve")["token"]}
+    assert c.get(f"/genie/projects/{pid}/progress", headers=eve, params={"id": "abc123"}).json()["steps"] == []
+    assert c.get("/genie/projects/other/progress", headers=h, params={"id": "abc123"}).json()["steps"] == []

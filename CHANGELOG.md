@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.38 (October 2026)
+
+- Gink Genie shows its work live: each step (files created, changed, commands run) appears while
+  Genie is still working, instead of all at the end
+
 ## 0.1.37 (October 2026)
 
 - Gink Genie shows exactly what it changed: "Updated app.js (+3 -2)" opens to the changed lines,

@@ -469,13 +469,13 @@
   function handleGenie(j, pid) {                // a final answer, or a command to run first
     if (j.files) { S.files = j.files; renderTree(); }
     if (j.pending) {
-      working(true, j.steps);
+      working(true, j.steps); PROGRESS.shown = j.steps.length;
       return runCommand(j.pending.command).then(function (r) {
         return api("/genie/projects/" + encodeURIComponent(pid) + "/ask/continue",
                    { body: { run_id: j.pending.run_id, output: r.output, exit_code: r.code } });
       }).then(function (next) { return handleGenie(next, pid); });
     }
-    working(false); say(j.reply, false, j.changes, j.steps, j.checkpoint);
+    stopProgress(); working(false); say(j.reply, false, j.changes, j.steps, j.checkpoint);
     if (S.path) { var still = S.files.some(function (f) { return f.path === S.path; }); if (still) loadFile(S.path); else { S.path = ""; S.saved = ""; clearEditor(); } }
     else if (S.files.length) loadFile((S.files.filter(function (f) { return f.path === "index.html"; })[0] || S.files[0]).path);
     loadProjects(pid, true);
@@ -492,12 +492,27 @@
       loadProjects(S.project.id, true);
     }).catch(function (e) { button.disabled = false; say(e.message, true); });
   }
+  // live steps: while Genie works, ask the server every 1.5 s what it has done so far
+  function uid() {                                       // a random id (crypto when available)
+    var a = new Uint8Array(9); (window.crypto || {}).getRandomValues ? crypto.getRandomValues(a) : a.forEach(function (_, i) { a[i] = Math.random() * 256; });
+    return Array.prototype.map.call(a, function (x) { return ("0" + x.toString(16)).slice(-2); }).join("");
+  }
+  var PROGRESS = { timer: null, shown: 0 };
+  function startProgress(pid, id) {
+    stopProgress(); PROGRESS.shown = 0;
+    PROGRESS.timer = setInterval(function () {
+      api("/genie/projects/" + encodeURIComponent(pid) + "/progress?id=" + encodeURIComponent(id)).then(function (j) {
+        if (PROGRESS.timer && S.busy && j.steps.length > PROGRESS.shown) { PROGRESS.shown = j.steps.length; working(true, j.steps); }
+      }).catch(function () {});
+    }, 1500);
+  }
+  function stopProgress() { clearInterval(PROGRESS.timer); PROGRESS.timer = null; }
   function sendToGenie(text) {
-    var pid = S.project.id;
-    said(text); working(true);
-    return api("/genie/projects/" + encodeURIComponent(pid) + "/ask", { body: { instruction: text } })
+    var pid = S.project.id, progress = uid();
+    said(text); working(true); startProgress(pid, progress);
+    return api("/genie/projects/" + encodeURIComponent(pid) + "/ask", { body: { instruction: text, progress: progress } })
       .then(function (j) { return handleGenie(j, pid); })
-      .catch(function (e) { working(false); if (e.message !== "signed out") say(e.message, true); });
+      .catch(function (e) { stopProgress(); working(false); if (e.message !== "signed out") say(e.message, true); });
   }
   function ask() {
     var text = $("instr").value.trim(); if (!text || S.busy || !S.project) return;

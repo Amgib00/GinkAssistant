@@ -109,3 +109,10 @@ When Genie updates an existing text file, its step SHALL be titled with the numb
 #### Scenario: Changing one value
 - **WHEN** Genie changes the tax line in app.js
 - **THEN** the step reads "Updated app.js (+1 −1)" and shows the old line removed and the new one added
+
+### Requirement: Live progress
+While Genie works on a request, the page SHALL show its steps as they happen, refreshed about every 1.5 seconds, from progress that only the person who sent the request can see (kept for at most 30 minutes).
+
+#### Scenario: A long request
+- **WHEN** Genie writes four files over several seconds
+- **THEN** the waiting message shows one step, then two, then three, before the final answer
