@@ -809,6 +809,62 @@
   document.addEventListener("keydown", function (e) {
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "p" && S.project && !$("work").hidden) { e.preventDefault(); goToFile(); }
   });
+  // Search in the project: Ctrl+Shift+F / Cmd+Shift+F -- matches inside files, opens the file at the line
+  function openAtLine(path, line) {
+    openFile(path);
+    var tries = 0, t = setInterval(function () {                // wait for the file to load, then select the line
+      if (S.path === path && !$("code").disabled) {
+        clearInterval(t); var lines = $("code").value.split("\n"), start = 0;
+        for (var i = 0; i < line - 1 && i < lines.length; i++) start += lines[i].length + 1;
+        var box = $("code"); box.focus(); box.setSelectionRange(start, start + (lines[line - 1] || "").length);
+        box.scrollTop = Math.max(0, (line - 5) * 20);
+      } else if (++tries > 40) clearInterval(t);
+    }, 100);
+  }
+  function searchProject() {
+    if (!S.project || $("work").hidden || $("findbox")) return;
+    var box = el("div"); box.id = "findbox";
+    box.style.cssText = "position:fixed;left:50%;top:70px;transform:translateX(-50%);width:min(680px,94vw);z-index:60;background:var(--panel);" +
+      "border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.25);padding:8px";
+    var input = el("input"); input.type = "text"; input.placeholder = "Search in the project\u2026"; input.setAttribute("aria-label", "Search in the project");
+    input.style.cssText = "width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--bg)";
+    var info = el("div", "note", "Loading the files\u2026"); info.style.padding = "6px 4px 0";
+    var list = el("div"); list.style.cssText = "max-height:380px;overflow:auto;margin-top:4px";
+    var files = {}, hits = [], idx = 0, timer = null;
+    api("/genie/projects/" + encodeURIComponent(S.project.id) + "/all").then(function (j) { files = j.files; info.textContent = ""; run(); });
+    function run() {
+      var q = input.value.toLowerCase(); hits = []; idx = 0; list.innerHTML = "";
+      if (q.length < 2) { info.textContent = q ? "Type at least 2 letters." : ""; return; }
+      Object.keys(files).sort().forEach(function (path) {
+        files[path].split("\n").forEach(function (text, i) {
+          if (hits.length < 200 && text.toLowerCase().indexOf(q) >= 0) hits.push({ path: path, line: i + 1, text: text.trim().slice(0, 140) });
+        });
+      });
+      info.textContent = hits.length ? hits.length + (hits.length === 200 ? "+" : "") + (hits.length === 1 ? " match" : " matches") : "No matches.";
+      var lastPath = null;
+      hits.forEach(function (h, i) {
+        if (h.path !== lastPath) { lastPath = h.path; var hd = el("div", "dir", h.path); hd.style.padding = "8px 8px 2px"; list.appendChild(hd); }
+        var b = el("button", "file" + (i === idx ? " on" : "")); b.style.whiteSpace = "pre"; b.dataset.i = i;
+        b.appendChild(el("span", "note", String(h.line).padStart(4, " ") + "  ")); b.appendChild(document.createTextNode(h.text));
+        b.onmousedown = function (e) { e.preventDefault(); pick(i); }; list.appendChild(b);
+      });
+    }
+    function mark() { list.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", Number(b.dataset.i) === idx); });
+                      var on = list.querySelector("button.on"); if (on) on.scrollIntoView({ block: "nearest" }); }
+    function close() { box.remove(); }
+    function pick(i) { var h = hits[i]; close(); if (h) openAtLine(h.path, h.line); }
+    input.oninput = function () { clearTimeout(timer); timer = setTimeout(run, 150); };
+    input.onkeydown = function (e) {
+      if ((e.key === "ArrowDown" || e.key === "ArrowUp") && hits.length) { e.preventDefault(); idx = (idx + (e.key === "ArrowDown" ? 1 : -1) + hits.length) % hits.length; mark(); }
+      else if (e.key === "Enter") { e.preventDefault(); pick(idx); }
+      else if (e.key === "Escape") { e.preventDefault(); close(); }
+    };
+    input.onblur = function () { setTimeout(close, 150); };
+    box.appendChild(input); box.appendChild(info); box.appendChild(list); document.body.appendChild(box); input.focus();
+  }
+  document.addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "f" && S.project && !$("work").hidden) { e.preventDefault(); searchProject(); }
+  });
   window.addEventListener("beforeunload", function (e) { if (dirty()) { e.preventDefault(); e.returnValue = ""; } });
   loadProjects().catch(function () {});
 })();

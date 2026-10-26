@@ -1328,3 +1328,7 @@ New services/live_info.py (all free, no API keys):
 - PATCH /genie/projects/{pid}/file {path, new_path}: 409 if the target exists, pictures keep an image
   ending (and text files can't take one). genie.html: #renfile (saves unsaved edits first), Ctrl/Cmd+P
   #goto box (letters-in-order match, arrows/Enter/Escape). Browser-tested.
+
+## 0.1.44: search in the project
+- genie.html searchProject (Ctrl/Cmd+Shift+F): /all text files, case-insensitive, >= 2 letters, <= 200
+  matches grouped by file; openAtLine selects the line. Client-only. Browser-tested.

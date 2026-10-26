@@ -144,3 +144,10 @@ The open file SHALL be renamable or movable to another folder (saving unsaved ed
 #### Scenario: Finding a file
 - **WHEN** the person presses Ctrl+P and types "abt"
 - **THEN** pages/about.html is listed and Enter opens it
+
+### Requirement: Search in the project
+Ctrl+Shift+F or Cmd+Shift+F SHALL search the text of every code and text file (ignoring upper and lower case, at least 2 letters, up to 200 matches), list matches grouped by file with their line numbers, and open the chosen file with that line selected.
+
+#### Scenario: Finding a function
+- **WHEN** the person searches "addtocart"
+- **THEN** every line containing addToCart is listed by file, and choosing one opens it with the line selected

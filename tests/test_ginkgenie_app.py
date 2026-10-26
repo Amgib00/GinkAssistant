@@ -80,3 +80,9 @@ def test_genie_page_commands_steps_and_files():
     for part in ('class="s-title">New project', 'id="open-btn"', "function stepsBlock", "function runCommand", "/ask/continue",
                  "function addFiles", 'addEventListener("drop"', "Available: python FILE, pytest, node FILE, ls, cat FILE"):
         assert part in genie, part
+
+
+def test_search_in_project_wiring():
+    genie = open(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "genie.html"), encoding="utf-8").read()
+    for part in ("function searchProject", "function openAtLine", 'e.shiftKey && e.key.toLowerCase() === "f"', "function goToFile"):
+        assert part in genie, part

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.44 (October 2026)
+
+- Gink Genie: search the whole project with Ctrl+Shift+F (Cmd+Shift+F on Mac) and jump straight to
+  the line you need
+
 ## 0.1.43 (October 2026)
 
 - Gink's description: "Your AI assistant for work, study and everyday life"
