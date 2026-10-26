@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.48 (October 2026)
+
+- Gink Genie works properly on phones: Files, Code and Genie tabs, and all project actions in the
+  menu, instead of a crowded screen that scrolled sideways
+
 ## 0.1.47 (October 2026)
 
 - Gink Genie: Share a project's website with a link, and Stop sharing to make every old link stop

@@ -95,3 +95,11 @@ def test_editor_line_numbers_and_position():
     # the numbers and the code must use the same font and line height, or they drift apart
     assert "font:13px/1.55 ui-monospace,Menlo,Consolas,monospace; user-select:none" in genie
     assert "font:13px/1.55 ui-monospace,Menlo,Consolas,monospace; white-space:pre" in genie
+
+
+def test_phone_layout_wiring():
+    genie = open(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "genie.html"), encoding="utf-8").read()
+    for part in ("@media (max-width: 700px)", 'id="mtabs"', 'id="more"', "header .hb { display:none !important; }", "function tab(name)"):
+        assert part in genie, part
+    for bid in ("new", "preview", "download", "share", "github", "rename", "duplicate", "del"):    # every action reachable on phones
+        assert re.search(r'<button class="[^"]* hb" id="%s"' % bid, genie), bid

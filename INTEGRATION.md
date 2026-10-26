@@ -1354,3 +1354,9 @@ New services/live_info.py (all free, no API keys):
 ## 0.1.47: share Genie websites / stop sharing
 - POST /genie/projects/{pid}/preview/reset -> new preview_key (old /genie/p/<key>/ links 404).
   genie.html #share + #sharedlg (Copy, Open via openOutside, Stop sharing). Browser-tested.
+
+## 0.1.48: Genie on phones
+- Measured first at 390 px: page 406 px wide, header 260 px. Now (<= 700 px): header actions (.hb) in
+  #more-menu, #mtabs Files/Code/Genie (body.m-files/m-code/m-chat; Genie first, openFile -> Code,
+  hidden on the start screen via body.m-start), compact editor bar. openProject loads the first file
+  quietly. Checked: 390 px wide, 49 px header; computer layout unchanged.

@@ -130,6 +130,31 @@
   dialog input[type=text] { width:100%; border:1px solid var(--line); border-radius:10px; padding:8px 10px; background:var(--bg); }
   dialog .row { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; flex-wrap:wrap; }
   dialog .result a { color:var(--accent); font-weight:650; word-break:break-all; }
+  #more, #mtabs { display:none; }
+  #more-menu { position:fixed; right:10px; top:52px; z-index:70; min-width:200px; background:var(--panel); border:1px solid var(--line);
+               border-radius:14px; box-shadow:0 14px 40px rgba(0,0,0,.22); padding:6px; }
+  #more-menu button { display:block; width:100%; text-align:left; background:none; color:var(--text); border-radius:9px; font-weight:500; padding:10px 12px; }
+  #more-menu button:hover { background:var(--sel); } #more-menu .danger { color:var(--bad); box-shadow:none; }
+  /* Phones: header actions in "more", one panel at a time (Files / Code / Genie) */
+  @media (max-width: 700px) {
+    header { flex-wrap:nowrap; gap:8px; padding:8px 10px; }
+    header .hb { display:none !important; }
+    #more { display:inline-flex; padding:6px 12px; font-size:18px; line-height:1; }
+    .brand { font-size:0; gap:0; margin:0; } .brand .lamp { font-size:14px; }
+    #pick { flex:1; min-width:0; max-width:none; }
+    main { grid-template-columns:1fr !important; grid-template-rows:1fr !important; }
+    main > .files, main > .editor, main > .chat { display:none !important; }
+    body.m-files main > .files { display:block !important; max-height:none; border:0; }
+    body.m-code main > .editor { display:flex !important; }
+    body.m-chat main > .chat { display:flex !important; }
+    #mtabs { display:flex; position:sticky; bottom:0; order:9; border-top:1px solid var(--line); background:var(--panel); }
+    body.m-start #mtabs { display:none; }
+    #mtabs button { flex:1; border-radius:0; background:none; color:var(--muted); padding:12px 0; font-weight:650; }
+    #mtabs button.on { color:var(--accent); box-shadow:inset 0 2px 0 var(--accent); }
+    #cursor, .ask .row .note { display:none; }          /* no Ctrl+Enter on a phone */
+    .ebar { flex-wrap:wrap; gap:6px; padding:6px 8px; } .ebar button { padding:5px 10px; font-size:12.5px; }
+    .s-bottom { padding-top:150px; } .s-info { gap:10px; }
+  }
   [hidden] { display:none !important; }
   @media (max-width: 900px) { main { grid-template-columns:1fr; grid-template-rows:auto 45vh auto; } .files { max-height:160px; border-right:0; border-bottom:1px solid var(--line); }
     .editor { border-right:0; } .chat { min-height:380px; } }
@@ -139,16 +164,18 @@
 <header>
   <div class="brand"><span class="lamp" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><g transform="matrix(-1 0 0 1 24 0)"><path d="M2 10.2c1.9.1 3.4 1.2 4.7 2.2 1 .8 2.2 1.4 3.7 1.4h4c2 0 3.7-1.2 4.2-3"/><path d="M7.2 13.4c.7 2 2.6 3.2 4.8 3.2h1.6c2.1 0 3.9-1.3 4.5-3.2"/><path d="M10.6 10.9c0-1.5 1.1-2.6 2.6-2.6s2.6 1.1 2.6 2.6"/><path d="M13.2 8.3V6.9"/><circle cx="13.2" cy="5.9" r="1.1" fill="currentColor" stroke="none"/><path d="M18.6 11.2c1.3-.4 2.7.2 3 1.4.3 1.2-.6 2.4-2 2.6-.5.1-1 0-1.4-.2"/><path d="M11.4 16.6l-.6 2.2h5l-.6-2.2"/><path d="M9.6 18.8h6.6"/></g></svg></span> Gink Genie</div>
   <select id="pick" aria-label="Project"></select>
-  <button class="ghost" id="new">New project</button>
+  <button class="ghost hb" id="new">New project</button>
   <div class="grow"></div>
-  <button class="ghost" id="preview" hidden>Preview</button>
-  <button class="ghost" id="download" hidden>Download ZIP</button>
-  <button class="ghost" id="share" hidden>Share</button>
-  <button class="ghost" id="github" hidden>GitHub</button>
-  <button class="ghost" id="rename" hidden>Rename</button>
-  <button class="ghost" id="duplicate" hidden>Duplicate</button>
-  <button class="danger" id="del" hidden>Delete</button>
-  <a href="/app" style="color:var(--muted);font-size:13px">Back to Gink</a>
+  <button class="ghost hb" id="preview" hidden>Preview</button>
+  <button class="ghost hb" id="download" hidden>Download ZIP</button>
+  <button class="ghost hb" id="share" hidden>Share</button>
+  <button class="ghost hb" id="github" hidden>GitHub</button>
+  <button class="ghost hb" id="rename" hidden>Rename</button>
+  <button class="ghost hb" id="duplicate" hidden>Duplicate</button>
+  <button class="danger hb" id="del" hidden>Delete</button>
+  <a href="/app" class="hb" style="color:var(--muted);font-size:13px">Back to Gink</a>
+  <button class="ghost" id="more" aria-haspopup="true" aria-expanded="false" title="More">&#8943;</button>
+  <div id="more-menu" role="menu" hidden></div>
 </header>
 
 <section class="start" id="start" hidden>
@@ -176,6 +203,7 @@
   </div>
 </section>
 
+<nav id="mtabs" aria-label="Panels"><button data-tab="files">Files</button><button data-tab="code">Code</button><button data-tab="chat">Genie</button></nav>
 <main id="work" hidden>
   <nav class="files" aria-label="Files">
     <div class="t">Files <button class="ghost" id="newfile">+ New</button></div>
@@ -273,12 +301,13 @@
     });
   }
   function showStart() {
+    document.body.classList.add("m-start");
     S.project = null; $("start").hidden = false; $("work").hidden = true;
     ["preview", "download", "del", "github", "rename", "duplicate", "share"].forEach(function (id) { $(id).hidden = true; });
   }
   function openProject(id) {
     return api("/genie/projects/" + encodeURIComponent(id)).then(function (j) {
-      S.project = j.project; S.files = j.files || []; S.path = ""; S.saved = "";
+      S.project = j.project; S.files = j.files || []; S.path = ""; S.saved = ""; document.body.classList.remove("m-start");
       $("start").hidden = true; $("work").hidden = false;
       ["preview", "download", "del", "github", "rename", "duplicate", "share"].forEach(function (x) { $(x).hidden = false; });
       $("msgs").innerHTML = ""; (S.log[id] || []).forEach(function (m) { draw(m); }); renderTree(); clearEditor();
@@ -293,7 +322,7 @@
         $("msgs").innerHTML = ""; S.log[id].forEach(function (m) { draw(m); });
       }).catch(function () {});
       var first = S.files.filter(function (f) { return f.path === "index.html"; })[0] || S.files[0];
-      if (first) openFile(first.path);
+      if (first) loadFile(first.path);                  // quietly: on phones Genie stays the open tab
     });
   }
   function renderTree() {
@@ -353,6 +382,7 @@
   function clearEditor() {
     setTimeout(gutter, 0); $("fname").textContent = "Choose a file"; $("code").value = ""; $("code").disabled = true; $("delfile").hidden = true; $("renfile").hidden = true; setDirty(); }
   function openFile(path) {
+    if (PHONE_TAB()) tab("code");
     if (dirty() && !confirm("You have unsaved changes in " + S.path + ". Leave without saving?")) return;
     loadFile(path);
   }
@@ -919,6 +949,29 @@
       $("share-result").textContent = "Done: the old links no longer work. This is the new private link.";
     }).catch(function (e) { $("share-result").textContent = e.message; });
   };
+  // ---- phones: the "more" menu and the Files / Code / Genie tabs
+  function PHONE_TAB() { return window.matchMedia && window.matchMedia("(max-width: 700px)").matches; }
+  var PHONE = window.matchMedia("(max-width: 700px)");
+  function tab(name) {
+    document.body.classList.remove("m-files", "m-code", "m-chat"); document.body.classList.add("m-" + name);
+    document.querySelectorAll("#mtabs button").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-tab") === name); });
+  }
+  tab("chat");
+  document.querySelectorAll("#mtabs button").forEach(function (b) { b.onclick = function () { tab(b.getAttribute("data-tab")); }; });
+  $("more").onclick = function (e) {
+    e.stopPropagation(); var m = $("more-menu");
+    if (!m.hidden) { m.hidden = true; return; }
+    m.innerHTML = "";
+    [["preview", "Preview"], ["share", "Share"], ["github", "GitHub"], ["download", "Download ZIP"], ["rename", "Rename project"],
+     ["duplicate", "Duplicate"], ["new", "New project"], ["del", "Delete project"]].forEach(function (a) {
+      var src = $(a[0]); if (!src || src.hidden) return;
+      var b = el("button", a[0] === "del" ? "danger" : "", a[1]); b.setAttribute("role", "menuitem");
+      b.onclick = function () { m.hidden = true; src.click(); }; m.appendChild(b);
+    });
+    var back = el("button", "", "Back to Gink"); back.onclick = function () { location.href = "/app"; }; m.appendChild(back);
+    m.hidden = false; this.setAttribute("aria-expanded", "true");
+  };
+  document.addEventListener("click", function () { if (!$("more-menu").hidden) { $("more-menu").hidden = true; $("more").setAttribute("aria-expanded", "false"); } });
   window.addEventListener("beforeunload", function (e) { if (dirty()) { e.preventDefault(); e.returnValue = ""; } });
   loadProjects().catch(function () {});
 })();

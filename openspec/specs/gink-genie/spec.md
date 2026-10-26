@@ -165,3 +165,10 @@ The Share window SHALL show the project's website link with Copy and Open, expla
 #### Scenario: Taking a link back
 - **WHEN** the person presses Stop sharing
 - **THEN** the old link answers "not found" and a new private link is shown
+
+### Requirement: Genie on phones
+On screens up to 700 px wide the workspace SHALL fit the screen without sideways scrolling: a one-row header with the project picker and a "more" menu holding every project action, and Files / Code / Genie tabs showing one panel at a time (Genie first; opening a file shows Code); larger screens keep the three panels side by side.
+
+#### Scenario: Opening a file on a phone
+- **WHEN** the person taps cart.js in the Files tab
+- **THEN** the Code tab opens with cart.js and its Save button visible
