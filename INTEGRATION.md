@@ -1332,3 +1332,8 @@ New services/live_info.py (all free, no API keys):
 ## 0.1.44: search in the project
 - genie.html searchProject (Ctrl/Cmd+Shift+F): /all text files, case-insensitive, >= 2 letters, <= 200
   matches grouped by file; openAtLine selects the line. Client-only. Browser-tested.
+
+## 0.1.45: editor line numbers + cursor position
+- genie.html: #edwrap (gutter + textarea, same font/line height), gutter() on load/input/scroll,
+  cursorPos() on click/keyup/select/focus; hidden for pictures. Browser-tested (31 after Enter,
+  scroll sync, Ln/Col, picture hides both).

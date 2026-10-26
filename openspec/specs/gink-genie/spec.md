@@ -151,3 +151,10 @@ Ctrl+Shift+F or Cmd+Shift+F SHALL search the text of every code and text file (i
 #### Scenario: Finding a function
 - **WHEN** the person searches "addtocart"
 - **THEN** every line containing addToCart is listed by file, and choosing one opens it with the line selected
+
+### Requirement: Line numbers and cursor position
+The editor SHALL show line numbers that scroll with the code and update while typing, and the cursor position as "Ln N, Col M"; both SHALL be hidden for pictures.
+
+#### Scenario: Adding a line
+- **WHEN** the person presses Enter at the end of a 30-line file
+- **THEN** the numbers go to 31 and the position reads "Ln 31, Col 1"

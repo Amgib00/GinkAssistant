@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.45 (October 2026)
+
+- Gink Genie's editor shows line numbers and where your cursor is (Ln, Col)
+
 ## 0.1.44 (October 2026)
 
 - Gink Genie: search the whole project with Ctrl+Shift+F (Cmd+Shift+F on Mac) and jump straight to

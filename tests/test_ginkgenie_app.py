@@ -86,3 +86,12 @@ def test_search_in_project_wiring():
     genie = open(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "genie.html"), encoding="utf-8").read()
     for part in ("function searchProject", "function openAtLine", 'e.shiftKey && e.key.toLowerCase() === "f"', "function goToFile"):
         assert part in genie, part
+
+
+def test_editor_line_numbers_and_position():
+    genie = open(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "genie.html"), encoding="utf-8").read()
+    for part in ('id="gutter"', 'id="cursor"', "function gutter", "function cursorPos", '"Ln " + before.length'):
+        assert part in genie, part
+    # the numbers and the code must use the same font and line height, or they drift apart
+    assert "font:13px/1.55 ui-monospace,Menlo,Consolas,monospace; user-select:none" in genie
+    assert "font:13px/1.55 ui-monospace,Menlo,Consolas,monospace; white-space:pre" in genie

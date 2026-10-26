@@ -38,6 +38,10 @@
   .console .cbar { display:flex; align-items:center; gap:8px; padding:6px 12px; border-bottom:1px solid var(--line); font-size:12.5px; color:var(--muted); }
   .console pre { margin:0; padding:10px 14px; overflow:auto; font:12.5px/1.5 ui-monospace,Menlo,monospace; white-space:pre-wrap; flex:1; }
   .console .e { color:var(--bad); }
+  .edwrap { flex:1; display:flex; min-height:0; background:var(--code); }
+  .gutter { margin:0; padding:14px 8px 14px 12px; min-width:44px; text-align:right; color:var(--muted); opacity:.7; overflow:hidden;
+            font:13px/1.55 ui-monospace,Menlo,Consolas,monospace; user-select:none; border-right:1px solid var(--line); }
+  #cursor { color:var(--muted); font-size:12.5px; font-family:ui-monospace,Menlo,monospace; }
   textarea.code { flex:1; width:100%; border:0; outline:none; resize:none; padding:14px 16px; background:var(--code); tab-size:2;
                   font:13px/1.55 ui-monospace,Menlo,Consolas,monospace; white-space:pre; overflow:auto; }
   .chat { display:flex; flex-direction:column; min-height:0; background:var(--panel); }
@@ -178,11 +182,12 @@
   </nav>
   <section class="editor">
     <div class="ebar"><span class="name" id="fname">Choose a file</span><span class="dirty" id="dirty" hidden>&bull;</span>
-      <div class="grow"></div><button class="ghost" id="run" hidden>&#9654; Run</button><button class="ghost" id="tests" hidden>Run tests</button>
+      <span id="cursor"></span><div class="grow"></div><button class="ghost" id="run" hidden>&#9654; Run</button><button class="ghost" id="tests" hidden>Run tests</button>
       <button class="ghost" id="renfile" hidden>Rename</button><button class="ghost" id="delfile" hidden>Delete file</button><button id="save" disabled>Save</button></div>
     <div id="picview" hidden style="flex:1;display:grid;place-items:center;background:var(--code);overflow:auto;padding:20px">
       <img id="picimg" alt="" style="max-width:100%;max-height:100%;image-rendering:auto;box-shadow:0 2px 12px rgba(0,0,0,.12)"></div>
-    <textarea class="code" id="code" spellcheck="false" placeholder="Pick a file on the left, or ask Genie to build something." disabled></textarea>
+    <div class="edwrap" id="edwrap"><pre class="gutter" id="gutter" aria-hidden="true">1</pre>
+    <textarea class="code" id="code" spellcheck="false" placeholder="Pick a file on the left, or ask Genie to build something." disabled></textarea></div>
     <div class="console" id="console" hidden>
       <div class="cbar"><b>Output</b><span id="cstatus"></span><div class="grow"></div><button class="danger" id="stop" hidden>Stop</button><button class="ghost" id="cclose">Close</button></div>
       <pre id="cout" aria-live="polite"></pre>
@@ -335,22 +340,36 @@
     else if (m.kind === "err") out(m.text, true);
     else if (m.kind === "done") stopRun(m.text);
   });
-  function clearEditor() { $("fname").textContent = "Choose a file"; $("code").value = ""; $("code").disabled = true; $("delfile").hidden = true; $("renfile").hidden = true; setDirty(); }
+  function clearEditor() {
+    setTimeout(gutter, 0); $("fname").textContent = "Choose a file"; $("code").value = ""; $("code").disabled = true; $("delfile").hidden = true; $("renfile").hidden = true; setDirty(); }
   function openFile(path) {
     if (dirty() && !confirm("You have unsaved changes in " + S.path + ". Leave without saving?")) return;
     loadFile(path);
   }
+  // line numbers + cursor position (Ln, Col)
+  function gutter() {
+    var n = $("code").disabled ? 0 : $("code").value.split("\n").length, g = $("gutter");
+    if (n !== Number(g.dataset.n || -1)) { var out = []; for (var i = 1; i <= n; i++) out.push(i); g.textContent = out.join("\n"); g.dataset.n = n; }
+    g.scrollTop = $("code").scrollTop; cursorPos();
+  }
+  function cursorPos() {
+    var box = $("code");
+    if (box.disabled || !S.path) { $("cursor").textContent = ""; return; }
+    var before = box.value.slice(0, box.selectionStart).split("\n");
+    $("cursor").textContent = "Ln " + before.length + ", Col " + (before[before.length - 1].length + 1);
+  }
   function showPicture(j) {
+    $("edwrap").hidden = true; $("cursor").textContent = "";
     S.path = j.path; S.saved = ""; $("code").value = ""; $("code").hidden = true; $("code").disabled = true;
     $("picview").hidden = false; $("picimg").src = "data:" + j.mime + ";base64," + j.content_b64; $("picimg").alt = j.path;
     $("fname").textContent = j.path + " \u00b7 picture"; $("delfile").hidden = false; $("renfile").hidden = false; $("save").disabled = true; $("dirty").hidden = true;
     $("run").hidden = true; renderTree();
   }
   function loadFile(path) {                                   // no unsaved-changes question (e.g. after Genie changed files)
-    $("picview").hidden = true; $("code").hidden = false;
+    $("picview").hidden = true; $("code").hidden = false; $("edwrap").hidden = false;
     api("/genie/projects/" + encodeURIComponent(S.project.id) + "/file?path=" + encodeURIComponent(path)).then(function (j) {
       if (j.picture) return showPicture(j);
-      S.path = j.path; S.saved = j.content; $("code").value = j.content; $("code").disabled = false;
+      S.path = j.path; S.saved = j.content; $("code").value = j.content; $("code").disabled = false; $("code").scrollTop = 0; setTimeout(gutter, 0);
       $("fname").textContent = j.path; $("delfile").hidden = false; $("renfile").hidden = false; setDirty(); renderTree(); runButtons();
     }).catch(function (e) { say(e.message, true); });
   }
@@ -668,7 +687,9 @@
   $("go").onclick = build;
   $("send").onclick = ask;
   $("instr").onkeydown = function (e) { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); ask(); } };
-  $("code").oninput = setDirty;
+  $("code").oninput = function () { setDirty(); gutter(); };
+  $("code").addEventListener("scroll", function () { $("gutter").scrollTop = this.scrollTop; });
+  ["click", "keyup", "select", "focus"].forEach(function (ev) { $("code").addEventListener(ev, cursorPos); });
   $("code").onkeydown = function (e) {
     if (e.key === "Tab") { e.preventDefault(); var t = this, s = t.selectionStart; t.setRangeText("  ", s, t.selectionEnd, "end"); setDirty(); }
     if (e.key === "s" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveFile(); }
