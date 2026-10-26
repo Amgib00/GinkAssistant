@@ -334,6 +334,11 @@ SETTINGS_JS = r"""
             return {t: c.title || 'Untitled chat', m: '', button: {text: 'Unarchive', action: 'unarchive_chat', value: c.id, style: 'plain'}}; }),
            empty: 'No archived chats. Archive one from its \u22ef menu in the sidebar.'},
           {type: 'button', label: 'Archive all chats', desc: 'Moves every chat out of Recents. Nothing is deleted.', action: 'archive_all', text: 'Archive all'}]},
+        {title: 'Shared links', rows: [
+          {type: 'list', items: (L.shared || []).map(function (x) {
+            return {t: x.title, m: x.url + ' \u00b7 ' + (x.views || 0) + (x.views === 1 ? ' view' : ' views'),
+                    button: {text: 'Delete', action: 'delete_shared', value: x.id}}; }),
+           empty: 'No shared links. Share a chat from its \u22ef menu in the sidebar.'}]},
         {title: 'Your chats and AI training', rows: [
           {type: 'note', text: 'Gink never uses your chats, files or voice to train AI models, and doesn\u2019t use tracking or advertising cookies.'}]},
         {title: 'Lockdown mode', rows: [

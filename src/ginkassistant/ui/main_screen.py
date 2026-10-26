@@ -965,6 +965,8 @@ def build_main_screen(app: toga.App, email: str):
             if value.get("archived", True) and value["id"] == current_session["id"]:
                 on_select_session(None)                # leave the chat you just archived (like New chat)
             refresh_sidebar()
+        elif kind == "share_session" and value:
+            await share_chat(str(value))
         elif kind == "export_session" and value:
             await export_chat(str(value))
         elif kind == "branch" and value is not None:
@@ -1577,6 +1579,21 @@ def build_main_screen(app: toga.App, email: str):
             brain.history.save_message(new_id, m.get("role", "user"), m.get("content", ""))
         on_select_session(new_id)
         set_voice_status("Branched into a new chat")
+
+    async def share_chat(session_id: str):
+        """A public, read-only snapshot link of a chat (Settings > Privacy > Shared links)."""
+        from ..services.api_client import ApiClient, ApiError
+        token = getattr(app, "session_token", None)
+        if not token:
+            return await web_chat.show_share_link("", "Sign in to Gink to share chats.")
+        session = brain.history.get_all_sessions().get(session_id, {})
+        msgs = [{"role": m.get("role"), "content": m.get("content")} for m in session.get("messages", [])]
+        title = brain.history.get_meta().get(session_id, {}).get("title") or _chat_title(session.get("messages", []))
+        try:
+            made = await ApiClient(app.state.base_url).share_chat(token, title, msgs)
+        except ApiError as exc:
+            return await web_chat.show_share_link("", str(exc))
+        await web_chat.show_share_link(made["url"], made["title"])
 
     async def export_chat(session_id: str):
         session = brain.history.get_all_sessions().get(session_id, {})

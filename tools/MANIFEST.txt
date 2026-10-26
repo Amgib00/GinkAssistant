@@ -27,7 +27,6 @@ deploy/IOS_AND_WEB.md
 deploy/README.md
 deploy/requirements-server.txt
 icons/genie-source/genie.png
-icons/genie-source/lamp-square.png
 icons/genie-source/lamp.png
 icons/ginkassistant-1024.png
 icons/ginkassistant-120.png
@@ -287,6 +286,7 @@ tests/test_screens_and_server.py
 tests/test_security_lockdown_style.py
 tests/test_sessions_security.py
 tests/test_settings_and_account.py
+tests/test_shared_links.py
 tests/test_signin_name_and_history.py
 tests/test_sync_attach_memory_briefing.py
 tests/test_two_step.py

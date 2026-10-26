@@ -645,8 +645,10 @@
     return Object.keys(W.sessions).map(function (k) { return W.sessions[k]; })
       .filter(function (s) { return s.archived && !s.deleted; }).map(function (s) { return { id: s.id, title: titleOf(s) }; });
   }
-  function loadLockdown() {                              // Settings > Privacy (archived chats + Lockdown mode)
+  function loadLockdown() {                              // Settings > Privacy (archived chats, shared links, Lockdown)
     pushSettings({ archived: archivedList() });
+    api("/shared").then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (j) { pushSettings({ archived: archivedList(), shared: j.shared || [] }); }).catch(function () {});
     api("/account/lockdown").then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (j) { pushSettings({ archived: archivedList() }, { lockdown_on: !!j.on }); }).catch(function () {});
   }
@@ -694,6 +696,14 @@
     },
     rename_session: function (v) { var s = v && W.sessions[v.id]; if (s) { s.title = String(v.title || "").slice(0, 80); touch(s.id); refreshSidebar(); sync(); } },
     pin_session: function (v) { var s = v && W.sessions[v.id]; if (s) { s.pinned = !!v.pinned; touch(s.id); refreshSidebar(); sync(); } },
+    share_session: function (id) {
+      var s = W.sessions[id]; if (!s) return;
+      var msgs = (s.messages || []).map(function (m) { return { role: m.role, content: m.content }; });
+      api("/share", { title: titleOf(s), messages: msgs }).then(function (r) {
+        return r.ok ? r.json().then(function (j) { showShareLink(j.url, j.title); })
+                    : errorText(r).then(function (t) { showShareLink("", t); });
+      }).catch(function () { showShareLink("", "Can\u2019t reach the Gink server."); });
+    },
     archive_session: function (v) {
       var s = v && W.sessions[v.id]; if (!s) return;
       s.archived = v.archived !== false; touch(s.id);
@@ -770,6 +780,10 @@
       if (name === "passkey_remove" && v.value) {
         return fetch("/account/passkeys/" + encodeURIComponent(v.value), { method: "DELETE", headers: { Authorization: "Bearer " + W.token } })
           .then(function () { settingsToast("Passkey removed."); loadDevices(); });
+      }
+      if (name === "delete_shared" && v.value) {
+        return fetch("/shared/" + encodeURIComponent(v.value), { method: "DELETE", headers: { Authorization: "Bearer " + W.token } })
+          .then(function () { settingsToast("Link deleted: it no longer works."); loadLockdown(); });
       }
       if (name === "unarchive_chat" && v.value && W.sessions[v.value]) {
         W.sessions[v.value].archived = false; touch(v.value); refreshSidebar(); sync(); settingsToast("Back in Recents."); return loadLockdown();

@@ -25,3 +25,10 @@ A daily-limit answer SHALL include the exact reset time (resets_at, plus Retry-A
 #### Scenario: Limit reached
 - **WHEN** the person sends a message after today's allowance is used
 - **THEN** the message says when it resets in their own time (for example "12:00 AM tomorrow"), not "midnight (UTC)"
+
+### Requirement: Shared chat links
+A chat SHALL be shareable from its menu as a public, read-only snapshot at /c/<id> containing only the user's messages and Gink's answers (pictures become "[attachment]"), rendered without any scripts; Settings > Privacy > Shared links SHALL list them with views and let the owner delete them, after which the link stops working.
+
+#### Scenario: A message contains a script
+- **WHEN** a shared chat contains "<script>" in a message
+- **THEN** the page shows it as text and runs nothing

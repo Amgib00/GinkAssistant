@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.28 (October 2026)
+
+- Gink Genie's new lamp icon (in the menu and as the app icon: a lime lamp, like Gink's snowflake)
+- The genie comes alive: it rises out of magic smoke, floats, sparkles, talks when you point at it,
+  leans in while you type, and works its magic while building (it stays still if you turn off
+  animations in your system settings)
+
+## 0.1.27 (October 2026)
+
+- Share a chat: choose Share link in a chat's menu to get a read-only link anyone can open (a
+  snapshot: later messages aren't added). Manage and delete links in Settings > Privacy > Shared links
+
 ## 0.1.26 (October 2026)
 
 - Gink Genie is now also its own app for Mac, Windows, Linux and Android (including 32-bit phones),

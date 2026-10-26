@@ -59,3 +59,14 @@ def test_builds_name_their_app_and_genie_has_every_icon():
     gink = {os.path.basename(p)[len("ginkassistant"):] for p in glob.glob(os.path.join(ROOT, "icons", "ginkassistant*"))}
     genie_icons = {os.path.basename(p)[len("ginkgenie"):] for p in glob.glob(os.path.join(ROOT, "icons", "ginkgenie*"))}
     assert gink == genie_icons and len(genie_icons) >= 45
+
+
+def test_lamp_icon_and_living_genie():
+    """The sidebar uses the drawn lamp (not the photo); the genie animates but stays still for reduced motion."""
+    page = open(os.path.join(ROOT, "src", "ginkassistant", "ui", "web_chat_view.py"), encoding="utf-8").read()
+    assert page.count('<circle cx="13.2" cy="5.9" r="1.1" fill="currentColor" stroke="none"/>') == 2      # rail + list
+    assert "data:image/png;base64" not in page[page.index('data-nav="genie"') - 50:page.index('data-nav="genie"') + 300]
+    genie = open(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "genie.html"), encoding="utf-8").read()
+    for part in ("@keyframes genie-appear", "@keyframes genie-float", "@keyframes genie-spark", "prefers-reduced-motion: reduce",
+                 'role="button" tabindex="0"', "Your wish is my command!", "Working my magic"):
+        assert part in genie, part

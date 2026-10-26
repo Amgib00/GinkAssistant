@@ -241,6 +241,11 @@ class SettingsController:
             sessions = self.brain.history.get_all_sessions()
             extra_lists["archived"] = [{"id": sid, "title": m["title"] or _first_words(sessions.get(sid, {}))}
                                        for sid, m in meta.items() if m["archived"]]
+        if token and panel == "privacy":                      # shared links
+            try:
+                extra_lists["shared"] = await asyncio.wait_for(api.shared_links(token), timeout=8)
+            except Exception:
+                extra_lists["shared"] = []
         if token and panel == "privacy":                      # Lockdown mode
             try:
                 extra_info["lockdown_on"] = await asyncio.wait_for(api.lockdown(token), timeout=8)
@@ -505,6 +510,13 @@ class SettingsController:
             await ApiClient(self.app.state.base_url).remove_passkey(token, str(pid))
             await self.web.settings_toast("Passkey removed.")
             await self.refresh("account")
+
+    async def _a_delete_shared(self, sid):
+        token = getattr(self.app, "session_token", None)
+        if token and sid:
+            await ApiClient(self.app.state.base_url).delete_shared(token, str(sid))
+            await self.web.settings_toast("Link deleted: it no longer works.")
+            await self.refresh("privacy")
 
     async def _a_lockdown_on(self, _):
         await self._set_lockdown(True)

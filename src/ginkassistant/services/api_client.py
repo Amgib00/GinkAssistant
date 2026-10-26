@@ -251,6 +251,15 @@ class ApiClient:
     async def security_history(self, token: str) -> list:
         return (await self._authed("GET", "/account/security-history", token)).get("events", [])
 
+    async def share_chat(self, token: str, title: str, messages: list) -> dict:
+        return await self._authed("POST", "/share", token, json={"title": title, "messages": messages})
+
+    async def shared_links(self, token: str) -> list:
+        return (await self._authed("GET", "/shared", token)).get("shared", [])
+
+    async def delete_shared(self, token: str, sid: str) -> None:
+        await self._authed("DELETE", f"/shared/{sid}", token)
+
     async def phone(self, token: str) -> dict:
         return await self._authed("GET", "/account/phone", token)
 

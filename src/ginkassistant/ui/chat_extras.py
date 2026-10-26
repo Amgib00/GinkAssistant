@@ -514,6 +514,7 @@ JS = r"""
     if (what === 'rename') { closeMenus(); promptRename(id, s.title || ''); }
     else if (what === 'pin') { closeMenus(); s.pinned = !s.pinned; renderRecents(); ginkEmit('pin_session', {id: id, pinned: !!s.pinned}); }
     else if (what === 'archive') { closeMenus(); ginkEmit('archive_session', {id: id, archived: true}); }
+    else if (what === 'share') { closeMenus(); ginkEmit('share_session', id); }
     else if (what === 'export') { closeMenus(); ginkEmit('export_session', id); }
   });
   function promptRename(id, current) {
@@ -581,6 +582,42 @@ JS = r"""
       var st = document.getElementById('stop'); if (st && st.style.display !== 'none') { e.preventDefault(); st.click(); }
     }
   });
+  // Shared chat links: a small window with the public link, Copy and Open
+  window.showShareLink = function (url, title) {
+    var old = document.getElementById('share-dlg'); if (old) old.remove();
+    var d = document.createElement('div'); d.id = 'share-dlg'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Shared link');
+    d.style.cssText = 'position:fixed;inset:0;z-index:10000;display:grid;place-items:center;background:rgba(0,0,0,.35)';
+    var box = document.createElement('div');
+    box.style.cssText = 'width:min(460px,92vw);background:var(--surface,#fff);color:var(--text,#151D23);border-radius:16px;padding:20px;' +
+      'box-shadow:0 12px 40px rgba(0,0,0,.25);font:14.5px/1.5 system-ui,sans-serif';
+    var h = document.createElement('h3'); h.textContent = 'Link created'; h.style.margin = '0 0 6px';
+    var p = document.createElement('p'); p.style.cssText = 'margin:0 0 12px;opacity:.75';
+    p.textContent = 'Anyone with this link can read a snapshot of \u201c' + (title || 'this chat') + '\u201d. Later messages aren\u2019t included. Manage links in Settings > Privacy.';
+    var input = document.createElement('input'); input.readOnly = true; input.value = url;
+    input.style.cssText = 'width:100%;box-sizing:border-box;padding:9px 11px;border-radius:10px;border:1px solid var(--border,#ddd);background:transparent;color:inherit;font:inherit';
+    var row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:14px';
+    function btn(text, primary, fn) {
+      var b = document.createElement('button'); b.textContent = text; b.onclick = fn;
+      b.style.cssText = 'font:inherit;font-weight:650;border:0;border-radius:999px;padding:8px 16px;cursor:pointer;' +
+        (primary ? 'background:var(--text,#151D23);color:var(--surface,#fff)' : 'background:transparent;color:inherit;box-shadow:inset 0 0 0 1.5px var(--border,#ddd)');
+      row.appendChild(b); return b;
+    }
+    btn('Close', false, function () { d.remove(); });
+    btn('Open', false, function () { ginkEmit('open_url', url); });
+    var copy = btn('Copy link', true, function () {
+      input.select();
+      var ok = function () { copy.textContent = 'Copied'; };
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(ok, function () { try { document.execCommand('copy'); ok(); } catch (e) {} });
+      else { try { document.execCommand('copy'); ok(); } catch (e) {} }
+    });
+    if (!url) {                                   // a problem instead of a link: explain it, Close only
+      h.textContent = 'Couldn\u2019t create the link'; p.textContent = title || 'Please try again.';
+      input.style.display = 'none'; row.querySelectorAll('button').forEach(function (b, i) { if (i) b.remove(); });
+    }
+    box.appendChild(h); box.appendChild(p); box.appendChild(input); box.appendChild(row); d.appendChild(box);
+    d.onclick = function (e) { if (e.target === d) d.remove(); };
+    document.body.appendChild(d); input.select();
+  };
 """
 
 

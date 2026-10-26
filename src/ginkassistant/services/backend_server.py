@@ -2120,10 +2120,11 @@ def delete_account(request: Request, data: dict = Body(...)):
             con.execute(_FLAGS_TABLE)
             con.execute(_PASSKEY_TABLE)
             con.execute(_PHONES_TABLE)
+            con.execute(_SHARES_TABLE)
             for t in _GENIE_TABLES:
                 con.execute(t)
             con.execute("DELETE FROM genie_files WHERE project_id IN (SELECT id FROM genie_projects WHERE email=?)", (email,))
-            for table in ("genie_projects", "phone_numbers", "passkeys", "security_events", "account_flags", "connections", "api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
+            for table in ("shared_chats", "genie_projects", "phone_numbers", "passkeys", "security_events", "account_flags", "connections", "api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
                           "search_usage", "search_turns", "sessions", "account_security"):
                 con.execute(f"DELETE FROM {table} WHERE email=?", (email,))
             con.execute("UPDATE payments SET email=? WHERE email=?", (anon, email))
@@ -5293,3 +5294,118 @@ async def genie_push(pid: str, request: Request, data: dict = Body(...)):
             raise HTTPException(status_code=502, detail="GitHub didn't accept the update (was the branch changed elsewhere? Try again).")
     url = info.get("html_url") or f"https://github.com/{login}/{repo}"
     return {"repo": f"{login}/{repo}", "url": url, "commit": sha, "commit_url": f"{url}/commit/{sha}", "files": len(files)}
+
+
+# ================================================================ Shared chat links (Settings > Privacy > Shared links)
+# A read-only SNAPSHOT of a chat at /c/<id>. Rendered on the server with Gink's markdown renderer (which
+# escapes HTML and neutralises javascript: links), served with a policy that allows no scripts at all.
+SHARE_MAX_MESSAGES, SHARE_MAX_BYTES, SHARES_PER_ACCOUNT = 300, 400_000, 100
+_SHARES_TABLE = ("CREATE TABLE IF NOT EXISTS shared_chats (id TEXT PRIMARY KEY, email TEXT NOT NULL, title TEXT NOT NULL, "
+                 "messages TEXT NOT NULL, created REAL NOT NULL, views INTEGER NOT NULL DEFAULT 0)")
+SHARE_CSP = ("default-src 'none'; style-src 'unsafe-inline'; img-src https: data:; base-uri 'none'; form-action 'none'; "
+             "frame-ancestors 'none'")
+
+
+def _share_db(fn):
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(_SHARES_TABLE)
+            out = fn(con)
+            con.commit()
+            return out
+        finally:
+            con.close()
+
+
+def _share_clean(messages) -> list:
+    """Only who said what: roles user/assistant, text only (pictures and attachments become a short note)."""
+    out = []
+    for m in (messages or [])[:SHARE_MAX_MESSAGES]:
+        if not isinstance(m, dict) or m.get("role") not in ("user", "assistant"):
+            continue
+        content = m.get("content")
+        if isinstance(content, list):
+            content = "\n".join(str(p.get("text", "")) for p in content if isinstance(p, dict) and p.get("type") == "text")
+        text = re.sub(r"data:[a-z]+/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+", "[attachment]", str(content or "")).strip()
+        if text:
+            out.append({"role": m["role"], "content": text})
+    return out
+
+
+@app.post("/share")
+def share_create(request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    messages = _share_clean(data.get("messages"))
+    if not messages:
+        raise HTTPException(status_code=422, detail="There's nothing to share in this chat yet.")
+    payload = _json.dumps(messages)
+    if len(payload.encode()) > SHARE_MAX_BYTES:
+        raise HTTPException(status_code=422, detail="This chat is too long to share. Share a shorter chat.")
+    if _share_db(lambda con: con.execute("SELECT COUNT(*) FROM shared_chats WHERE email=?", (email,)).fetchone()[0]) >= SHARES_PER_ACCOUNT:
+        raise HTTPException(status_code=409, detail=f"You have {SHARES_PER_ACCOUNT} shared links. Delete some in Settings > Privacy.")
+    title = " ".join(str(data.get("title") or messages[0]["content"][:60]).split())[:80] or "Shared chat"
+    sid = secrets.token_urlsafe(10)
+    _share_db(lambda con: con.execute("INSERT INTO shared_chats (id, email, title, messages, created) VALUES (?, ?, ?, ?, ?)",
+                                      (sid, email, title, payload, time.time())))
+    return {"id": sid, "title": title, "url": f"{_public_base(request).rstrip('/')}/c/{sid}"}
+
+
+@app.get("/shared")
+def share_list(request: Request):
+    email = _email_from_auth(request)
+    rows = _share_db(lambda con: con.execute("SELECT id, title, created, views FROM shared_chats WHERE email=? ORDER BY created DESC",
+                                             (email,)).fetchall())
+    base = _public_base(request).rstrip("/")
+    return {"shared": [{"id": r[0], "title": r[1], "created": r[2], "views": r[3], "url": f"{base}/c/{r[0]}"} for r in rows]}
+
+
+@app.delete("/shared/{sid}")
+def share_delete(sid: str, request: Request):
+    email = _email_from_auth(request)
+    n = _share_db(lambda con: con.execute("DELETE FROM shared_chats WHERE id=? AND email=?", (sid, email)).rowcount)
+    if not n:
+        raise HTTPException(status_code=404, detail="That shared link wasn't found.")
+    return {"ok": True}
+
+
+@app.get("/c/{sid}", response_class=HTMLResponse)
+def share_view(sid: str, request: Request):
+    import html as _h
+    try:
+        from .markdown_render import render_markdown_body
+    except ImportError:                    # the server running as a standalone file (deploy/)
+        from markdown_render import render_markdown_body
+    row = _share_db(lambda con: con.execute("SELECT title, messages, created FROM shared_chats WHERE id=?", (sid,)).fetchone())
+    if not row:
+        return HTMLResponse("<!doctype html><title>Not found</title><p style='font-family:system-ui'>This shared chat doesn't exist "
+                            "(anymore).</p>", status_code=404, headers={"Content-Security-Policy": SHARE_CSP})
+    _share_db(lambda con: con.execute("UPDATE shared_chats SET views = views + 1 WHERE id=?", (sid,)))
+    title, messages, created = row[0], _json.loads(row[1]), row[2]
+    parts = []
+    for m in messages:
+        if m["role"] == "user":
+            parts.append(f"<div class='u'>{_h.escape(m['content'])}</div>")
+        else:
+            parts.append(f"<div class='a'><div class='who'>Gink</div>{render_markdown_body(m['content'])}</div>")
+    when = time.strftime("%d %B %Y", time.gmtime(created))
+    base = _public_base(request).rstrip("/")
+    page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>{_h.escape(title)} \u00b7 Gink</title><style>
+:root {{ --bg:#F6F7F4; --card:#fff; --text:#151D23; --muted:#5D6B64; --line:#E1E5E0; --accent:#3F7D12; --code:#F1F3EF; }}
+@media (prefers-color-scheme: dark) {{ :root {{ --bg:#0F1519; --card:#18222A; --text:#E9EFEA; --muted:#9AABA3; --line:rgba(233,239,234,.12);
+  --accent:#A8F03C; --code:#0E1519; }} }}
+body {{ margin:0; background:var(--bg); color:var(--text); font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }}
+main {{ max-width:760px; margin:0 auto; padding:28px 18px 60px; }} h1 {{ font-size:24px; margin:0 0 4px; }}
+.meta {{ color:var(--muted); font-size:14px; margin-bottom:24px; }}
+.u {{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:10px 14px; margin:18px 0 18px auto; max-width:85%;
+      width:fit-content; white-space:pre-wrap; word-wrap:break-word; }}
+.a {{ margin:12px 0 26px; }} .who {{ font-weight:700; font-size:13px; color:var(--accent); margin-bottom:4px; }}
+pre {{ background:var(--code); border:1px solid var(--line); border-radius:12px; padding:12px; overflow:auto; }}
+code {{ font-family:ui-monospace,Menlo,monospace; font-size:.92em; }} table {{ border-collapse:collapse; }} td, th {{ border:1px solid var(--line); padding:6px 10px; }}
+a {{ color:var(--accent); }} footer {{ border-top:1px solid var(--line); margin-top:32px; padding-top:16px; color:var(--muted); font-size:14px; }}
+</style></head><body><main><h1>{_h.escape(title)}</h1><div class="meta">Shared from Gink \u00b7 {when} \u00b7 a snapshot: later messages aren't included</div>
+{''.join(parts)}
+<footer>Gink can make mistakes. Check important information. \u00b7 <a href="{_h.escape(base)}/app">Start your own chat with Gink</a></footer></main></body></html>"""
+    return HTMLResponse(page, headers={"Content-Security-Policy": SHARE_CSP, "X-Content-Type-Options": "nosniff",
+                                       "Referrer-Policy": "no-referrer", "Cache-Control": "no-store"})

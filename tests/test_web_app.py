@@ -151,3 +151,15 @@ def test_no_javascript_escapes_inside_html():
         html = open(path, encoding="utf-8").read()
         html = re.sub(r"<script>.*?</script>", "", html, flags=re.S)        # escapes are fine inside scripts
         assert not re.search(r"\\u[0-9a-fA-F]{4}", html), os.path.basename(path)
+
+
+def test_docker_image_has_every_module_the_server_imports():
+    """Render runs backend_server.py in Docker with only the files deploy/Dockerfile copies: a module the
+    server imports but the image lacks would break the live server while every test here passes."""
+    import re
+    server = open(os.path.join(ROOT, "src", "ginkassistant", "services", "backend_server.py"), encoding="utf-8").read()
+    docker = open(os.path.join(ROOT, "deploy", "Dockerfile"), encoding="utf-8").read()
+    local = set(re.findall(r"from \.([a-z_]+) import", server)) | set(re.findall(r"^\s*import (billing_catalog)\b", server, re.M))
+    copied = set(re.findall(r"COPY src/ginkassistant/services/([a-z_]+)\.py", docker))
+    assert local and local <= copied, f"not in the Docker image: {sorted(local - copied)}"
+    assert "COPY src/ginkassistant/services/web_app ./web_app" in docker

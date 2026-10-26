@@ -1203,3 +1203,23 @@ New services/live_info.py (all free, no API keys):
   Android 64/32) uploads Gink-Genie-*; release.yml runs it and lists the files; website download page.
 - Verified here: a REAL Briefcase 0.4.4 create + build + package for Linux (.deb 930 KB) and the built
   app launched on a virtual display (menus, toolbar, woke the server, showed sign-in).
+
+## 0.1.27: shared chat links
+- shared_chats; POST /share (roles user/assistant only, text only, data: URLs -> [attachment], <=300
+  messages / 400 KB, 100 links per account), GET /shared, DELETE /shared/{id}, public GET /c/{id}
+  rendered with render_markdown_body (escapes HTML, neutralises javascript:) under CSP
+  default-src 'none' (no scripts), noindex, views counted. Account deletion removes them.
+- Chat menu "Share link" (chat_extras -> share_session); window.showShareLink(url, title) with Copy /
+  Open (open_url) or an explanation; apps: main_screen.share_chat; web: bridge share_session.
+  Settings > Privacy > Shared links (apps + web) with Delete.
+- Caught while building: the dialog code first landed inside chat_extras.inject() (Python) instead
+  of its JS block -- the page build failed loudly; moved. New test: every local module the server
+  imports is COPYed into the Docker image (Render runs only those files).
+
+## 0.1.28: lamp icon + the living genie (owner's request + reference video of Claude's creature)
+- Drawn lamp line icon (24x24, currentColor, solid knob) in the sidebar rail + list and Genie header;
+  app icons regenerated from the same drawing in lime on the dark tile (make_genie_icons.py, cairosvg).
+- genie.html .genie: appear (smoke puff + rise with overshoot), float + breathing glow, sparkles
+  (idle every 4.2 s; every 0.38 s while building), hover/focus tilt + random line, listening tilt while
+  typing, click/Enter focuses the box, "Working my magic..." while building. prefers-reduced-motion:
+  no animation, no sparkles (checked in Chromium).
