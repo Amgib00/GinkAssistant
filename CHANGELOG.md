@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.36 (October 2026)
+
+- Gink Genie: "Undo these changes" under an answer puts the project back exactly as it was before
+  that request (the last 5 requests can be undone)
+
 ## 0.1.35 (October 2026)
 
 - Gink Genie remembers: each project keeps its conversation (with every step), on all your devices,

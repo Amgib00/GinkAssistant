@@ -1287,3 +1287,10 @@ New services/live_info.py (all free, no API keys):
   _genie_run adds the last GENIE_MEMORY=6 exchanges (1500 chars each) before the new request.
   GET /genie/projects/{pid}/chat; project and account deletion remove it.
 - genie.html openProject loads the saved conversation. Browser-tested: reload + a second profile.
+
+## 0.1.36: undo Genie's changes
+- genie_snapshots (added to _GENIE_TABLES): _genie_checkpoint(pid, instruction) before every request
+  (raw files JSON, pictures included), keep GENIE_CHECKPOINTS=5. The answer (and the saved chat extra)
+  carries "checkpoint". POST /genie/projects/{pid}/undo {checkpoint}: replaces all files in one
+  transaction + a chat note; 404 "too old". Project/account deletion remove snapshots.
+- genie.html: "Undo these changes" (confirm; warns about unsaved edits). Browser-tested.

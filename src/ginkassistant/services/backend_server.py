@@ -2126,6 +2126,7 @@ def delete_account(request: Request, data: dict = Body(...)):
                 con.execute(t)
             con.execute("DELETE FROM genie_files WHERE project_id IN (SELECT id FROM genie_projects WHERE email=?)", (email,))
             con.execute("DELETE FROM genie_chat WHERE project_id IN (SELECT id FROM genie_projects WHERE email=?)", (email,))
+            con.execute("DELETE FROM genie_snapshots WHERE project_id IN (SELECT id FROM genie_projects WHERE email=?)", (email,))
             for table in ("account_prompts", "shared_chats", "genie_projects", "phone_numbers", "passkeys", "security_events", "account_flags", "connections", "api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
                           "search_usage", "search_turns", "sessions", "account_security"):
                 con.execute(f"DELETE FROM {table} WHERE email=?", (email,))
@@ -4803,6 +4804,19 @@ _GENIE_TABLES = (
     "CREATE TABLE IF NOT EXISTS genie_chat (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id TEXT NOT NULL, role TEXT NOT NULL, "
     "text TEXT NOT NULL, extra TEXT NOT NULL DEFAULT '{}', created REAL NOT NULL)")
 GENIE_MEMORY = 6                        # recent exchanges Genie keeps in mind for a new request
+GENIE_CHECKPOINTS = 5                   # "Undo these changes": the project as it was before each recent request
+_GENIE_TABLES = _GENIE_TABLES + (
+    "CREATE TABLE IF NOT EXISTS genie_snapshots (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id TEXT NOT NULL, "
+    "label TEXT NOT NULL, files TEXT NOT NULL, created REAL NOT NULL)",)
+
+
+def _genie_checkpoint(pid: str, label: str) -> int:
+    files = _json.dumps(_genie_files(pid))
+    return _genie_db(lambda con: (con.execute("INSERT INTO genie_snapshots (project_id, label, files, created) VALUES (?, ?, ?, ?)",
+                                              (pid, label[:200], files, time.time())).lastrowid,
+                                  con.execute("DELETE FROM genie_snapshots WHERE project_id=? AND id NOT IN (SELECT id FROM "
+                                              "genie_snapshots WHERE project_id=? ORDER BY id DESC LIMIT ?)",
+                                              (pid, pid, GENIE_CHECKPOINTS)))[0])
 GENIE_SYSTEM = (
     "You are Gink Genie, an expert software engineer working inside the user's project. Use the tools to look at "
     "and change files: list_files, read_file, write_file (always the COMPLETE new content of the file), delete_file, "
@@ -5041,7 +5055,8 @@ async def _genie_drive(state: dict) -> dict:
             if state["rounds"] >= GENIE_ROUNDS:
                 reply = "I made progress but ran out of steps for one request. Ask me to continue."
                 _genie_remember(state, reply)
-                return {"reply": reply, "changes": state["changes"], "steps": state["steps"], "rounds": state["rounds"]}
+                return {"reply": reply, "changes": state["changes"], "steps": state["steps"], "rounds": state["rounds"],
+                        "checkpoint": state.get("checkpoint")}
             body = {"model": state["model"], "messages": state["messages"], "tools": GENIE_TOOLS + [GENIE_COMMAND_TOOL],
                     "tool_choice": "auto", "max_tokens": 16000, "temperature": 0.3, "reasoning_effort": "medium"}
             try:
@@ -5057,7 +5072,8 @@ async def _genie_drive(state: dict) -> dict:
             if not calls:
                 reply = (msg.get("content") or "").strip() or "Done."
                 _genie_remember(state, reply)
-                return {"reply": reply, "changes": state["changes"], "steps": state["steps"], "rounds": state["rounds"]}
+                return {"reply": reply, "changes": state["changes"], "steps": state["steps"], "rounds": state["rounds"],
+                        "checkpoint": state.get("checkpoint")}
             state["messages"].append({"role": "assistant", "content": msg.get("content") or "", "tool_calls": calls})
             state["queue"] = list(calls)
 
@@ -5070,6 +5086,7 @@ async def _genie_run(email: str, pid: str, instruction: str) -> dict:
         "SELECT role, text FROM genie_chat WHERE project_id=? ORDER BY id DESC LIMIT ?", (pid, GENIE_MEMORY * 2)).fetchall())[::-1]
     history = [{"role": "user" if r == "user" else "assistant", "content": t[:1500]} for r, t in earlier]
     state = {"email": email, "pid": pid, "instruction": instruction, "changes": [], "steps": [], "rounds": 0, "queue": [],
+             "checkpoint": _genie_checkpoint(pid, instruction),
              "pending": None, "model": await _current_model("openai/gpt-oss-120b"),
              "messages": [{"role": "system", "content": GENIE_SYSTEM}] + history +
                          [{"role": "user", "content": f"Project files:\n{listing}\n\nRequest: {instruction}"}]}
@@ -5079,7 +5096,7 @@ async def _genie_run(email: str, pid: str, instruction: str) -> dict:
 def _genie_remember(state: dict, reply: str):
     """Save the finished exchange (the request, Genie's answer with its steps) in the project's conversation."""
     now = time.time()
-    extra = _json.dumps({"steps": state["steps"][-60:], "changes": state["changes"][-60:]})
+    extra = _json.dumps({"steps": state["steps"][-60:], "changes": state["changes"][-60:], "checkpoint": state.get("checkpoint")})
     _genie_db(lambda con: (
         con.execute("INSERT INTO genie_chat (project_id, role, text, created) VALUES (?, 'user', ?, ?)",
                     (state["pid"], state["instruction"][:6000], now)),
@@ -5141,6 +5158,32 @@ def genie_get(pid: str, request: Request):
     return {"project": _genie_public(request, _genie_project(email, pid)), "files": _genie_summary(pid)}
 
 
+@app.post("/genie/projects/{pid}/undo")
+def genie_undo(pid: str, request: Request, data: dict = Body(...)):
+    """Put the project back exactly as it was before a request (its checkpoint)."""
+    email = _email_from_auth(request)
+    _genie_project(email, pid)
+    try:
+        cid = int(data.get("checkpoint") or 0)
+    except (TypeError, ValueError):
+        cid = 0
+    row = _genie_db(lambda con: con.execute("SELECT label, files FROM genie_snapshots WHERE id=? AND project_id=?",
+                                            (cid, pid)).fetchone())
+    if not row:
+        raise HTTPException(status_code=404, detail="That change is too old to undo (Genie keeps the last 5).")
+    files, now = _json.loads(row[1]), time.time()
+
+    def restore(con):
+        con.execute("DELETE FROM genie_files WHERE project_id=?", (pid,))
+        con.executemany("INSERT INTO genie_files (project_id, path, content, updated) VALUES (?, ?, ?, ?)",
+                        [(pid, p, c, now) for p, c in files.items()])
+        con.execute("UPDATE genie_projects SET updated=? WHERE id=?", (now, pid))
+        con.execute("INSERT INTO genie_chat (project_id, role, text, created) VALUES (?, 'genie', ?, ?)",
+                    (pid, f"Undid the changes from: \u201c{row[0]}\u201d. The project is back as it was before that request.", now))
+    _genie_db(restore)
+    return {"ok": True, "files": _genie_summary(pid)}
+
+
 @app.get("/genie/projects/{pid}/chat")
 def genie_chat(pid: str, request: Request):
     """The project's Genie conversation (oldest first), with each answer's steps and changed files."""
@@ -5155,7 +5198,8 @@ def genie_chat(pid: str, request: Request):
 def genie_delete(pid: str, request: Request):
     email = _email_from_auth(request)
     _genie_project(email, pid)
-    _genie_db(lambda con: (con.execute("DELETE FROM genie_chat WHERE project_id=?", (pid,)),
+    _genie_db(lambda con: (con.execute("DELETE FROM genie_snapshots WHERE project_id=?", (pid,)),
+                           con.execute("DELETE FROM genie_chat WHERE project_id=?", (pid,)),
                            con.execute("DELETE FROM genie_files WHERE project_id=?", (pid,)),
                            con.execute("DELETE FROM genie_projects WHERE id=?", (pid,))))
     return {"ok": True}

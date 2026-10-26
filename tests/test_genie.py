@@ -216,3 +216,31 @@ def test_genie_remembers_the_conversation(srv):
     assert c.get(f"/genie/projects/{pid}/chat", headers=eve).status_code == 404
     c.delete(f"/genie/projects/{pid}", headers=h)
     assert b._genie_db(lambda con: con.execute("SELECT COUNT(*) FROM genie_chat").fetchone()[0]) == 0
+
+
+def test_undo_puts_the_project_back(srv):
+    b, c, h = srv
+    first = build(c, h)                                                              # request 1: 3 files
+    pid, cp1 = first["project"]["id"], first["result"]["checkpoint"]
+    before = c.get(f"/genie/projects/{pid}/all", headers=h).json()["files"]
+    SCRIPT[:] = [{"content": "", "tool_calls": [call("write_file", path="js/app.js", content="changed()"),
+                                                call("delete_file", path="styles.css"), call("write_file", path="new.txt", content="new")]},
+                 {"content": "Changed things."}]
+    r = c.post(f"/genie/projects/{pid}/ask", headers=h, json={"instruction": "change things"}).json()
+    assert set(c.get(f"/genie/projects/{pid}/all", headers=h).json()["files"]) == {"index.html", "js/app.js", "new.txt"}
+    eve = {"Authorization": "Bearer " + b._token_response("eve@example.com", "Eve")["token"]}
+    assert c.post(f"/genie/projects/{pid}/undo", headers=eve, json={"checkpoint": r["checkpoint"]}).status_code == 404
+    assert c.post(f"/genie/projects/{pid}/undo", headers=h, json={"checkpoint": r["checkpoint"]}).json()["ok"]
+    assert c.get(f"/genie/projects/{pid}/all", headers=h).json()["files"] == before          # exactly as before
+    chat = c.get(f"/genie/projects/{pid}/chat", headers=h).json()["messages"]
+    assert chat[-1]["text"].startswith("Undid the changes from: \u201cchange things\u201d") and chat[1]["checkpoint"] == cp1
+    c.post(f"/genie/projects/{pid}/undo", headers=h, json={"checkpoint": cp1})
+    assert c.get(f"/genie/projects/{pid}/all", headers=h).json()["files"] == {}             # before request 1: empty
+    for i in range(5):
+        SCRIPT[:] = [{"content": f"Answer {i}."}]
+        c.post(f"/genie/projects/{pid}/ask", headers=h, json={"instruction": f"request {i}"})
+    old = c.post(f"/genie/projects/{pid}/undo", headers=h, json={"checkpoint": cp1})
+    assert old.status_code == 404 and "too old" in old.json()["detail"]
+    assert c.post(f"/genie/projects/{pid}/undo", headers=h, json={"checkpoint": "nonsense"}).status_code == 404
+    c.delete(f"/genie/projects/{pid}", headers=h)
+    assert b._genie_db(lambda con: con.execute("SELECT COUNT(*) FROM genie_snapshots").fetchone()[0]) == 0

@@ -95,3 +95,10 @@ Each finished request and Genie's answer (with its steps and changed files) SHAL
 #### Scenario: A follow-up
 - **WHEN** the person asked for a shop website and then asks "make the buttons green"
 - **THEN** Genie receives the earlier request and its own answer before the new request
+
+### Requirement: Undo Genie's changes
+Before each request Genie SHALL save a checkpoint of the whole project (the 5 most recent are kept); an answer that changed files SHALL offer "Undo these changes", which, after confirmation, puts the project back exactly as it was before that request (files, deletions and pictures) and notes the undo in the conversation; older answers SHALL explain they are too old to undo.
+
+#### Scenario: Undoing a change
+- **WHEN** Genie changed index.html and added page2.html, and the person undoes it
+- **THEN** index.html is as before and page2.html is gone

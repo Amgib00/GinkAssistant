@@ -264,7 +264,7 @@
         if (!S.project || S.project.id !== id || !c.messages.length) return;
         S.log[id] = c.messages.map(function (m) {
           return m.role === "user" ? { kind: "u", text: m.text, changes: [] }
-                                   : { kind: "g", text: m.text, changes: m.changes || [], steps: m.steps || [] };
+                                   : { kind: "g", text: m.text, changes: m.changes || [], steps: m.steps || [], checkpoint: m.checkpoint };
         });
         $("msgs").innerHTML = ""; S.log[id].forEach(function (m) { draw(m); });
       }).catch(function () {});
@@ -353,8 +353,8 @@
   }
 
   // ---- Genie chat
-  function say(text, isError, changes, steps) {
-    var entry = { kind: isError ? "err" : "g", text: text, changes: changes || [], steps: steps || [] };
+  function say(text, isError, changes, steps, checkpoint) {
+    var entry = { kind: isError ? "err" : "g", text: text, changes: changes || [], steps: steps || [], checkpoint: checkpoint };
     if (S.project) (S.log[S.project.id] = S.log[S.project.id] || []).push(entry);
     return draw(entry);
   }
@@ -400,6 +400,10 @@
         var b = el("button", "ghost", (c.action === "created" ? "+ " : c.action === "deleted" ? "\u2212 " : "\u270e ") + c.path);
         b.disabled = c.action === "deleted"; b.onclick = function () { openFile(c.path); }; ch.appendChild(b);
       });
+      if (entry.checkpoint) {                                   // put the project back as it was before this request
+        var u = el("button", "ghost", "\u21b6 Undo these changes"); u.title = "Put the project back as it was before this request";
+        u.onclick = function () { undo(entry.checkpoint, u); }; ch.appendChild(u);
+      }
       m.appendChild(ch);
     }
     $("msgs").appendChild(m); $("msgs").scrollTop = 1e9; return m;
@@ -465,10 +469,22 @@
                    { body: { run_id: j.pending.run_id, output: r.output, exit_code: r.code } });
       }).then(function (next) { return handleGenie(next, pid); });
     }
-    working(false); say(j.reply, false, j.changes, j.steps);
+    working(false); say(j.reply, false, j.changes, j.steps, j.checkpoint);
     if (S.path) { var still = S.files.some(function (f) { return f.path === S.path; }); if (still) loadFile(S.path); else { S.path = ""; S.saved = ""; clearEditor(); } }
     else if (S.files.length) loadFile((S.files.filter(function (f) { return f.path === "index.html"; })[0] || S.files[0]).path);
     loadProjects(pid, true);
+  }
+  function undo(checkpoint, button) {
+    if (S.busy || !confirm("Undo these changes? The project goes back to how it was before this request. Later changes are undone too.")) return;
+    if (dirty() && !confirm("You have unsaved changes in " + S.path + ". They will be lost. Continue?")) return;
+    button.disabled = true;
+    api("/genie/projects/" + encodeURIComponent(S.project.id) + "/undo", { body: { checkpoint: checkpoint } }).then(function (j) {
+      S.files = j.files; S.saved = $("code").value;                 // nothing unsaved any more
+      say("Undid those changes. The project is back as it was before that request.");
+      renderTree();
+      if (S.files.some(function (f) { return f.path === S.path; })) loadFile(S.path); else { S.path = ""; S.saved = ""; clearEditor(); }
+      loadProjects(S.project.id, true);
+    }).catch(function (e) { button.disabled = false; say(e.message, true); });
   }
   function sendToGenie(text) {
     var pid = S.project.id;
