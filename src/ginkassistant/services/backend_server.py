@@ -4996,6 +4996,15 @@ GENIE_COMMAND_TOOL = {"type": "function", "function": {
     "parameters": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]}}}
 _genie_runs = {}                     # paused requests waiting for a command's output: run_id -> state
 _genie_progress = {}                 # live steps for the page while it waits: progress id -> {email, pid, steps, updated}
+_genie_stops = set()                 # progress ids the person asked to stop
+GENIE_STOPPED = "Stopped before finishing. The changes made so far are kept; you can undo them."
+
+
+def _genie_stopped(state: dict) -> dict:
+    _genie_stops.discard(state.get("progress"))
+    _genie_remember(state, GENIE_STOPPED)
+    return {"reply": GENIE_STOPPED, "stopped": True, "changes": state["changes"], "steps": state["steps"],
+            "rounds": state["rounds"], "checkpoint": state.get("checkpoint")}
 
 
 def _genie_report(state: dict):
@@ -5075,6 +5084,8 @@ async def _genie_drive(state: dict) -> dict:
     import httpx
     async with httpx.AsyncClient(timeout=httpx.Timeout(240, connect=15)) as client:
         while True:
+            if state.get("progress") and state["progress"] in _genie_stops:
+                return _genie_stopped(state)              # stops between steps, never halfway through one
             pending = _genie_process_queue(state)
             if pending:
                 run_id = secrets.token_urlsafe(12)
@@ -5308,6 +5319,24 @@ def genie_progress(pid: str, request: Request, id: str = ""):
     if not p or p["email"] != email or p["pid"] != pid:
         return {"steps": [], "rounds": 0}
     return {"steps": p["steps"], "rounds": p["rounds"]}
+
+
+@app.post("/genie/projects/{pid}/stop")
+def genie_stop(pid: str, request: Request, data: dict = Body(...)):
+    """Stop a request: a running one stops after its current step; one waiting for a command ends now."""
+    email = _email_from_auth(request)
+    _genie_project(email, pid)
+    progress = re.sub(r"[^A-Za-z0-9_-]", "", str(data.get("progress") or ""))[:40]
+    if not progress:
+        raise HTTPException(status_code=422, detail="Nothing to stop.")
+    for run_id, st in list(_genie_runs.items()):
+        if st.get("progress") == progress and st["email"] == email and st["pid"] == pid:
+            _genie_runs.pop(run_id, None)
+            return {**_genie_stopped(st), "files": _genie_summary(pid)}
+    if len(_genie_stops) > 1000:                         # requests that never ran: don't keep them forever
+        _genie_stops.clear()
+    _genie_stops.add(progress)
+    return {"stopping": True}
 
 
 @app.post("/genie/projects/{pid}/ask/continue")

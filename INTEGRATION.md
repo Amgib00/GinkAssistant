@@ -1306,3 +1306,10 @@ New services/live_info.py (all free, no API keys):
 - genie.html: uid() (the page had none -- would have broken every request), startProgress/stopProgress
   polling every 1.5 s while busy. Browser-tested with an ASYNC slow mock: 0 -> 1 -> 2 -> 3 live
   (a time.sleep mock blocks the event loop and hides progress; real Groq calls are async).
+
+## 0.1.39: Stop in Genie
+- _genie_stops (capped at 1000): _genie_drive checks it at the top of each loop -> _genie_stopped()
+  (saved in the chat, "stopped": true, checkpoint kept). POST /genie/projects/{pid}/stop {progress}:
+  a paused run (found by its progress id, same email+pid) ends at once; otherwise mark it.
+- genie.html: Stop in the waiting message, "Stopping after the current step...", S.stopped makes a
+  finishing browser command not continue. Browser-tested: 2 of 4 files, then stopped.

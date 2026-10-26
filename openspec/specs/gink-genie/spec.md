@@ -116,3 +116,10 @@ While Genie works on a request, the page SHALL show its steps as they happen, re
 #### Scenario: A long request
 - **WHEN** Genie writes four files over several seconds
 - **THEN** the waiting message shows one step, then two, then three, before the final answer
+
+### Requirement: Stop
+While Genie works, the person SHALL be able to press Stop: a running request stops after its current step (never halfway through one), a request waiting for a command ends at once and its command result is ignored, the answer says it stopped before finishing, and the changes made so far are kept and can be undone.
+
+#### Scenario: Stopping a long request
+- **WHEN** Genie is writing four files and the person presses Stop after the first
+- **THEN** Genie ends with "Stopped before finishing" having written fewer than four files

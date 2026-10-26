@@ -269,3 +269,21 @@ def test_live_progress_is_private(srv):
     eve = {"Authorization": "Bearer " + b._token_response("eve@example.com", "Eve")["token"]}
     assert c.get(f"/genie/projects/{pid}/progress", headers=eve, params={"id": "abc123"}).json()["steps"] == []
     assert c.get("/genie/projects/other/progress", headers=h, params={"id": "abc123"}).json()["steps"] == []
+
+
+def test_stop_a_request(srv):
+    b, c, h = srv
+    pid = c.post("/genie/projects", headers=h, json={"name": "Stop"}).json()["project"]["id"]
+    assert c.post(f"/genie/projects/{pid}/stop", headers=h, json={"progress": "p1"}).json() == {"stopping": True}
+    SCRIPT[:] = [{"content": "", "tool_calls": [call("write_file", path="a.txt", content="a")]}, {"content": "Done."}]
+    r = c.post(f"/genie/projects/{pid}/ask", headers=h, json={"instruction": "go", "progress": "p1"}).json()
+    assert r["stopped"] and r["reply"] == b.GENIE_STOPPED and r["rounds"] == 0 and "p1" not in b._genie_stops
+    SCRIPT[:] = [{"content": "", "tool_calls": [call("write_file", path="b.txt", content="b"), call("run_command", command="ls")]}]
+    paused = c.post(f"/genie/projects/{pid}/ask", headers=h, json={"instruction": "again", "progress": "p2"}).json()
+    eve = {"Authorization": "Bearer " + b._token_response("eve@example.com", "Eve")["token"]}
+    assert c.post(f"/genie/projects/{pid}/stop", headers=eve, json={"progress": "p2"}).status_code == 404
+    s = c.post(f"/genie/projects/{pid}/stop", headers=h, json={"progress": "p2"}).json()
+    assert s["stopped"] and [x["kind"] for x in s["steps"]] == ["write", "command"] and s["steps"][1]["output"] is None
+    assert c.post(f"/genie/projects/{pid}/ask/continue", headers=h, json={"run_id": paused["pending"]["run_id"], "output": "x"}).status_code == 404
+    chat = c.get(f"/genie/projects/{pid}/chat", headers=h).json()["messages"]
+    assert [m["text"] for m in chat if m["role"] == "genie"] == [b.GENIE_STOPPED, b.GENIE_STOPPED]

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.39 (October 2026)
+
+- Gink Genie has a Stop button while it works: it stops after its current step and keeps (and lets
+  you undo) what it already changed
+
 ## 0.1.38 (October 2026)
 
 - Gink Genie shows its work live: each step (files created, changed, commands run) appears while

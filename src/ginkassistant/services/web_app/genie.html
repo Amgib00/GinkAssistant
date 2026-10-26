@@ -421,7 +421,11 @@
       var d = el("div", "m g working"); d.id = "genie-working"; d.style.display = "block";
       if (steps && steps.length) d.appendChild(stepsBlock(steps, true));
       var line = el("div"); line.style.cssText = "display:flex;gap:8px;align-items:center";
-      line.appendChild(el("span", "dot")); line.appendChild(el("span", "", "Genie is working\u2026 this can take a minute.")); d.appendChild(line);
+      line.appendChild(el("span", "dot"));
+      line.appendChild(el("span", "", S.stopping ? "Stopping after the current step\u2026" : "Genie is working\u2026 this can take a minute."));
+      if (!S.stopping) { var stop = el("button", "danger", "Stop"); stop.style.cssText = "margin-left:auto;padding:4px 12px;font-size:12.5px";
+                         stop.onclick = stopGenie; line.appendChild(stop); }
+      d.appendChild(line);
       $("msgs").appendChild(d); $("msgs").scrollTop = 1e9;
     }
   }
@@ -469,13 +473,14 @@
   function handleGenie(j, pid) {                // a final answer, or a command to run first
     if (j.files) { S.files = j.files; renderTree(); }
     if (j.pending) {
-      working(true, j.steps); PROGRESS.shown = j.steps.length;
+      working(true, j.steps); PROGRESS.shown = j.steps.length; S.lastSteps = j.steps;
       return runCommand(j.pending.command).then(function (r) {
+        if (S.stopped) return null;                          // stopped while the command ran: don't carry on
         return api("/genie/projects/" + encodeURIComponent(pid) + "/ask/continue",
                    { body: { run_id: j.pending.run_id, output: r.output, exit_code: r.code } });
-      }).then(function (next) { return handleGenie(next, pid); });
+      }).then(function (next) { return next && handleGenie(next, pid); });
     }
-    stopProgress(); working(false); say(j.reply, false, j.changes, j.steps, j.checkpoint);
+    stopProgress(); S.stopping = false; working(false); say(j.reply, false, j.changes, j.steps, j.checkpoint);
     if (S.path) { var still = S.files.some(function (f) { return f.path === S.path; }); if (still) loadFile(S.path); else { S.path = ""; S.saved = ""; clearEditor(); } }
     else if (S.files.length) loadFile((S.files.filter(function (f) { return f.path === "index.html"; })[0] || S.files[0]).path);
     loadProjects(pid, true);
@@ -502,13 +507,25 @@
     stopProgress(); PROGRESS.shown = 0;
     PROGRESS.timer = setInterval(function () {
       api("/genie/projects/" + encodeURIComponent(pid) + "/progress?id=" + encodeURIComponent(id)).then(function (j) {
-        if (PROGRESS.timer && S.busy && j.steps.length > PROGRESS.shown) { PROGRESS.shown = j.steps.length; working(true, j.steps); }
+        if (PROGRESS.timer && S.busy && j.steps.length > PROGRESS.shown) { PROGRESS.shown = j.steps.length; S.lastSteps = j.steps; working(true, j.steps); }
       }).catch(function () {});
     }, 1500);
   }
   function stopProgress() { clearInterval(PROGRESS.timer); PROGRESS.timer = null; }
+  function stopGenie() {
+    if (!S.busy || !S.progress || S.stopping) return;
+    S.stopping = true; working(true, S.lastSteps);
+    var pid = S.project.id;
+    api("/genie/projects/" + encodeURIComponent(pid) + "/stop", { body: { progress: S.progress } }).then(function (j) {
+      if (j.reply) {                                         // it was waiting for a command: ended right away
+        S.stopped = true; stopProgress(); working(false); S.stopping = false;
+        say(j.reply, false, j.changes, j.steps, j.checkpoint); if (j.files) { S.files = j.files; renderTree(); }
+      }                                                      // otherwise the running request answers "Stopped" itself
+    }).catch(function () { S.stopping = false; });
+  }
   function sendToGenie(text) {
     var pid = S.project.id, progress = uid();
+    S.progress = progress; S.stopping = false; S.stopped = false; S.lastSteps = [];
     said(text); working(true); startProgress(pid, progress);
     return api("/genie/projects/" + encodeURIComponent(pid) + "/ask", { body: { instruction: text, progress: progress } })
       .then(function (j) { return handleGenie(j, pid); })
