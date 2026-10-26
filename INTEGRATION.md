@@ -1294,3 +1294,8 @@ New services/live_info.py (all free, no API keys):
   carries "checkpoint". POST /genie/projects/{pid}/undo {checkpoint}: replaces all files in one
   transaction + a chat note; 404 "too old". Project/account deletion remove snapshots.
 - genie.html: "Undo these changes" (confirm; warns about unsaved edits). Browser-tested.
+
+## 0.1.37: diffs in Genie's steps
+- _genie_process_queue reads the file's old content before write_file; _genie_step -> _genie_diff
+  (difflib unified, n=2, header dropped, 6000 chars) titled "Updated PATH (+A -R)" with diff:true;
+  pictures and new files unchanged. genie.html colours .dl lines (add/del/hunk). Browser-checked.

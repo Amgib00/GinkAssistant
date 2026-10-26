@@ -4997,13 +4997,27 @@ GENIE_COMMAND_TOOL = {"type": "function", "function": {
 _genie_runs = {}                     # paused requests waiting for a command's output: run_id -> state
 
 
-def _genie_step(name: str, args: dict, result: str, changes: list) -> dict:
+def _genie_diff(path: str, old: str, new: str):
+    """A short unified diff (2 lines of context) and the number of lines added and removed."""
+    import difflib
+    lines = list(difflib.unified_diff(old.splitlines(), new.splitlines(), fromfile=path, tofile=path, lineterm="", n=2))
+    added = sum(1 for x in lines if x.startswith("+") and not x.startswith("+++"))
+    removed = sum(1 for x in lines if x.startswith("-") and not x.startswith("---"))
+    text = "\n".join(lines[2:])                          # without the ---/+++ header
+    return (text[:6000] + ("\n\u2026 (more changes)" if len(text) > 6000 else "")), added, removed
+
+
+def _genie_step(name: str, args: dict, result: str, changes: list, old: str = None) -> dict:
     path = str(args.get("path") or "")
     if name == "write_file":
         if not result.startswith("Saved"):
             return {"kind": "error", "title": f"Couldn't write {path}", "detail": result}
-        verb = "Created" if changes and changes[-1]["action"] == "created" else "Updated"
-        return {"kind": "write", "title": f"{verb} {path}", "detail": str(args.get("content") or "")[:4000]}
+        new = str(args.get("content") or "")
+        if old is not None and not old.startswith(GENIE_PIC):          # an update: show what changed
+            diff, added, removed = _genie_diff(path, old, new)
+            return {"kind": "write", "title": f"Updated {path} (+{added} \u2212{removed})", "detail": diff or "(no changes)",
+                    "diff": True}
+        return {"kind": "write", "title": f"Created {path}", "detail": new[:4000]}
     if name == "read_file":
         return {"kind": "read", "title": f"Read {path}"}
     if name == "delete_file":
@@ -5033,9 +5047,15 @@ def _genie_process_queue(state: dict):
             state["steps"].append({"kind": "command", "title": "Ran a command", "command": command, "output": None})
             state["pending"] = {"id": call.get("id", ""), "step": len(state["steps"]) - 1, "command": command}
             return state["pending"]
+        old = None
+        if name == "write_file":
+            try:
+                old = _genie_files(state["pid"]).get(_genie_path(args.get("path")))
+            except ValueError:
+                old = None
         result = _genie_tool(state["pid"], name, args, state["changes"])
         state["messages"].append({"role": "tool", "tool_call_id": call.get("id", ""), "content": result})
-        state["steps"].append(_genie_step(name, args, result, state["changes"]))
+        state["steps"].append(_genie_step(name, args, result, state["changes"], old))
     return None
 
 

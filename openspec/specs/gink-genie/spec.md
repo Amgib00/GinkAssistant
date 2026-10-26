@@ -102,3 +102,10 @@ Before each request Genie SHALL save a checkpoint of the whole project (the 5 mo
 #### Scenario: Undoing a change
 - **WHEN** Genie changed index.html and added page2.html, and the person undoes it
 - **THEN** index.html is as before and page2.html is gone
+
+### Requirement: Diffs for updated files
+When Genie updates an existing text file, its step SHALL be titled with the number of lines added and removed and SHALL open to a short diff (removed lines in red, added lines in green, with 2 lines of context); new files SHALL show their content.
+
+#### Scenario: Changing one value
+- **WHEN** Genie changes the tax line in app.js
+- **THEN** the step reads "Updated app.js (+1 −1)" and shows the old line removed and the new one added

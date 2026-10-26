@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.37 (October 2026)
+
+- Gink Genie shows exactly what it changed: "Updated app.js (+3 -2)" opens to the changed lines,
+  removed in red and added in green
+
 ## 0.1.36 (October 2026)
 
 - Gink Genie: "Undo these changes" under an answer puts the project back exactly as it was before

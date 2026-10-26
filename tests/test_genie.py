@@ -244,3 +244,16 @@ def test_undo_puts_the_project_back(srv):
     assert c.post(f"/genie/projects/{pid}/undo", headers=h, json={"checkpoint": "nonsense"}).status_code == 404
     c.delete(f"/genie/projects/{pid}", headers=h)
     assert b._genie_db(lambda con: con.execute("SELECT COUNT(*) FROM genie_snapshots").fetchone()[0]) == 0
+
+
+def test_updates_show_a_diff(srv):
+    b, c, h = srv
+    pid = build(c, h)["project"]["id"]                                              # js/app.js = console.log('grades')
+    SCRIPT[:] = [{"content": "", "tool_calls": [call("write_file", path="js/app.js", content="console.log('grades v2')\nconsole.log('more')"),
+                                                call("write_file", path="new.js", content="x()")]},
+                 {"content": "Updated."}]
+    steps = c.post(f"/genie/projects/{pid}/ask", headers=h, json={"instruction": "update"}).json()["steps"]
+    upd, new = steps
+    assert upd["title"] == "Updated js/app.js (+2 \u22121)" and upd["diff"] is True
+    assert "-console.log('grades')" in upd["detail"] and "+console.log('grades v2')" in upd["detail"] and "+++" not in upd["detail"]
+    assert new["title"] == "Created new.js" and new["detail"] == "x()" and "diff" not in new

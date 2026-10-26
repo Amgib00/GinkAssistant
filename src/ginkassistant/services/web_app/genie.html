@@ -111,6 +111,8 @@
   .step pre { margin:0; padding:9px 12px; max-height:260px; overflow:auto; background:var(--code); border-top:1px solid var(--line);
               font:12.5px/1.5 ui-monospace,Menlo,monospace; white-space:pre-wrap; word-break:break-word; }
   .step .ok { color:var(--accent); } .step .bad { color:var(--bad); }
+  .step pre .dl { display:block; padding:0 4px; } .step pre .add { background:rgba(63,125,18,.16); }
+  .step pre .del { background:rgba(196,43,28,.14); } .step pre .hunk { color:var(--muted); }
   .drop { position:fixed; inset:0; z-index:50; display:grid; place-items:center; background:rgba(63,125,18,.12);
           border:3px dashed var(--accent); font-size:20px; font-weight:700; pointer-events:none; }
   .working { display:flex; align-items:center; gap:8px; color:var(--muted); }
@@ -382,7 +384,11 @@
       var detail = st.kind === "command" ? "$ " + st.command + (st.output != null ? "\n" + (st.output || "(no output)") : "") : st.detail;
       row.appendChild(btn);
       if (detail) {
-        var pre = el("pre", "", detail); pre.hidden = !(live && st.kind === "command" && i === steps.length - 1);
+        var pre = el("pre", "", st.diff ? null : detail); pre.hidden = !(live && st.kind === "command" && i === steps.length - 1);
+        if (st.diff) detail.split("\n").forEach(function (line) {             // green added, red removed
+          var c = line.charAt(0) === "+" ? "add" : line.charAt(0) === "-" ? "del" : line.slice(0, 2) === "@@" ? "hunk" : "";
+          pre.appendChild(el("span", "dl " + c, line || " "));
+        });
         btn.onclick = function () { pre.hidden = !pre.hidden; }; row.appendChild(pre);
       } else btn.disabled = true;
       list.appendChild(row);
