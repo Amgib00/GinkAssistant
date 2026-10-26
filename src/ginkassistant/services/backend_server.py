@@ -2122,12 +2122,13 @@ def delete_account(request: Request, data: dict = Body(...)):
             con.execute(_PHONES_TABLE)
             con.execute(_SHARES_TABLE)
             con.execute(_PROMPTS_TABLE)
+            con.execute(_PREFS_TABLE)
             for t in _GENIE_TABLES:
                 con.execute(t)
             con.execute("DELETE FROM genie_files WHERE project_id IN (SELECT id FROM genie_projects WHERE email=?)", (email,))
             con.execute("DELETE FROM genie_chat WHERE project_id IN (SELECT id FROM genie_projects WHERE email=?)", (email,))
             con.execute("DELETE FROM genie_snapshots WHERE project_id IN (SELECT id FROM genie_projects WHERE email=?)", (email,))
-            for table in ("account_prompts", "shared_chats", "genie_projects", "phone_numbers", "passkeys", "security_events", "account_flags", "connections", "api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
+            for table in ("account_preferences", "account_prompts", "shared_chats", "genie_projects", "phone_numbers", "passkeys", "security_events", "account_flags", "connections", "api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
                           "search_usage", "search_turns", "sessions", "account_security"):
                 con.execute(f"DELETE FROM {table} WHERE email=?", (email,))
             con.execute("UPDATE payments SET email=? WHERE email=?", (anon, email))
@@ -5828,3 +5829,64 @@ def prompts_put(request: Request, data: dict = Body(...)):
         "INSERT INTO account_prompts (email, data, updated) VALUES (?, ?, ?) "
         "ON CONFLICT(email) DO UPDATE SET data=excluded.data, updated=excluded.updated", (email, _json.dumps(prompts), now)))
     return {"prompts": prompts, "updated": now}
+
+
+
+# ================================================================ Settings on every device (signed in)
+# The same list as services/prefs.py SYNCED (a test keeps them equal): personal preferences, not
+# device ones (Hey Gink on/off, location). Each change is merged key by key, newest wins.
+SYNCED_PREFS = frozenset({
+    "theme", "chat_font", "motion", "style_base", "style_warmth", "style_enthusiasm", "style_emoji", "style_headers",
+    "reply_language", "voice_speed", "read_aloud", "speech_lang", "web_search", "use_memory", "video_suggestions",
+    "notify_reminders", "agent_confirm", "send_key", "briefing_enabled", "briefing_time", "briefing_city",
+    "briefing_speak", "wake_followup", "voice", "model", "genie_mode",
+})
+_PREFS_TABLE = "CREATE TABLE IF NOT EXISTS account_preferences (email TEXT PRIMARY KEY, data TEXT NOT NULL, updated REAL NOT NULL)"
+
+
+def _prefs_db(fn):
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(_PREFS_TABLE)
+            out = fn(con)
+            con.commit()
+            return out
+        finally:
+            con.close()
+
+
+def _clean_prefs(raw) -> dict:
+    out = {}
+    for k, v in (raw or {}).items() if isinstance(raw, dict) else []:
+        if k not in SYNCED_PREFS:
+            continue
+        if isinstance(v, bool) or (isinstance(v, (int, float)) and abs(v) < 1e9):
+            out[k] = v
+        elif isinstance(v, str) and len(v) <= 300:
+            out[k] = v
+    return out
+
+
+@app.get("/account/preferences")
+def preferences_get(request: Request):
+    email = _email_from_auth(request)
+    row = _prefs_db(lambda con: con.execute("SELECT data, updated FROM account_preferences WHERE email=?", (email,)).fetchone())
+    return {"prefs": _json.loads(row[0]) if row else {}, "updated": row[1] if row else 0}
+
+
+@app.put("/account/preferences")
+def preferences_put(request: Request, data: dict = Body(...)):
+    """Merge changed settings (newest wins per setting)."""
+    email = _email_from_auth(request)
+    changes = _clean_prefs(data.get("prefs"))
+
+    def merge(con):
+        row = con.execute("SELECT data FROM account_preferences WHERE email=?", (email,)).fetchone()
+        merged = {**(_json.loads(row[0]) if row else {}), **changes}
+        now = time.time()
+        con.execute("INSERT INTO account_preferences (email, data, updated) VALUES (?, ?, ?) ON CONFLICT(email) DO UPDATE SET "
+                    "data=excluded.data, updated=excluded.updated", (email, _json.dumps(merged), now))
+        return merged, now
+    merged, now = _prefs_db(merge)
+    return {"prefs": merged, "updated": now}

@@ -51,13 +51,35 @@ def load(app) -> dict:
     return data
 
 
-def save(app, **changes) -> dict:
+# Settings that follow the person to every device (signed in). Device-only ones stay here:
+# Hey Gink on/off (this device's microphone), location access, and internal markers.
+SYNCED = frozenset({
+    "theme", "chat_font", "motion", "style_base", "style_warmth", "style_enthusiasm", "style_emoji", "style_headers",
+    "reply_language", "voice_speed", "read_aloud", "speech_lang", "web_search", "use_memory", "video_suggestions",
+    "notify_reminders", "agent_confirm", "send_key", "briefing_enabled", "briefing_time", "briefing_city",
+    "briefing_speak", "wake_followup", "voice", "model", "genie_mode",
+})
+on_change = []                     # callbacks(changed_synced_settings) -- the app uploads them
+
+
+def synced(data: dict) -> dict:
+    return {k: v for k, v in data.items() if k in SYNCED}
+
+
+def save(app, _from_sync: bool = False, **changes) -> dict:
     data = load(app)
     data.update(changes)
     try:
         _path(app).write_text(json.dumps(data, indent=2), encoding="utf-8")
     except Exception:
         pass
+    shared = synced(changes)
+    if shared and not _from_sync:              # changes that came FROM the account aren't sent back
+        for cb in list(on_change):
+            try:
+                cb(shared)
+            except Exception:
+                pass
     return data
 
 

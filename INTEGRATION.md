@@ -1337,3 +1337,16 @@ New services/live_info.py (all free, no API keys):
 - genie.html: #edwrap (gutter + textarea, same font/line height), gutter() on load/input/scroll,
   cursorPos() on click/keyup/select/focus; hidden for pictures. Browser-tested (31 after Enter,
   scroll sync, Ln/Col, picture hides both).
+
+## 0.1.46: Hey Gink fixed everywhere + settings sync
+- ROOT CAUSE (Mac/iPhone): [..macOS.permissions] / [..iOS.permissions] (plural) are ignored by
+  Briefcase (0.3.15 and 0.4.4 read "permission"): no NSMicrophoneUsageDescription/entitlement, so
+  macOS gave Gink silence. Fixed + test (no ".permissions]" sections; mic declared everywhere).
+- Android: AndroidWakeListener stopped for good after 5 errors (busy/client are routine when
+  restarting the recognizer) and never worked without an offline language (12/13 with
+  PREFER_OFFLINE). Now VoiceProblem(code): fatal only for permission/no service; 12/13 -> online;
+  others back off up to 30 s and keep listening. Reproduced on the old code (stopped, never woke).
+- Settings sync: prefs.SYNCED == backend SYNCED_PREFS == bridge SYNCED_PREFS (test); prefs.save
+  notifies (not for _from_sync); /account/preferences GET/PUT (merge per key, cleaned); apps upload
+  bundled after 1 s, pull at start + every 2 min (validated against CHOICES/VOICES, model + voice
+  applied live); web same; Genie's genie_mode too. Apps' model picker now saves the model.

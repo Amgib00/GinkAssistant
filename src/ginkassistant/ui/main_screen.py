@@ -906,9 +906,71 @@ def build_main_screen(app: toga.App, email: str):
         await push_prompts()
     app.sync_prompts = sync_prompts
 
+    # ---- settings on every device: upload changes, take the account's settings now and every 2 minutes
+    pref_sync = {"pending": {}, "task": None, "seen": 0.0, "loop": None}
+
+    def _queue_pref_upload(changes: dict):
+        pref_sync["pending"].update(changes)
+        if pref_sync["task"] is None or pref_sync["task"].done():
+            pref_sync["task"] = asyncio.ensure_future(_upload_prefs())
+
+    async def _upload_prefs():
+        from ..services.api_client import ApiClient
+        await asyncio.sleep(1.0)                             # bundle quick successive changes
+        token = getattr(app, "session_token", None)
+        changes, pref_sync["pending"] = pref_sync["pending"], {}
+        if token and changes:
+            try:
+                pref_sync["seen"] = (await ApiClient(app.state.base_url).put_preferences(token, changes)).get("updated", 0)
+            except Exception:
+                pref_sync["pending"] = {**changes, **pref_sync["pending"]}      # try again with the next change
+    if _queue_pref_upload not in prefs.on_change:
+        prefs.on_change[:] = [_queue_pref_upload]
+
+    async def pull_prefs():
+        from ..services.api_client import ApiClient
+        token = getattr(app, "session_token", None)
+        if not token:
+            return
+        try:
+            remote = await asyncio.wait_for(ApiClient(app.state.base_url).get_preferences(token), timeout=10)
+        except Exception:
+            return
+        if not remote.get("updated") or remote["updated"] <= pref_sync["seen"]:
+            if not remote.get("updated") and prefs.synced(prefs.load(app)):           # first time: share this device's
+                _queue_pref_upload({k: v for k, v in prefs.synced(prefs.load(app)).items() if v != prefs.DEFAULTS.get(k)})
+            return
+        pref_sync["seen"] = remote["updated"]
+        mine = prefs.load(app)
+        from .settings_controller import CHOICES
+        changed = {k: v for k, v in prefs.synced(remote.get("prefs") or {}).items() if mine.get(k) != v
+                   and (k not in CHOICES or v in CHOICES[k]) and (k != "voice" or v in voice_bridge.VOICES)}
+        if changed:
+            prefs.save(app, _from_sync=True, **changed)
+            if changed.get("model"):
+                brain.preferred_model = changed["model"]
+                await push_models_only()
+            if changed.get("voice"):
+                selected_voice["value"] = changed["voice"]
+            await settings.apply_appearance()
+            await settings.push()
+
+    async def _pull_prefs_forever():
+        while True:
+            await pull_prefs()
+            await asyncio.sleep(120)
+
+    async def push_models_only():
+        ids = _initial_model_choices()
+        if brain.preferred_model not in ids:
+            ids.insert(0, brain.preferred_model)
+        await web_chat.set_models([_model_entry(m) for m in ids], brain.preferred_model)
+
     async def push_models():
         await push_prompts()
         asyncio.create_task(sync_prompts())
+        if pref_sync["loop"] is None:
+            pref_sync["loop"] = asyncio.ensure_future(_pull_prefs_forever())
         ids = _initial_model_choices()
         if brain.preferred_model not in ids:
             ids.insert(0, brain.preferred_model)
@@ -942,7 +1004,8 @@ def build_main_screen(app: toga.App, email: str):
             await dictate()
         elif kind == "model" and value:
             brain.preferred_model = value
-            await push_models()
+            prefs.save(app, model=value)                    # remembered, and on every device
+            await push_models_only()
             set_voice_status(f"Now using {_model_entry(value)['name']}")
         elif kind == "attach_data" and isinstance(value, dict):
             await add_attachment(lambda: att_svc.load_data_url(value.get("data", ""), value.get("name", "file")))

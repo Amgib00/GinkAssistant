@@ -32,3 +32,10 @@ On desktops Gink SHALL listen offline for "Hey Gink" (Vosk), and on Android whil
 #### Scenario: Said in one go
 - **WHEN** a person says "Hey Gink, what's the weather in Dakar?"
 - **THEN** Gink answers that question directly
+
+### Requirement: Hey Gink keeps listening
+Every app SHALL declare the microphone permission in the form its build tool reads (Briefcase: "permission", singular), and on Android the wake listener SHALL keep listening through busy, network and server hiccups (waiting longer each time, up to 30 seconds), switch to online recognition when the phone has no offline language, and stop only when the microphone permission is off or the phone has no speech service, saying why.
+
+#### Scenario: A busy recognizer
+- **WHEN** the phone's recognizer reports "busy" several times in a row
+- **THEN** Hey Gink keeps listening and still wakes on "Hey Gink"

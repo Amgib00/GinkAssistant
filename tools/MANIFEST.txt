@@ -272,6 +272,7 @@ tests/test_genie_github.py
 tests/test_gink_cloud.py
 tests/test_gink_dataset.py
 tests/test_ginkgenie_app.py
+tests/test_hey_gink.py
 tests/test_ios_startup.py
 tests/test_languages_auto.py
 tests/test_live_info.py
@@ -289,6 +290,7 @@ tests/test_screens_and_server.py
 tests/test_security_lockdown_style.py
 tests/test_sessions_security.py
 tests/test_settings_and_account.py
+tests/test_settings_sync.py
 tests/test_shared_links.py
 tests/test_signin_name_and_history.py
 tests/test_sync_attach_memory_briefing.py

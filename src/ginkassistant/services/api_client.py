@@ -251,6 +251,12 @@ class ApiClient:
     async def security_history(self, token: str) -> list:
         return (await self._authed("GET", "/account/security-history", token)).get("events", [])
 
+    async def get_preferences(self, token: str) -> dict:
+        return await self._authed("GET", "/account/preferences", token)
+
+    async def put_preferences(self, token: str, changes: dict) -> dict:
+        return await self._authed("PUT", "/account/preferences", token, json={"prefs": changes})
+
     async def get_prompts(self, token: str) -> dict:
         return await self._authed("GET", "/account/prompts", token)
 

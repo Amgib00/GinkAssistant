@@ -564,8 +564,14 @@
     if (!e.target.closest || !e.target.closest(".mode-btn")) return;
     S.mode = S.mode === "plan" ? "auto" : "plan"; showMode();
     try { localStorage.setItem("gink_genie_mode", S.mode); } catch (er) {}
+    fetch("/account/preferences", { method: "PUT", body: JSON.stringify({ prefs: { genie_mode: S.mode } }),       // every device
+                                    headers: { "Content-Type": "application/json", Authorization: "Bearer " + token } }).catch(function () {});
   });
   setTimeout(showMode, 0);
+  api("/account/preferences").then(function (j) {                       // Plan first follows you to every device
+    var m = (j.prefs || {}).genie_mode;
+    if (m === "plan" || m === "auto") { S.mode = m; showMode(); try { localStorage.setItem("gink_genie_mode", m); } catch (e) {} }
+  }).catch(function () {});
   function sendToGenie(text, modeOverride) {
     var pid = S.project.id, progress = uid();
     S.progress = progress; S.stopping = false; S.stopped = false; S.lastSteps = [];

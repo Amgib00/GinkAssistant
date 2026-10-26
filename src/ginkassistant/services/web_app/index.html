@@ -3887,6 +3887,39 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     });
   }
   function applyAppearance() { setAppearance(W.prefs.theme, W.prefs.chat_font, W.prefs.motion); }
+  // ---- settings on every device (the same list as the apps' prefs.SYNCED; a test keeps them equal)
+  var SYNCED_PREFS = ["theme", "chat_font", "motion", "style_base", "style_warmth", "style_enthusiasm", "style_emoji", "style_headers",
+    "reply_language", "voice_speed", "read_aloud", "speech_lang", "web_search", "use_memory", "video_suggestions",
+    "notify_reminders", "agent_confirm", "send_key", "briefing_enabled", "briefing_time", "briefing_city",
+    "briefing_speak", "wake_followup", "voice", "model", "genie_mode"];
+  var PREFSYNC = { pending: {}, timer: null, seen: parseFloat(LS.getItem("gink_prefs_seen") || "0") };
+  function queuePrefs(key, value) {
+    PREFSYNC.pending[key] = value; clearTimeout(PREFSYNC.timer);
+    PREFSYNC.timer = setTimeout(function () {
+      var changes = PREFSYNC.pending; PREFSYNC.pending = {};
+      if (!W.token) return;
+      fetch("/account/preferences", { method: "PUT", body: JSON.stringify({ prefs: changes }),
+                                      headers: { "Content-Type": "application/json", Authorization: "Bearer " + W.token } })
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+        .then(function (j) { PREFSYNC.seen = j.updated; LS.setItem("gink_prefs_seen", String(j.updated)); })
+        .catch(function () { Object.keys(changes).forEach(function (k) { if (!(k in PREFSYNC.pending)) PREFSYNC.pending[k] = changes[k]; }); });
+    }, 1000);
+  }
+  function pullPrefs() {
+    if (!W.token) return;
+    fetch("/account/preferences", { headers: { Authorization: "Bearer " + W.token } })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) {
+        if (!j.updated || j.updated <= PREFSYNC.seen) return;
+        PREFSYNC.seen = j.updated; LS.setItem("gink_prefs_seen", String(j.updated));
+        var changed = false, remote = j.prefs || {};
+        SYNCED_PREFS.forEach(function (k) {
+          if (k in remote && k !== "model" && W.prefs[k] !== remote[k]) { W.prefs[k] = remote[k]; changed = true; }
+        });
+        if (changed) { save("gink_prefs", W.prefs); applyAppearance(); pushSettings(); }
+        if (remote.model && remote.model !== W.model && HANDLERS.model) HANDLERS.model(remote.model, true);
+      }).catch(function () {});
+  }
+  setTimeout(pullPrefs, 0); setInterval(pullPrefs, 120000);
 
   // ---------------------------------------------------------------- downloads (export / save code)
   function download(name, text, type) {
@@ -3940,7 +3973,8 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     },
     read_aloud: function (v) { if (v) readAloud(String(v)); },
     dictate: dictate,
-    model: function (v) { W.model = String(v || ""); LS.setItem("gink_model", W.model); setModels(W.models, W.model); },
+    model: function (v, fromSync) { W.model = String(v || ""); LS.setItem("gink_model", W.model); setModels(W.models, W.model);
+                                    if (!fromSync && W.model) queuePrefs("model", W.model); },
     feedback: function (v) { if (v && typeof v === "object") api("/feedback", Object.assign({}, v, { model: W.model })).catch(function () {}); },
     open_url: function (u) {
       u = String(u || "");
@@ -3955,6 +3989,7 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     setting: function (v) {
       if (!v || !v.key) return;
       W.prefs[v.key] = v.value; save("gink_prefs", W.prefs);
+      if (SYNCED_PREFS.indexOf(v.key) >= 0) queuePrefs(v.key, v.value);         // follows you to every device
       if (/^(theme|chat_font|motion)$/.test(v.key)) applyAppearance();
       if (v.key === "model") HANDLERS.model(v.value);
       pushSettings();

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.46 (October 2026)
+
+- Fixed "Hey Gink": the Mac app never asked for the microphone (a settings name Briefcase ignores),
+  so it heard nothing; on Android it switched itself off after a few everyday recognizer hiccups
+  and never worked on phones without offline speech. Now it keeps listening on every device
+- Your settings follow you: theme, font, style, language, voice, model, Genie's Plan first and more
+  change on every device you're signed in on
+- The model you pick in the apps is remembered after restarting
+
 ## 0.1.45 (October 2026)
 
 - Gink Genie's editor shows line numbers and where your cursor is (Ln, Col)

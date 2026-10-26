@@ -115,3 +115,10 @@ People SHALL be able to add passkeys in a browser (Settings > Account > Passkeys
 #### Scenario: Removed passkey
 - **WHEN** a passkey removed in Settings is used
 - **THEN** sign-in is refused with "That passkey isn't linked to a Gink account"
+
+### Requirement: Settings on every device
+When signed in, personal settings (appearance, writing style, reply language, voice, read-aloud, web search, memory, reminders, briefing, send key, model and Genie's Plan first) SHALL follow the person to every device: each change is uploaded within about a second and merged per setting on the server, and each device takes the account's settings when it starts and every 2 minutes; device-only settings (Hey Gink on/off, location) stay on the device.
+
+#### Scenario: Dark theme on another device
+- **WHEN** the person switches to the dark theme on one device
+- **THEN** another device opens in the dark theme

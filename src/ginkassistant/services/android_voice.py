@@ -29,7 +29,15 @@ ERRORS = {1: "network timeout", 2: "no network", 3: "audio problem", 4: "speech 
 
 
 class VoiceProblem(Exception):
-    pass
+    def __init__(self, message: str = "", code: int = 0):
+        super().__init__(message)
+        self.code = code                     # the recognizer's error number (0: not from the recognizer)
+
+
+# Hey Gink must keep listening through everyday hiccups; only these stop it (and it says why)
+WAKE_FATAL = (9,)                            # the microphone permission is off
+NO_OFFLINE = (12, 13)                        # this language isn't available offline on this phone -> go online
+TRANSIENT = (1, 2, 3, 4, 5, 8, 10, 11)       # network, busy, client and server problems: wait and retry
 
 
 def _java():
@@ -119,7 +127,7 @@ class _Session:
         SR, RI = jclass("android.speech.SpeechRecognizer"), jclass("android.speech.RecognizerIntent")
         activity = _activity()
         if not SR.isRecognitionAvailable(activity):
-            raise VoiceProblem("this phone has no speech recognition service (install or update Google app)")
+            raise VoiceProblem("this phone has no speech recognition service (install or update Google app)", code=-1)
         self.future = asyncio.get_running_loop().create_future()
         self.recognizer = SR.createSpeechRecognizer(activity)
         self.recognizer.setRecognitionListener(self._listener())
@@ -141,9 +149,9 @@ class _Session:
         if error in (6, 7):                                   # silence / nothing understood
             return ""
         if error == 9:
-            raise VoiceProblem("the microphone permission is off (Settings > Apps > Gink > Permissions)")
+            raise VoiceProblem("the microphone permission is off (Settings > Apps > Gink > Permissions)", code=9)
         if error:
-            raise VoiceProblem(ERRORS.get(error, f"speech error {error}"))
+            raise VoiceProblem(ERRORS.get(error, f"speech error {error}"), code=error)
         return text.strip()
 
     def close(self):
@@ -289,6 +297,7 @@ class AndroidWakeListener:
         self.engine, self.running, self.error, self.detections = _EngineInfo(), False, "", 0
         self.heard_after_wake = ""             # "hey gink what's the weather" -> "what's the weather"
         self._paused, self._task, self._session = False, None, None
+        self.prefer_offline = True               # switched off for good if this phone has no offline language
         self._released = threading.Event()
         self._released.set()
         self._loop = None
@@ -336,22 +345,29 @@ class AndroidWakeListener:
                 await asyncio.sleep(0.3)
                 continue
             self._released.clear()
-            self._session = _Session(self.language, prefer_offline=True)
+            self._session = _Session(self.language, prefer_offline=self.prefer_offline)
             try:
                 text = await self._session.run(timeout=12)
                 failures = 0
             except VoiceProblem as exc:
-                failures += 1
                 text = ""
-                if failures >= 5:                       # something is really wrong: stop and say why
+                code = getattr(exc, "code", 0)
+                if code in WAKE_FATAL or code == -1:     # no permission / no speech service: stop and say why
                     self.error, self.running = str(exc), False
                     break
-                await asyncio.sleep(min(10, 2 * failures))
+                if code in NO_OFFLINE and self.prefer_offline:
+                    self.prefer_offline = False          # no offline language pack here: use online recognition
+                    continue
+                failures += 1                            # busy, network...: wait a bit longer each time, keep listening
+                self.error = str(exc)
+                await asyncio.sleep(min(30, 1 + 2 * failures))
+                continue
             except asyncio.CancelledError:
                 break
             finally:
                 self._session = None
                 self._released.set()
+            self.error = "" if failures == 0 else self.error
             if text:
                 self.engine.last_heard = text
                 m = WAKE_RE.search(text)
