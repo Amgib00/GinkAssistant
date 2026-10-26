@@ -130,3 +130,10 @@ A "Plan first" switch (remembered in the browser) SHALL make Genie only look at 
 #### Scenario: Approving a plan
 - **WHEN** the person asks for a shop in Plan first mode and presses "Build this plan"
 - **THEN** no file changes before the approval, and Genie builds the shop after it
+
+### Requirement: Rename and duplicate projects
+A project SHALL be renamable (1 to 60 characters) and duplicable: the copy, named "… (copy)", has exactly the same files including pictures, its own preview address and a fresh conversation, and changing it never affects the original.
+
+#### Scenario: Trying an idea on a copy
+- **WHEN** the person duplicates "Gink Shop" and changes the copy
+- **THEN** "Gink Shop" keeps its files unchanged

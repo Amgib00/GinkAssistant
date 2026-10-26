@@ -309,3 +309,25 @@ def test_plan_mode_looks_but_never_touches(srv):
     done = c.post(f"/genie/projects/{pid}/ask", headers=h, json={"instruction": "Go ahead and build the plan above.", "mode": "auto"}).json()
     assert done["plan"] is False and "cart.html" in c.get(f"/genie/projects/{pid}/all", headers=h).json()["files"]
     assert any(m["role"] == "assistant" and m["content"].startswith("1. Add a cart page") for m in SEEN[-2]["messages"])   # it remembers the plan
+
+
+def test_rename_and_duplicate(srv):
+    b, c, h = srv
+    pid = build(c, h)["project"]["id"]
+    png = _png()
+    c.put(f"/genie/projects/{pid}/file", headers=h, json={"path": "logo.png", "content_b64": base64.b64encode(png).decode()})
+    assert c.patch(f"/genie/projects/{pid}", headers=h, json={"name": "  My   School  "}).json()["project"]["name"] == "My School"
+    assert c.patch(f"/genie/projects/{pid}", headers=h, json={"name": "   "}).status_code == 422
+    eve = {"Authorization": "Bearer " + b._token_response("eve@example.com", "Eve")["token"]}
+    assert c.patch(f"/genie/projects/{pid}", headers=eve, json={"name": "mine"}).status_code == 404
+    assert c.post(f"/genie/projects/{pid}/duplicate", headers=eve).status_code == 404
+    copy = c.post(f"/genie/projects/{pid}/duplicate", headers=h).json()
+    cid = copy["project"]["id"]
+    assert copy["project"]["name"] == "My School (copy)" and cid != pid
+    assert c.get(f"/genie/projects/{cid}/all", headers=h).json() == c.get(f"/genie/projects/{pid}/all", headers=h).json()
+    got = c.get(f"/genie/projects/{cid}/file", headers=h, params={"path": "logo.png"}).json()
+    assert base64.b64decode(got["content_b64"]) == png                                             # pictures copied exactly
+    assert c.get(f"/genie/projects/{cid}/chat", headers=h).json()["messages"] == []               # fresh conversation
+    c.put(f"/genie/projects/{cid}/file", headers=h, json={"path": "index.html", "content": "changed"})
+    assert c.get(f"/genie/projects/{pid}/file", headers=h, params={"path": "index.html"}).json()["content"] != "changed"   # original untouched
+    assert copy["project"]["preview_url"] != c.get(f"/genie/projects/{pid}", headers=h).json()["project"]["preview_url"]

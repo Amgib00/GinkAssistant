@@ -5252,6 +5252,37 @@ def genie_chat(pid: str, request: Request):
     return {"messages": [{"role": r, "text": t, "created": c, **_json.loads(x or "{}")} for r, t, x, c in rows]}
 
 
+@app.patch("/genie/projects/{pid}")
+def genie_rename(pid: str, request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    _genie_project(email, pid)
+    name = " ".join(str(data.get("name") or "").split())[:60]
+    if not name:
+        raise HTTPException(status_code=422, detail="Give the project a name.")
+    _genie_db(lambda con: con.execute("UPDATE genie_projects SET name=?, updated=? WHERE id=?", (name, time.time(), pid)))
+    return {"project": _genie_public(request, _genie_project(email, pid))}
+
+
+@app.post("/genie/projects/{pid}/duplicate")
+def genie_duplicate(pid: str, request: Request):
+    """An exact copy of the files (pictures included) as a new project, with a fresh conversation."""
+    email = _email_from_auth(request)
+    src = _genie_project(email, pid)
+    n = _genie_db(lambda con: con.execute("SELECT COUNT(*) FROM genie_projects WHERE email=?", (email,)).fetchone()[0])
+    if n >= GENIE_MAX_PROJECTS:
+        raise HTTPException(status_code=409, detail=f"You have {GENIE_MAX_PROJECTS} projects. Delete one to make a copy.")
+    new, now, files = "gp_" + secrets.token_hex(6), time.time(), _genie_files(pid)
+    name = (src["name"][:53] + " (copy)")
+
+    def copy(con):
+        con.execute("INSERT INTO genie_projects (id, email, name, preview_key, created, updated) VALUES (?, ?, ?, ?, ?, ?)",
+                    (new, email, name, secrets.token_urlsafe(16), now, now))
+        con.executemany("INSERT INTO genie_files (project_id, path, content, updated) VALUES (?, ?, ?, ?)",
+                        [(new, p_, c_, now) for p_, c_ in files.items()])
+    _genie_db(copy)
+    return {"project": _genie_public(request, _genie_project(email, new)), "files": _genie_summary(new)}
+
+
 @app.delete("/genie/projects/{pid}")
 def genie_delete(pid: str, request: Request):
     email = _email_from_auth(request)

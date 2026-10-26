@@ -140,6 +140,8 @@
   <button class="ghost" id="preview" hidden>Preview</button>
   <button class="ghost" id="download" hidden>Download ZIP</button>
   <button class="ghost" id="github" hidden>GitHub</button>
+  <button class="ghost" id="rename" hidden>Rename</button>
+  <button class="ghost" id="duplicate" hidden>Duplicate</button>
   <button class="danger" id="del" hidden>Delete</button>
   <a href="/app" style="color:var(--muted);font-size:13px">Back to Gink</a>
 </header>
@@ -247,7 +249,7 @@
     return api("/genie/projects").then(function (j) {
       S.projects = j.projects || [];
       var pick = $("pick"); pick.innerHTML = "";
-      S.projects.forEach(function (p) { var o = el("option", "", p.name + " (" + p.files + " files)"); o.value = p.id; pick.appendChild(o); });
+      S.projects.forEach(function (p) { var o = el("option", "", p.name + " (" + p.files + (p.files === 1 ? " file)" : " files)")); o.value = p.id; pick.appendChild(o); });
       pick.hidden = !S.projects.length;
       if (listOnly && S.project) { pick.value = S.project.id; return; }     // just refresh the list: keep the chat
       var want = selectId || (S.project && S.project.id) || (S.projects[0] && S.projects[0].id);
@@ -257,13 +259,13 @@
   }
   function showStart() {
     S.project = null; $("start").hidden = false; $("work").hidden = true;
-    ["preview", "download", "del", "github"].forEach(function (id) { $(id).hidden = true; });
+    ["preview", "download", "del", "github", "rename", "duplicate"].forEach(function (id) { $(id).hidden = true; });
   }
   function openProject(id) {
     return api("/genie/projects/" + encodeURIComponent(id)).then(function (j) {
       S.project = j.project; S.files = j.files || []; S.path = ""; S.saved = "";
       $("start").hidden = true; $("work").hidden = false;
-      ["preview", "download", "del", "github"].forEach(function (x) { $(x).hidden = false; });
+      ["preview", "download", "del", "github", "rename", "duplicate"].forEach(function (x) { $(x).hidden = false; });
       $("msgs").innerHTML = ""; (S.log[id] || []).forEach(function (m) { draw(m); }); renderTree(); clearEditor();
       api("/genie/projects/" + encodeURIComponent(id) + "/chat").then(function (c) {      // the saved conversation
         if (!S.project || S.project.id !== id || !c.messages.length) return;
@@ -621,7 +623,7 @@
   function renderOpenList() {
     var box = $("open-list"); box.innerHTML = "";
     if (!S.projects.length) box.appendChild(el("div", "note", "No projects yet.")).style.padding = "8px 13px";
-    S.projects.forEach(function (p) { var b = el("button", "", p.name + " (" + p.files + " files)"); b.onclick = function () { openProject(p.id); }; box.appendChild(b); });
+    S.projects.forEach(function (p) { var b = el("button", "", p.name + " (" + p.files + (p.files === 1 ? " file)" : " files)")); b.onclick = function () { openProject(p.id); }; box.appendChild(b); });
   }
 
   // ---- the living genie
@@ -749,6 +751,18 @@
   $("gh-disconnect").onclick = function () {
     if (!confirm("Disconnect GitHub? Genie will no longer be able to upload. Your repositories stay on GitHub.")) return;
     api("/genie/github", { method: "DELETE" }).then(ghShow);
+  };
+  $("rename").onclick = function () {
+    var name = prompt("Project name:", S.project.name); if (name === null) return;
+    api("/genie/projects/" + encodeURIComponent(S.project.id), { method: "PATCH", body: { name: name } })
+      .then(function (j) { S.project.name = j.project.name; return loadProjects(S.project.id, true); })
+      .catch(function (e) { say(e.message, true); });
+  };
+  $("duplicate").onclick = function () {
+    if (dirty()) saveFile();
+    api("/genie/projects/" + encodeURIComponent(S.project.id) + "/duplicate", { body: {} }).then(function (j) {
+      return loadProjects(j.project.id).then(function () { say("This is a copy of the project, with a fresh conversation. The original is unchanged."); });
+    }).catch(function (e) { say(e.message, true); });
   };
   window.addEventListener("beforeunload", function (e) { if (dirty()) { e.preventDefault(); e.returnValue = ""; } });
   loadProjects().catch(function () {});

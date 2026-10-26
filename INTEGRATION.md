@@ -1319,3 +1319,7 @@ New services/live_info.py (all free, no API keys):
   to the request, any other tool call refused in _genie_process_queue; answers/chat carry "plan".
 - genie.html: .mode-btn (start info row + workspace box, localStorage gink_genie_mode), sendToGenie
   (text, modeOverride), "Build this plan" -> auto request; from history only the latest plan is buildable.
+
+## 0.1.41: rename + duplicate Genie projects
+- PATCH /genie/projects/{pid} {name}; POST /genie/projects/{pid}/duplicate (files incl. pictures copied
+  raw, new preview key, no chat, project limit applies). Header buttons; "1 file" plural fixed.

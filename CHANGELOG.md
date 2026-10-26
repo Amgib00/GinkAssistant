@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.41 (October 2026)
+
+- Gink Genie: rename a project, or duplicate it to try an idea on a copy (the original stays as it is)
+
 ## 0.1.40 (October 2026)
 
 - Gink Genie's Plan first mode: Genie looks at your project and proposes a numbered plan without
