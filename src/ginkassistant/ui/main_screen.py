@@ -884,8 +884,31 @@ def build_main_screen(app: toga.App, email: str):
         await web_chat.set_prompts(prompt_store().all())
     app.push_prompts = push_prompts                        # Settings calls it after changes
 
+    async def sync_prompts(upload: bool = False):
+        """Signed in: the account holds the list. upload=True after a change here; otherwise take the
+        account's list (or, the first time, give it this device's prompts)."""
+        from ..services.api_client import ApiClient
+        token = getattr(app, "session_token", None)
+        if not token:
+            return
+        api = ApiClient(app.state.base_url)
+        try:
+            if upload:
+                await api.put_prompts(token, prompt_store().all())
+                return
+            remote = await asyncio.wait_for(api.get_prompts(token), timeout=10)
+            if remote.get("updated"):
+                prompt_store().replace_all(remote.get("prompts") or [])
+            elif prompt_store().all():
+                await api.put_prompts(token, prompt_store().all())
+        except Exception:
+            return                                         # offline: this device's list still works
+        await push_prompts()
+    app.sync_prompts = sync_prompts
+
     async def push_models():
         await push_prompts()
+        asyncio.create_task(sync_prompts())
         ids = _initial_model_choices()
         if brain.preferred_model not in ids:
             ids.insert(0, brain.preferred_model)

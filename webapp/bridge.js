@@ -255,7 +255,7 @@
       .map(function (s) { return { id: s.id, title: titleOf(s), current: s.id === W.current, pinned: !!s.pinned }; });
     setSessions(list);
   }
-  setTimeout(function () { setPrompts(myPrompts()); }, 0);         // the "/" menu knows your prompts
+  setTimeout(function () { setPrompts(myPrompts()); syncPrompts(); }, 0);   // the "/" menu knows your prompts
   function newChat() {
     leaveTemporary();
     W.current = null; clearFeed();
@@ -622,7 +622,22 @@
   }
   // the prompt library ("/" menu), kept in this browser
   function myPrompts() { return load("gink_prompts", []); }
-  function savePrompts(list) { save("gink_prompts", list); setPrompts(list); }
+  function savePrompts(list, fromServer) {
+    save("gink_prompts", list); setPrompts(list);
+    if (!fromServer && W.token) putPrompts(list).catch(function () {});
+  }
+  function putPrompts(list) {
+    return fetch("/account/prompts", { method: "PUT", body: JSON.stringify({ prompts: list }),
+                                       headers: { "Content-Type": "application/json", Authorization: "Bearer " + W.token } });
+  }
+  function syncPrompts() {                               // signed in: the account holds the list
+    if (!W.token) return;
+    fetch("/account/prompts", { headers: { Authorization: "Bearer " + W.token } })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) {
+        if (j.updated) savePrompts(j.prompts || [], true);
+        else if (myPrompts().length) putPrompts(myPrompts()).catch(function () {});
+      }).catch(function () {});
+  }
   // signed-in devices (Settings > Account)
   function activeText(d) {
     if (d.current) return "This device";

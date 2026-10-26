@@ -25,6 +25,11 @@ class PromptStore:
             json.dump(prompts, f, ensure_ascii=False)
         os.replace(tmp, self.path)                  # never a half-written file
 
+    def replace_all(self, prompts: list) -> None:
+        """Take the account's list (synced from the server)."""
+        clean = [{"id": str(p["id"]), "text": str(p["text"])} for p in prompts or [] if isinstance(p, dict) and p.get("id") and p.get("text")]
+        self._save(clean[:MAX_PROMPTS])
+
     def add(self, text: str) -> dict:
         text = str(text or "").strip()
         if not text:

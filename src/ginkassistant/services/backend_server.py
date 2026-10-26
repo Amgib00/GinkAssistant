@@ -2121,10 +2121,11 @@ def delete_account(request: Request, data: dict = Body(...)):
             con.execute(_PASSKEY_TABLE)
             con.execute(_PHONES_TABLE)
             con.execute(_SHARES_TABLE)
+            con.execute(_PROMPTS_TABLE)
             for t in _GENIE_TABLES:
                 con.execute(t)
             con.execute("DELETE FROM genie_files WHERE project_id IN (SELECT id FROM genie_projects WHERE email=?)", (email,))
-            for table in ("shared_chats", "genie_projects", "phone_numbers", "passkeys", "security_events", "account_flags", "connections", "api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
+            for table in ("account_prompts", "shared_chats", "genie_projects", "phone_numbers", "passkeys", "security_events", "account_flags", "connections", "api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
                           "search_usage", "search_turns", "sessions", "account_security"):
                 con.execute(f"DELETE FROM {table} WHERE email=?", (email,))
             con.execute("UPDATE payments SET email=? WHERE email=?", (anon, email))
@@ -5409,3 +5410,50 @@ a {{ color:var(--accent); }} footer {{ border-top:1px solid var(--line); margin-
 <footer>Gink can make mistakes. Check important information. \u00b7 <a href="{_h.escape(base)}/app">Start your own chat with Gink</a></footer></main></body></html>"""
     return HTMLResponse(page, headers={"Content-Security-Policy": SHARE_CSP, "X-Content-Type-Options": "nosniff",
                                        "Referrer-Policy": "no-referrer", "Cache-Control": "no-store"})
+
+
+# ================================================================ Prompt library sync ("/" menu prompts on every device)
+_PROMPTS_TABLE = "CREATE TABLE IF NOT EXISTS account_prompts (email TEXT PRIMARY KEY, data TEXT NOT NULL, updated REAL NOT NULL)"
+
+
+def _prompts_db(fn):
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(_PROMPTS_TABLE)
+            out = fn(con)
+            con.commit()
+            return out
+        finally:
+            con.close()
+
+
+def _clean_prompts(items) -> list:
+    out, seen = [], set()
+    for p in (items or []):
+        if not isinstance(p, dict):
+            continue
+        text = str(p.get("text") or "").strip()[:2000]
+        pid = re.sub(r"[^A-Za-z0-9_-]", "", str(p.get("id") or ""))[:24] or secrets.token_hex(5)
+        if text and text not in seen:
+            seen.add(text); out.append({"id": pid, "text": text})
+    if len(out) > 50:
+        raise HTTPException(status_code=422, detail="You can keep up to 50 prompts.")
+    return out
+
+
+@app.get("/account/prompts")
+def prompts_get(request: Request):
+    email = _email_from_auth(request)
+    row = _prompts_db(lambda con: con.execute("SELECT data, updated FROM account_prompts WHERE email=?", (email,)).fetchone())
+    return {"prompts": _json.loads(row[0]) if row else [], "updated": row[1] if row else 0}
+
+
+@app.put("/account/prompts")
+def prompts_put(request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    prompts, now = _clean_prompts(data.get("prompts")), time.time()
+    _prompts_db(lambda con: con.execute(
+        "INSERT INTO account_prompts (email, data, updated) VALUES (?, ?, ?) "
+        "ON CONFLICT(email) DO UPDATE SET data=excluded.data, updated=excluded.updated", (email, _json.dumps(prompts), now)))
+    return {"prompts": prompts, "updated": now}

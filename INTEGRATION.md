@@ -1251,3 +1251,11 @@ New services/live_info.py (all free, no API keys):
   survives a damaged file); main_screen push_prompts (with push_models at startup, app.push_prompts);
   Settings > Personalization > Prompt library (add_prompt / delete_prompt). Web: localStorage
   gink_prompts, pushSettings always includes prompts. Prompts are per device (not synced yet).
+
+## 0.1.32: prompt library sync
+- account_prompts (email, data, updated); GET/PUT /account/prompts (cleaned: trimmed, no dupes, safe
+  ids, <= 50 x 2000); account deletion removes it.
+- Apps: sync_prompts() after the first push (take the account's list if updated, else upload this
+  device's); add/delete upload at once. PromptStore.replace_all. Web: syncPrompts() at start,
+  putPrompts() on changes (direct PUT: the bridge's api() helper only POSTs -- caught in review).
+- Browser-tested with three browser profiles: first-sync upload, A adds -> B sees, B deletes -> A loses it.

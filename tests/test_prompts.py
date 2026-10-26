@@ -31,3 +31,29 @@ def test_page_and_settings_wiring():
     assert "action: 'add_prompt'" in settings and "action: 'delete_prompt'" in settings
     bridge = open(os.path.join(ROOT, "webapp", "bridge.js"), encoding="utf-8").read()
     assert 'name === "add_prompt"' in bridge and "prompts: myPrompts()" in bridge
+
+
+def test_server_keeps_each_accounts_prompts(tmp_path, monkeypatch):
+    monkeypatch.setenv("GINK_DB_PATH", str(tmp_path / "p.db"))
+    from fastapi.testclient import TestClient
+    from ginkassistant.services import backend_server as b
+    c = TestClient(b.app)
+    me = {"Authorization": "Bearer " + b._token_response("ib@example.com", "I")["token"]}
+    eve = {"Authorization": "Bearer " + b._token_response("eve@example.com", "E")["token"]}
+    assert c.get("/account/prompts", headers=me).json() == {"prompts": [], "updated": 0}
+    r = c.put("/account/prompts", headers=me, json={"prompts": [{"id": "a1", "text": " Hi "}, {"id": "a2", "text": "Hi"},
+                                                                {"id": "<x>", "text": "Two"}, {"text": ""}]}).json()
+    assert [p["text"] for p in r["prompts"]] == ["Hi", "Two"] and r["prompts"][1]["id"] == "x" and r["updated"] > 0
+    assert c.get("/account/prompts", headers=eve).json()["prompts"] == []                      # separate accounts
+    too_many = [{"id": f"p{i}", "text": f"t{i}"} for i in range(51)]
+    assert c.put("/account/prompts", headers=me, json={"prompts": too_many}).status_code == 422
+    assert c.get("/account/prompts").status_code == 401
+    c.post("/account/delete", headers=me, json={"confirm": "DELETE"})
+    assert b._prompts_db(lambda con: con.execute("SELECT COUNT(*) FROM account_prompts").fetchone()[0]) == 0
+
+
+def test_replace_all_takes_the_accounts_list(tmp_path):
+    st = PromptStore(str(tmp_path / "prompts.json"))
+    st.add("old one")
+    st.replace_all([{"id": "s1", "text": "from the account"}, {"bad": True}])
+    assert st.all() == [{"id": "s1", "text": "from the account"}]

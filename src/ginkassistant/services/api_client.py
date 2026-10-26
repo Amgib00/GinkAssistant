@@ -251,6 +251,12 @@ class ApiClient:
     async def security_history(self, token: str) -> list:
         return (await self._authed("GET", "/account/security-history", token)).get("events", [])
 
+    async def get_prompts(self, token: str) -> dict:
+        return await self._authed("GET", "/account/prompts", token)
+
+    async def put_prompts(self, token: str, prompts: list) -> dict:
+        return await self._authed("PUT", "/account/prompts", token, json={"prompts": prompts})
+
     async def share_chat(self, token: str, title: str, messages: list) -> dict:
         return await self._authed("POST", "/share", token, json={"title": title, "messages": messages})
 

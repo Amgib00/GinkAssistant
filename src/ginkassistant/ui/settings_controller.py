@@ -519,12 +519,14 @@ class SettingsController:
         except ValueError as exc:
             return await self.web.settings_toast(str(exc), "error")
         await self.app.push_prompts()
+        await self.app.sync_prompts(upload=True)
         await self.web.settings_toast("Added. Type / in a message to use it.")
         await self.refresh("personalization")
 
     async def _a_delete_prompt(self, pid):
         self.app.prompts.delete(str(pid or ""))
         await self.app.push_prompts()
+        await self.app.sync_prompts(upload=True)
         await self.refresh("personalization")
 
     async def _a_delete_shared(self, sid):

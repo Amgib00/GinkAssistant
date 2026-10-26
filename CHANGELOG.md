@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.32 (October 2026)
+
+- Your prompts (the / menu) now sync: add or delete one on any device, signed in, and it's the same
+  everywhere
+
 ## 0.1.31 (October 2026)
 
 - Prompt library: type / at the start of a message to pick a prompt (Summarize, Fix grammar,

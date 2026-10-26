@@ -22,3 +22,10 @@ Typing "/" at the start of a message SHALL open a menu of built-in prompts and t
 #### Scenario: Picking a prompt
 - **WHEN** the person types "/tra" and presses Enter
 - **THEN** the message box contains "Translate this into French:" ready to complete, and nothing is sent
+
+### Requirement: Prompts on every device
+When signed in, the person's prompts SHALL be kept with their account: each device SHALL take the account's list when Gink starts, upload its own prompts the first time the account has none, and send every addition or deletion right away; signed out, prompts stay on the device; deleting the account deletes them.
+
+#### Scenario: Deleting on another device
+- **WHEN** a prompt is deleted on one device
+- **THEN** it is gone from the "/" menu on the other devices the next time Gink starts there
