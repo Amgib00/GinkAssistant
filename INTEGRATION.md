@@ -1259,3 +1259,15 @@ New services/live_info.py (all free, no API keys):
   device's); add/delete upload at once. PromptStore.replace_all. Web: syncPrompts() at start,
   putPrompts() on changes (direct PUT: the bridge's api() helper only POSTs -- caught in review).
 - Browser-tested with three browser profiles: first-sync upload, A adds -> B sees, B deletes -> A loses it.
+
+## 0.1.33: Genie runs commands; steps; files; new start screen (owner's Claude Code screenshots)
+- Server: _genie_run -> resumable _genie_drive(state) + _genie_process_queue; run_command tool pauses
+  (state in _genie_runs, 15 min, same email+pid, pop = once) -> {"pending": {run_id, command}, steps};
+  POST /genie/projects/{pid}/ask/continue {run_id, output, exit_code}. Every tool call -> a step
+  (write/read/delete/search/list/command with output + exit code).
+- Page: build() = create project + sendToGenie (same flow as ask); handleGenie runs pending commands
+  via runCommand -> runnerExec (sandboxed iframe, 90 s) or ls/cat from /all; stepsBlock (collapsible,
+  open when <= 3 steps or live). addFiles: ZIP -> /import, text -> PUT /file, binaries skipped; "+"
+  in the start box and the chat, drag and drop. Start screen like Claude Code (title, project card,
+  bottom composer, info row). Upload ZIP button removed.
+- Browser-tested with Pyodide served locally: Genie got "exit code: 0\nAverage: 15.0" from a real run.

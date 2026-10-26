@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.33 (October 2026)
+
+- Gink Genie runs commands to check its work (python, pytest, node, ls, cat), safely in your
+  browser, and shows every step like a work log: files created and changed, commands with output
+- A new-project screen in the style of Claude Code, with the genie on the message box
+- Add files with + or drag and drop: ZIPs are unpacked automatically (the Upload ZIP button is gone)
+
 ## 0.1.32 (October 2026)
 
 - Your prompts (the / menu) now sync: add or delete one on any device, signed in, and it's the same

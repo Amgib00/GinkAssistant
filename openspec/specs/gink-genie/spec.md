@@ -67,3 +67,17 @@ Each app's builds SHALL name their app, so building Gink never builds Gink Genie
 #### Scenario: A release
 - **WHEN** a release runs
 - **THEN** it publishes Gink's and Gink Genie's installers for every platform
+
+### Requirement: Genie runs commands in the browser
+Genie SHALL be able to run `python FILE`, `pytest`, `node FILE`, `ls` and `cat FILE` to check its work: the server pauses the request (for at most 15 minutes, for the same person and project, resumable once), the person's browser runs the command in the sandboxed runner, and the output and exit code go back to Genie; any other command SHALL be answered as unavailable, never run on the server.
+
+#### Scenario: Checking its own code
+- **WHEN** Genie writes main.py and asks to run `python main.py`
+- **THEN** the browser runs it and Genie receives "exit code: 0" and the real output
+
+### Requirement: Steps and files
+Each answer SHALL show Genie's work as a collapsible list of steps (created, updated, read, deleted, searched, ran a command with its output and result); the "+" and drag and drop SHALL add any text or code files and unpack ZIP files automatically, telling the person what was added and what was skipped.
+
+#### Scenario: Adding a ZIP and a picture
+- **WHEN** the person adds shop.zip and logo.png
+- **THEN** the ZIP's files are unpacked into the project and the picture is skipped with a note

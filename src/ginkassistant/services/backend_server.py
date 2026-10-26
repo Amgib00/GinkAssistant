@@ -4805,7 +4805,8 @@ GENIE_SYSTEM = (
     "search_files. Build complete, working, well-organised projects -- several files when that is clearer (for a "
     "web app: index.html, styles.css, app.js...). Web projects must run by opening index.html: no build step, no "
     "frameworks from the internet, relative paths only. Read a file before changing it. Keep each file under "
-    "250 KB. Never include passwords, API keys or secrets. The user can run .py and .js files and pytest tests "
+    "250 KB. Never include passwords, API keys or secrets. Use run_command to check your work (for example run the "
+    "tests). The user can run .py and .js files and pytest tests "
     "in their browser (Python 3.14 via Pyodide: the standard library and pure-Python packages; no input(), no "
     "servers, no internet access, only the project's files) -- write code that works there, and put Python tests "
     "in test_*.py files. When done, reply with a short summary of what you built or changed and how to use or "
@@ -4925,18 +4926,74 @@ def _genie_tool(pid: str, name: str, args: dict, changes: list) -> str:
         return f"Error: {exc}"
 
 
-async def _genie_run(email: str, pid: str, instruction: str) -> dict:
-    """The AI coding loop for one request."""
+GENIE_COMMAND_TOOL = {"type": "function", "function": {
+    "name": "run_command",
+    "description": ("Run a command in the user's browser sandbox to check your work: `python FILE [args]`, "
+                    "`pytest [args]`, `node FILE`, `ls`, or `cat FILE`. Returns the output and exit code."),
+    "parameters": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]}}}
+_genie_runs = {}                     # paused requests waiting for a command's output: run_id -> state
+
+
+def _genie_step(name: str, args: dict, result: str, changes: list) -> dict:
+    path = str(args.get("path") or "")
+    if name == "write_file":
+        if not result.startswith("Saved"):
+            return {"kind": "error", "title": f"Couldn't write {path}", "detail": result}
+        verb = "Created" if changes and changes[-1]["action"] == "created" else "Updated"
+        return {"kind": "write", "title": f"{verb} {path}", "detail": str(args.get("content") or "")[:4000]}
+    if name == "read_file":
+        return {"kind": "read", "title": f"Read {path}"}
+    if name == "delete_file":
+        return {"kind": "delete", "title": f"Deleted {path}"}
+    if name == "search_files":
+        return {"kind": "search", "title": f"Searched for \u201c{args.get('text', '')}\u201d", "detail": result[:2000]}
+    if name == "list_files":
+        return {"kind": "list", "title": "Looked at the files", "detail": result[:2000]}
+    return {"kind": "other", "title": name, "detail": result[:1000]}
+
+
+def _genie_process_queue(state: dict):
+    """Run the AI's queued tool calls; stop at a command (it runs in the browser) and return it."""
+    while state["queue"]:
+        call = state["queue"].pop(0)
+        name = call["function"].get("name")
+        try:
+            args = _json.loads(call["function"].get("arguments") or "{}")
+        except ValueError:
+            args = {}
+        args = args if isinstance(args, dict) else {}
+        if name == "run_command":
+            command = " ".join(str(args.get("command") or "").split())[:300]
+            if not command:
+                state["messages"].append({"role": "tool", "tool_call_id": call.get("id", ""), "content": "Error: no command given."})
+                continue
+            state["steps"].append({"kind": "command", "title": "Ran a command", "command": command, "output": None})
+            state["pending"] = {"id": call.get("id", ""), "step": len(state["steps"]) - 1, "command": command}
+            return state["pending"]
+        result = _genie_tool(state["pid"], name, args, state["changes"])
+        state["messages"].append({"role": "tool", "tool_call_id": call.get("id", ""), "content": result})
+        state["steps"].append(_genie_step(name, args, result, state["changes"]))
+    return None
+
+
+async def _genie_drive(state: dict) -> dict:
     import httpx
-    files = _genie_summary(pid)
-    listing = "\n".join(f"- {f['path']} ({f['size']} bytes)" for f in files) or "(empty project)"
-    messages = [{"role": "system", "content": GENIE_SYSTEM},
-                {"role": "user", "content": f"Project files:\n{listing}\n\nRequest: {instruction}"}]
-    changes, model = [], await _current_model("openai/gpt-oss-120b")
     async with httpx.AsyncClient(timeout=httpx.Timeout(240, connect=15)) as client:
-        for rounds in range(1, GENIE_ROUNDS + 1):
-            body = {"model": model, "messages": messages, "tools": GENIE_TOOLS, "tool_choice": "auto",
-                    "max_tokens": 16000, "temperature": 0.3, "reasoning_effort": "medium"}
+        while True:
+            pending = _genie_process_queue(state)
+            if pending:
+                run_id = secrets.token_urlsafe(12)
+                state["created"] = time.time()
+                for k in [k for k, v in _genie_runs.items() if time.time() - v["created"] > 900]:
+                    _genie_runs.pop(k, None)
+                _genie_runs[run_id] = state
+                return {"pending": {"run_id": run_id, "command": pending["command"]}, "steps": state["steps"],
+                        "changes": state["changes"]}
+            if state["rounds"] >= GENIE_ROUNDS:
+                return {"reply": "I made progress but ran out of steps for one request. Ask me to continue.",
+                        "changes": state["changes"], "steps": state["steps"], "rounds": state["rounds"]}
+            body = {"model": state["model"], "messages": state["messages"], "tools": GENIE_TOOLS + [GENIE_COMMAND_TOOL],
+                    "tool_choice": "auto", "max_tokens": 16000, "temperature": 0.3, "reasoning_effort": "medium"}
             try:
                 r = await client.post(f"{GROQ_BASE}/chat/completions", json=body,
                                       headers={"Authorization": f"Bearer {_env('GROQ_API_KEY')}"})
@@ -4944,20 +5001,25 @@ async def _genie_run(email: str, pid: str, instruction: str) -> dict:
                 raise HTTPException(status_code=502, detail="The AI service didn't answer. Please try again.")
             if r.status_code != 200:
                 raise HTTPException(status_code=502, detail="The AI service had a problem. Please try again.")
+            state["rounds"] += 1
             msg = ((r.json().get("choices") or [{}])[0].get("message")) or {}
             calls = msg.get("tool_calls") or []
             if not calls:
-                return {"reply": (msg.get("content") or "").strip() or "Done.", "changes": changes, "rounds": rounds}
-            messages.append({"role": "assistant", "content": msg.get("content") or "", "tool_calls": calls})
-            for call in calls:
-                try:
-                    args = _json.loads(call["function"].get("arguments") or "{}")
-                except ValueError:
-                    args = {}
-                result = _genie_tool(pid, call["function"].get("name"), args if isinstance(args, dict) else {}, changes)
-                messages.append({"role": "tool", "tool_call_id": call.get("id", ""), "content": result})
-    return {"reply": "I made progress but ran out of steps for one request. Ask me to continue.", "changes": changes,
-            "rounds": GENIE_ROUNDS}
+                return {"reply": (msg.get("content") or "").strip() or "Done.", "changes": state["changes"],
+                        "steps": state["steps"], "rounds": state["rounds"]}
+            state["messages"].append({"role": "assistant", "content": msg.get("content") or "", "tool_calls": calls})
+            state["queue"] = list(calls)
+
+
+async def _genie_run(email: str, pid: str, instruction: str) -> dict:
+    """The AI coding loop for one request (it pauses while the browser runs a command)."""
+    files = _genie_summary(pid)
+    listing = "\n".join(f"- {f['path']} ({f['size']} bytes)" for f in files) or "(empty project)"
+    state = {"email": email, "pid": pid, "changes": [], "steps": [], "rounds": 0, "queue": [], "pending": None,
+             "model": await _current_model("openai/gpt-oss-120b"),
+             "messages": [{"role": "system", "content": GENIE_SYSTEM},
+                          {"role": "user", "content": f"Project files:\n{listing}\n\nRequest: {instruction}"}]}
+    return await _genie_drive(state)
 
 
 async def _genie_ask(request: Request, email: str, pid: str, instruction: str) -> dict:
@@ -5069,6 +5131,25 @@ async def genie_ask(pid: str, request: Request, data: dict = Body(...)):
     email = _email_from_auth(request)
     _genie_project(email, pid)
     result = await _genie_ask(request, email, pid, data.get("instruction"))
+    return {**result, "files": _genie_summary(pid)}
+
+
+@app.post("/genie/projects/{pid}/ask/continue")
+async def genie_ask_continue(pid: str, request: Request, data: dict = Body(...)):
+    """The browser ran Genie's command: hand the output back and let Genie carry on."""
+    email = _email_from_auth(request)
+    _genie_project(email, pid)
+    state = _genie_runs.pop(str(data.get("run_id") or ""), None)
+    if not state or state["email"] != email or state["pid"] != pid or time.time() - state["created"] > 900:
+        raise HTTPException(status_code=404, detail="That request expired. Ask Genie again.")
+    output = str(data.get("output") or "")[:8000]
+    code = data.get("exit_code")
+    step = state["steps"][state["pending"]["step"]]
+    step["output"], step["exit_code"] = output, code
+    state["messages"].append({"role": "tool", "tool_call_id": state["pending"]["id"],
+                              "content": f"exit code: {code}\n{output or '(no output)'}"})
+    state["pending"] = None
+    result = await _genie_drive(state)
     return {**result, "files": _genie_summary(pid)}
 
 

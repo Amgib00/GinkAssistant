@@ -72,3 +72,11 @@ def test_lamp_icon_and_living_genie():
                  'role="button" tabindex="0"', "Your wish is my command!", "Working my magic",
                  "transform-origin:50% 100%", "drop-shadow"):          # the full genie leans from its tail
         assert part in genie, part
+
+
+def test_genie_page_commands_steps_and_files():
+    genie = open(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "genie.html"), encoding="utf-8").read()
+    assert "Upload ZIP" not in genie and 'id="upload2" multiple' in genie and 'id="upload3" multiple' in genie
+    for part in ('class="s-title">New project', 'id="open-btn"', "function stepsBlock", "function runCommand", "/ask/continue",
+                 "function addFiles", 'addEventListener("drop"', "Available: python FILE, pytest, node FILE, ls, cat FILE"):
+        assert part in genie, part

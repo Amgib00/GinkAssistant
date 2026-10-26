@@ -134,3 +134,27 @@ def test_runner_page_and_files_for_running(srv):
     eve = {"Authorization": "Bearer " + b._token_response("eve@example.com", "Eve")["token"]}
     assert c.get(f"/genie/projects/{pid}/all", headers=eve).status_code == 404
     assert "no input()" in b.GENIE_SYSTEM and "test_*.py" in b.GENIE_SYSTEM
+
+
+def test_commands_pause_for_the_browser_and_steps_are_recorded(srv):
+    b, c, h = srv
+    pid = c.post("/genie/projects", headers=h, json={"name": "Grades"}).json()["project"]["id"]
+    SCRIPT[:] = [{"content": "", "tool_calls": [call("write_file", path="main.py", content="print('Average:', 15)"),
+                                                call("run_command", command="python main.py"),
+                                                call("read_file", path="main.py")]},
+                 {"content": "It works: the average is 15."}]
+    r = c.post(f"/genie/projects/{pid}/ask", headers=h, json={"instruction": "write and run it"}).json()
+    assert r["pending"]["command"] == "python main.py" and "reply" not in r
+    assert [s["kind"] for s in r["steps"]] == ["write", "command"] and r["steps"][0]["title"] == "Created main.py"
+    assert r["steps"][1]["output"] is None                                            # waiting for the browser
+    eve = {"Authorization": "Bearer " + b._token_response("eve@example.com", "Eve")["token"]}
+    assert c.post(f"/genie/projects/{pid}/ask/continue", headers=eve, json={"run_id": r["pending"]["run_id"]}).status_code == 404
+    done = c.post(f"/genie/projects/{pid}/ask/continue", headers=h,
+                  json={"run_id": r["pending"]["run_id"], "output": "Average: 15\n", "exit_code": 0}).json()
+    assert done["reply"] == "It works: the average is 15."
+    assert [s["kind"] for s in done["steps"]] == ["write", "command", "read"]          # the queued read ran after the command
+    assert done["steps"][1]["output"] == "Average: 15\n" and done["steps"][1]["exit_code"] == 0
+    assert any(m["role"] == "tool" and m["content"].startswith("exit code: 0\nAverage: 15") for m in SEEN[-1]["messages"])
+    assert any(t["function"]["name"] == "run_command" for t in SEEN[-1]["tools"])
+    again = c.post(f"/genie/projects/{pid}/ask/continue", headers=h, json={"run_id": r["pending"]["run_id"], "output": "x"})
+    assert again.status_code == 404                                                     # a run continues only once
