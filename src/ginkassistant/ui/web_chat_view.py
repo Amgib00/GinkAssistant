@@ -387,6 +387,18 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
   /* ONE sidebar button, always in the same top-left spot, above the
      sidebar: click = open/close, hover = slides open, leave = slides away */
   #tb-toggle { position: fixed; top: 10px; left: 12px; z-index: 35; }
+  /* Temporary chat: not saved, not synced, gone when you leave it */
+  #temp-btn { position: fixed; top: 10px; right: 14px; z-index: 28; display: none; align-items: center; gap: 6px; padding: 6px 12px;
+              border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-main); font: inherit;
+              font-size: 13px; font-weight: 600; cursor: pointer; }
+  body.home #temp-btn { display: inline-flex; }
+  body.temporary #temp-btn { background: var(--text-main); color: var(--surface); border-color: var(--text-main); }
+  #temp-banner { position: fixed; top: 54px; left: 50%; transform: translateX(-50%); z-index: 27; display: none; align-items: center; gap: 8px;
+                 padding: 6px 14px; border-radius: 999px; background: var(--text-main); color: var(--surface); font-size: 13px; font-weight: 600;
+                 box-shadow: 0 4px 14px rgba(0,0,0,.15); max-width: calc(100vw - 160px); }
+  #temp-banner span { font-weight: 400; opacity: .8; }
+  body.temporary #temp-banner { display: inline-flex; }
+  body.temporary #composer { border-style: dashed; }
   body.pinned #tb-toggle, body.peek #tb-toggle { background: var(--elevated); }
   #topbar { position: fixed; top: 10px; left: 52px; z-index: 28; display: flex; align-items: center; transition: left 0.28s; }
   body.pinned #topbar { left: calc(var(--side-w) + 16px); }
@@ -657,6 +669,8 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
       </div>
     </div>
   </div>
+  <button id="temp-btn" type="button" aria-pressed="false" title="A chat that isn't saved or synced"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><path d="M6 20V11a6 6 0 0 1 12 0v9l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5z"/><circle cx="10" cy="11" r=".6" fill="currentColor"/><circle cx="14" cy="11" r=".6" fill="currentColor"/></svg>Temporary</button>
+  <div id="temp-banner" role="status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><path d="M6 20V11a6 6 0 0 1 12 0v9l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5z"/><circle cx="10" cy="11" r=".6" fill="currentColor"/><circle cx="14" cy="11" r=".6" fill="currentColor"/></svg>Temporary chat <span>· not saved, not synced, gone when you leave it</span></div>
   <div id="feed">
     <div id="welcome">
       <h1 data-text="__WELCOME_TITLE__">__WELCOME_TITLE__</h1>
@@ -1157,6 +1171,17 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     lastLogoMsgId = null;
   }
 
+  // ---- temporary chat (the host keeps it out of history and sync)
+  window.setTemporary = function (on) {
+    document.body.classList.toggle('temporary', !!on);
+    var b = document.getElementById('temp-btn'); if (b) b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  };
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('#temp-btn'); if (!b) return;
+    var on = !document.body.classList.contains('temporary');
+    setTemporary(on); ginkEmit('temporary', on);
+  });
+
   function showWelcome(title, subtitle) {
     var feed = document.getElementById('feed');
     var div = document.createElement('div');
@@ -1506,6 +1531,9 @@ class WebChatFeed:
 
     async def open_settings(self, panel: str = "general"):
         await self._js(f"openSettings({json.dumps(panel)})")
+
+    async def set_temporary(self, on: bool):
+        await self._js(f"setTemporary({json.dumps(bool(on))})")
 
     async def show_share_link(self, url: str, title: str = ""):
         await self._js(f"showShareLink({json.dumps(url)}, {json.dumps(title)})")

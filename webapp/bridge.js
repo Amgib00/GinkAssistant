@@ -233,8 +233,16 @@
   function now() { return Date.now() / 1000; }
   function stamp() { return new Date().toISOString().replace("T", " ").slice(0, 19); }
   function uid() { return (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)); }
-  function persist() { save("gink_sessions", W.sessions); save("gink_dirty", W.dirty); }
-  function touch(id) { var s = W.sessions[id]; if (!s) return; s.updated = now(); W.dirty[id] = true; persist(); }
+  function persist() {                                   // temporary chats are never stored (nor synced)
+    var keep = {}; Object.keys(W.sessions).forEach(function (k) { if (!W.sessions[k].temporary) keep[k] = W.sessions[k]; });
+    save("gink_sessions", keep); save("gink_dirty", W.dirty);
+  }
+  function touch(id) { var s = W.sessions[id]; if (!s) return; s.updated = now(); if (!s.temporary) W.dirty[id] = true; persist(); }
+  function leaveTemporary() {                            // a temporary chat is gone once you leave it
+    var s = W.current && W.sessions[W.current];
+    if (s && s.temporary) { delete W.sessions[W.current]; delete W.dirty[W.current]; }
+    W.tempMode = false; setTemporary(false);
+  }
   function titleOf(s) {
     if (s.title) return s.title;
     var first = (s.messages || []).filter(function (m) { return m.role === "user"; })[0];
@@ -242,12 +250,13 @@
   }
   function refreshSidebar() {
     var list = Object.keys(W.sessions).map(function (k) { return W.sessions[k]; })
-      .filter(function (s) { return !s.deleted && !s.archived && (s.messages || []).length; })
+      .filter(function (s) { return !s.deleted && !s.archived && !s.temporary && (s.messages || []).length; })
       .sort(function (a, b) { return (b.pinned - a.pinned) || (b.updated - a.updated); })
       .map(function (s) { return { id: s.id, title: titleOf(s), current: s.id === W.current, pinned: !!s.pinned }; });
     setSessions(list);
   }
   function newChat() {
+    leaveTemporary();
     W.current = null; clearFeed();
     var first = (W.name || W.email || "").split(/[\s@]/)[0];
     showWelcome(first ? "Hi " + first + ", what\u2019s on your mind?" : "Hi, what\u2019s on your mind?", "");
@@ -255,6 +264,7 @@
     refreshSidebar();
   }
   function openSession(id) {
+    if (id !== W.current) leaveTemporary();
     var s = W.sessions[id]; if (!s || s.deleted) return newChat();
     W.current = id; clearFeed(); hideWelcome();
     var msgs = s.messages || [], answers = [];
@@ -364,8 +374,9 @@
       return Promise.resolve("");
     }
     if (!W.current) {
-      W.current = uid();
-      W.sessions[W.current] = { id: W.current, messages: [], title: "", pinned: false, deleted: false, updated: now() };
+      W.current = W.tempMode ? "tmp-" + uid() : uid();
+      W.sessions[W.current] = { id: W.current, messages: [], title: "", pinned: false, deleted: false, updated: now(),
+                                temporary: !!W.tempMode };
       save("gink_draft_new", "");
     }
     var s = W.sessions[W.current];
@@ -689,6 +700,7 @@
     send: function (v) { send(String(v || "")); },
     stop: function () { if (W.busy && W.busy.abort) W.busy.abort(); stopSpeaking(); },
     new_chat: newChat,
+    temporary: function (on) { W.tempMode = !!on; setTemporary(!!on); },
     select_session: function (id) { openSession(id); },
     delete_session: function (id) {
       var s = W.sessions[id]; if (!s) return;

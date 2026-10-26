@@ -316,6 +316,18 @@
   /* ONE sidebar button, always in the same top-left spot, above the
      sidebar: click = open/close, hover = slides open, leave = slides away */
   #tb-toggle { position: fixed; top: 10px; left: 12px; z-index: 35; }
+  /* Temporary chat: not saved, not synced, gone when you leave it */
+  #temp-btn { position: fixed; top: 10px; right: 14px; z-index: 28; display: none; align-items: center; gap: 6px; padding: 6px 12px;
+              border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-main); font: inherit;
+              font-size: 13px; font-weight: 600; cursor: pointer; }
+  body.home #temp-btn { display: inline-flex; }
+  body.temporary #temp-btn { background: var(--text-main); color: var(--surface); border-color: var(--text-main); }
+  #temp-banner { position: fixed; top: 54px; left: 50%; transform: translateX(-50%); z-index: 27; display: none; align-items: center; gap: 8px;
+                 padding: 6px 14px; border-radius: 999px; background: var(--text-main); color: var(--surface); font-size: 13px; font-weight: 600;
+                 box-shadow: 0 4px 14px rgba(0,0,0,.15); max-width: calc(100vw - 160px); }
+  #temp-banner span { font-weight: 400; opacity: .8; }
+  body.temporary #temp-banner { display: inline-flex; }
+  body.temporary #composer { border-style: dashed; }
   body.pinned #tb-toggle, body.peek #tb-toggle { background: var(--elevated); }
   #topbar { position: fixed; top: 10px; left: 52px; z-index: 28; display: flex; align-items: center; transition: left 0.28s; }
   body.pinned #topbar { left: calc(var(--side-w) + 16px); }
@@ -1147,6 +1159,8 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
       </div>
     </div>
   </div>
+  <button id="temp-btn" type="button" aria-pressed="false" title="A chat that isn't saved or synced"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><path d="M6 20V11a6 6 0 0 1 12 0v9l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5z"/><circle cx="10" cy="11" r=".6" fill="currentColor"/><circle cx="14" cy="11" r=".6" fill="currentColor"/></svg>Temporary</button>
+  <div id="temp-banner" role="status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><path d="M6 20V11a6 6 0 0 1 12 0v9l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5z"/><circle cx="10" cy="11" r=".6" fill="currentColor"/><circle cx="14" cy="11" r=".6" fill="currentColor"/></svg>Temporary chat <span>· not saved, not synced, gone when you leave it</span></div>
   <div id="feed">
     <div id="welcome">
       <h1 data-text="Hi, what’s on your mind?">Hi, what’s on your mind?</h1>
@@ -1705,6 +1719,17 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     userIdx = 0;
     lastLogoMsgId = null;
   }
+
+  // ---- temporary chat (the host keeps it out of history and sync)
+  window.setTemporary = function (on) {
+    document.body.classList.toggle('temporary', !!on);
+    var b = document.getElementById('temp-btn'); if (b) b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  };
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('#temp-btn'); if (!b) return;
+    var on = !document.body.classList.contains('temporary');
+    setTemporary(on); ginkEmit('temporary', on);
+  });
 
   function showWelcome(title, subtitle) {
     var feed = document.getElementById('feed');
@@ -2805,18 +2830,18 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     var d = document.createElement('div'); d.id = 'share-dlg'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Shared link');
     d.style.cssText = 'position:fixed;inset:0;z-index:10000;display:grid;place-items:center;background:rgba(0,0,0,.35)';
     var box = document.createElement('div');
-    box.style.cssText = 'width:min(460px,92vw);background:var(--surface,#fff);color:var(--text,#151D23);border-radius:16px;padding:20px;' +
+    box.style.cssText = 'width:min(460px,92vw);background:var(--surface);color:var(--text-main);border-radius:16px;padding:20px;' +
       'box-shadow:0 12px 40px rgba(0,0,0,.25);font:14.5px/1.5 system-ui,sans-serif';
     var h = document.createElement('h3'); h.textContent = 'Link created'; h.style.margin = '0 0 6px';
     var p = document.createElement('p'); p.style.cssText = 'margin:0 0 12px;opacity:.75';
     p.textContent = 'Anyone with this link can read a snapshot of \u201c' + (title || 'this chat') + '\u201d. Later messages aren\u2019t included. Manage links in Settings > Privacy.';
     var input = document.createElement('input'); input.readOnly = true; input.value = url;
-    input.style.cssText = 'width:100%;box-sizing:border-box;padding:9px 11px;border-radius:10px;border:1px solid var(--border,#ddd);background:transparent;color:inherit;font:inherit';
+    input.style.cssText = 'width:100%;box-sizing:border-box;padding:9px 11px;border-radius:10px;border:1px solid var(--border);background:transparent;color:inherit;font:inherit';
     var row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:14px';
     function btn(text, primary, fn) {
       var b = document.createElement('button'); b.textContent = text; b.onclick = fn;
       b.style.cssText = 'font:inherit;font-weight:650;border:0;border-radius:999px;padding:8px 16px;cursor:pointer;' +
-        (primary ? 'background:var(--text,#151D23);color:var(--surface,#fff)' : 'background:transparent;color:inherit;box-shadow:inset 0 0 0 1.5px var(--border,#ddd)');
+        (primary ? 'background:var(--text-main);color:var(--surface)' : 'background:transparent;color:inherit;box-shadow:inset 0 0 0 1.5px var(--border)');
       row.appendChild(b); return b;
     }
     btn('Close', false, function () { d.remove(); });
@@ -3321,8 +3346,16 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
   function now() { return Date.now() / 1000; }
   function stamp() { return new Date().toISOString().replace("T", " ").slice(0, 19); }
   function uid() { return (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)); }
-  function persist() { save("gink_sessions", W.sessions); save("gink_dirty", W.dirty); }
-  function touch(id) { var s = W.sessions[id]; if (!s) return; s.updated = now(); W.dirty[id] = true; persist(); }
+  function persist() {                                   // temporary chats are never stored (nor synced)
+    var keep = {}; Object.keys(W.sessions).forEach(function (k) { if (!W.sessions[k].temporary) keep[k] = W.sessions[k]; });
+    save("gink_sessions", keep); save("gink_dirty", W.dirty);
+  }
+  function touch(id) { var s = W.sessions[id]; if (!s) return; s.updated = now(); if (!s.temporary) W.dirty[id] = true; persist(); }
+  function leaveTemporary() {                            // a temporary chat is gone once you leave it
+    var s = W.current && W.sessions[W.current];
+    if (s && s.temporary) { delete W.sessions[W.current]; delete W.dirty[W.current]; }
+    W.tempMode = false; setTemporary(false);
+  }
   function titleOf(s) {
     if (s.title) return s.title;
     var first = (s.messages || []).filter(function (m) { return m.role === "user"; })[0];
@@ -3330,12 +3363,13 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
   }
   function refreshSidebar() {
     var list = Object.keys(W.sessions).map(function (k) { return W.sessions[k]; })
-      .filter(function (s) { return !s.deleted && !s.archived && (s.messages || []).length; })
+      .filter(function (s) { return !s.deleted && !s.archived && !s.temporary && (s.messages || []).length; })
       .sort(function (a, b) { return (b.pinned - a.pinned) || (b.updated - a.updated); })
       .map(function (s) { return { id: s.id, title: titleOf(s), current: s.id === W.current, pinned: !!s.pinned }; });
     setSessions(list);
   }
   function newChat() {
+    leaveTemporary();
     W.current = null; clearFeed();
     var first = (W.name || W.email || "").split(/[\s@]/)[0];
     showWelcome(first ? "Hi " + first + ", what\u2019s on your mind?" : "Hi, what\u2019s on your mind?", "");
@@ -3343,6 +3377,7 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     refreshSidebar();
   }
   function openSession(id) {
+    if (id !== W.current) leaveTemporary();
     var s = W.sessions[id]; if (!s || s.deleted) return newChat();
     W.current = id; clearFeed(); hideWelcome();
     var msgs = s.messages || [], answers = [];
@@ -3452,8 +3487,9 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
       return Promise.resolve("");
     }
     if (!W.current) {
-      W.current = uid();
-      W.sessions[W.current] = { id: W.current, messages: [], title: "", pinned: false, deleted: false, updated: now() };
+      W.current = W.tempMode ? "tmp-" + uid() : uid();
+      W.sessions[W.current] = { id: W.current, messages: [], title: "", pinned: false, deleted: false, updated: now(),
+                                temporary: !!W.tempMode };
       save("gink_draft_new", "");
     }
     var s = W.sessions[W.current];
@@ -3777,6 +3813,7 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     send: function (v) { send(String(v || "")); },
     stop: function () { if (W.busy && W.busy.abort) W.busy.abort(); stopSpeaking(); },
     new_chat: newChat,
+    temporary: function (on) { W.tempMode = !!on; setTemporary(!!on); },
     select_session: function (id) { openSession(id); },
     delete_session: function (id) {
       var s = W.sessions[id]; if (!s) return;

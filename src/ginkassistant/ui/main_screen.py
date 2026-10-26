@@ -975,6 +975,9 @@ def build_main_screen(app: toga.App, email: str):
             await voice_bridge.speak(value, voice_key=selected_voice["value"])
         elif kind == "new_chat":
             on_select_session(None)
+        elif kind == "temporary":
+            # only on the new-chat screen: the empty chat becomes temporary (or normal again)
+            on_select_session(None, temporary=bool(value))
         elif kind == "select_session" and value:
             on_select_session(value)
         elif kind == "delete_session" and value:
@@ -1490,9 +1493,13 @@ def build_main_screen(app: toga.App, email: str):
 
     # -- Session sidebar --------------------------------------------------
 
-    def on_select_session(session_id):
+    def on_select_session(session_id, temporary=False):
+        leaving = current_session.get("id")
+        if leaving and brain.history.is_temporary(leaving) and leaving != session_id:
+            brain.history.forget_temporary(leaving)          # a temporary chat is gone once you leave it
         if session_id is None:
-            session_id = brain.history.new_session_id()
+            session_id = brain.history.new_session_id(temporary=temporary)
+        asyncio.create_task(web_chat.set_temporary(brain.history.is_temporary(session_id)))
         current_session["id"] = session_id
         brain.session_id = session_id
         asyncio.create_task(load_session(session_id))

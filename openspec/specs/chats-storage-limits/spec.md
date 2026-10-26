@@ -32,3 +32,10 @@ A chat SHALL be shareable from its menu as a public, read-only snapshot at /c/<i
 #### Scenario: A message contains a script
 - **WHEN** a shared chat contains "<script>" in a message
 - **THEN** the page shows it as text and runs nothing
+
+### Requirement: Temporary chats
+From the new-chat screen a person SHALL be able to start a temporary chat, shown with a notice and a dashed message box, that is never written to storage, never synced, never listed in Recents, and is discarded when they leave it; Gink still keeps its messages in mind while it lasts.
+
+#### Scenario: Leaving a temporary chat
+- **WHEN** a person has a temporary chat and starts a new chat
+- **THEN** the temporary chat is gone and the new chat is a normal one

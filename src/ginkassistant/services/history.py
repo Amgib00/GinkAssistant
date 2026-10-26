@@ -65,7 +65,31 @@ class HistoryStore:
             )
             conn.commit()
 
+    # -- temporary chats ------------------------------------------------------
+    # Ids starting with "tmp-" live only in memory: never written to the database, so never in
+    # Recents, sync, export or backups, and gone when the app closes (or the chat is left).
+    TEMP_PREFIX = "tmp-"
+
+    @classmethod
+    def is_temporary(cls, session_id) -> bool:
+        return str(session_id or "").startswith(cls.TEMP_PREFIX)
+
+    def _temp_store(self) -> Dict[str, List[Dict[str, str]]]:
+        if not hasattr(self, "_temp"):
+            self._temp = {}
+        return self._temp
+
+    def forget_temporary(self, session_id: str = None) -> None:
+        """Drop one temporary chat (or all of them)."""
+        if session_id is None:
+            self._temp_store().clear()
+        else:
+            self._temp_store().pop(session_id, None)
+
     def save_message(self, session_id: str, role: str, content: str):
+        if self.is_temporary(session_id):
+            self._temp_store().setdefault(session_id, []).append({"role": role, "content": content})
+            return
         if not content or not content.strip():
             return
         with self._connect() as conn:
@@ -78,6 +102,8 @@ class HistoryStore:
         self._changed()
 
     def get_history(self, session_id: str, limit: int = 24) -> List[Dict[str, str]]:
+        if self.is_temporary(session_id):
+            return [dict(m) for m in self._temp_store().get(session_id, [])[-limit:]]
         with self._connect() as conn:
             rows = conn.execute(
                 "SELECT role, content FROM chat_history WHERE session_id = ? ORDER BY id DESC LIMIT ?",
@@ -102,15 +128,19 @@ class HistoryStore:
         return sessions
 
     def clear_history(self, session_id: str):
+        if self.is_temporary(session_id):
+            return self.forget_temporary(session_id)
         with self._connect() as conn:
             conn.execute("DELETE FROM chat_history WHERE session_id = ?", (session_id,))
             self._touch(conn, session_id, deleted=True)
             conn.commit()
         self._changed()
 
-    def new_session_id(self) -> str:
+    def new_session_id(self, temporary: bool = False) -> str:
         # random suffix: two devices starting a chat in the same second
         # must not collide once they sync
+        if temporary:
+            return self.TEMP_PREFIX + uuid.uuid4().hex[:12]
         return datetime.now().strftime("session-%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:6]
 
     # -- sync --------------------------------------------------------------
@@ -134,6 +164,8 @@ class HistoryStore:
 
     # -- rename / pin (sidebar chat menu) -----------------------------------
     def set_title(self, session_id: str, title: str) -> None:
+        if self.is_temporary(session_id):
+            return
         with self._connect() as conn:
             self._touch(conn, session_id)
             conn.execute("UPDATE chat_meta SET title=? WHERE session_id=?", ((title or "").strip()[:120], session_id))
@@ -141,6 +173,8 @@ class HistoryStore:
         self._changed()
 
     def set_pinned(self, session_id: str, pinned: bool) -> None:
+        if self.is_temporary(session_id):
+            return
         with self._connect() as conn:
             self._touch(conn, session_id)
             conn.execute("UPDATE chat_meta SET pinned=? WHERE session_id=?", (int(bool(pinned)), session_id))
@@ -148,6 +182,8 @@ class HistoryStore:
         self._changed()
 
     def set_archived(self, session_id: str, archived: bool) -> None:
+        if self.is_temporary(session_id):
+            return
         """Archived chats leave Recents but are kept (Settings > Privacy > Archived chats)."""
         with self._connect() as conn:
             self._touch(conn, session_id)

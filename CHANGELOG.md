@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.29 (October 2026)
+
+- Temporary chats: press Temporary on the new-chat screen for a chat that isn't saved, isn't
+  synced, doesn't appear in Recents, and is gone when you leave it
+- Fixed the shared-link window's colours in dark mode
+
 ## 0.1.28 (October 2026)
 
 - Gink Genie's new lamp icon (in the menu and as the app icon: a lime lamp, like Gink's snowflake)

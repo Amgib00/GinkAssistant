@@ -289,6 +289,7 @@ tests/test_settings_and_account.py
 tests/test_shared_links.py
 tests/test_signin_name_and_history.py
 tests/test_sync_attach_memory_briefing.py
+tests/test_temporary_chat.py
 tests/test_two_step.py
 tests/test_ui.py
 tests/test_unreachable.py

@@ -163,3 +163,15 @@ def test_docker_image_has_every_module_the_server_imports():
     copied = set(re.findall(r"COPY src/ginkassistant/services/([a-z_]+)\.py", docker))
     assert local and local <= copied, f"not in the Docker image: {sorted(local - copied)}"
     assert "COPY src/ginkassistant/services/web_app ./web_app" in docker
+
+
+def test_every_css_variable_used_in_the_ui_is_defined():
+    """The temporary-chat notice used var(--text), which doesn't exist (the page's is --text-main): white text
+    on a white pill. Every var(--x) without a fallback must be defined somewhere in the UI."""
+    import re, glob
+    texts = [open(f, encoding="utf-8").read() for f in glob.glob(os.path.join(ROOT, "src", "ginkassistant", "ui", "*.py"))]
+    defined = set()
+    for t in texts:
+        defined |= set(re.findall(r"(--[a-z0-9-]+)\s*:", t)) | set(re.findall(r"setProperty\(\s*['\"](--[a-z0-9-]+)", t))
+    used = set(v for t in texts for v in re.findall(r"var\((--[a-z0-9-]+)\)", t))
+    assert used - defined == set()

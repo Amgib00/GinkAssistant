@@ -588,18 +588,18 @@ JS = r"""
     var d = document.createElement('div'); d.id = 'share-dlg'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Shared link');
     d.style.cssText = 'position:fixed;inset:0;z-index:10000;display:grid;place-items:center;background:rgba(0,0,0,.35)';
     var box = document.createElement('div');
-    box.style.cssText = 'width:min(460px,92vw);background:var(--surface,#fff);color:var(--text,#151D23);border-radius:16px;padding:20px;' +
+    box.style.cssText = 'width:min(460px,92vw);background:var(--surface);color:var(--text-main);border-radius:16px;padding:20px;' +
       'box-shadow:0 12px 40px rgba(0,0,0,.25);font:14.5px/1.5 system-ui,sans-serif';
     var h = document.createElement('h3'); h.textContent = 'Link created'; h.style.margin = '0 0 6px';
     var p = document.createElement('p'); p.style.cssText = 'margin:0 0 12px;opacity:.75';
     p.textContent = 'Anyone with this link can read a snapshot of \u201c' + (title || 'this chat') + '\u201d. Later messages aren\u2019t included. Manage links in Settings > Privacy.';
     var input = document.createElement('input'); input.readOnly = true; input.value = url;
-    input.style.cssText = 'width:100%;box-sizing:border-box;padding:9px 11px;border-radius:10px;border:1px solid var(--border,#ddd);background:transparent;color:inherit;font:inherit';
+    input.style.cssText = 'width:100%;box-sizing:border-box;padding:9px 11px;border-radius:10px;border:1px solid var(--border);background:transparent;color:inherit;font:inherit';
     var row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:14px';
     function btn(text, primary, fn) {
       var b = document.createElement('button'); b.textContent = text; b.onclick = fn;
       b.style.cssText = 'font:inherit;font-weight:650;border:0;border-radius:999px;padding:8px 16px;cursor:pointer;' +
-        (primary ? 'background:var(--text,#151D23);color:var(--surface,#fff)' : 'background:transparent;color:inherit;box-shadow:inset 0 0 0 1.5px var(--border,#ddd)');
+        (primary ? 'background:var(--text-main);color:var(--surface)' : 'background:transparent;color:inherit;box-shadow:inset 0 0 0 1.5px var(--border)');
       row.appendChild(b); return b;
     }
     btn('Close', false, function () { d.remove(); });

@@ -1223,3 +1223,15 @@ New services/live_info.py (all free, no API keys):
   (idle every 4.2 s; every 0.38 s while building), hover/focus tilt + random line, listening tilt while
   typing, click/Enter focuses the box, "Working my magic..." while building. prefers-reduced-motion:
   no animation, no sparkles (checked in Chromium).
+
+## 0.1.29: temporary chats
+- Apps: HistoryStore keeps "tmp-" sessions only in memory (save/get/clear; title/pin/archive ignored;
+  never in the DB, so never in get_all_sessions, changes_since or export); new_session_id(temporary)
+  and forget_temporary. main_screen: "temporary" event -> on_select_session(None, temporary); leaving a
+  temporary chat forgets it; web_chat.set_temporary.
+- Web: W.tempMode -> "tmp-" session with temporary:true; persist() skips it, touch() never marks it
+  dirty (no sync), Recents filter; leaveTemporary() on New chat / opening another chat.
+- Page: #temp-btn (home screen only), #temp-banner below the top bar, dashed composer.
+- Caught in the browser: var(--text) doesn't exist here (it's --text-main) -> white-on-white notice;
+  the share window had the same names behind light-only fallbacks. New test: every var(--x) used in
+  the UI is defined.
