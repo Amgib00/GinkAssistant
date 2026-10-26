@@ -174,6 +174,8 @@
     <div class="ebar"><span class="name" id="fname">Choose a file</span><span class="dirty" id="dirty" hidden>&bull;</span>
       <div class="grow"></div><button class="ghost" id="run" hidden>&#9654; Run</button><button class="ghost" id="tests" hidden>Run tests</button>
       <button class="ghost" id="delfile" hidden>Delete file</button><button id="save" disabled>Save</button></div>
+    <div id="picview" hidden style="flex:1;display:grid;place-items:center;background:var(--code);overflow:auto;padding:20px">
+      <img id="picimg" alt="" style="max-width:100%;max-height:100%;image-rendering:auto;box-shadow:0 2px 12px rgba(0,0,0,.12)"></div>
     <textarea class="code" id="code" spellcheck="false" placeholder="Pick a file on the left, or ask Genie to build something." disabled></textarea>
     <div class="console" id="console" hidden>
       <div class="cbar"><b>Output</b><span id="cstatus"></span><div class="grow"></div><button class="danger" id="stop" hidden>Stop</button><button class="ghost" id="cclose">Close</button></div>
@@ -270,7 +272,7 @@
       var dir = f.path.indexOf("/") > 0 ? f.path.slice(0, f.path.lastIndexOf("/")) : "";
       if (dir && dir !== lastDir) tree.appendChild(el("div", "dir", dir + "/"));
       lastDir = dir;
-      var b = el("button", "file" + (f.path === S.path ? " on" : ""), (dir ? "\u2003" : "") + f.path.slice(dir ? dir.length + 1 : 0));
+      var b = el("button", "file" + (f.path === S.path ? " on" : ""), (dir ? "\u2003" : "") + (f.picture ? "\u25a3 " : "") + f.path.slice(dir ? dir.length + 1 : 0));
       b.title = f.path + " \u00b7 " + f.size + " bytes"; b.onclick = function () { openFile(f.path); };
       tree.appendChild(b);
     });
@@ -321,8 +323,16 @@
     if (dirty() && !confirm("You have unsaved changes in " + S.path + ". Leave without saving?")) return;
     loadFile(path);
   }
+  function showPicture(j) {
+    S.path = j.path; S.saved = ""; $("code").value = ""; $("code").hidden = true; $("code").disabled = true;
+    $("picview").hidden = false; $("picimg").src = "data:" + j.mime + ";base64," + j.content_b64; $("picimg").alt = j.path;
+    $("fname").textContent = j.path + " \u00b7 picture"; $("delfile").hidden = false; $("save").disabled = true; $("dirty").hidden = true;
+    $("run").hidden = true; renderTree();
+  }
   function loadFile(path) {                                   // no unsaved-changes question (e.g. after Genie changed files)
+    $("picview").hidden = true; $("code").hidden = false;
     api("/genie/projects/" + encodeURIComponent(S.project.id) + "/file?path=" + encodeURIComponent(path)).then(function (j) {
+      if (j.picture) return showPicture(j);
       S.path = j.path; S.saved = j.content; $("code").value = j.content; $("code").disabled = false;
       $("fname").textContent = j.path; $("delfile").hidden = false; setDirty(); renderTree(); runButtons();
     }).catch(function (e) { say(e.message, true); });
@@ -492,7 +502,14 @@
                 unzipped.push(file.name + " (" + j.imported.length + " files)"); skipped = skipped.concat(j.skipped);
               });
             }
-            var text; try { text = new TextDecoder("utf-8", { fatal: true }).decode(buf); } catch (e) { skipped.push(file.name + " (not a text file)"); return; }
+            var text; try { text = new TextDecoder("utf-8", { fatal: true }).decode(buf); } catch (e) { text = null; }
+            if (text === null || /\.(png|jpe?g|gif|webp|ico)$/i.test(file.name)) {
+              if (!/\.(png|jpe?g|gif|webp|ico)$/i.test(file.name)) { skipped.push(file.name + " (not a text file or picture)"); return; }
+              var b = "", by = new Uint8Array(buf);                 // pictures go up as base64
+              for (var k = 0; k < by.length; k += 32768) b += String.fromCharCode.apply(null, by.subarray(k, k + 32768));
+              return api(base + "/file", { method: "PUT", body: { path: file.webkitRelativePath || file.name, content_b64: btoa(b) } })
+                .then(function (j) { added.push(j.path); }, function (e) { skipped.push(file.name + " (" + e.message + ")"); });
+            }
             return api(base + "/file", { method: "PUT", body: { path: file.webkitRelativePath || file.name, content: text } })
               .then(function (j) { added.push(j.path); }, function (e) { skipped.push(file.name + " (" + e.message + ")"); });
           });

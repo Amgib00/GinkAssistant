@@ -1271,3 +1271,12 @@ New services/live_info.py (all free, no API keys):
   in the start box and the chat, drag and drop. Start screen like Claude Code (title, project card,
   bottom composer, info row). Upload ZIP button removed.
 - Browser-tested with Pyodide served locally: Genie got "exit code: 0\nAverage: 15.0" from a real run.
+
+## 0.1.34: pictures in Genie projects
+- Stored in genie_files with the marker GENIE_PIC ("\x00gink-b64:") + base64 (no schema change; text
+  files now refuse \x00). _genie_texts for code-only uses (runner /all, search); _genie_size gives the
+  real byte size (a test caught marker + padding being counted). Checked by magic bytes; 1 MB each.
+- read_file describes pictures; write_file refuses picture paths; GET /file returns {picture,
+  content_b64, mime}; PUT accepts content_b64; preview serves bytes; ZIP export/import keep bytes;
+  GitHub push uploads pictures as blobs (tree "content" is text only).
+- genie.html: pictures via "+" / drop, shown in #picview, marked in the file list. Browser-tested.

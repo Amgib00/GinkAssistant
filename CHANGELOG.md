@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.34 (October 2026)
+
+- Gink Genie projects can include pictures (PNG, JPG, GIF, WebP, ICO): add logos and photos with
+  + or drag and drop, see them in the workspace and the preview, and they go into ZIP downloads
+  and GitHub too
+
 ## 0.1.33 (October 2026)
 
 - Gink Genie runs commands to check its work (python, pytest, node, ls, cat), safely in your

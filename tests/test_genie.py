@@ -93,7 +93,7 @@ def test_manual_edits_privacy_zip_and_import(srv):
         up.writestr("shop/logo.png", b"\x89PNG\x00\xff\xfe"); up.writestr("shop/.git/HEAD", "ref")
     new = c.post("/genie/projects", headers=h, json={"name": "Shop"}).json()["project"]["id"]
     r = c.post(f"/genie/projects/{new}/import", headers=h, json={"zip_b64": base64.b64encode(buf.getvalue()).decode()}).json()
-    assert r["imported"] == ["app.py"] and r["skipped"] == ["logo.png (not a text file)"]   # top folder unwrapped
+    assert r["imported"] == ["app.py"] and r["skipped"][0].startswith("logo.png (logo.png isn't a PNG")   # fake picture refused
 
 
 def test_sandboxed_preview(srv):
@@ -158,3 +158,40 @@ def test_commands_pause_for_the_browser_and_steps_are_recorded(srv):
     assert any(t["function"]["name"] == "run_command" for t in SEEN[-1]["tools"])
     again = c.post(f"/genie/projects/{pid}/ask/continue", headers=h, json={"run_id": r["pending"]["run_id"], "output": "x"})
     assert again.status_code == 404                                                     # a run continues only once
+
+
+def _png(size=(4, 4)):
+    from PIL import Image
+    buf = io.BytesIO(); Image.new("RGB", size, (63, 125, 18)).save(buf, "PNG"); return buf.getvalue()
+
+
+def test_pictures_in_projects(srv):
+    b, c, h = srv
+    pid = build(c, h)["project"]["id"]
+    png = _png()
+    r = c.put(f"/genie/projects/{pid}/file", headers=h, json={"path": "images/logo.png", "content_b64": base64.b64encode(png).decode()})
+    assert r.status_code == 200
+    logo = [f for f in r.json()["files"] if f["path"] == "images/logo.png"][0]
+    assert logo["picture"] is True and logo["size"] == len(png)                                  # the real size
+    got = c.get(f"/genie/projects/{pid}/file", headers=h, params={"path": "images/logo.png"}).json()
+    assert got["picture"] and base64.b64decode(got["content_b64"]) == png and got["mime"] == "image/png"
+    url = c.get(f"/genie/projects/{pid}", headers=h).json()["project"]["preview_url"].replace("http://testserver", "")
+    shown = c.get(url + "images/logo.png")
+    assert shown.content == png and shown.headers["content-type"] == "image/png"                 # the preview serves the picture
+    assert "images/logo.png" not in c.get(f"/genie/projects/{pid}/all", headers=h).json()["files"]   # the runner: text only
+    assert "picture" in b._genie_tool(pid, "list_files", {}, [])
+    assert "is a picture" in b._genie_tool(pid, "read_file", {"path": "images/logo.png"}, [])
+    assert "pictures can be added, not written" in b._genie_tool(pid, "write_file", {"path": "images/logo.png", "content": "x"}, [])
+    z = zipfile.ZipFile(io.BytesIO(c.get(f"/genie/projects/{pid}/zip", headers=h).content))
+    assert z.read("images/logo.png") == png                                                      # exact bytes
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as up:
+        up.writestr("site/photo.png", png); up.writestr("site/index.html", "<img src=photo.png>")
+    new = c.post("/genie/projects", headers=h, json={"name": "Site"}).json()["project"]["id"]
+    imp = c.post(f"/genie/projects/{new}/import", headers=h, json={"zip_b64": base64.b64encode(buf.getvalue()).decode()}).json()
+    assert sorted(imp["imported"]) == ["index.html", "photo.png"] and imp["skipped"] == []
+    for bad in ({"path": "fake.png", "content_b64": base64.b64encode(b"not a picture").decode()},
+                {"path": "big.png", "content_b64": base64.b64encode(png + b"0" * 1_000_001).decode()},
+                {"path": "notes.txt", "content": "a\x00b"},
+                {"path": "logo2.png", "content": "<svg>"}):
+        assert c.put(f"/genie/projects/{pid}/file", headers=h, json=bad).status_code == 422, bad["path"]

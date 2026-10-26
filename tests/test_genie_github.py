@@ -27,6 +27,8 @@ def github(request):
         return httpx.Response(201, json=GH["repo"])
     if path == repo + "/git/ref/heads/main":
         return httpx.Response(200, json={"object": {"sha": GH["head"]}})
+    if path == repo + "/git/blobs":
+        GH.setdefault("blobs", []).append(json.loads(request.content)); return httpx.Response(201, json={"sha": f"blob{len(GH['blobs'])}"})
     if path == repo + "/git/trees":
         GH["tree"] = json.loads(request.content)["tree"]; return httpx.Response(201, json={"sha": f"tree{len(GH['tree'])}"})
     if path == repo + "/git/commits":
@@ -110,3 +112,17 @@ def test_expired_disconnect_and_account_deletion(srv):
     assert c.post("/account/delete", headers=h, json={"confirm": "DELETE"}).status_code == 200
     assert GH["revoked"][-1][1] == {"access_token": "gho_SECRET_TOKEN"}                             # revoked at GitHub
     assert not any("gho_SECRET_TOKEN" in str(d) for _, d in GH.get("google", []))                   # never sent to Google
+
+
+def test_pictures_go_to_github_as_blobs(srv):
+    import base64 as b64
+    b, c, h, db = srv
+    connect(b, c, h)
+    pid = project(c, h)
+    png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 20
+    c.put(f"/genie/projects/{pid}/file", headers=h, json={"path": "logo.png", "content_b64": b64.b64encode(png).decode()})
+    c.post(f"/genie/projects/{pid}/github", headers=h, json={"repo": "school-app"})
+    assert GH["blobs"] == [{"content": b64.b64encode(png).decode(), "encoding": "base64"}]
+    entry = [t for t in GH["tree"] if t["path"] == "logo.png"][0]
+    assert entry["sha"] == "blob1" and "content" not in entry                                   # referenced, not inlined
+    assert all("content" in t for t in GH["tree"] if t["path"] != "logo.png")

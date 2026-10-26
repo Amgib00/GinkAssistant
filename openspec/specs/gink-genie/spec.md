@@ -81,3 +81,10 @@ Each answer SHALL show Genie's work as a collapsible list of steps (created, upd
 #### Scenario: Adding a ZIP and a picture
 - **WHEN** the person adds shop.zip and logo.png
 - **THEN** the ZIP's files are unpacked into the project and the picture is skipped with a note
+
+### Requirement: Pictures in projects
+Projects SHALL accept PNG, JPG, GIF, WebP and ICO pictures up to 1 MB each (checked by their content, not only their name) through "+", drag and drop or ZIP files; the preview, ZIP download and GitHub upload SHALL use the exact picture bytes, the workspace SHALL show a picture when it is opened, and Genie SHALL be able to use pictures by their path but never read or write them as text.
+
+#### Scenario: A website with a logo
+- **WHEN** the person adds logo.png and an index.html that shows it
+- **THEN** the preview displays the logo

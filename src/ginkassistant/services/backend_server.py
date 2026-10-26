@@ -4805,7 +4805,8 @@ GENIE_SYSTEM = (
     "search_files. Build complete, working, well-organised projects -- several files when that is clearer (for a "
     "web app: index.html, styles.css, app.js...). Web projects must run by opening index.html: no build step, no "
     "frameworks from the internet, relative paths only. Read a file before changing it. Keep each file under "
-    "250 KB. Never include passwords, API keys or secrets. Use run_command to check your work (for example run the "
+    "250 KB. Never include passwords, API keys or secrets. Pictures in the project (marked \u201cpicture\u201d by "
+    "list_files) can be used by their path, e.g. <img src=\"images/logo.png\">; you can't create or edit pictures. Use run_command to check your work (for example run the "
     "tests). The user can run .py and .js files and pytest tests "
     "in their browser (Python 3.14 via Pyodide: the standard library and pure-Python packages; no input(), no "
     "servers, no internet access, only the project's files) -- write code that works there, and put Python tests "
@@ -4862,20 +4863,60 @@ def _genie_project(email: str, pid: str):
     return {"id": row[0], "name": row[1], "preview_key": row[2], "created": row[3], "updated": row[4]}
 
 
+GENIE_PIC = "\x00gink-b64:"            # pictures: this marker + base64 (text files never contain \x00)
+GENIE_IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif",
+                     ".webp": "image/webp", ".ico": "image/x-icon"}
+GENIE_MAX_PICTURE = 1_000_000
+
+
 def _genie_files(pid: str) -> dict:
+    """Every file, raw (pictures still marked): use _genie_texts for code and text only."""
     return dict(_genie_db(lambda con: con.execute("SELECT path, content FROM genie_files WHERE project_id=? ORDER BY path",
                                                   (pid,)).fetchall()))
 
 
-def _genie_write(pid: str, path: str, content: str):
+def _genie_texts(pid: str) -> dict:
+    return {p: c for p, c in _genie_files(pid).items() if not c.startswith(GENIE_PIC)}
+
+
+def _genie_size(content: str) -> int:
+    if content.startswith(GENIE_PIC):                     # the picture's real size (without the marker and padding)
+        b64 = content[len(GENIE_PIC):]
+        return len(b64) * 3 // 4 - (2 if b64.endswith("==") else 1 if b64.endswith("=") else 0)
+    return len(content.encode())
+
+
+def _genie_picture_bytes(content: str) -> bytes:
+    return base64.b64decode(content[len(GENIE_PIC):])
+
+
+def _looks_like_picture(data: bytes, ext: str) -> bool:
+    return {".png": data[:8] == b"\x89PNG\r\n\x1a\n", ".jpg": data[:3] == b"\xff\xd8\xff", ".jpeg": data[:3] == b"\xff\xd8\xff",
+            ".gif": data[:6] in (b"GIF87a", b"GIF89a"), ".webp": data[:4] == b"RIFF" and data[8:12] == b"WEBP",
+            ".ico": data[:4] == b"\x00\x00\x01\x00"}.get(ext, False)
+
+
+def _genie_write(pid: str, path: str, content: str, picture: bytes = None):
     path = _genie_path(path)
-    content = str(content if content is not None else "")
-    if len(content.encode()) > GENIE_MAX_FILE:
-        raise ValueError(f"{path} is too large (over {GENIE_MAX_FILE // 1000} KB). Split it into smaller files.")
+    ext = os.path.splitext(path)[1].lower()
+    if picture is not None:
+        if ext not in GENIE_IMAGE_TYPES or not _looks_like_picture(picture, ext):
+            raise ValueError(f"{path} isn't a PNG, JPG, GIF, WebP or ICO picture.")
+        if len(picture) > GENIE_MAX_PICTURE:
+            raise ValueError(f"{path} is too large (pictures can be up to 1 MB).")
+        content = GENIE_PIC + base64.b64encode(picture).decode()
+    else:
+        content = str(content if content is not None else "")
+        if ext in GENIE_IMAGE_TYPES:
+            raise ValueError(f"{path} is a picture: pictures can be added, not written as text. Use the pictures the project has.")
+        if "\x00" in content:
+            raise ValueError(f"{path} contains a null character, which text files can't have.")
+        if len(content.encode()) > GENIE_MAX_FILE:
+            raise ValueError(f"{path} is too large (over {GENIE_MAX_FILE // 1000} KB). Split it into smaller files.")
     files = _genie_files(pid)
     if path not in files and len(files) >= GENIE_MAX_FILES:
         raise ValueError(f"A project can have up to {GENIE_MAX_FILES} files.")
-    total = sum(len(c.encode()) for p, c in files.items() if p != path) + len(content.encode())
+    total = sum(_genie_size(c) for p, c in files.items() if p != path) + _genie_size(content)
     if total > GENIE_MAX_PROJECT:
         raise ValueError("The project is too large (over 3 MB). Remove something first.")
     now = time.time()
@@ -4891,20 +4932,24 @@ def _genie_delete_file(pid: str, path: str) -> bool:
 
 
 def _genie_summary(pid: str) -> list:
-    rows = _genie_db(lambda con: con.execute("SELECT path, length(content), updated FROM genie_files WHERE project_id=? ORDER BY path",
+    rows = _genie_db(lambda con: con.execute("SELECT path, content, updated FROM genie_files WHERE project_id=? ORDER BY path",
                                              (pid,)).fetchall())
-    return [{"path": p, "size": n, "updated": u} for p, n, u in rows]
+    return [{"path": p, "size": _genie_size(c), "updated": u, **({"picture": True} if c.startswith(GENIE_PIC) else {})}
+            for p, c, u in rows]
 
 
 def _genie_tool(pid: str, name: str, args: dict, changes: list) -> str:
     try:
         if name == "list_files":
             files = _genie_summary(pid)
-            return "\n".join(f"{f['path']} ({f['size']} bytes)" for f in files) or "(the project is empty)"
+            return "\n".join(f"{f['path']} ({'picture, ' if f.get('picture') else ''}{f['size']} bytes)" for f in files) or "(the project is empty)"
         if name == "read_file":
             content = _genie_files(pid).get(_genie_path(args.get("path")))
             if content is None:
                 return f"No file called {args.get('path')}."
+            if content.startswith(GENIE_PIC):
+                return (f"{args.get('path')} is a picture ({_genie_size(content)} bytes). Use it by its path, for example "
+                        f"<img src=\"{args.get('path')}\" alt=\"...\">.")
             return content[:60000] + ("\n[... cut: the file is longer]" if len(content) > 60000 else "")
         if name == "write_file":
             existed = _genie_path(args.get("path")) in _genie_files(pid)
@@ -4918,7 +4963,7 @@ def _genie_tool(pid: str, name: str, args: dict, changes: list) -> str:
             return "There was no such file."
         if name == "search_files":
             needle = str(args.get("text") or "").lower()
-            hits = [f"{p}:{i + 1}: {line.strip()[:160]}" for p, c in _genie_files(pid).items()
+            hits = [f"{p}:{i + 1}: {line.strip()[:160]}" for p, c in _genie_texts(pid).items()
                     for i, line in enumerate(c.splitlines()) if needle and needle in line.lower()]
             return "\n".join(hits[:60]) or "Nothing found."
         return f"Unknown tool {name}."
@@ -5093,6 +5138,10 @@ def genie_file_get(pid: str, request: Request, path: str = ""):
         raise HTTPException(status_code=422, detail=str(exc))
     if content is None:
         raise HTTPException(status_code=404, detail="That file wasn't found.")
+    if content.startswith(GENIE_PIC):
+        p = _genie_path(path)
+        return {"path": p, "picture": True, "content_b64": content[len(GENIE_PIC):],
+                "mime": GENIE_IMAGE_TYPES.get(os.path.splitext(p)[1].lower(), "application/octet-stream")}
     return {"path": _genie_path(path), "content": content}
 
 
@@ -5101,7 +5150,13 @@ def genie_file_put(pid: str, request: Request, data: dict = Body(...)):
     email = _email_from_auth(request)
     _genie_project(email, pid)
     try:
-        path = _genie_write(pid, data.get("path"), data.get("content", ""))
+        picture = None
+        if data.get("content_b64") is not None:
+            try:
+                picture = base64.b64decode(str(data["content_b64"]), validate=True)
+            except Exception:
+                raise ValueError("That picture couldn't be read.")
+        path = _genie_write(pid, data.get("path"), data.get("content", ""), picture=picture)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     return {"path": path, "files": _genie_summary(pid)}
@@ -5123,7 +5178,7 @@ def genie_all_files(pid: str, request: Request):
     """Every file's content at once (the in-browser runner needs the whole project)."""
     email = _email_from_auth(request)
     _genie_project(email, pid)
-    return {"files": _genie_files(pid)}
+    return {"files": _genie_texts(pid)}
 
 
 @app.post("/genie/projects/{pid}/ask")
@@ -5163,7 +5218,7 @@ def genie_zip(pid: str, request: Request):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         for path, content in _genie_files(pid).items():
-            z.writestr(path, content)
+            z.writestr(path, _genie_picture_bytes(content) if content.startswith(GENIE_PIC) else content)
     safe = re.sub(r"[^A-Za-z0-9_-]+", "-", p["name"]).strip("-") or "project"
     return Response(buf.getvalue(), media_type="application/zip",
                     headers={"Content-Disposition": f'attachment; filename="{safe}.zip"'})
@@ -5193,11 +5248,14 @@ def genie_import(pid: str, request: Request, data: dict = Body(...)):
             continue
         if info.file_size > GENIE_MAX_FILE:
             skipped.append(f"{rel} (too large)"); continue
+        raw_bytes = z.read(info)
         try:
-            text = z.read(info).decode("utf-8")
-            imported.append(_genie_write(pid, rel, text))
+            if os.path.splitext(rel)[1].lower() in GENIE_IMAGE_TYPES:
+                imported.append(_genie_write(pid, rel, "", picture=raw_bytes))
+                continue
+            imported.append(_genie_write(pid, rel, raw_bytes.decode("utf-8")))
         except UnicodeDecodeError:
-            skipped.append(f"{rel} (not a text file)")
+            skipped.append(f"{rel} (not a text file or picture)")
         except ValueError as exc:
             skipped.append(f"{rel} ({exc})")
     return {"imported": imported, "skipped": skipped[:50], "files": _genie_summary(pid)}
@@ -5218,6 +5276,10 @@ def genie_preview(key: str, request: Request, path: str = ""):
     content = files.get(want)
     if content is None:
         return HTMLResponse("<!doctype html><title>Not found</title><p>No such file in this project.</p>", status_code=404)
+    if content.startswith(GENIE_PIC):
+        return Response(_genie_picture_bytes(content), media_type=GENIE_IMAGE_TYPES.get(os.path.splitext(want)[1].lower(), "application/octet-stream"),
+                        headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "no-store",
+                                 "Content-Security-Policy": "default-src 'none'; sandbox"})
     origin = _public_base(request).rstrip("/")
     csp = (f"sandbox allow-scripts allow-forms allow-modals allow-popups; default-src {origin} data: blob:; "
            f"script-src {origin} 'unsafe-inline'; style-src {origin} 'unsafe-inline'; img-src {origin} data: blob: https:; "
@@ -5362,8 +5424,17 @@ async def genie_push(pid: str, request: Request, data: dict = Body(...)):
         if ref.status_code != 200:
             raise HTTPException(status_code=502, detail="Couldn't read the repository's main branch.")
         head = ref.json()["object"]["sha"]
-        tree = await gh(client, "POST", f"/repos/{login}/{repo}/git/trees", json={"tree": [
-            {"path": p, "mode": "100644", "type": "blob", "content": c} for p, c in sorted(files.items())]})
+        entries = []
+        for p, c in sorted(files.items()):
+            if c.startswith(GENIE_PIC):                  # pictures go up as blobs (the tree's "content" is text only)
+                blob = await gh(client, "POST", f"/repos/{login}/{repo}/git/blobs",
+                                json={"content": c[len(GENIE_PIC):], "encoding": "base64"})
+                if blob.status_code != 201:
+                    raise HTTPException(status_code=502, detail=f"GitHub refused the picture {p}.")
+                entries.append({"path": p, "mode": "100644", "type": "blob", "sha": blob.json()["sha"]})
+            else:
+                entries.append({"path": p, "mode": "100644", "type": "blob", "content": c})
+        tree = await gh(client, "POST", f"/repos/{login}/{repo}/git/trees", json={"tree": entries})
         if tree.status_code != 201:
             raise HTTPException(status_code=502, detail="GitHub refused the files.")
         commit = await gh(client, "POST", f"/repos/{login}/{repo}/git/commits",
