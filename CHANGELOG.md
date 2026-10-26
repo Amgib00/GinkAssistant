@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.43 (October 2026)
+
+- Gink's description: "Your AI assistant for work, study and everyday life"
+
 ## 0.1.42 (October 2026)
 
 - Gink Genie: rename or move files (Rename next to Delete file), and press Ctrl+P (Cmd+P on Mac)

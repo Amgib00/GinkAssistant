@@ -6,8 +6,8 @@ build-backend = "setuptools.build_meta"
 # Must be a valid package name (letters, digits, "-", "_", "."; no spaces).
 # Briefcase 0.4.6+ reads this name, so "gink ai assistant" could break builds.
 name = "ginkassistant"
-version = "0.1.42"
-description = "AI Assistant powered to Help Humans"
+version = "0.1.43"
+description = "Your AI assistant for work, study and everyday life"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -22,7 +22,7 @@ license = "MIT"          # Briefcase 0.3.15 reads this one (it can't read the [p
 # "Gink Ai Assistant" will become an error). Users see formal_name ("Gink") below.
 project_name = "ginkassistant"
 bundle = "com.amgib"
-version = "0.1.42"
+version = "0.1.43"
 url = "https://github.com/amgib00/ginkassistant"
 author = "Amgib00"
 author_email = "kargboi131ik667957@gmail.com"
@@ -35,7 +35,7 @@ set alarms, timers and reminders, make PDF, Word and Excel files, create images,
 web with sources, and brief you every morning. Your chats sync across your devices.
 """
 formal_name = "Gink"
-description = "AI Assistant powered to Help Humans"
+description = "Your AI assistant for work, study and everyday life"
 sources = ["src/ginkassistant"]
 test_sources = ["tests"]
 # App icon for every platform. tools/make_icons.py builds all the sizes and formats
