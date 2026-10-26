@@ -249,6 +249,7 @@ tests/fake_android.py
 tests/test_actions.py
 tests/test_actions_briefing_mic.py
 tests/test_agent_mode.py
+tests/test_ai_errors.py
 tests/test_android_32bit.py
 tests/test_android_startup.py
 tests/test_android_voice.py

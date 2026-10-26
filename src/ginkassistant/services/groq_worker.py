@@ -107,6 +107,24 @@ def local_reset_time(info: dict) -> str:
     return message.replace("at midnight (UTC)", f"at {when}").replace("midnight (UTC)", when)
 
 
+def _problem_message(err) -> str:
+    """The real reason, in plain words (instead of hiding it behind "The AI service had a problem")."""
+    status = getattr(err, "status_code", 0) or 0
+    try:
+        body = err.body if isinstance(err.body, dict) else {}
+        info = body.get("error", body) if isinstance(body, dict) else {}
+        msg = " ".join(str((info or {}).get("message") or "").split())[:200]
+    except Exception:
+        msg = ""
+    if status == 429:
+        return ("The AI service has reached its limit for now (too many requests). Please try again in a little while."
+                + (f"\n\n_Details: {msg}_" if msg else ""))
+    if status in (500, 502, 503, 504):
+        return (f"The AI service is having trouble right now (error {status}). Please try again in a moment."
+                + (f"\n\n_Details: {msg}_" if msg else ""))
+    return f"The AI service couldn't answer (error {status or '?'}{': ' + msg if msg else ''})."
+
+
 def _limit_message(err) -> str:
     """Gink Cloud limit / Pro-only answers -> a friendly message with an upgrade link."""
     try:
@@ -388,8 +406,8 @@ class GroqBrain:
                     model=retry_model, messages=messages, temperature=0.8, stream=True, extra_headers=turn
                 )
             except APIStatusError as err2:
-                return await self._emit(_limit_message(err2) or "The AI service had a problem. Please try again.",
-                                        on_token)
+                logger.warning(f"fallback '{retry_model}' failed too ({err2})")
+                return await self._emit(_limit_message(err2) or _problem_message(err2), on_token)
         except (BadRequestError, NotFoundError, APIError) as err:
             # network problems land here (not APIStatusError)
             if images:
@@ -403,8 +421,8 @@ class GroqBrain:
                     model=retry_model, messages=messages, temperature=0.8, stream=True, extra_headers=turn
                 )
             except APIStatusError as err2:
-                return await self._emit(_limit_message(err2) or "The AI service had a problem. Please try again.",
-                                        on_token)
+                logger.warning(f"fallback '{retry_model}' failed too ({err2})")
+                return await self._emit(_limit_message(err2) or _problem_message(err2), on_token)
             except APIError:
                 return await self._emit("I can't reach the Gink server right now. Check your internet "
                                         "connection and try again.", on_token)

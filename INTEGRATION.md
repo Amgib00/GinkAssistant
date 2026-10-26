@@ -1367,3 +1367,12 @@ New services/live_info.py (all free, no API keys):
   version order). main_screen.maybe_whats_new() at startup: prefs last_version_seen (device-only);
   fresh install -> nothing; existing users without a record -> current version once. Page
   showWhatsNew(version, [[v, points]...]).
+
+## 0.1.50: the real reason when the AI provider refuses
+- Owner saw "The AI service had a problem" on every message. That text appears only after BOTH the
+  chosen and the fallback model were refused (not 401, not our limits, not a network failure): the
+  app hid the provider's reason. Now groq_worker._problem_message (429 = limit reached + details;
+  5xx; others "error N: message"); the server prints "[gink] AI provider refused: HTTP N model=..."
+  (no message content) and passes Retry-After; web: plain sentence for provider 429.
+- Hey Gink: the owner's old 0.1.0 zip had the same "macOS.permissions" (plural) bug -> the installed
+  Mac app never had the microphone; it only worked via `briefcase dev` (Terminal's permission).

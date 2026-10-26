@@ -103,7 +103,10 @@
         watchReset(e.resets_at);
         return String(e.message || "").replace(/at midnight \(UTC\)|midnight \(UTC\)/, "at " + localReset(e.resets_at));
       }
-      return (j.error && (j.error.message || j.error)) || j.detail || ("Something went wrong (" + r.status + ").");
+      var msg = (j.error && (j.error.message || j.error)) || j.detail || ("Something went wrong (" + r.status + ").");
+      if (r.status === 429 && e.code !== "daily_limit" && e.code !== "turn_limit")      // the AI provider's own limit
+        return "The AI service has reached its limit for now (too many requests). Please try again in a little while.\n\nDetails: " + msg;
+      return msg;
     }).catch(function () { return "Something went wrong (" + r.status + ")."; });
   }
 

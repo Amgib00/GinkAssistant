@@ -2027,8 +2027,12 @@ async def ai_chat(request: Request):
             text = await upstream.aread()
             await upstream.aclose()
             await client.aclose()
+            # in the server's logs (Render > Logs): why the AI provider refused, without the person's messages
+            print(f"[gink] AI provider refused: HTTP {upstream.status_code} model={body.get('model')} "
+                  f"{text[:300].decode('utf-8', 'replace') if isinstance(text, bytes) else str(text)[:300]}", flush=True)
             try:
-                return JSONResponse(status_code=upstream.status_code, content=_json.loads(text))
+                return JSONResponse(status_code=upstream.status_code, content=_json.loads(text),
+                                    headers={k: v for k, v in (("Retry-After", upstream.headers.get("retry-after")),) if v})
             except ValueError:
                 return _ai_error(502, "The AI service had a problem. Please try again.", "upstream")
 
@@ -2052,6 +2056,8 @@ async def ai_chat(request: Request):
         return StreamingResponse(relay(), media_type="text/event-stream")
     async with httpx.AsyncClient(timeout=120) as client:
         r = await client.post(f"{base}/chat/completions", json=body, headers=headers)
+    if r.status_code != 200:
+        print(f"[gink] AI provider refused: HTTP {r.status_code} model={body.get('model')} {r.text[:300]}", flush=True)
     try:
         data = r.json()
         if web and r.status_code == 200:

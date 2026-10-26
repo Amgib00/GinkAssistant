@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.50 (October 2026)
+
+- When the AI service refuses a message, Gink now says why (for example that its limit is reached
+  for now) instead of "The AI service had a problem", and the server records the reason in its logs
+
 ## 0.1.49 (October 2026)
 
 - After an update, Gink shows what's new, once, so you don't miss improvements
