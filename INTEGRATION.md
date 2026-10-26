@@ -1350,3 +1350,7 @@ New services/live_info.py (all free, no API keys):
   notifies (not for _from_sync); /account/preferences GET/PUT (merge per key, cleaned); apps upload
   bundled after 1 s, pull at start + every 2 min (validated against CHOICES/VOICES, model + voice
   applied live); web same; Genie's genie_mode too. Apps' model picker now saves the model.
+
+## 0.1.47: share Genie websites / stop sharing
+- POST /genie/projects/{pid}/preview/reset -> new preview_key (old /genie/p/<key>/ links 404).
+  genie.html #share + #sharedlg (Copy, Open via openOutside, Stop sharing). Browser-tested.

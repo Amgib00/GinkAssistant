@@ -143,6 +143,7 @@
   <div class="grow"></div>
   <button class="ghost" id="preview" hidden>Preview</button>
   <button class="ghost" id="download" hidden>Download ZIP</button>
+  <button class="ghost" id="share" hidden>Share</button>
   <button class="ghost" id="github" hidden>GitHub</button>
   <button class="ghost" id="rename" hidden>Rename</button>
   <button class="ghost" id="duplicate" hidden>Duplicate</button>
@@ -204,6 +205,15 @@
   </section>
 </main>
 
+<dialog id="sharedlg">
+  <h2>Share this project</h2>
+  <p class="note">Anyone with this link can open the project’s website (index.html and its files). They can’t see the code editor, the conversation or change anything.</p>
+  <input type="text" id="share-link" readonly style="width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--bg);margin-top:8px">
+  <p class="result" id="share-result" aria-live="polite"></p>
+  <div class="row"><button class="danger" id="share-stop">Stop sharing</button><div class="grow"></div>
+    <button class="ghost" id="share-open">Open</button><button class="ghost" id="share-close">Close</button><button id="share-copy">Copy link</button></div>
+</dialog>
+
 <dialog id="ghdlg">
   <h2>Push to GitHub</h2>
   <p class="note" id="gh-who"></p>
@@ -264,13 +274,13 @@
   }
   function showStart() {
     S.project = null; $("start").hidden = false; $("work").hidden = true;
-    ["preview", "download", "del", "github", "rename", "duplicate"].forEach(function (id) { $(id).hidden = true; });
+    ["preview", "download", "del", "github", "rename", "duplicate", "share"].forEach(function (id) { $(id).hidden = true; });
   }
   function openProject(id) {
     return api("/genie/projects/" + encodeURIComponent(id)).then(function (j) {
       S.project = j.project; S.files = j.files || []; S.path = ""; S.saved = "";
       $("start").hidden = true; $("work").hidden = false;
-      ["preview", "download", "del", "github", "rename", "duplicate"].forEach(function (x) { $(x).hidden = false; });
+      ["preview", "download", "del", "github", "rename", "duplicate", "share"].forEach(function (x) { $(x).hidden = false; });
       $("msgs").innerHTML = ""; (S.log[id] || []).forEach(function (m) { draw(m); }); renderTree(); clearEditor();
       api("/genie/projects/" + encodeURIComponent(id) + "/chat").then(function (c) {      // the saved conversation
         if (!S.project || S.project.id !== id || !c.messages.length) return;
@@ -892,6 +902,23 @@
   document.addEventListener("keydown", function (e) {
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "f" && S.project && !$("work").hidden) { e.preventDefault(); searchProject(); }
   });
+  // ---- share the project's website (and take the link back)
+  $("share").onclick = function () { $("share-link").value = S.project.preview_url; $("share-result").textContent = ""; $("sharedlg").showModal(); };
+  $("share-close").onclick = function () { $("sharedlg").close(); };
+  $("share-open").onclick = function () { openOutside($("share-link").value); };
+  $("share-copy").onclick = function () {
+    var done = function () { $("share-result").textContent = "Copied."; };
+    $("share-link").select();
+    if (navigator.clipboard) navigator.clipboard.writeText($("share-link").value).then(done, function () { try { document.execCommand("copy"); done(); } catch (e) {} });
+    else { try { document.execCommand("copy"); done(); } catch (e) {} }
+  };
+  $("share-stop").onclick = function () {
+    if (!confirm("Stop sharing? Every link you've shared stops working, and the project gets a new private link.")) return;
+    api("/genie/projects/" + encodeURIComponent(S.project.id) + "/preview/reset", { body: {} }).then(function (j) {
+      S.project.preview_url = j.project.preview_url; $("share-link").value = j.project.preview_url;
+      $("share-result").textContent = "Done: the old links no longer work. This is the new private link.";
+    }).catch(function (e) { $("share-result").textContent = e.message; });
+  };
   window.addEventListener("beforeunload", function (e) { if (dirty()) { e.preventDefault(); e.returnValue = ""; } });
   loadProjects().catch(function () {});
 })();

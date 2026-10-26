@@ -348,3 +348,14 @@ def test_rename_and_move_files(srv):
     assert mv("images/logo.png", "logo.txt").status_code == 422 and mv("index.html", "index.png").status_code == 422
     eve = {"Authorization": "Bearer " + b._token_response("eve@example.com", "Eve")["token"]}
     assert mv("index.html", "home.html", eve).status_code == 404
+
+
+def test_stop_sharing_changes_the_link(srv):
+    b, c, h = srv
+    pid = build(c, h)["project"]["id"]
+    old = c.get(f"/genie/projects/{pid}", headers=h).json()["project"]["preview_url"].replace("http://testserver", "")
+    assert c.get(old).status_code == 200
+    eve = {"Authorization": "Bearer " + b._token_response("eve@example.com", "Eve")["token"]}
+    assert c.post(f"/genie/projects/{pid}/preview/reset", headers=eve).status_code == 404
+    new = c.post(f"/genie/projects/{pid}/preview/reset", headers=h).json()["project"]["preview_url"].replace("http://testserver", "")
+    assert new != old and c.get(old).status_code == 404 and c.get(new).status_code == 200      # old links stop working

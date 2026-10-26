@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.47 (October 2026)
+
+- Gink Genie: Share a project's website with a link, and Stop sharing to make every old link stop
+  working
+
 ## 0.1.46 (October 2026)
 
 - Fixed "Hey Gink": the Mac app never asked for the microphone (a settings name Briefcase ignores),

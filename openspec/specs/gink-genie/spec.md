@@ -158,3 +158,10 @@ The editor SHALL show line numbers that scroll with the code and update while ty
 #### Scenario: Adding a line
 - **WHEN** the person presses Enter at the end of a 30-line file
 - **THEN** the numbers go to 31 and the position reads "Ln 31, Col 1"
+
+### Requirement: Share and stop sharing
+The Share window SHALL show the project's website link with Copy and Open, explaining that anyone with the link can view the website but not the code, conversation or anything editable; Stop sharing SHALL give the project a new private address so every earlier link stops working.
+
+#### Scenario: Taking a link back
+- **WHEN** the person presses Stop sharing
+- **THEN** the old link answers "not found" and a new private link is shown

@@ -5284,6 +5284,15 @@ def genie_duplicate(pid: str, request: Request):
     return {"project": _genie_public(request, _genie_project(email, new)), "files": _genie_summary(new)}
 
 
+@app.post("/genie/projects/{pid}/preview/reset")
+def genie_preview_reset(pid: str, request: Request):
+    """Stop sharing: a new secret preview address, so every old link stops working."""
+    email = _email_from_auth(request)
+    _genie_project(email, pid)
+    _genie_db(lambda con: con.execute("UPDATE genie_projects SET preview_key=? WHERE id=?", (secrets.token_urlsafe(16), pid)))
+    return {"project": _genie_public(request, _genie_project(email, pid))}
+
+
 @app.delete("/genie/projects/{pid}")
 def genie_delete(pid: str, request: Request):
     email = _email_from_auth(request)
