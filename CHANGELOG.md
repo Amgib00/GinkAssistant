@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.31 (October 2026)
+
+- Prompt library: type / at the start of a message to pick a prompt (Summarize, Fix grammar,
+  Translate, Explain simply, Write an email...). Save your own in Settings > Personalization
+
 ## 0.1.30 (October 2026)
 
 - Gink Genie: the lamp now faces right, and the whole genie (with its smoky tail) rises from the

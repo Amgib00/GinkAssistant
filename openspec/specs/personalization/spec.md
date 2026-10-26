@@ -15,3 +15,10 @@ Settings > Personalization SHALL offer a base style (default, professional, frie
 #### Scenario: New settings show their real value
 - **WHEN** a person who never changed these settings opens the panel
 - **THEN** every choice shows Default
+
+### Requirement: Prompt library
+Typing "/" at the start of a message SHALL open a menu of built-in prompts and the person's own (theirs first), filtered by what follows the "/", chosen with the arrow keys and Enter or Tab (which never sends the message) or a click, and closed with Escape; Settings > Personalization > Prompt library SHALL let them add (up to 50, 2000 characters each, no duplicates) and delete their own prompts.
+
+#### Scenario: Picking a prompt
+- **WHEN** the person types "/tra" and presses Enter
+- **THEN** the message box contains "Translate this into French:" ready to complete, and nothing is sent

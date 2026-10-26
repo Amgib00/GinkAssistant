@@ -255,6 +255,7 @@
       .map(function (s) { return { id: s.id, title: titleOf(s), current: s.id === W.current, pinned: !!s.pinned }; });
     setSessions(list);
   }
+  setTimeout(function () { setPrompts(myPrompts()); }, 0);         // the "/" menu knows your prompts
   function newChat() {
     leaveTemporary();
     W.current = null; clearFeed();
@@ -617,8 +618,11 @@
   function pushSettings(lists, extra) {
     setSettingsState({ values: Object.assign({}, W.prefs, { model: W.model }),
                        info: Object.assign({ name: W.name, email: W.email, version: "web", plan: W.plan || "free", voices: [], models: W.models, web: true }, extra || {}),
-                       lists: lists || {} });
+                       lists: Object.assign({ prompts: myPrompts() }, lists || {}) });
   }
+  // the prompt library ("/" menu), kept in this browser
+  function myPrompts() { return load("gink_prompts", []); }
+  function savePrompts(list) { save("gink_prompts", list); setPrompts(list); }
   // signed-in devices (Settings > Account)
   function activeText(d) {
     if (d.current) return "This device";
@@ -793,6 +797,16 @@
         return fetch("/account/passkeys/" + encodeURIComponent(v.value), { method: "DELETE", headers: { Authorization: "Bearer " + W.token } })
           .then(function () { settingsToast("Passkey removed."); loadDevices(); });
       }
+      if (name === "add_prompt") {
+        var text = String(v.value || "").trim(), list = myPrompts();
+        var problem = !text ? "Write the prompt first." : text.length > 2000 ? "A prompt can be up to 2000 characters."
+                    : list.some(function (x) { return x.text === text; }) ? "You already have this prompt."
+                    : list.length >= 50 ? "You can keep up to 50 prompts. Delete one first." : "";
+        if (problem) return settingsToast(problem, "error");
+        list.push({ id: uid().slice(0, 10), text: text }); savePrompts(list);
+        settingsToast("Added. Type / in a message to use it."); return pushSettings();
+      }
+      if (name === "delete_prompt") { savePrompts(myPrompts().filter(function (x) { return x.id !== v.value; })); return pushSettings(); }
       if (name === "delete_shared" && v.value) {
         return fetch("/shared/" + encodeURIComponent(v.value), { method: "DELETE", headers: { Authorization: "Bearer " + W.token } })
           .then(function () { settingsToast("Link deleted: it no longer works."); loadLockdown(); });

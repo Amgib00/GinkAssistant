@@ -241,6 +241,8 @@ class SettingsController:
             sessions = self.brain.history.get_all_sessions()
             extra_lists["archived"] = [{"id": sid, "title": m["title"] or _first_words(sessions.get(sid, {}))}
                                        for sid, m in meta.items() if m["archived"]]
+        if panel == "personalization" and getattr(self.app, "prompts", None) is not None:
+            extra_lists["prompts"] = self.app.prompts.all()
         if token and panel == "privacy":                      # shared links
             try:
                 extra_lists["shared"] = await asyncio.wait_for(api.shared_links(token), timeout=8)
@@ -510,6 +512,20 @@ class SettingsController:
             await ApiClient(self.app.state.base_url).remove_passkey(token, str(pid))
             await self.web.settings_toast("Passkey removed.")
             await self.refresh("account")
+
+    async def _a_add_prompt(self, text):
+        try:
+            self.app.prompts.add(text)
+        except ValueError as exc:
+            return await self.web.settings_toast(str(exc), "error")
+        await self.app.push_prompts()
+        await self.web.settings_toast("Added. Type / in a message to use it.")
+        await self.refresh("personalization")
+
+    async def _a_delete_prompt(self, pid):
+        self.app.prompts.delete(str(pid or ""))
+        await self.app.push_prompts()
+        await self.refresh("personalization")
 
     async def _a_delete_shared(self, sid):
         token = getattr(self.app, "session_token", None)

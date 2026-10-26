@@ -618,6 +618,68 @@ JS = r"""
     d.onclick = function (e) { if (e.target === d) d.remove(); };
     document.body.appendChild(d); input.select();
   };
+  // ---- the "/" prompt menu: built-in prompts + the person's own (Settings > Personalization > Prompt library)
+  var SLASH_BUILTIN = [
+    ['Summarize', 'Summarize this in a few short points:\n\n'],
+    ['Fix grammar', 'Fix the grammar and spelling, keeping my meaning and tone:\n\n'],
+    ['Translate to French', 'Translate this into French:\n\n'],
+    ['Translate to English', 'Translate this into English:\n\n'],
+    ['Explain simply', 'Explain this simply, as if I were 12:\n\n'],
+    ['Write an email', 'Write a short, polite email that says:\n\n'],
+    ['Help me reply', 'Help me reply to this message:\n\n'],
+    ['Give me ideas', 'Give me 10 ideas for:\n\n'],
+    ['Quiz me', 'Quiz me with 5 questions about:\n\n']
+  ];
+  var MY_PROMPTS = [];
+  window.setPrompts = function (list) { MY_PROMPTS = (list || []).map(function (p) { return [String(p.text).split('\n')[0].slice(0, 48), String(p.text) + (/\s$/.test(p.text) ? '' : ' ')]; }); };
+  var slash = { el: null, items: [], idx: 0 };
+  function slashBox() {
+    if (slash.el) return slash.el;
+    var m = document.createElement('div'); m.id = 'slash-menu'; m.setAttribute('role', 'listbox'); m.setAttribute('aria-label', 'Prompts');
+    m.style.cssText = 'position:absolute;left:0;right:0;bottom:calc(100% + 8px);max-height:300px;overflow:auto;display:none;z-index:40;' +
+      'background:var(--surface);color:var(--text-main);border:1px solid var(--border);border-radius:14px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.15)';
+    var host = document.getElementById('composer'); host.style.position = host.style.position || 'relative'; host.appendChild(m);
+    slash.el = m; return m;
+  }
+  function slashClose() { if (slash.el) slash.el.style.display = 'none'; slash.items = []; }
+  function slashOpen(query) {
+    var q = query.toLowerCase(), m = slashBox();
+    var mine = MY_PROMPTS.map(function (p) { return p.concat(['Yours']); });
+    slash.items = mine.concat(SLASH_BUILTIN).filter(function (p) { return !q || p[0].toLowerCase().indexOf(q) >= 0 || p[1].toLowerCase().indexOf(q) >= 0; }).slice(0, 12);
+    if (!slash.items.length) return slashClose();
+    slash.idx = Math.min(slash.idx, slash.items.length - 1);
+    m.innerHTML = '';
+    slash.items.forEach(function (p, i) {
+      var row = document.createElement('div'); row.setAttribute('role', 'option'); row.setAttribute('aria-selected', i === slash.idx ? 'true' : 'false');
+      row.style.cssText = 'padding:7px 10px;border-radius:9px;cursor:pointer;display:flex;gap:10px;align-items:baseline;' + (i === slash.idx ? 'background:var(--elevated)' : '');
+      var t = document.createElement('b'); t.textContent = p[0]; t.style.cssText = 'font-weight:650;white-space:nowrap';
+      var d = document.createElement('span'); d.textContent = p[2] ? 'your prompt' : p[1].replace(/\s+/g, ' ').trim().slice(0, 60);
+      d.style.cssText = 'color:var(--text-muted);font-size:.9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+      row.appendChild(t); row.appendChild(d);
+      row.addEventListener('mousedown', function (e) { e.preventDefault(); slashPick(i); });
+      m.appendChild(row);
+    });
+    m.style.display = 'block';
+  }
+  function slashPick(i) {
+    var p = slash.items[i], box = document.getElementById('cin'); if (!p || !box) return;
+    box.value = p[1]; slashClose(); box.focus(); box.setSelectionRange(box.value.length, box.value.length);
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  document.addEventListener('input', function (e) {
+    if (!e.target || e.target.id !== 'cin') return;
+    var v = e.target.value, mt = /^\/([^\n]{0,40})$/.exec(v);
+    if (mt) { slash.idx = 0; slashOpen(mt[1]); } else slashClose();
+  });
+  document.addEventListener('keydown', function (e) {                // before the normal Enter-to-send
+    if (!slash.items.length || !e.target || e.target.id !== 'cin') return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault(); slash.idx = (slash.idx + (e.key === 'ArrowDown' ? 1 : -1) + slash.items.length) % slash.items.length;
+      slashOpen(/^\/(.*)$/.exec(e.target.value)[1]);
+    } else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); e.stopImmediatePropagation(); slashPick(slash.idx); }
+    else if (e.key === 'Escape') { e.preventDefault(); slashClose(); }
+  }, true);
+  document.addEventListener('click', function (e) { if (slash.el && !slash.el.contains(e.target) && e.target.id !== 'cin') slashClose(); });
 """
 
 

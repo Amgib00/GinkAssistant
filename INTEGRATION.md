@@ -1243,3 +1243,11 @@ New services/live_info.py (all free, no API keys):
   hair), trimmed to 232x300, cut edges faded, colourless background haze removed
   (icons/genie-source/genie-cutout.png). On the composer: 116x150, tail resting on the box edge,
   drop-shadow glow, leans from its tail (transform-origin 50% 100%).
+
+## 0.1.31: prompt library ("/" menu)
+- Page (chat_extras JS): SLASH_BUILTIN (9) + setPrompts(list); "/query" opens #slash-menu in #composer,
+  arrows / Enter / Tab (capture phase, stopImmediatePropagation so Enter never sends) / Escape / click.
+- Apps: services/prompts.py PromptStore (<data>/prompts.json, atomic save, 50 x 2000 chars, no dupes,
+  survives a damaged file); main_screen push_prompts (with push_models at startup, app.push_prompts);
+  Settings > Personalization > Prompt library (add_prompt / delete_prompt). Web: localStorage
+  gink_prompts, pushSettings always includes prompts. Prompts are per device (not synced yet).

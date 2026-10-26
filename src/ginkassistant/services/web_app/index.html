@@ -2096,6 +2096,13 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
           empty: 'Nothing yet. Say \u201cremember that my exams start on 12 November\u201d in the chat.'}].concat(
           (L.memories || []).length ? [{type: 'button', label: 'Forget everything', action: 'forget_all', text: 'Forget all', style: 'danger-ghost'}] : [])}]},
       {id: 'personalization', group: 'Settings', title: 'Personalization', sections: [
+        {title: 'Prompt library', rows: [
+          {type: 'note', text: 'Type / at the start of a message to pick a prompt. Gink includes some; add your own here.'},
+          {type: 'input', key: 'new_prompt', label: 'New prompt', placeholder: 'e.g. Reply to this customer politely and briefly:', action: 'add_prompt', text: 'Add'},
+          {type: 'list', items: (L.prompts || []).map(function (x) {
+            return {t: x.text.split('\n')[0].slice(0, 80), m: x.text.length > 80 ? x.text.length + ' characters' : '',
+                    button: {text: 'Delete', action: 'delete_prompt', value: x.id}}; }),
+           empty: 'No prompts of your own yet.'}]},
         {title: 'Style and tone', rows: [
           {type: 'note', text: 'Choose how Gink writes to you. This doesn\u2019t change what Gink can do.'},
           {type: 'select', key: 'style_base', label: 'Base style and tone', options: [['default', 'Default'], ['professional', 'Professional'], ['friendly', 'Friendly'], ['concise', 'Concise'], ['candid', 'Candid'], ['playful', 'Playful']]},
@@ -2860,6 +2867,68 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     d.onclick = function (e) { if (e.target === d) d.remove(); };
     document.body.appendChild(d); input.select();
   };
+  // ---- the "/" prompt menu: built-in prompts + the person's own (Settings > Personalization > Prompt library)
+  var SLASH_BUILTIN = [
+    ['Summarize', 'Summarize this in a few short points:\n\n'],
+    ['Fix grammar', 'Fix the grammar and spelling, keeping my meaning and tone:\n\n'],
+    ['Translate to French', 'Translate this into French:\n\n'],
+    ['Translate to English', 'Translate this into English:\n\n'],
+    ['Explain simply', 'Explain this simply, as if I were 12:\n\n'],
+    ['Write an email', 'Write a short, polite email that says:\n\n'],
+    ['Help me reply', 'Help me reply to this message:\n\n'],
+    ['Give me ideas', 'Give me 10 ideas for:\n\n'],
+    ['Quiz me', 'Quiz me with 5 questions about:\n\n']
+  ];
+  var MY_PROMPTS = [];
+  window.setPrompts = function (list) { MY_PROMPTS = (list || []).map(function (p) { return [String(p.text).split('\n')[0].slice(0, 48), String(p.text) + (/\s$/.test(p.text) ? '' : ' ')]; }); };
+  var slash = { el: null, items: [], idx: 0 };
+  function slashBox() {
+    if (slash.el) return slash.el;
+    var m = document.createElement('div'); m.id = 'slash-menu'; m.setAttribute('role', 'listbox'); m.setAttribute('aria-label', 'Prompts');
+    m.style.cssText = 'position:absolute;left:0;right:0;bottom:calc(100% + 8px);max-height:300px;overflow:auto;display:none;z-index:40;' +
+      'background:var(--surface);color:var(--text-main);border:1px solid var(--border);border-radius:14px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.15)';
+    var host = document.getElementById('composer'); host.style.position = host.style.position || 'relative'; host.appendChild(m);
+    slash.el = m; return m;
+  }
+  function slashClose() { if (slash.el) slash.el.style.display = 'none'; slash.items = []; }
+  function slashOpen(query) {
+    var q = query.toLowerCase(), m = slashBox();
+    var mine = MY_PROMPTS.map(function (p) { return p.concat(['Yours']); });
+    slash.items = mine.concat(SLASH_BUILTIN).filter(function (p) { return !q || p[0].toLowerCase().indexOf(q) >= 0 || p[1].toLowerCase().indexOf(q) >= 0; }).slice(0, 12);
+    if (!slash.items.length) return slashClose();
+    slash.idx = Math.min(slash.idx, slash.items.length - 1);
+    m.innerHTML = '';
+    slash.items.forEach(function (p, i) {
+      var row = document.createElement('div'); row.setAttribute('role', 'option'); row.setAttribute('aria-selected', i === slash.idx ? 'true' : 'false');
+      row.style.cssText = 'padding:7px 10px;border-radius:9px;cursor:pointer;display:flex;gap:10px;align-items:baseline;' + (i === slash.idx ? 'background:var(--elevated)' : '');
+      var t = document.createElement('b'); t.textContent = p[0]; t.style.cssText = 'font-weight:650;white-space:nowrap';
+      var d = document.createElement('span'); d.textContent = p[2] ? 'your prompt' : p[1].replace(/\s+/g, ' ').trim().slice(0, 60);
+      d.style.cssText = 'color:var(--text-muted);font-size:.9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+      row.appendChild(t); row.appendChild(d);
+      row.addEventListener('mousedown', function (e) { e.preventDefault(); slashPick(i); });
+      m.appendChild(row);
+    });
+    m.style.display = 'block';
+  }
+  function slashPick(i) {
+    var p = slash.items[i], box = document.getElementById('cin'); if (!p || !box) return;
+    box.value = p[1]; slashClose(); box.focus(); box.setSelectionRange(box.value.length, box.value.length);
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  document.addEventListener('input', function (e) {
+    if (!e.target || e.target.id !== 'cin') return;
+    var v = e.target.value, mt = /^\/([^\n]{0,40})$/.exec(v);
+    if (mt) { slash.idx = 0; slashOpen(mt[1]); } else slashClose();
+  });
+  document.addEventListener('keydown', function (e) {                // before the normal Enter-to-send
+    if (!slash.items.length || !e.target || e.target.id !== 'cin') return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault(); slash.idx = (slash.idx + (e.key === 'ArrowDown' ? 1 : -1) + slash.items.length) % slash.items.length;
+      slashOpen(/^\/(.*)$/.exec(e.target.value)[1]);
+    } else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); e.stopImmediatePropagation(); slashPick(slash.idx); }
+    else if (e.key === 'Escape') { e.preventDefault(); slashClose(); }
+  }, true);
+  document.addEventListener('click', function (e) { if (slash.el && !slash.el.contains(e.target) && e.target.id !== 'cin') slashClose(); });
 
   // ======================= voice conversation =======================
   // keyboard preferences (Settings -> Keyboard); Python sends them with setKeyboardPrefs()
@@ -3368,6 +3437,7 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
       .map(function (s) { return { id: s.id, title: titleOf(s), current: s.id === W.current, pinned: !!s.pinned }; });
     setSessions(list);
   }
+  setTimeout(function () { setPrompts(myPrompts()); }, 0);         // the "/" menu knows your prompts
   function newChat() {
     leaveTemporary();
     W.current = null; clearFeed();
@@ -3730,8 +3800,11 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
   function pushSettings(lists, extra) {
     setSettingsState({ values: Object.assign({}, W.prefs, { model: W.model }),
                        info: Object.assign({ name: W.name, email: W.email, version: "web", plan: W.plan || "free", voices: [], models: W.models, web: true }, extra || {}),
-                       lists: lists || {} });
+                       lists: Object.assign({ prompts: myPrompts() }, lists || {}) });
   }
+  // the prompt library ("/" menu), kept in this browser
+  function myPrompts() { return load("gink_prompts", []); }
+  function savePrompts(list) { save("gink_prompts", list); setPrompts(list); }
   // signed-in devices (Settings > Account)
   function activeText(d) {
     if (d.current) return "This device";
@@ -3906,6 +3979,16 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
         return fetch("/account/passkeys/" + encodeURIComponent(v.value), { method: "DELETE", headers: { Authorization: "Bearer " + W.token } })
           .then(function () { settingsToast("Passkey removed."); loadDevices(); });
       }
+      if (name === "add_prompt") {
+        var text = String(v.value || "").trim(), list = myPrompts();
+        var problem = !text ? "Write the prompt first." : text.length > 2000 ? "A prompt can be up to 2000 characters."
+                    : list.some(function (x) { return x.text === text; }) ? "You already have this prompt."
+                    : list.length >= 50 ? "You can keep up to 50 prompts. Delete one first." : "";
+        if (problem) return settingsToast(problem, "error");
+        list.push({ id: uid().slice(0, 10), text: text }); savePrompts(list);
+        settingsToast("Added. Type / in a message to use it."); return pushSettings();
+      }
+      if (name === "delete_prompt") { savePrompts(myPrompts().filter(function (x) { return x.id !== v.value; })); return pushSettings(); }
       if (name === "delete_shared" && v.value) {
         return fetch("/shared/" + encodeURIComponent(v.value), { method: "DELETE", headers: { Authorization: "Bearer " + W.token } })
           .then(function () { settingsToast("Link deleted: it no longer works."); loadLockdown(); });

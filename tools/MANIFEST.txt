@@ -196,6 +196,7 @@ src/ginkassistant/services/personality.py
 src/ginkassistant/services/platform_utils.py
 src/ginkassistant/services/prefs.py
 src/ginkassistant/services/profile.py
+src/ginkassistant/services/prompts.py
 src/ginkassistant/services/server_config.py
 src/ginkassistant/services/shazam_engine.py
 src/ginkassistant/services/skills.py
@@ -282,6 +283,7 @@ tests/test_natural_voice.py
 tests/test_offline_song_engine.py
 tests/test_owner_dashboard.py
 tests/test_phone_signin.py
+tests/test_prompts.py
 tests/test_release_tooling.py
 tests/test_screens_and_server.py
 tests/test_security_lockdown_style.py

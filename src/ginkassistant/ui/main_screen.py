@@ -874,7 +874,18 @@ def build_main_screen(app: toga.App, email: str):
         name, tier = MODEL_LABELS.get(model_id, (model_id.split("/")[-1], ""))
         return {"id": model_id, "name": name, "tier": tier}
 
+    def prompt_store():
+        from ..services.prompts import PromptStore
+        if getattr(app, "prompts", None) is None:
+            app.prompts = PromptStore(os.path.join(str(app.paths.data), "prompts.json"))
+        return app.prompts
+
+    async def push_prompts():
+        await web_chat.set_prompts(prompt_store().all())
+    app.push_prompts = push_prompts                        # Settings calls it after changes
+
     async def push_models():
+        await push_prompts()
         ids = _initial_model_choices()
         if brain.preferred_model not in ids:
             ids.insert(0, brain.preferred_model)

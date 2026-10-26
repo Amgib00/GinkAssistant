@@ -379,6 +379,13 @@ SETTINGS_JS = r"""
           empty: 'Nothing yet. Say \u201cremember that my exams start on 12 November\u201d in the chat.'}].concat(
           (L.memories || []).length ? [{type: 'button', label: 'Forget everything', action: 'forget_all', text: 'Forget all', style: 'danger-ghost'}] : [])}]},
       {id: 'personalization', group: 'Settings', title: 'Personalization', sections: [
+        {title: 'Prompt library', rows: [
+          {type: 'note', text: 'Type / at the start of a message to pick a prompt. Gink includes some; add your own here.'},
+          {type: 'input', key: 'new_prompt', label: 'New prompt', placeholder: 'e.g. Reply to this customer politely and briefly:', action: 'add_prompt', text: 'Add'},
+          {type: 'list', items: (L.prompts || []).map(function (x) {
+            return {t: x.text.split('\n')[0].slice(0, 80), m: x.text.length > 80 ? x.text.length + ' characters' : '',
+                    button: {text: 'Delete', action: 'delete_prompt', value: x.id}}; }),
+           empty: 'No prompts of your own yet.'}]},
         {title: 'Style and tone', rows: [
           {type: 'note', text: 'Choose how Gink writes to you. This doesn\u2019t change what Gink can do.'},
           {type: 'select', key: 'style_base', label: 'Base style and tone', options: [['default', 'Default'], ['professional', 'Professional'], ['friendly', 'Friendly'], ['concise', 'Concise'], ['candid', 'Candid'], ['playful', 'Playful']]},
