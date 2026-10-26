@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.49 (October 2026)
+
+- After an update, Gink shows what's new, once, so you don't miss improvements
+
 ## 0.1.48 (October 2026)
 
 - Gink Genie works properly on phones: Files, Code and Genie tabs, and all project actions in the

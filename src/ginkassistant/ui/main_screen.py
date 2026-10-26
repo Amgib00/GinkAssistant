@@ -966,8 +966,27 @@ def build_main_screen(app: toga.App, email: str):
             ids.insert(0, brain.preferred_model)
         await web_chat.set_models([_model_entry(m) for m in ids], brain.preferred_model)
 
+    async def maybe_whats_new():
+        """Once after an update: the changelog points since the version this device last ran."""
+        from ..services import whats_new
+        current = str(getattr(app, "version", "") or "")
+        if not current or pref_sync.get("whats_new_done"):
+            return
+        pref_sync["whats_new_done"] = True
+        existed = prefs._path(app).exists()
+        last = prefs.load(app).get("last_version_seen", "")
+        if last == current:
+            return
+        prefs.save(app, last_version_seen=current)
+        if not last and not existed:
+            return                                          # a fresh install: nothing was missed
+        items = whats_new.since(whats_new.changelog_text(), last or "", current, limit=3 if last else 1)
+        if items:
+            await web_chat.show_whats_new(current, [[v, p] for v, p in items])
+
     async def push_models():
         await push_prompts()
+        asyncio.ensure_future(maybe_whats_new())
         asyncio.create_task(sync_prompts())
         if pref_sync["loop"] is None:
             pref_sync["loop"] = asyncio.ensure_future(_pull_prefs_forever())

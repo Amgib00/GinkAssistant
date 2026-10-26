@@ -155,6 +155,7 @@ requirements.txt
 src/ginkassistant/__init__.py
 src/ginkassistant/__main__.py
 src/ginkassistant/app.py
+src/ginkassistant/resources/CHANGELOG.md
 src/ginkassistant/resources/ginkassistant.png
 src/ginkassistant/services/__init__.py
 src/ginkassistant/services/actions/__init__.py
@@ -215,6 +216,7 @@ src/ginkassistant/services/web_app/device.html
 src/ginkassistant/services/web_app/genie.html
 src/ginkassistant/services/web_app/index.html
 src/ginkassistant/services/web_app/runner.html
+src/ginkassistant/services/whats_new.py
 src/ginkassistant/ui/__init__.py
 src/ginkassistant/ui/agent_ui.py
 src/ginkassistant/ui/branding.py
@@ -305,6 +307,7 @@ tests/test_wake_word.py
 tests/test_web_app.py
 tests/test_web_search.py
 tests/test_websites.py
+tests/test_whats_new.py
 tools/MANIFEST.txt
 tools/build_web_app.py
 tools/build_website.py

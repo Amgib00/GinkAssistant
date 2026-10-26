@@ -1532,6 +1532,9 @@ class WebChatFeed:
     async def open_settings(self, panel: str = "general"):
         await self._js(f"openSettings({json.dumps(panel)})")
 
+    async def show_whats_new(self, version: str, sections: list):
+        await self._js(f"showWhatsNew({json.dumps(version)}, {json.dumps(sections)})")
+
     async def set_prompts(self, prompts: list):
         await self._js(f"setPrompts({json.dumps(prompts)})")
 

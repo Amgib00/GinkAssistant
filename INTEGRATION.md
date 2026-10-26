@@ -1360,3 +1360,10 @@ New services/live_info.py (all free, no API keys):
   #more-menu, #mtabs Files/Code/Genie (body.m-files/m-code/m-chat; Genie first, openFile -> Code,
   hidden on the start screen via body.m-start), compact editor bar. openProject loads the first file
   quietly. Checked: 390 px wide, 49 px header; computer layout unchanged.
+
+## 0.1.49: What's new after an update
+- src/ginkassistant/resources/CHANGELOG.md = CHANGELOG.md (test; COPY IT WITH EVERY VERSION, and the
+  newest section must equal pyproject's version). services/whats_new.py: sections()/since() (numeric
+  version order). main_screen.maybe_whats_new() at startup: prefs last_version_seen (device-only);
+  fresh install -> nothing; existing users without a record -> current version once. Page
+  showWhatsNew(version, [[v, points]...]).

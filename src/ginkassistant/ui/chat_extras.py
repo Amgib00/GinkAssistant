@@ -680,6 +680,30 @@ JS = r"""
     else if (e.key === 'Escape') { e.preventDefault(); slashClose(); }
   }, true);
   document.addEventListener('click', function (e) { if (slash.el && !slash.el.contains(e.target) && e.target.id !== 'cin') slashClose(); });
+  // ---- "What's new" after an update (apps)
+  window.showWhatsNew = function (version, sections) {
+    var old = document.getElementById('whatsnew'); if (old) old.remove();
+    var d = document.createElement('div'); d.id = 'whatsnew'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', "What's new");
+    d.style.cssText = 'position:fixed;inset:0;z-index:10000;display:grid;place-items:center;background:rgba(0,0,0,.35)';
+    var box = document.createElement('div');
+    box.style.cssText = 'width:min(520px,92vw);max-height:80vh;overflow:auto;background:var(--surface);color:var(--text-main);border-radius:16px;' +
+      'padding:22px;box-shadow:0 12px 40px rgba(0,0,0,.25);font:14.5px/1.55 system-ui,sans-serif';
+    var h = document.createElement('h3'); h.textContent = 'What\u2019s new in Gink ' + version; h.style.margin = '0 0 10px';
+    box.appendChild(h);
+    (sections || []).forEach(function (sec) {
+      if (sections.length > 1) { var v = document.createElement('div'); v.textContent = 'Version ' + sec[0];
+        v.style.cssText = 'font-weight:700;font-size:13px;color:var(--text-muted);margin:12px 0 4px'; box.appendChild(v); }
+      var ul = document.createElement('ul'); ul.style.cssText = 'margin:0;padding-left:20px';
+      sec[1].forEach(function (pt) { var li = document.createElement('li'); li.textContent = pt; li.style.margin = '4px 0'; ul.appendChild(li); });
+      box.appendChild(ul);
+    });
+    var row = document.createElement('div'); row.style.cssText = 'display:flex;justify-content:flex-end;margin-top:16px';
+    var ok = document.createElement('button'); ok.textContent = 'Got it';
+    ok.style.cssText = 'font:inherit;font-weight:650;border:0;border-radius:999px;padding:8px 18px;cursor:pointer;background:var(--text-main);color:var(--surface)';
+    ok.onclick = function () { d.remove(); }; row.appendChild(ok); box.appendChild(row);
+    d.appendChild(box); d.onclick = function (e) { if (e.target === d) d.remove(); };
+    document.body.appendChild(d); ok.focus();
+  };
 """
 
 
