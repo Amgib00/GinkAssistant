@@ -26,6 +26,7 @@ deploy/Dockerfile
 deploy/IOS_AND_WEB.md
 deploy/README.md
 deploy/requirements-server.txt
+icons/genie-source/genie-cutout.png
 icons/genie-source/genie.png
 icons/genie-source/lamp.png
 icons/ginkassistant-1024.png

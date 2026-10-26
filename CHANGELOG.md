@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.30 (October 2026)
+
+- Gink Genie: the lamp now faces right, and the whole genie (with its smoky tail) rises from the
+  "Describe a task" box instead of a round picture
+
 ## 0.1.29 (October 2026)
 
 - Temporary chats: press Temporary on the new-chat screen for a chat that isn't saved, isn't

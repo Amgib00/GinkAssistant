@@ -1235,3 +1235,11 @@ New services/live_info.py (all free, no API keys):
 - Caught in the browser: var(--text) doesn't exist here (it's --text-main) -> white-on-white notice;
   the share window had the same names behind light-only fallbacks. New test: every var(--x) used in
   the UI is defined.
+
+## 0.1.30: lamp faces right; the full genie
+- Lamp paths wrapped in <g transform="matrix(-1 0 0 1 24 0)"> (sidebar x2, Genie header, icon tool);
+  app icons regenerated.
+- Genie cut out of the owner's picture with rembg (u2net kept the hair and smoke; isnet lost the
+  hair), trimmed to 232x300, cut edges faded, colourless background haze removed
+  (icons/genie-source/genie-cutout.png). On the composer: 116x150, tail resting on the box edge,
+  drop-shadow glow, leans from its tail (transform-origin 50% 100%).
