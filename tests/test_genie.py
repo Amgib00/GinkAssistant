@@ -331,3 +331,20 @@ def test_rename_and_duplicate(srv):
     c.put(f"/genie/projects/{cid}/file", headers=h, json={"path": "index.html", "content": "changed"})
     assert c.get(f"/genie/projects/{pid}/file", headers=h, params={"path": "index.html"}).json()["content"] != "changed"   # original untouched
     assert copy["project"]["preview_url"] != c.get(f"/genie/projects/{pid}", headers=h).json()["project"]["preview_url"]
+
+
+def test_rename_and_move_files(srv):
+    b, c, h = srv
+    pid = build(c, h)["project"]["id"]                                              # index.html, styles.css, js/app.js
+    mv = lambda a, z, hh=h: c.patch(f"/genie/projects/{pid}/file", headers=hh, json={"path": a, "new_path": z})
+    r = mv("styles.css", "css/main.css")
+    assert r.status_code == 200 and r.json()["path"] == "css/main.css"
+    assert set(c.get(f"/genie/projects/{pid}/all", headers=h).json()["files"]) == {"index.html", "js/app.js", "css/main.css"}
+    assert c.get(f"/genie/projects/{pid}/file", headers=h, params={"path": "css/main.css"}).json()["content"] == "h1{color:green}"
+    assert mv("index.html", "js/app.js").status_code == 409                       # never overwrites
+    assert mv("nope.txt", "x.txt").status_code == 404 and mv("index.html", "../x").status_code == 422
+    c.put(f"/genie/projects/{pid}/file", headers=h, json={"path": "logo.png", "content_b64": base64.b64encode(_png()).decode()})
+    assert mv("logo.png", "images/logo.png").status_code == 200
+    assert mv("images/logo.png", "logo.txt").status_code == 422 and mv("index.html", "index.png").status_code == 422
+    eve = {"Authorization": "Bearer " + b._token_response("eve@example.com", "Eve")["token"]}
+    assert mv("index.html", "home.html", eve).status_code == 404

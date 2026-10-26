@@ -1323,3 +1323,8 @@ New services/live_info.py (all free, no API keys):
 ## 0.1.41: rename + duplicate Genie projects
 - PATCH /genie/projects/{pid} {name}; POST /genie/projects/{pid}/duplicate (files incl. pictures copied
   raw, new preview key, no chat, project limit applies). Header buttons; "1 file" plural fixed.
+
+## 0.1.42: rename/move files + Go to file
+- PATCH /genie/projects/{pid}/file {path, new_path}: 409 if the target exists, pictures keep an image
+  ending (and text files can't take one). genie.html: #renfile (saves unsaved edits first), Ctrl/Cmd+P
+  #goto box (letters-in-order match, arrows/Enter/Escape). Browser-tested.

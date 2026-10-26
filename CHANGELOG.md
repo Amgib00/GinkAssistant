@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.42 (October 2026)
+
+- Gink Genie: rename or move files (Rename next to Delete file), and press Ctrl+P (Cmd+P on Mac)
+  to jump to any file by typing part of its name
+
 ## 0.1.41 (October 2026)
 
 - Gink Genie: rename a project, or duplicate it to try an idea on a copy (the original stays as it is)

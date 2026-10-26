@@ -179,7 +179,7 @@
   <section class="editor">
     <div class="ebar"><span class="name" id="fname">Choose a file</span><span class="dirty" id="dirty" hidden>&bull;</span>
       <div class="grow"></div><button class="ghost" id="run" hidden>&#9654; Run</button><button class="ghost" id="tests" hidden>Run tests</button>
-      <button class="ghost" id="delfile" hidden>Delete file</button><button id="save" disabled>Save</button></div>
+      <button class="ghost" id="renfile" hidden>Rename</button><button class="ghost" id="delfile" hidden>Delete file</button><button id="save" disabled>Save</button></div>
     <div id="picview" hidden style="flex:1;display:grid;place-items:center;background:var(--code);overflow:auto;padding:20px">
       <img id="picimg" alt="" style="max-width:100%;max-height:100%;image-rendering:auto;box-shadow:0 2px 12px rgba(0,0,0,.12)"></div>
     <textarea class="code" id="code" spellcheck="false" placeholder="Pick a file on the left, or ask Genie to build something." disabled></textarea>
@@ -335,7 +335,7 @@
     else if (m.kind === "err") out(m.text, true);
     else if (m.kind === "done") stopRun(m.text);
   });
-  function clearEditor() { $("fname").textContent = "Choose a file"; $("code").value = ""; $("code").disabled = true; $("delfile").hidden = true; setDirty(); }
+  function clearEditor() { $("fname").textContent = "Choose a file"; $("code").value = ""; $("code").disabled = true; $("delfile").hidden = true; $("renfile").hidden = true; setDirty(); }
   function openFile(path) {
     if (dirty() && !confirm("You have unsaved changes in " + S.path + ". Leave without saving?")) return;
     loadFile(path);
@@ -343,7 +343,7 @@
   function showPicture(j) {
     S.path = j.path; S.saved = ""; $("code").value = ""; $("code").hidden = true; $("code").disabled = true;
     $("picview").hidden = false; $("picimg").src = "data:" + j.mime + ";base64," + j.content_b64; $("picimg").alt = j.path;
-    $("fname").textContent = j.path + " \u00b7 picture"; $("delfile").hidden = false; $("save").disabled = true; $("dirty").hidden = true;
+    $("fname").textContent = j.path + " \u00b7 picture"; $("delfile").hidden = false; $("renfile").hidden = false; $("save").disabled = true; $("dirty").hidden = true;
     $("run").hidden = true; renderTree();
   }
   function loadFile(path) {                                   // no unsaved-changes question (e.g. after Genie changed files)
@@ -351,7 +351,7 @@
     api("/genie/projects/" + encodeURIComponent(S.project.id) + "/file?path=" + encodeURIComponent(path)).then(function (j) {
       if (j.picture) return showPicture(j);
       S.path = j.path; S.saved = j.content; $("code").value = j.content; $("code").disabled = false;
-      $("fname").textContent = j.path; $("delfile").hidden = false; setDirty(); renderTree(); runButtons();
+      $("fname").textContent = j.path; $("delfile").hidden = false; $("renfile").hidden = false; setDirty(); renderTree(); runButtons();
     }).catch(function (e) { say(e.message, true); });
   }
   function saveFile() {
@@ -764,6 +764,51 @@
       return loadProjects(j.project.id).then(function () { say("This is a copy of the project, with a fresh conversation. The original is unchanged."); });
     }).catch(function (e) { say(e.message, true); });
   };
+  // rename or move the open file
+  $("renfile").onclick = function () {
+    if (!S.path) return;
+    var to = prompt("New name or path (for example pages/about.html):", S.path); if (to === null || to.trim() === S.path) return;
+    var from = S.path, base = "/genie/projects/" + encodeURIComponent(S.project.id) + "/file";
+    var save = dirty() ? api(base, { method: "PUT", body: { path: from, content: $("code").value } }) : Promise.resolve();
+    save.then(function () { return api(base, { method: "PATCH", body: { path: from, new_path: to.trim() } }); }).then(function (j) {
+      S.files = j.files; S.path = j.path; S.saved = $("code").value; setDirty();
+      $("fname").textContent = j.path + ($("picview").hidden ? "" : " \u00b7 picture"); renderTree();
+    }).catch(function (e) { say(e.message, true); });
+  };
+  // Go to file: Ctrl+P / Cmd+P
+  function goToFile() {
+    if (!S.project || $("work").hidden || $("goto")) return;
+    var box = el("div"); box.id = "goto";
+    box.style.cssText = "position:fixed;left:50%;top:70px;transform:translateX(-50%);width:min(520px,92vw);z-index:60;background:var(--panel);" +
+      "border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.25);padding:8px";
+    var input = el("input"); input.type = "text"; input.placeholder = "Go to file\u2026"; input.setAttribute("aria-label", "Go to file");
+    input.style.cssText = "width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--bg)";
+    var list = el("div"); list.style.cssText = "max-height:320px;overflow:auto;margin-top:6px"; var idx = 0, hits = [];
+    function draw() {
+      var q = input.value.toLowerCase().replace(/\s+/g, "");
+      hits = S.files.filter(function (f) { var p = f.path.toLowerCase(), i = 0;           // letters in order, like editors do
+        for (var k = 0; k < p.length && i < q.length; k++) if (p[k] === q[i]) i++; return i === q.length; }).slice(0, 30);
+      idx = Math.min(idx, Math.max(hits.length - 1, 0)); list.innerHTML = "";
+      if (!hits.length) list.appendChild(el("div", "note", "No file matches.")).style.padding = "8px";
+      hits.forEach(function (f, i) {
+        var b = el("button", "file" + (i === idx ? " on" : ""), (f.picture ? "\u25a3 " : "") + f.path);
+        b.onmousedown = function (e) { e.preventDefault(); pick(i); }; list.appendChild(b);
+      });
+    }
+    function close() { box.remove(); }
+    function pick(i) { var f = hits[i]; close(); if (f) openFile(f.path); }
+    input.oninput = function () { idx = 0; draw(); };
+    input.onkeydown = function (e) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); idx = (idx + (e.key === "ArrowDown" ? 1 : -1) + hits.length) % Math.max(hits.length, 1); draw(); }
+      else if (e.key === "Enter") { e.preventDefault(); pick(idx); }
+      else if (e.key === "Escape") { e.preventDefault(); close(); }
+    };
+    input.onblur = function () { setTimeout(close, 150); };
+    box.appendChild(input); box.appendChild(list); document.body.appendChild(box); draw(); input.focus();
+  }
+  document.addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "p" && S.project && !$("work").hidden) { e.preventDefault(); goToFile(); }
+  });
   window.addEventListener("beforeunload", function (e) { if (dirty()) { e.preventDefault(); e.returnValue = ""; } });
   loadProjects().catch(function () {});
 })();

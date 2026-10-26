@@ -5328,6 +5328,31 @@ def genie_file_put(pid: str, request: Request, data: dict = Body(...)):
     return {"path": path, "files": _genie_summary(pid)}
 
 
+@app.patch("/genie/projects/{pid}/file")
+def genie_file_move(pid: str, request: Request, data: dict = Body(...)):
+    """Rename or move a file (pictures too); never overwrites another file."""
+    email = _email_from_auth(request)
+    _genie_project(email, pid)
+    try:
+        old, new = _genie_path(data.get("path")), _genie_path(data.get("new_path"))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    files = _genie_files(pid)
+    if old not in files:
+        raise HTTPException(status_code=404, detail="That file wasn't found.")
+    if new == old:
+        return {"path": new, "files": _genie_summary(pid)}
+    if new in files:
+        raise HTTPException(status_code=409, detail=f"There's already a file called {new}.")
+    is_pic = files[old].startswith(GENIE_PIC)
+    if is_pic != (os.path.splitext(new)[1].lower() in GENIE_IMAGE_TYPES):
+        raise HTTPException(status_code=422, detail="Pictures keep a picture ending (.png, .jpg...), and other files can't take one.")
+    now = time.time()
+    _genie_db(lambda con: (con.execute("UPDATE genie_files SET path=?, updated=? WHERE project_id=? AND path=?", (new, now, pid, old)),
+                           con.execute("UPDATE genie_projects SET updated=? WHERE id=?", (now, pid))))
+    return {"path": new, "files": _genie_summary(pid)}
+
+
 @app.delete("/genie/projects/{pid}/file")
 def genie_file_delete(pid: str, request: Request, path: str = ""):
     email = _email_from_auth(request)

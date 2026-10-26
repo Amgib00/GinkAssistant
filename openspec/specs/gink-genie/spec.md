@@ -137,3 +137,10 @@ A project SHALL be renamable (1 to 60 characters) and duplicable: the copy, name
 #### Scenario: Trying an idea on a copy
 - **WHEN** the person duplicates "Gink Shop" and changes the copy
 - **THEN** "Gink Shop" keeps its files unchanged
+
+### Requirement: Rename files and go to a file
+The open file SHALL be renamable or movable to another folder (saving unsaved edits first), never overwriting an existing file, with pictures keeping a picture ending; Ctrl+P or Cmd+P SHALL open a search box that finds files by letters in order and opens the chosen one with Enter, closing with Escape.
+
+#### Scenario: Finding a file
+- **WHEN** the person presses Ctrl+P and types "abt"
+- **THEN** pages/about.html is listed and Enter opens it
