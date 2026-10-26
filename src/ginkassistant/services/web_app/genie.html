@@ -260,6 +260,14 @@
       $("start").hidden = true; $("work").hidden = false;
       ["preview", "download", "del", "github"].forEach(function (x) { $(x).hidden = false; });
       $("msgs").innerHTML = ""; (S.log[id] || []).forEach(function (m) { draw(m); }); renderTree(); clearEditor();
+      api("/genie/projects/" + encodeURIComponent(id) + "/chat").then(function (c) {      // the saved conversation
+        if (!S.project || S.project.id !== id || !c.messages.length) return;
+        S.log[id] = c.messages.map(function (m) {
+          return m.role === "user" ? { kind: "u", text: m.text, changes: [] }
+                                   : { kind: "g", text: m.text, changes: m.changes || [], steps: m.steps || [] };
+        });
+        $("msgs").innerHTML = ""; S.log[id].forEach(function (m) { draw(m); });
+      }).catch(function () {});
       var first = S.files.filter(function (f) { return f.path === "index.html"; })[0] || S.files[0];
       if (first) openFile(first.path);
     });

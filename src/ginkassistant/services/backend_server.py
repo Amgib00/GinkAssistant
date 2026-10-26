@@ -2125,6 +2125,7 @@ def delete_account(request: Request, data: dict = Body(...)):
             for t in _GENIE_TABLES:
                 con.execute(t)
             con.execute("DELETE FROM genie_files WHERE project_id IN (SELECT id FROM genie_projects WHERE email=?)", (email,))
+            con.execute("DELETE FROM genie_chat WHERE project_id IN (SELECT id FROM genie_projects WHERE email=?)", (email,))
             for table in ("account_prompts", "shared_chats", "genie_projects", "phone_numbers", "passkeys", "security_events", "account_flags", "connections", "api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
                           "search_usage", "search_turns", "sessions", "account_security"):
                 con.execute(f"DELETE FROM {table} WHERE email=?", (email,))
@@ -4798,7 +4799,10 @@ _GENIE_TABLES = (
     "CREATE TABLE IF NOT EXISTS genie_projects (id TEXT PRIMARY KEY, email TEXT NOT NULL, name TEXT NOT NULL, "
     "preview_key TEXT NOT NULL, created REAL NOT NULL, updated REAL NOT NULL)",
     "CREATE TABLE IF NOT EXISTS genie_files (project_id TEXT NOT NULL, path TEXT NOT NULL, content TEXT NOT NULL, "
-    "updated REAL NOT NULL, PRIMARY KEY (project_id, path))")
+    "updated REAL NOT NULL, PRIMARY KEY (project_id, path))",
+    "CREATE TABLE IF NOT EXISTS genie_chat (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id TEXT NOT NULL, role TEXT NOT NULL, "
+    "text TEXT NOT NULL, extra TEXT NOT NULL DEFAULT '{}', created REAL NOT NULL)")
+GENIE_MEMORY = 6                        # recent exchanges Genie keeps in mind for a new request
 GENIE_SYSTEM = (
     "You are Gink Genie, an expert software engineer working inside the user's project. Use the tools to look at "
     "and change files: list_files, read_file, write_file (always the COMPLETE new content of the file), delete_file, "
@@ -5035,8 +5039,9 @@ async def _genie_drive(state: dict) -> dict:
                 return {"pending": {"run_id": run_id, "command": pending["command"]}, "steps": state["steps"],
                         "changes": state["changes"]}
             if state["rounds"] >= GENIE_ROUNDS:
-                return {"reply": "I made progress but ran out of steps for one request. Ask me to continue.",
-                        "changes": state["changes"], "steps": state["steps"], "rounds": state["rounds"]}
+                reply = "I made progress but ran out of steps for one request. Ask me to continue."
+                _genie_remember(state, reply)
+                return {"reply": reply, "changes": state["changes"], "steps": state["steps"], "rounds": state["rounds"]}
             body = {"model": state["model"], "messages": state["messages"], "tools": GENIE_TOOLS + [GENIE_COMMAND_TOOL],
                     "tool_choice": "auto", "max_tokens": 16000, "temperature": 0.3, "reasoning_effort": "medium"}
             try:
@@ -5050,8 +5055,9 @@ async def _genie_drive(state: dict) -> dict:
             msg = ((r.json().get("choices") or [{}])[0].get("message")) or {}
             calls = msg.get("tool_calls") or []
             if not calls:
-                return {"reply": (msg.get("content") or "").strip() or "Done.", "changes": state["changes"],
-                        "steps": state["steps"], "rounds": state["rounds"]}
+                reply = (msg.get("content") or "").strip() or "Done."
+                _genie_remember(state, reply)
+                return {"reply": reply, "changes": state["changes"], "steps": state["steps"], "rounds": state["rounds"]}
             state["messages"].append({"role": "assistant", "content": msg.get("content") or "", "tool_calls": calls})
             state["queue"] = list(calls)
 
@@ -5060,11 +5066,27 @@ async def _genie_run(email: str, pid: str, instruction: str) -> dict:
     """The AI coding loop for one request (it pauses while the browser runs a command)."""
     files = _genie_summary(pid)
     listing = "\n".join(f"- {f['path']} ({f['size']} bytes)" for f in files) or "(empty project)"
-    state = {"email": email, "pid": pid, "changes": [], "steps": [], "rounds": 0, "queue": [], "pending": None,
-             "model": await _current_model("openai/gpt-oss-120b"),
-             "messages": [{"role": "system", "content": GENIE_SYSTEM},
-                          {"role": "user", "content": f"Project files:\n{listing}\n\nRequest: {instruction}"}]}
+    earlier = _genie_db(lambda con: con.execute(
+        "SELECT role, text FROM genie_chat WHERE project_id=? ORDER BY id DESC LIMIT ?", (pid, GENIE_MEMORY * 2)).fetchall())[::-1]
+    history = [{"role": "user" if r == "user" else "assistant", "content": t[:1500]} for r, t in earlier]
+    state = {"email": email, "pid": pid, "instruction": instruction, "changes": [], "steps": [], "rounds": 0, "queue": [],
+             "pending": None, "model": await _current_model("openai/gpt-oss-120b"),
+             "messages": [{"role": "system", "content": GENIE_SYSTEM}] + history +
+                         [{"role": "user", "content": f"Project files:\n{listing}\n\nRequest: {instruction}"}]}
     return await _genie_drive(state)
+
+
+def _genie_remember(state: dict, reply: str):
+    """Save the finished exchange (the request, Genie's answer with its steps) in the project's conversation."""
+    now = time.time()
+    extra = _json.dumps({"steps": state["steps"][-60:], "changes": state["changes"][-60:]})
+    _genie_db(lambda con: (
+        con.execute("INSERT INTO genie_chat (project_id, role, text, created) VALUES (?, 'user', ?, ?)",
+                    (state["pid"], state["instruction"][:6000], now)),
+        con.execute("INSERT INTO genie_chat (project_id, role, text, extra, created) VALUES (?, 'genie', ?, ?, ?)",
+                    (state["pid"], reply[:20000], extra[:400000], now)),
+        con.execute("DELETE FROM genie_chat WHERE project_id=? AND id NOT IN (SELECT id FROM genie_chat WHERE project_id=? "
+                    "ORDER BY id DESC LIMIT 400)", (state["pid"], state["pid"]))))
 
 
 async def _genie_ask(request: Request, email: str, pid: str, instruction: str) -> dict:
@@ -5119,11 +5141,22 @@ def genie_get(pid: str, request: Request):
     return {"project": _genie_public(request, _genie_project(email, pid)), "files": _genie_summary(pid)}
 
 
+@app.get("/genie/projects/{pid}/chat")
+def genie_chat(pid: str, request: Request):
+    """The project's Genie conversation (oldest first), with each answer's steps and changed files."""
+    email = _email_from_auth(request)
+    _genie_project(email, pid)
+    rows = _genie_db(lambda con: con.execute("SELECT role, text, extra, created FROM genie_chat WHERE project_id=? ORDER BY id",
+                                             (pid,)).fetchall())
+    return {"messages": [{"role": r, "text": t, "created": c, **_json.loads(x or "{}")} for r, t, x, c in rows]}
+
+
 @app.delete("/genie/projects/{pid}")
 def genie_delete(pid: str, request: Request):
     email = _email_from_auth(request)
     _genie_project(email, pid)
-    _genie_db(lambda con: (con.execute("DELETE FROM genie_files WHERE project_id=?", (pid,)),
+    _genie_db(lambda con: (con.execute("DELETE FROM genie_chat WHERE project_id=?", (pid,)),
+                           con.execute("DELETE FROM genie_files WHERE project_id=?", (pid,)),
                            con.execute("DELETE FROM genie_projects WHERE id=?", (pid,))))
     return {"ok": True}
 

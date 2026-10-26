@@ -1280,3 +1280,10 @@ New services/live_info.py (all free, no API keys):
   content_b64, mime}; PUT accepts content_b64; preview serves bytes; ZIP export/import keep bytes;
   GitHub push uploads pictures as blobs (tree "content" is text only).
 - genie.html: pictures via "+" / drop, shown in #picview, marked in the file list. Browser-tested.
+
+## 0.1.35: Genie remembers each project's conversation
+- genie_chat (in _GENIE_TABLES): _genie_remember saves request + answer (+ steps/changes JSON) when a
+  request finishes (both exits of _genie_drive; paused requests only once done); keeps 400 rows.
+  _genie_run adds the last GENIE_MEMORY=6 exchanges (1500 chars each) before the new request.
+  GET /genie/projects/{pid}/chat; project and account deletion remove it.
+- genie.html openProject loads the saved conversation. Browser-tested: reload + a second profile.

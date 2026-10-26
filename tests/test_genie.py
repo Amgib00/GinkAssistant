@@ -195,3 +195,24 @@ def test_pictures_in_projects(srv):
                 {"path": "notes.txt", "content": "a\x00b"},
                 {"path": "logo2.png", "content": "<svg>"}):
         assert c.put(f"/genie/projects/{pid}/file", headers=h, json=bad).status_code == 422, bad["path"]
+
+
+def test_genie_remembers_the_conversation(srv):
+    b, c, h = srv
+    pid = build(c, h, "Build a shop website")["project"]["id"]                    # exchange 1 (writes 3 files)
+    SCRIPT[:] = [{"content": "", "tool_calls": [call("run_command", command="ls")]}, {"content": "Made the buttons green."}]
+    paused = c.post(f"/genie/projects/{pid}/ask", headers=h, json={"instruction": "make the buttons green"}).json()
+    assert len(c.get(f"/genie/projects/{pid}/chat", headers=h).json()["messages"]) == 2      # saved only when finished
+    c.post(f"/genie/projects/{pid}/ask/continue", headers=h, json={"run_id": paused["pending"]["run_id"], "output": "index.html", "exit_code": 0})
+    msgs = SEEN[-2]["messages"]                                                    # what the AI saw for request 2
+    assert [m["role"] for m in msgs[:4]] == ["system", "user", "assistant", "user"]
+    assert msgs[1]["content"] == "Build a shop website" and msgs[2]["content"].startswith("I built a school app")
+    assert "Request: make the buttons green" in msgs[3]["content"]
+    chat = c.get(f"/genie/projects/{pid}/chat", headers=h).json()["messages"]
+    assert [(m["role"], m["text"]) for m in chat] == [("user", "Build a shop website"), ("genie", "I built a school app: open index.html."),
+                                                      ("user", "make the buttons green"), ("genie", "Made the buttons green.")]
+    assert [s["kind"] for s in chat[1]["steps"]] == ["write"] * 3 and chat[3]["steps"][0]["output"] == "index.html"
+    eve = {"Authorization": "Bearer " + b._token_response("eve@example.com", "Eve")["token"]}
+    assert c.get(f"/genie/projects/{pid}/chat", headers=eve).status_code == 404
+    c.delete(f"/genie/projects/{pid}", headers=h)
+    assert b._genie_db(lambda con: con.execute("SELECT COUNT(*) FROM genie_chat").fetchone()[0]) == 0

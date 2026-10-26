@@ -88,3 +88,10 @@ Projects SHALL accept PNG, JPG, GIF, WebP and ICO pictures up to 1 MB each (chec
 #### Scenario: A website with a logo
 - **WHEN** the person adds logo.png and an index.html that shows it
 - **THEN** the preview displays the logo
+
+### Requirement: Genie remembers each project's conversation
+Each finished request and Genie's answer (with its steps and changed files) SHALL be saved with the project (the last 400 messages), shown again when the project is opened on any device, and the last 6 exchanges SHALL be given to Genie with each new request; deleting the project or the account SHALL delete the conversation.
+
+#### Scenario: A follow-up
+- **WHEN** the person asked for a shop website and then asks "make the buttons green"
+- **THEN** Genie receives the earlier request and its own answer before the new request

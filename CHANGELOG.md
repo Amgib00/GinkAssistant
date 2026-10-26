@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.35 (October 2026)
+
+- Gink Genie remembers: each project keeps its conversation (with every step), on all your devices,
+  and Genie keeps your recent requests in mind, so follow-ups like "now do the same for the cart" work
+
 ## 0.1.34 (October 2026)
 
 - Gink Genie projects can include pictures (PNG, JPG, GIF, WebP, ICO): add logos and photos with
