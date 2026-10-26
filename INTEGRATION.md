@@ -1313,3 +1313,9 @@ New services/live_info.py (all free, no API keys):
   a paused run (found by its progress id, same email+pid) ends at once; otherwise mark it.
 - genie.html: Stop in the waiting message, "Stopping after the current step...", S.stopped makes a
   finishing browser command not continue. Browser-tested: 2 of 4 files, then stopped.
+
+## 0.1.40: Plan first
+- mode "plan" in the ask body -> state["mode"]: only GENIE_READ_ONLY tools offered, GENIE_PLAN_NOTE added
+  to the request, any other tool call refused in _genie_process_queue; answers/chat carry "plan".
+- genie.html: .mode-btn (start info row + workspace box, localStorage gink_genie_mode), sendToGenie
+  (text, modeOverride), "Build this plan" -> auto request; from history only the latest plan is buildable.

@@ -99,6 +99,8 @@
                            100% { opacity:0; transform:translate(var(--dx), -58px) scale(1); } }
   @media (prefers-reduced-motion: reduce) { .genie, .genie .float, .genie img, .genie .smoke { animation:none !important; }
     .genie .smoke { display:none; } .genie img { transition:none; } }
+  .mode-btn { padding:3px 11px; font-size:12.5px; font-weight:600; }
+  .mode-btn[aria-pressed="true"] { background:var(--sel); color:var(--accent); box-shadow:inset 0 0 0 1.5px var(--accent); }
   .composer .send { width:36px; height:36px; padding:0; border-radius:50%; font-size:18px; flex:none; }
   /* Genie's work, like Claude's: a collapsible list of steps (Read, Created, Ran a command) */
   .steps { border:1px solid var(--line); border-radius:12px; margin:0 0 10px; overflow:hidden; background:var(--panel); }
@@ -162,7 +164,7 @@
       <textarea id="idea" rows="1" placeholder="Describe a task or ask a question"></textarea>
       <button id="go" class="send" aria-label="Build it" title="Build it">&#8593;</button>
     </div>
-    <div class="s-info"><span>&#9729; Browser sandbox</span><span>Auto</span><span class="note" id="start-note"></span>
+    <div class="s-info"><span>&#9729; Browser sandbox</span><button class="ghost mode-btn" type="button" aria-pressed="false" title="Plan first: Genie proposes a plan before changing anything">Auto</button><span class="note" id="start-note"></span>
       <div class="grow"></div><span>GPT-OSS 120B</span><span class="note">Medium</span></div>
   </div>
 </section>
@@ -189,6 +191,7 @@
     <div class="ask">
       <textarea id="instr" placeholder="Ask Genie: add a login page, fix a bug, explain app.js…"></textarea>
       <div class="row"><label class="plus" title="Add files (ZIPs are unpacked)" aria-label="Add files" style="width:32px;height:32px;border-radius:50%;display:grid;place-items:center;cursor:pointer;font-size:20px;box-shadow:inset 0 0 0 1.5px var(--line)">+<input type="file" id="upload3" multiple hidden></label>
+        <button class="ghost mode-btn" type="button" aria-pressed="false" title="Plan first: Genie proposes a plan before changing anything">Auto</button>
         <span class="note">Ctrl+Enter to send</span><button id="send">Ask Genie</button></div>
     </div>
   </section>
@@ -264,9 +267,11 @@
       $("msgs").innerHTML = ""; (S.log[id] || []).forEach(function (m) { draw(m); }); renderTree(); clearEditor();
       api("/genie/projects/" + encodeURIComponent(id) + "/chat").then(function (c) {      // the saved conversation
         if (!S.project || S.project.id !== id || !c.messages.length) return;
-        S.log[id] = c.messages.map(function (m) {
+        var lastAt = c.messages.length - 1;                  // only the latest answer can still be "built"
+        S.log[id] = c.messages.map(function (m, i) {
           return m.role === "user" ? { kind: "u", text: m.text, changes: [] }
-                                   : { kind: "g", text: m.text, changes: m.changes || [], steps: m.steps || [], checkpoint: m.checkpoint };
+                                   : { kind: "g", text: m.text, changes: m.changes || [], steps: m.steps || [], checkpoint: m.checkpoint,
+                                       plan: !!m.plan && i === lastAt };
         });
         $("msgs").innerHTML = ""; S.log[id].forEach(function (m) { draw(m); });
       }).catch(function () {});
@@ -355,8 +360,8 @@
   }
 
   // ---- Genie chat
-  function say(text, isError, changes, steps, checkpoint) {
-    var entry = { kind: isError ? "err" : "g", text: text, changes: changes || [], steps: steps || [], checkpoint: checkpoint };
+  function say(text, isError, changes, steps, checkpoint, plan) {
+    var entry = { kind: isError ? "err" : "g", text: text, changes: changes || [], steps: steps || [], checkpoint: checkpoint, plan: !!plan };
     if (S.project) (S.log[S.project.id] = S.log[S.project.id] || []).push(entry);
     return draw(entry);
   }
@@ -400,6 +405,11 @@
     var m = el("div", "m " + (entry.kind === "u" ? "u" : isError ? "g err" : "g"));
     if (entry.steps && entry.steps.length) m.appendChild(stepsBlock(entry.steps, false));
     m.appendChild(el("div", "", entry.text));
+    if (entry.plan) {                                        // plan mode: approve, then Genie builds it
+      var go = el("button", "", "Build this plan"); go.style.cssText = "margin-top:10px;padding:6px 14px;font-size:13px";
+      go.onclick = function () { if (!S.busy) { go.disabled = true; sendToGenie("Go ahead and build the plan above.", "auto"); } };
+      m.appendChild(go);
+    }
     if (changes && changes.length) {
       var ch = el("div", "ch");
       changes.forEach(function (c) {
@@ -480,7 +490,7 @@
                    { body: { run_id: j.pending.run_id, output: r.output, exit_code: r.code } });
       }).then(function (next) { return next && handleGenie(next, pid); });
     }
-    stopProgress(); S.stopping = false; working(false); say(j.reply, false, j.changes, j.steps, j.checkpoint);
+    stopProgress(); S.stopping = false; working(false); say(j.reply, false, j.changes, j.steps, j.checkpoint, j.plan);
     if (S.path) { var still = S.files.some(function (f) { return f.path === S.path; }); if (still) loadFile(S.path); else { S.path = ""; S.saved = ""; clearEditor(); } }
     else if (S.files.length) loadFile((S.files.filter(function (f) { return f.path === "index.html"; })[0] || S.files[0]).path);
     loadProjects(pid, true);
@@ -523,11 +533,23 @@
       }                                                      // otherwise the running request answers "Stopped" itself
     }).catch(function () { S.stopping = false; });
   }
-  function sendToGenie(text) {
+  // Auto, or Plan first (remembered in this browser)
+  S.mode = (function () { try { return localStorage.getItem("gink_genie_mode") === "plan" ? "plan" : "auto"; } catch (e) { return "auto"; } })();
+  function showMode() {
+    document.querySelectorAll(".mode-btn").forEach(function (b) { b.textContent = S.mode === "plan" ? "Plan first" : "Auto";
+      b.setAttribute("aria-pressed", S.mode === "plan" ? "true" : "false"); });
+  }
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest || !e.target.closest(".mode-btn")) return;
+    S.mode = S.mode === "plan" ? "auto" : "plan"; showMode();
+    try { localStorage.setItem("gink_genie_mode", S.mode); } catch (er) {}
+  });
+  setTimeout(showMode, 0);
+  function sendToGenie(text, modeOverride) {
     var pid = S.project.id, progress = uid();
     S.progress = progress; S.stopping = false; S.stopped = false; S.lastSteps = [];
     said(text); working(true); startProgress(pid, progress);
-    return api("/genie/projects/" + encodeURIComponent(pid) + "/ask", { body: { instruction: text, progress: progress } })
+    return api("/genie/projects/" + encodeURIComponent(pid) + "/ask", { body: { instruction: text, progress: progress, mode: modeOverride || S.mode } })
       .then(function (j) { return handleGenie(j, pid); })
       .catch(function (e) { stopProgress(); working(false); if (e.message !== "signed out") say(e.message, true); });
   }

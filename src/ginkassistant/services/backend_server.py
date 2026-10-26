@@ -4997,6 +4997,10 @@ GENIE_COMMAND_TOOL = {"type": "function", "function": {
 _genie_runs = {}                     # paused requests waiting for a command's output: run_id -> state
 _genie_progress = {}                 # live steps for the page while it waits: progress id -> {email, pid, steps, updated}
 _genie_stops = set()                 # progress ids the person asked to stop
+GENIE_READ_ONLY = {"list_files", "read_file", "search_files"}      # plan mode: look, don't touch
+GENIE_PLAN_NOTE = ("PLAN MODE: do not change anything. Look at the project with list_files, read_file and search_files, "
+                   "then reply with a short numbered plan of what you would build or change (files, steps, how to check it). "
+                   "The person will approve it before you build.")
 GENIE_STOPPED = "Stopped before finishing. The changes made so far are kept; you can undo them."
 
 
@@ -5059,6 +5063,10 @@ def _genie_process_queue(state: dict):
         except ValueError:
             args = {}
         args = args if isinstance(args, dict) else {}
+        if state.get("mode") == "plan" and name not in GENIE_READ_ONLY:     # never, even if the AI tries
+            state["messages"].append({"role": "tool", "tool_call_id": call.get("id", ""),
+                                      "content": "Not allowed in plan mode: reply with your plan instead."})
+            continue
         if name == "run_command":
             command = " ".join(str(args.get("command") or "").split())[:300]
             if not command:
@@ -5099,8 +5107,10 @@ async def _genie_drive(state: dict) -> dict:
                 reply = "I made progress but ran out of steps for one request. Ask me to continue."
                 _genie_remember(state, reply)
                 return {"reply": reply, "changes": state["changes"], "steps": state["steps"], "rounds": state["rounds"],
-                        "checkpoint": state.get("checkpoint")}
-            body = {"model": state["model"], "messages": state["messages"], "tools": GENIE_TOOLS + [GENIE_COMMAND_TOOL],
+                        "checkpoint": state.get("checkpoint"), "plan": state.get("mode") == "plan"}
+            tools = ([t for t in GENIE_TOOLS if t["function"]["name"] in GENIE_READ_ONLY] if state.get("mode") == "plan"
+                     else GENIE_TOOLS + [GENIE_COMMAND_TOOL])
+            body = {"model": state["model"], "messages": state["messages"], "tools": tools,
                     "tool_choice": "auto", "max_tokens": 16000, "temperature": 0.3, "reasoning_effort": "medium"}
             try:
                 r = await client.post(f"{GROQ_BASE}/chat/completions", json=body,
@@ -5117,12 +5127,12 @@ async def _genie_drive(state: dict) -> dict:
                 reply = (msg.get("content") or "").strip() or "Done."
                 _genie_remember(state, reply)
                 return {"reply": reply, "changes": state["changes"], "steps": state["steps"], "rounds": state["rounds"],
-                        "checkpoint": state.get("checkpoint")}
+                        "checkpoint": state.get("checkpoint"), "plan": state.get("mode") == "plan"}
             state["messages"].append({"role": "assistant", "content": msg.get("content") or "", "tool_calls": calls})
             state["queue"] = list(calls)
 
 
-async def _genie_run(email: str, pid: str, instruction: str, progress: str = "") -> dict:
+async def _genie_run(email: str, pid: str, instruction: str, progress: str = "", mode: str = "auto") -> dict:
     """The AI coding loop for one request (it pauses while the browser runs a command)."""
     files = _genie_summary(pid)
     listing = "\n".join(f"- {f['path']} ({f['size']} bytes)" for f in files) or "(empty project)"
@@ -5132,16 +5142,19 @@ async def _genie_run(email: str, pid: str, instruction: str, progress: str = "")
     state = {"email": email, "pid": pid, "instruction": instruction, "changes": [], "steps": [], "rounds": 0, "queue": [],
              "checkpoint": _genie_checkpoint(pid, instruction),
              "progress": re.sub(r"[^A-Za-z0-9_-]", "", str(progress or ""))[:40],
+             "mode": "plan" if mode == "plan" else "auto",
              "pending": None, "model": await _current_model("openai/gpt-oss-120b"),
              "messages": [{"role": "system", "content": GENIE_SYSTEM}] + history +
-                         [{"role": "user", "content": f"Project files:\n{listing}\n\nRequest: {instruction}"}]}
+                         [{"role": "user", "content": f"Project files:\n{listing}\n\nRequest: {instruction}"
+                                   + (f"\n\n{GENIE_PLAN_NOTE}" if mode == "plan" else "")}]}
     return await _genie_drive(state)
 
 
 def _genie_remember(state: dict, reply: str):
     """Save the finished exchange (the request, Genie's answer with its steps) in the project's conversation."""
     now = time.time()
-    extra = _json.dumps({"steps": state["steps"][-60:], "changes": state["changes"][-60:], "checkpoint": state.get("checkpoint")})
+    extra = _json.dumps({"steps": state["steps"][-60:], "changes": state["changes"][-60:], "checkpoint": state.get("checkpoint"),
+                         "plan": state.get("mode") == "plan"})
     _genie_db(lambda con: (
         con.execute("INSERT INTO genie_chat (project_id, role, text, created) VALUES (?, 'user', ?, ?)",
                     (state["pid"], state["instruction"][:6000], now)),
@@ -5151,7 +5164,7 @@ def _genie_remember(state: dict, reply: str):
                     "ORDER BY id DESC LIMIT 400)", (state["pid"], state["pid"]))))
 
 
-async def _genie_ask(request: Request, email: str, pid: str, instruction: str, progress: str = "") -> dict:
+async def _genie_ask(request: Request, email: str, pid: str, instruction: str, progress: str = "", mode: str = "auto") -> dict:
     instruction = str(instruction or "").strip()[:6000]
     if len(instruction) < 2:
         raise HTTPException(status_code=422, detail="Tell Genie what to build or change.")
@@ -5161,7 +5174,7 @@ async def _genie_ask(request: Request, email: str, pid: str, instruction: str, p
     if blocked is not None:
         detail = _json.loads(bytes(blocked.body))["error"]["message"]
         raise HTTPException(status_code=429, detail=detail)
-    return await _genie_run(email, pid, instruction, progress)
+    return await _genie_run(email, pid, instruction, progress, mode)
 
 
 def _genie_public(request: Request, p: dict) -> dict:
@@ -5307,7 +5320,7 @@ def genie_all_files(pid: str, request: Request):
 async def genie_ask(pid: str, request: Request, data: dict = Body(...)):
     email = _email_from_auth(request)
     _genie_project(email, pid)
-    result = await _genie_ask(request, email, pid, data.get("instruction"), data.get("progress", ""))
+    result = await _genie_ask(request, email, pid, data.get("instruction"), data.get("progress", ""), data.get("mode", "auto"))
     return {**result, "files": _genie_summary(pid)}
 
 

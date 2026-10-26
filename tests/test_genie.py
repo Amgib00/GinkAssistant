@@ -287,3 +287,25 @@ def test_stop_a_request(srv):
     assert c.post(f"/genie/projects/{pid}/ask/continue", headers=h, json={"run_id": paused["pending"]["run_id"], "output": "x"}).status_code == 404
     chat = c.get(f"/genie/projects/{pid}/chat", headers=h).json()["messages"]
     assert [m["text"] for m in chat if m["role"] == "genie"] == [b.GENIE_STOPPED, b.GENIE_STOPPED]
+
+
+def test_plan_mode_looks_but_never_touches(srv):
+    b, c, h = srv
+    pid = build(c, h)["project"]["id"]
+    before = c.get(f"/genie/projects/{pid}/all", headers=h).json()["files"]
+    SCRIPT[:] = [{"content": "", "tool_calls": [call("read_file", path="index.html"), call("write_file", path="hack.txt", content="x"),
+                                                call("run_command", command="ls")]},
+                 {"content": "1. Add a cart page\n2. Link it from index.html"}]
+    r = c.post(f"/genie/projects/{pid}/ask", headers=h, json={"instruction": "add a cart", "mode": "plan"}).json()
+    assert r["plan"] is True and r["reply"].startswith("1. Add a cart page") and "pending" not in r
+    assert c.get(f"/genie/projects/{pid}/all", headers=h).json()["files"] == before                # nothing changed
+    names = [t["function"]["name"] for t in SEEN[-2]["tools"]]
+    assert sorted(names) == ["list_files", "read_file", "search_files"]                           # only looking tools
+    assert "PLAN MODE" in SEEN[-2]["messages"][-1]["content"] or any("PLAN MODE" in m.get("content", "") for m in SEEN[-2]["messages"])
+    refused = [m["content"] for m in SEEN[-1]["messages"] if m["role"] == "tool"]
+    assert refused.count("Not allowed in plan mode: reply with your plan instead.") == 2
+    assert c.get(f"/genie/projects/{pid}/chat", headers=h).json()["messages"][-1]["plan"] is True
+    SCRIPT[:] = [{"content": "", "tool_calls": [call("write_file", path="cart.html", content="<h1>Cart</h1>")]}, {"content": "Built it."}]
+    done = c.post(f"/genie/projects/{pid}/ask", headers=h, json={"instruction": "Go ahead and build the plan above.", "mode": "auto"}).json()
+    assert done["plan"] is False and "cart.html" in c.get(f"/genie/projects/{pid}/all", headers=h).json()["files"]
+    assert any(m["role"] == "assistant" and m["content"].startswith("1. Add a cart page") for m in SEEN[-2]["messages"])   # it remembers the plan

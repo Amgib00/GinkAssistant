@@ -123,3 +123,10 @@ While Genie works, the person SHALL be able to press Stop: a running request sto
 #### Scenario: Stopping a long request
 - **WHEN** Genie is writing four files and the person presses Stop after the first
 - **THEN** Genie ends with "Stopped before finishing" having written fewer than four files
+
+### Requirement: Plan first
+A "Plan first" switch (remembered in the browser) SHALL make Genie only look at the project (list, read, search) and answer with a numbered plan, refusing any change or command even if the AI asks; the plan SHALL offer "Build this plan", which sends Genie ahead in Auto mode with the plan in its memory; only the latest plan in a conversation stays buildable.
+
+#### Scenario: Approving a plan
+- **WHEN** the person asks for a shop in Plan first mode and presses "Build this plan"
+- **THEN** no file changes before the approval, and Genie builds the shop after it

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.40 (October 2026)
+
+- Gink Genie's Plan first mode: Genie looks at your project and proposes a numbered plan without
+  changing anything; press Build this plan when you're happy with it
+
 ## 0.1.39 (October 2026)
 
 - Gink Genie has a Stop button while it works: it stops after its current step and keeps (and lets
