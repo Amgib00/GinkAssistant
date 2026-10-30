@@ -39,3 +39,10 @@ From the new-chat screen a person SHALL be able to start a temporary chat, shown
 #### Scenario: Leaving a temporary chat
 - **WHEN** a person has a temporary chat and starts a new chat
 - **THEN** the temporary chat is gone and the new chat is a normal one
+
+### Requirement: Code viewer
+Code blocks of 15 lines or more SHALL offer "Open", showing the code in a side panel with a title (from a file name mentioned just before it, else the language), a language badge, Copy with a menu (Copy, Download), Expand, Close and line numbers aligned with the code; a new answer's longest code block of 30 lines or more SHALL open by itself on screens 900 px or wider, never for chats opened from history.
+
+#### Scenario: A long file in an answer
+- **WHEN** Gink answers with "Here's voice_bridge.py" and 40 lines of Python
+- **THEN** the viewer opens titled "Voice bridge" with a PY badge and 40 numbered lines

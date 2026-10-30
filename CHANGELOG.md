@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.56 (October 2026)
+
+- A code viewer: long code opens in a panel beside the chat, with the file's name, Copy or
+  Download, Expand and line numbers (press Open on any long code block)
+
 ## 0.1.55 (October 2026)
 
 - "Play Floating (Genom Världar - English Version)": Gink plays the exact song (YouTube on computers,

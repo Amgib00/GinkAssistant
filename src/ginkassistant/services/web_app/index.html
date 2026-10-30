@@ -1008,6 +1008,29 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
   .recalled { display: flex; gap: 8px; align-items: baseline; color: var(--text-muted); font-size: 13.5px; margin: 6px 0 2px; cursor: pointer; }
   .recalled b { color: var(--text-main); font-weight: 600; } .recalled .rm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 520px; }
   .recalled.open .rm { white-space: normal; }
+  /* The code viewer: long code in a panel on the right (Copy / Download, Expand, Close, line numbers) */
+  #codeview { position: fixed; top: 0; right: 0; bottom: 0; width: min(50vw, 780px); z-index: 60; display: flex; flex-direction: column;
+              background: var(--surface); border-left: 1px solid var(--border); box-shadow: -8px 0 30px rgba(0,0,0,.08); }
+  #codeview.wide { width: 100vw; }
+  #codeview .cvh { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  #codeview .cvt { font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #codeview .cvb { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: .04em; }
+  #codeview .cvg { flex: 1; }
+  #codeview .cvh button { border: 1px solid var(--border); background: var(--bg); color: var(--text-main); font: inherit; font-size: 13px;
+                          border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+  #codeview .cvcopy { border-radius: 8px 0 0 8px !important; } #codeview .cvmore { border-radius: 0 8px 8px 0 !important; margin-left: -9px; padding: 5px 7px !important; }
+  #codeview .cvicon { border: 0 !important; background: transparent !important; font-size: 17px !important; padding: 4px 7px !important; }
+  #codeview .cvmenu { position: absolute; top: 46px; right: 70px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+                      box-shadow: 0 10px 30px rgba(0,0,0,.15); padding: 4px; z-index: 2; }
+  #codeview .cvmenu button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 7px 12px; }
+  #codeview .cvmenu button:hover { background: var(--elevated); }
+  #codeview .cvbody { flex: 1; overflow: auto; }
+  #codeview .cvbody .code-block { margin: 0; border: 0; border-radius: 0; }
+  #codeview .cvbody code { font-size: inherit; line-height: inherit; }   /* same line height as the numbers: no drift */
+  #codeview .cvbody .code-block-body { border: 0; border-radius: 0; max-height: none !important; }
+  body.viewer-open { padding-right: min(50vw, 780px); }
+  body.viewer-open #composer-wrap { right: min(50vw, 780px); }
+  @media (max-width: 899px) { #codeview { width: 100vw; } body.viewer-open { padding-right: 0; } body.viewer-open #composer-wrap { right: 0; } }
 
   /* ---------- the orb (shared by intro, picker, conversation, Settings) ---------- */
   .vorb { position: relative; border-radius: 50%; overflow: hidden; flex: none;
@@ -1679,6 +1702,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     var text = cin().value.trim();
     if ((!text && !composerAtts.length) || composerBusy) return;
     if (composerAtts.some(function (a) { return a.loading; })) { setStatus('Still reading your file…'); return; }
+    window.__sentAt = Date.now();                     // answers after this may open the code viewer
     ginkEmit('send', text);
     cin().value = ''; autoGrow(); refreshSend();
   }
@@ -2062,6 +2086,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     upgradeFileLinks(el);
     if (window.upgradeQuestionCards) upgradeQuestionCards(el);     // before code blocks: ```ask``` becomes a card
     enhanceCodeBlocks(el);
+    if (!LOADING_CHAT && window.autoOpenCode) autoOpenCode(el);        // long code in a new answer: the viewer
     addGinkActions(el, id);
     var logoImg = document.createElement('img');
     logoImg.className = 'msg-logo arriving';
@@ -2790,6 +2815,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
         '<button data-code="save" title="Save to a file">' + CODE_ICONS.save + 'Save</button>' +
         '<button data-code="copy" title="Copy code">' + CODE_ICONS.copy + 'Copy</button>');
       var text = codeText(block).replace(/\n$/, ''), n = text ? text.split('\n').length : 0;
+      if (n >= 15) bar.insertAdjacentHTML('beforeend', '<button data-code="open" title="Open in the code viewer">\u2922 Open</button>');
       var body = block.querySelector('.code-block-body');
       if (n > 1 && body) {
         var lns = document.createElement('div'); lns.className = 'lns';
@@ -2810,6 +2836,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     var b = e.target.closest && e.target.closest('.code-block-bar button[data-code]'); if (!b) return;
     e.preventDefault(); e.stopPropagation();
     var block = b.closest('.code-block'), what = b.getAttribute('data-code');
+    if (what === 'open') { openCodeViewer(block); return; }
     if (what === 'copy') {
       copyText(codeText(block), function () { b.innerHTML = CODE_ICONS.check + 'Copied'; b.classList.add('on');
         setTimeout(function () { b.innerHTML = CODE_ICONS.copy + 'Copy'; b.classList.remove('on'); }, 1600); });
@@ -3129,6 +3156,62 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     row.appendChild(m); row.title = 'Tap to see all';
     row.onclick = function () { row.classList.toggle('open'); };
     feed.appendChild(row);
+  };
+  // ---- The code viewer (like Claude's): a panel with the file's name, Copy / Download, Expand, Close
+  var CV = { text: '', name: '' };
+  var CV_LANGS = {python: ['Python', 'py'], javascript: ['JavaScript', 'js'], typescript: ['TypeScript', 'ts'], html: ['HTML', 'html'],
+                  css: ['CSS', 'css'], java: ['Java', 'java'], kotlin: ['Kotlin', 'kt'], swift: ['Swift', 'swift'], go: ['Go', 'go'],
+                  rust: ['Rust', 'rs'], bash: ['Shell', 'sh'], shell: ['Shell', 'sh'], sql: ['SQL', 'sql'], json: ['JSON', 'json'],
+                  c: ['C', 'c'], cpp: ['C++', 'cpp'], csharp: ['C#', 'cs'], php: ['PHP', 'php'], ruby: ['Ruby', 'rb'], dart: ['Dart', 'dart']};
+  function cvName(block, lang) {
+    if (lang.indexOf('.') > 0) return lang;                              // the label is already a file name
+    var prev = block.previousElementSibling, re = /([A-Za-z0-9_-]+\.(py|js|ts|jsx|tsx|html|css|json|java|kt|swift|go|rs|sh|sql|c|cpp|cs|php|rb|dart|yml|yaml|toml|md))\b/;
+    for (var i = 0; prev && i < 3; i++, prev = prev.previousElementSibling) { var m = re.exec(prev.textContent || ''); if (m) return m[1]; }
+    return '';
+  }
+  window.openCodeViewer = function (block) {
+    var lang = (block.querySelector('.code-block-label').textContent || '').trim().toLowerCase();
+    var file = cvName(block, lang), info = CV_LANGS[lang] || [lang ? lang.charAt(0).toUpperCase() + lang.slice(1) : 'Code', lang || 'txt'];
+    var ext = file ? file.split('.').pop() : info[1];
+    var title = file ? file.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').replace(/^./, function (c) { return c.toUpperCase(); })
+                     : info[0] + ' code';
+    CV.text = codeText(block).replace(/\n$/, ''); CV.name = file || ('gink-code.' + ext);
+    var v = document.getElementById('codeview');
+    if (!v) {
+      v = document.createElement('aside'); v.id = 'codeview'; v.setAttribute('aria-label', 'Code viewer');
+      v.innerHTML = '<div class="cvh"><span class="cvt"></span><span class="cvb"></span><span class="cvg"></span>' +
+        '<button class="cvcopy">Copy</button><button class="cvmore" aria-label="More">\u2304</button>' +
+        '<button class="cvicon cvwide" title="Expand" aria-label="Expand">\u2922</button>' +
+        '<button class="cvicon cvclose" title="Close" aria-label="Close">\u00d7</button></div><div class="cvbody"></div>';
+      document.body.appendChild(v);
+      v.querySelector('.cvcopy').onclick = function () { var b = this; copyText(CV.text, function () { b.textContent = 'Copied';
+        setTimeout(function () { b.textContent = 'Copy'; }, 1500); }); };
+      v.querySelector('.cvmore').onclick = function (e) {
+        e.stopPropagation(); var old = v.querySelector('.cvmenu'); if (old) { old.remove(); return; }
+        var m = document.createElement('div'); m.className = 'cvmenu';
+        m.innerHTML = '<button data-cv="copy">Copy</button><button data-cv="download">Download</button>';
+        m.onclick = function (ev) { var a = ev.target.getAttribute('data-cv'); m.remove();
+          if (a === 'copy') v.querySelector('.cvcopy').click(); else ginkEmit('save_code', {name: CV.name, code: CV.text}); };
+        v.appendChild(m);
+      };
+      v.querySelector('.cvwide').onclick = function () { var w = v.classList.toggle('wide'); this.title = w ? 'Make smaller' : 'Expand'; };
+      v.querySelector('.cvclose').onclick = function () { v.remove(); document.body.classList.remove('viewer-open'); };
+      document.addEventListener('click', function () { var m = v.querySelector('.cvmenu'); if (m) m.remove(); });
+    }
+    v.querySelector('.cvt').textContent = title; v.querySelector('.cvb').textContent = ext.toUpperCase().slice(0, 4);
+    var body = block.querySelector('.code-block-body');
+    // inside a .code-block wrapper so the numbers and the code share the same styling (they drifted apart otherwise)
+    v.querySelector('.cvbody').innerHTML = body ? '<div class="code-block cv-inner" data-enh="1">' + body.outerHTML + '</div>' : '';
+    document.body.classList.add('viewer-open');
+  };
+  // A new answer with long code opens it by itself on larger screens (never for chats opened from history)
+  window.__sentAt = 0;
+  window.autoOpenCode = function (el) {
+    if (!window.__sentAt || Date.now() - window.__sentAt > 10 * 60 * 1000 || window.innerWidth < 900) return;
+    var best = null, most = 0;
+    Array.prototype.forEach.call(el.querySelectorAll('.code-block'), function (b) {
+      var n = codeText(b).split('\n').length; if (n > most) { most = n; best = b; } });
+    if (best && most >= 30) openCodeViewer(best);
   };
 
   // ======================= voice conversation =======================
@@ -3656,6 +3739,7 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     refreshSidebar();
   }
   function openSession(id) {
+    window.__sentAt = 0;                                     // an old chat: its code never opens by itself
     if (id !== W.current) leaveTemporary();
     var s = W.sessions[id]; if (!s || s.deleted) return newChat();
     W.current = id; clearFeed(); hideWelcome();

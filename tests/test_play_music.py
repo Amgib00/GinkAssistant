@@ -62,3 +62,14 @@ def test_model_menu_effort_greeting_and_attachments():
     assert b._effort_args("qwen/qwen3.8-27b") == {}                              # only GPT-OSS takes it
     main = open(os.path.join(root, "src", "ginkassistant", "ui", "main_screen.py"), encoding="utf-8").read()
     assert "def greet_name()" in main and "WELCOME_ENDINGS" in main             # never a name made from the email
+
+
+def test_code_viewer_wiring():
+    root = os.path.join(os.path.dirname(__file__), "..")
+    extras = open(os.path.join(root, "src", "ginkassistant", "ui", "chat_extras.py"), encoding="utf-8").read()
+    for part in ("window.openCodeViewer", "window.autoOpenCode", 'data-code="open"', "ginkEmit('save_code', {name: CV.name",
+                 "#codeview .cvbody code { font-size: inherit; line-height: inherit; }", "body.viewer-open { padding-right"):
+        assert part in extras, part
+    page = open(os.path.join(root, "src", "ginkassistant", "ui", "web_chat_view.py"), encoding="utf-8").read()
+    assert "if (!LOADING_CHAT && window.autoOpenCode) autoOpenCode(el);" in page and "window.__sentAt = Date.now();" in page
+    assert "window.__sentAt = 0;" in open(os.path.join(root, "webapp", "bridge.js"), encoding="utf-8").read()

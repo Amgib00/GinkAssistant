@@ -1111,6 +1111,7 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     var text = cin().value.trim();
     if ((!text && !composerAtts.length) || composerBusy) return;
     if (composerAtts.some(function (a) { return a.loading; })) { setStatus('Still reading your file\u2026'); return; }
+    window.__sentAt = Date.now();                     // answers after this may open the code viewer
     ginkEmit('send', text);
     cin().value = ''; autoGrow(); refreshSend();
   }
@@ -1494,6 +1495,7 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     upgradeFileLinks(el);
     if (window.upgradeQuestionCards) upgradeQuestionCards(el);     // before code blocks: ```ask``` becomes a card
     enhanceCodeBlocks(el);
+    if (!LOADING_CHAT && window.autoOpenCode) autoOpenCode(el);        // long code in a new answer: the viewer
     addGinkActions(el, id);
     var logoImg = document.createElement('img');
     logoImg.className = 'msg-logo arriving';

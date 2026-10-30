@@ -273,6 +273,7 @@
     refreshSidebar();
   }
   function openSession(id) {
+    window.__sentAt = 0;                                     // an old chat: its code never opens by itself
     if (id !== W.current) leaveTemporary();
     var s = W.sessions[id]; if (!s || s.deleted) return newChat();
     W.current = id; clearFeed(); hideWelcome();

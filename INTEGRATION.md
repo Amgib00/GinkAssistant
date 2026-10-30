@@ -1424,3 +1424,12 @@ New services/live_info.py (all free, no API keys):
 - Greeting: greet_name() (nickname / first word of full name, never email-made: 3+ digits or the email
   local part) + random WELCOME_ENDINGS; web the same. Attachments: in the box (home: flex-wrap,
   order -1), pictures 96 px with a corner x.
+
+## 0.1.56: code viewer (owner's recording of Claude's code panel)
+- chat_extras: "Open" on code blocks >= 15 lines; openCodeViewer(block): #codeview aside (title from a
+  file name in the 3 previous elements or the language, badge, Copy + menu Copy/Download via
+  save_code, Expand = full width, Close); body = the block's highlighted .code-block-body inside a
+  .code-block wrapper. autoOpenCode(el) in finalizeMessage (not while loadChat; only after a send in the
+  last 10 min, window.__sentAt; web openSession resets it; >= 900 px; longest block >= 30 lines).
+- Drift fix (seen in the screenshot: 37 next to line 36): the viewer's <code> took the page's 13px/20.8px;
+  now inherits 12.5px/20px like the numbers.
