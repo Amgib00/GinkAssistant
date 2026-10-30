@@ -216,12 +216,8 @@ def build_main_screen(app: toga.App, email: str):
     async def load_session(session_id: str):
         await web_chat.clear()
         history = brain.history.get_history(session_id)
-        if history:
-            for turn in history:
-                if turn.get("role") == "user":
-                    await web_chat.add_user_message(turn.get("content", ""))
-                else:
-                    await web_chat.add_complete_assistant_message(_new_message_id(), turn.get("content", ""))
+        if history:                                         # all at once, then a smooth glide to the end
+            await web_chat.load_chat(history, _new_message_id)
         else:
             await web_chat.show_welcome(welcome_title(), WELCOME_SUB)
         await web_chat.set_composer_text(_drafts().get(session_id, ""))     # unsent text comes back

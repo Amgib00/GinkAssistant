@@ -155,7 +155,7 @@ class GinkAssistantApp(toga.App):
 
         self._setup_task_system()
 
-        self.main_window = toga.MainWindow(title=self.formal_name)
+        self.main_window = toga.MainWindow(title="")      # no "Gink" in the title bar (the app is named by its icon and menu)
         self._try_auto_login()
         self.main_window.show()
 

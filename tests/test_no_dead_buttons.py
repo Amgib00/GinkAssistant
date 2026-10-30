@@ -74,3 +74,13 @@ def test_instructions_sync_allows_a_paragraph(tmp_path, monkeypatch):
     text = "Keep answers short. " * 50                                  # 1000 characters
     r = c.put("/account/preferences", headers=h, json={"prefs": {"instructions": text, "theme": "x" * 1000}}).json()
     assert r["prefs"] == {"instructions": text}                          # a paragraph for instructions; other settings stay short
+
+
+def test_no_window_title_and_chats_glide_open():
+    app = read("src", "ginkassistant", "app.py")
+    assert 'toga.MainWindow(title="")' in app                          # no "Gink" in the title bar, every platform
+    page = read("src", "ginkassistant", "ui", "web_chat_view.py")
+    assert "window.loadChat = function" in page and "behavior: 'smooth'" in page and "@keyframes logo-land" in page
+    main = read("src", "ginkassistant", "ui", "main_screen.py")
+    assert "await web_chat.load_chat(history, _new_message_id)" in main  # one step: no "Thinking..." flicker
+    assert "if (window.glideToEnd) glideToEnd();" in read("webapp", "bridge.js")

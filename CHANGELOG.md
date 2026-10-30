@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.53 (October 2026)
+
+- Opening a chat from the sidebar now glides smoothly to its end, with the Gink snowflake spinning
+  at the latest answer, and no more "Thinking..." flicker while it loads
+- No "Gink" title in the window's title bar
+
 ## 0.1.52 (October 2026)
 
 - Fixed on the web: Upgrade (in Settings and in the daily-limit message) now opens the plans page;

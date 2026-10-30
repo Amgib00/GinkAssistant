@@ -1395,3 +1395,10 @@ New services/live_info.py (all free, no API keys):
 - Settings rows marked apps: true are dropped on the web (photo, natural-voice test, memory list,
   city/location, briefing time/try, server address); S.info (not `info`, which broke Settings
   entirely -- caught in the browser). Apps: unknown actions now say so; _a_upgrade added.
+
+## 0.1.53: chats glide open; no window title
+- load_session drew each answer as addAssistantMessage ("Thinking..." + big logo) + finalize, one
+  JS round trip each -> visible placeholders. Now web_chat.load_chat(turns) -> page loadChat(items)
+  (one call, scrollDown suppressed) -> glideToEnd() (top -> smooth to the end; last .msg-logo gets
+  .landing = one spin; reduced motion: instant). Web openSession calls glideToEnd too.
+- app.py MainWindow(title=""). Browser-checked: 0 "Thinking", glide in 6 steps to the exact end.

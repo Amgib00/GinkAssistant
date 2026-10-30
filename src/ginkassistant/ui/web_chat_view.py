@@ -189,6 +189,8 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
   .assistant-text > .gink-spinner:first-child { margin-top: 2px; }
   @keyframes gink-spin { to { transform: rotate(360deg); } }
   .msg-logo { display: block; width: 26px; height: 26px; margin: 14px auto 0; opacity: 0.95; }
+  .msg-logo.landing { animation: logo-land 1.3s cubic-bezier(.3,.7,.3,1); }
+  @keyframes logo-land { 0% { transform: rotate(-200deg) scale(.5); opacity: 0; } 55% { opacity: 1; } 100% { transform: rotate(0) scale(1); } }
   .assistant-text .stream > *:last-child { margin-bottom: 0; }
   /* ---------- user message actions ---------- */
   .row.user { flex-direction: column; align-items: flex-end; }
@@ -1155,7 +1157,28 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     });
   }
 
-  function scrollDown() { window.scrollTo(0, document.body.scrollHeight); }
+  var LOADING_CHAT = false;                   // while a whole chat is drawn at once, no jumping
+  function scrollDown() { if (!LOADING_CHAT) window.scrollTo(0, document.body.scrollHeight); }
+  // Opening a chat: glide smoothly to its end, and the snowflake spins once as it lands
+  window.glideToEnd = function () {
+    var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var logos = document.querySelectorAll('.msg-logo'), logo = logos[logos.length - 1];
+    if (logo && !still) { logo.classList.remove('arriving', 'landing'); void logo.offsetWidth; logo.classList.add('landing'); }
+    if (still) { window.scrollTo(0, document.body.scrollHeight); return; }
+    window.scrollTo(0, 0);
+    requestAnimationFrame(function () { window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'}); });
+  };
+  // The whole chat in one go: no "Thinking..." placeholders flickering while it loads
+  window.loadChat = function (items) {
+    LOADING_CHAT = true;
+    try {
+      (items || []).forEach(function (m) {
+        if (m.role === 'user') addUserMessage(m.text, []);
+        else { addAssistantMessage(m.id, ''); finalizeMessage(m.id, m.html); }
+      });
+    } finally { LOADING_CHAT = false; }
+    glideToEnd();
+  };
 
   function hideWelcome() {
     var w = document.getElementById('welcome');
@@ -1620,6 +1643,12 @@ class WebChatFeed:
     async def finalize_message(self, message_id: str, raw_markdown: str):
         rendered = render_markdown_body(raw_markdown)
         await self._js(f"finalizeMessage({json.dumps(message_id)}, {json.dumps(rendered)})")
+
+    async def load_chat(self, turns: list, new_id):
+        """Draw a whole saved chat in one step (no placeholders), then glide to its end."""
+        items = [{"role": "user", "text": t.get("content", "")} if t.get("role") == "user" else
+                 {"role": "assistant", "id": new_id(), "html": render_markdown_body(t.get("content", ""))} for t in turns]
+        await self._js(f"loadChat({json.dumps(items)})")
 
     async def add_complete_assistant_message(self, message_id: str, raw_markdown: str):
         """For loading history -- adds the row and renders it fully in
