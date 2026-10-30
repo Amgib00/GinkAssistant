@@ -169,9 +169,24 @@ def build_main_screen(app: toga.App, email: str):
         prof = getattr(app, "profile", None)
         return prof.call_name(user_name) if prof is not None else user_name
 
+    WELCOME_ENDINGS = ("what\u2019s on your mind?", "how can I help today?", "what shall we work on?",
+                       "what would you like to explore?", "ready when you are.")
+
+    def greet_name() -> str:
+        """The person's name -- never made from their email ("kargboi131ik667957")."""
+        import re as _re
+        p = app.profile.get() if getattr(app, "profile", None) is not None else {}
+        looks_made = lambda n: not n or bool(_re.search(r"\d{3,}", n)) or n.lower() == (email or "").split("@")[0].lower()
+        nick = str(p.get("nickname") or "").strip()
+        if nick and not looks_made(nick):
+            return nick
+        first = str(p.get("full_name") or "").strip().split(" ")[0]
+        return first if first and not looks_made(first) else ""
+
     def welcome_title() -> str:
-        n = call_name()
-        return f"Hi {n}, what\u2019s on your mind?" if n else "Hi, what\u2019s on your mind?"
+        import random as _random
+        n, ending = greet_name(), _random.choice(WELCOME_ENDINGS)
+        return f"Hi {n}, {ending}" if n else f"Hi, {ending}"
 
     web_chat = WebChatFeed(welcome_title=welcome_title(), welcome_subtitle=WELCOME_SUB)
 
@@ -959,6 +974,8 @@ def build_main_screen(app: toga.App, email: str):
                 await push_models_only()
             if changed.get("voice"):
                 selected_voice["value"] = changed["voice"]
+            if changed.get("effort"):
+                await web_chat.set_effort(changed["effort"])
             await settings.apply_appearance()
             await settings.push()
 
@@ -992,6 +1009,7 @@ def build_main_screen(app: toga.App, email: str):
             await web_chat.show_whats_new(current, [[v, p] for v, p in items])
 
     async def push_models():
+        await web_chat.set_effort(prefs.load(app).get("effort", "medium"))
         await push_prompts()
         asyncio.ensure_future(maybe_whats_new())
         asyncio.create_task(sync_prompts())

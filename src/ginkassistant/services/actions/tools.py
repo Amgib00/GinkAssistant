@@ -120,6 +120,8 @@ TOOL_SPECS = [
     _fn("complete_item", "Mark a task/reminder done by id.", {"id": {"type": "integer"}}, ["id"]),
     _fn("delete_item", "Delete a task/reminder/alarm by id.", {"id": {"type": "integer"}}, ["id"]),
     _fn("open_app", "Open an app on this device by name.", {"name": S}, ["name"]),
+    _fn("play_music", "Play a specific song, artist, album or playlist now (for example \u201cFloating (Genom V\u00e4rldar - "
+        "English Version)\u201d). app: only if the user named one (spotify, youtube music).", {"query": S, "app": S}, ["query"]),
     _fn("open_url", "Open a website or link.", {"url": S}, ["url"]),
     _fn("compose_message", "Prepare an SMS, WhatsApp or email draft for the user to send.",
         {"channel": {"type": "string", "enum": ["sms", "whatsapp", "email"]},
@@ -316,6 +318,25 @@ class ToolRunner:
             return {"ok": False, "message": str(exc) or "The image couldn't be created."}
         return {"ok": True, "file": made.name, "path": made.path,
                 "message": f"Here's your image:\n\n{made.card_markdown()}"}
+
+    async def _t_play_music(self, query, app=""):
+        """Find the exact song first (so it plays, not just a search page), then play it."""
+        video_id = ""
+        if (app or "").lower() != "spotify" and self.device.platform != "android":
+            try:
+                found = await self.videos.search(f"{query} official audio", n=1)
+                video_id = (found[0] or {}).get("id", "") if found else ""
+            except Exception:
+                video_id = ""
+        res = self.device.play_music(query, app or "", video_id)
+        if not res.ok and not video_id:                # Android with no music app answering: find it, open it directly
+            try:
+                found = await self.videos.search(f"{query} official audio", n=1)
+                if found and found[0].get("id"):
+                    res = self.device.play_music(query, app or "", found[0]["id"])
+            except Exception:
+                pass
+        return {"ok": res.ok, "message": res.message}
 
     # ---------------- videos ----------------
     async def _t_find_video(self, query, live=False):

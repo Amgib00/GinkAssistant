@@ -101,7 +101,10 @@ _ACTION_WORDS = re.compile(
     # character, so it can't sit inside the \b(...)\b group above -- it never matched there)
     r"|\d\s*%|\b\d[\d,.]*\s*[x\u00d7*/+^]\s*\d"          # no "-": scores, dates and ranges use dashes
     # times and delays: "at 6:30", "at 5pm", "in 10 minutes", "tomorrow morning"
-    r"|\bat \d{1,2}([:.]\d{2})?\s*(am|pm)?\b|\bin \d+\s*(sec|min|hour|hr)|\btomorrow\b|\btonight\b",
+    r"|\bat \d{1,2}([:.]\d{2})?\s*(am|pm)?\b|\bin \d+\s*(sec|min|hour|hr)|\btomorrow\b|\btonight\b"
+    # play a specific song, close or exit an app: "play Floating (...)", "can you play some Burna Boy", "close Safari"
+    r"|^\s*(?:please\s+|can you\s+|could you\s+)?(?:play|close|exit)\b"
+    r"|\bplay (?:the |a |some |my )?(?:song|track|album|playlist|music)\b|\b(?:close|exit) (?:the |this )?app\b",
     re.I)
 
 
@@ -341,6 +344,7 @@ def _status_text(tool):
         "calendar_upcoming": "Checking your calendar…", "calendar_create": "Adding to your calendar…",
         "email_search": "Searching your email…", "email_read": "Reading the email…", "email_draft": "Writing the draft…",
         "email_send": "Sending the email…", "drive_search": "Searching your Drive…",
+        "play_music": "Finding the song…",
         "record_money": "Recording it…", "money_summary": "Adding it up…", "make_invoice": "Making the invoice…",
         "loan_calculator": "Calculating…", "split_bill": "Splitting the bill…", "convert_units": "Converting…",
         "generate_password": "Making a password…", "random_choice": "Choosing…", "make_qr_code": "Making the QR code…",

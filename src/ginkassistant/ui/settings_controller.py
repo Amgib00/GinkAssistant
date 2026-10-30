@@ -26,7 +26,7 @@ STATUS_LABELS = {"success": "Paid", "pending": "Pending", "failed": "Not complet
 BOOL_KEYS = {"read_aloud", "notify_reminders", "briefing_enabled", "briefing_speak", "use_memory",
              "web_search", "video_suggestions", "single_keys", "wake_enabled", "wake_followup", "wake_front",
              "briefing_projects", "use_location", "agent_confirm"}
-CHOICES = {"theme": {"system", "light", "dark"}, "chat_font": {"sans", "serif", "mono"},
+CHOICES = {"effort": {"low", "medium", "high", "extra", "max"}, "theme": {"system", "light", "dark"}, "chat_font": {"sans", "serif", "mono"},
            "motion": {"system", "reduced"}, "voice_speed": {"slow", "normal", "fast"},
            "reply_language": set(languages.BY_CODE), "send_key": {"enter", "mod"},
            "speech_lang": SPEECH_LANG_CODES,

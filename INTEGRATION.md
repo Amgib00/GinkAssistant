@@ -1412,3 +1412,15 @@ New services/live_info.py (all free, no API keys):
   scoring), memoryNote() in the system prompt. Browser-tested both.
 - Genie: assistant content alongside tool calls -> {"kind": "note"} step; GENIE_SYSTEM asks for one
   sentence per group and run -> fix -> rerun. Browser-tested with real Pyodide (exit 1 -> fixed -> 413.0).
+
+## 0.1.55: play songs, model menu + Effort, greeting, attachments in the box
+- play_music tool: DeviceActions.play_music (Android MEDIA_PLAY_FROM_SEARCH + package for a named app,
+  fallback music.youtube watch; computers: spotify:search if named, else the song found by VideoSearch
+  "<q> official audio" -> youtube watch (autoplays), else YouTube Music search). looks_like_action now
+  routes "play ...", "close ...", "exit ..." (at the start) and "play the song/album/...".
+- Model menu (page): main (current + desc, Effort >, More models >), Effort (low..max, synced pref
+  "effort" in all three lists; apps GroqBrain._effort_args / web body: GPT-OSS only; extra/max = high,
+  max + 32000 tokens), More models = only Crystal/Flake/Prism; hover (mouse) or tap.
+- Greeting: greet_name() (nickname / first word of full name, never email-made: 3+ digits or the email
+  local part) + random WELCOME_ENDINGS; web the same. Attachments: in the box (home: flex-wrap,
+  order -1), pictures 96 px with a corner x.

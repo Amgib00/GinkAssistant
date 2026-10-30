@@ -5905,7 +5905,7 @@ SYNCED_PREFS = frozenset({
     "theme", "chat_font", "motion", "style_base", "style_warmth", "style_enthusiasm", "style_emoji", "style_headers",
     "reply_language", "voice_speed", "read_aloud", "speech_lang", "web_search", "use_memory", "video_suggestions",
     "notify_reminders", "agent_confirm", "send_key", "briefing_enabled", "briefing_time", "briefing_city",
-    "briefing_speak", "wake_followup", "voice", "model", "genie_mode", "instructions",
+    "briefing_speak", "wake_followup", "voice", "model", "genie_mode", "instructions", "effort",
 })
 _PREFS_TABLE = "CREATE TABLE IF NOT EXISTS account_preferences (email TEXT PRIMARY KEY, data TEXT NOT NULL, updated REAL NOT NULL)"
 

@@ -264,7 +264,11 @@
     leaveTemporary();
     W.current = null; clearFeed();
     var first = (W.name || W.email || "").split(/[\s@]/)[0];
-    showWelcome(first ? "Hi " + first + ", what\u2019s on your mind?" : "Hi, what\u2019s on your mind?", "");
+    var endings = ["what\u2019s on your mind?", "how can I help today?", "what shall we work on?",
+                   "what would you like to explore?", "ready when you are."];
+    var ending = endings[Math.floor(Math.random() * endings.length)];
+    if (/\d{3,}/.test(first) || first === (W.email || "").split("@")[0]) first = "";    // never a name made from the email
+    showWelcome(first ? "Hi " + first + ", " + ending : "Hi, " + ending, "");
     setComposerText(load("gink_draft_new", "") || "");
     refreshSidebar();
   }
@@ -418,6 +422,11 @@
     var history = s.messages.slice(-24).map(function (m) { return { role: m.role, content: m.content }; });
     if (opts.last !== undefined && history.length) history[history.length - 1].content = opts.last;   // files + photos
     var body = { model: W.model || undefined, stream: true, messages: [{ role: "system", content: systemPrompt(opts.voice) }].concat(history) };
+    if (/^openai\/gpt-oss/.test(W.model || "openai/gpt-oss")) {                 // the model menu's Effort
+      var eff = W.prefs.effort || "medium";
+      body.reasoning_effort = { low: "low", medium: "medium", high: "high", extra: "high", max: "high" }[eff] || "medium";
+      if (eff === "max") body.max_tokens = 32000;
+    }
     if (opts.web) body.gink_web = true;                       // the server runs it as a web search
     var text = "";
     return api("/ai/openai/v1/chat/completions", body, { signal: ctrl.signal }).then(function (r) {
@@ -752,7 +761,7 @@
   var SYNCED_PREFS = ["theme", "chat_font", "motion", "style_base", "style_warmth", "style_enthusiasm", "style_emoji", "style_headers",
     "reply_language", "voice_speed", "read_aloud", "speech_lang", "web_search", "use_memory", "video_suggestions",
     "notify_reminders", "agent_confirm", "send_key", "briefing_enabled", "briefing_time", "briefing_city",
-    "briefing_speak", "wake_followup", "voice", "model", "genie_mode", "instructions"];
+    "briefing_speak", "wake_followup", "voice", "model", "genie_mode", "instructions", "effort"];
   var PREFSYNC = { pending: {}, timer: null, seen: parseFloat(LS.getItem("gink_prefs_seen") || "0") };
   function queuePrefs(key, value) {
     PREFSYNC.pending[key] = value; clearTimeout(PREFSYNC.timer);
@@ -776,11 +785,11 @@
         SYNCED_PREFS.forEach(function (k) {
           if (k in remote && k !== "model" && W.prefs[k] !== remote[k]) { W.prefs[k] = remote[k]; changed = true; }
         });
-        if (changed) { save("gink_prefs", W.prefs); applyAppearance(); pushSettings(); }
+        if (changed) { save("gink_prefs", W.prefs); applyAppearance(); pushSettings(); if (window.setEffort) setEffort(W.prefs.effort); }
         if (remote.model && remote.model !== W.model && HANDLERS.model) HANDLERS.model(remote.model, true);
       }).catch(function () {});
   }
-  setTimeout(pullPrefs, 0); setInterval(pullPrefs, 120000);
+  setTimeout(function () { if (window.setEffort) setEffort(W.prefs.effort || "medium"); pullPrefs(); }, 0); setInterval(pullPrefs, 120000);
 
   // ---------------------------------------------------------------- downloads (export / save code)
   function download(name, text, type) {

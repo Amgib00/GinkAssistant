@@ -273,6 +273,45 @@ class DeviceActions:
         close = difflib.get_close_matches(key, list(low), n=1, cutoff=0.75)
         return low[close[0]] if close else None
 
+    MUSIC_APPS_ANDROID = {"spotify": "com.spotify.music", "youtube music": "com.google.android.apps.youtube.music",
+                          "youtube": "com.google.android.youtube"}
+
+    def play_music(self, query: str, app: str = "", video_id: str = "") -> ActionResult:
+        """Play a specific song/artist/playlist. Android: the system's 'play from search' (the default music
+        app finds and plays it). Elsewhere: Spotify opens at the song if named, otherwise the song plays
+        on YouTube (found beforehand by the caller: video_id)."""
+        from urllib.parse import quote
+        query, app = " ".join(str(query or "").split())[:200], str(app or "").strip().lower()
+        if not query:
+            return ActionResult(False, "Tell me which song to play.")
+        if self.platform == "android":
+            try:
+                from java import jclass
+                Intent = jclass("android.content.Intent")
+                MediaStore = jclass("android.provider.MediaStore")
+                SearchManager = jclass("android.app.SearchManager")
+                intent = Intent(MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH)
+                intent.putExtra(MediaStore.EXTRA_MEDIA_FOCUS, "vnd.android.cursor.item/*")
+                intent.putExtra(SearchManager.QUERY, query)
+                if app in self.MUSIC_APPS_ANDROID:
+                    intent.setPackage(self.MUSIC_APPS_ANDROID[app])
+                self._android_start(intent)
+                return ActionResult(True, f"Playing \u201c{query}\u201d" + (f" on {app.title()}." if app else "."))
+            except Exception:
+                if video_id:                                  # no music app answers "play": open the song itself
+                    self._android_view(f"https://music.youtube.com/watch?v={video_id}")
+                    return ActionResult(True, f"Playing \u201c{query}\u201d on YouTube Music.")
+                return ActionResult(False, "No music app on this phone could play it. Install YouTube Music or Spotify.")
+        if app == "spotify":
+            res = self.open_url("spotify:search:" + quote(query))
+            if res.ok:
+                return ActionResult(True, f"Opened \u201c{query}\u201d in Spotify \u2014 press play there (Spotify doesn't let apps press it).")
+        if video_id:
+            res = self.open_url(f"https://www.youtube.com/watch?v={video_id}")
+            return ActionResult(res.ok, f"Playing \u201c{query}\u201d on YouTube." if res.ok else res.message)
+        res = self.open_url("https://music.youtube.com/search?q=" + quote(query))
+        return ActionResult(res.ok, f"Opened \u201c{query}\u201d in YouTube Music." if res.ok else res.message)
+
     def open_app(self, name: str) -> ActionResult:
         key = (name or "").strip().lower()
         if not key:

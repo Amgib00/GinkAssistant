@@ -145,6 +145,7 @@ def _limit_message(err) -> str:
 
 class GroqBrain:
     def __init__(self, app: toga.App, session_id: str = "default_session"):
+        self.app = app
         self.history = HistoryStore(app)
         self.session_id = session_id
         self.local_llm = LocalLLM(app)
@@ -239,6 +240,22 @@ class GroqBrain:
 
     last_turn = None
     TITLE_MODELS = ("openai/gpt-oss-20b", "openai/gpt-oss-120b", "llama-3.1-8b-instant")   # small + fast first
+
+    EFFORT = {"low": "low", "medium": "medium", "high": "high", "extra": "high", "max": "high"}
+
+    def _effort_args(self, model: str) -> dict:
+        """The Effort setting (model menu): GPT-OSS takes low/medium/high; Max also allows longer answers."""
+        if not str(model).startswith("openai/gpt-oss"):
+            return {}
+        try:
+            from . import prefs
+            effort = prefs.load(self.app).get("effort", "medium")
+        except Exception:
+            effort = "medium"
+        extra = {"reasoning_effort": self.EFFORT.get(effort, "medium")}
+        if effort == "max":
+            extra["max_tokens"] = 32000
+        return {"extra_body": extra}
 
     @staticmethod
     def _short_answer_args(model: str, max_tokens: int) -> dict:
@@ -390,7 +407,8 @@ class GroqBrain:
         self.last_turn = turn["X-Gink-Turn"]
         try:
             stream = await self.client.chat.completions.create(
-                model=active_model, messages=messages, temperature=0.8, stream=True, extra_headers=turn
+                model=active_model, messages=messages, temperature=0.8, stream=True, extra_headers=turn,
+                **self._effort_args(active_model),
             )
         except APIStatusError as err:
             friendly = _limit_message(err)
@@ -406,7 +424,8 @@ class GroqBrain:
             retry_model = await self.resolve_model(DEFAULT_FALLBACKS["_global_default"])
             try:
                 stream = await self.client.chat.completions.create(
-                    model=retry_model, messages=messages, temperature=0.8, stream=True, extra_headers=turn
+                    model=retry_model, messages=messages, temperature=0.8, stream=True, extra_headers=turn,
+                    **self._effort_args(retry_model),
                 )
             except APIStatusError as err2:
                 logger.warning(f"fallback '{retry_model}' failed too ({err2})")

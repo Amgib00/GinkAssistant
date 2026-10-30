@@ -317,6 +317,14 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
   .menu button:hover { background: var(--elevated); }
   .menu .hint { color: var(--text-muted); font-size: 12px; margin-left: auto; }
   .menu .sel::after { content: "\\2713"; margin-left: auto; color: var(--accent); }
+  #model-menu { min-width: 300px; }
+  #model-menu .mm-col { display: flex; flex-direction: column; gap: 2px; }
+  #model-menu .mm-name { font-weight: 600; } #model-menu .mm-desc { color: var(--text-muted); font-size: 12.5px; }
+  #model-menu .mm-back { color: var(--text-muted); font-weight: 600; }
+  #model-menu .mm-note { color: var(--text-muted); font-size: 12.5px; padding: 2px 10px 6px; line-height: 1.4; }
+  #model-menu .mm-badge { font-size: 11.5px; border: 1px solid var(--border); border-radius: 999px; padding: 1px 8px; color: var(--text-muted); }
+  #model-menu .mm-badge.warn { background: rgba(255, 190, 60, .16); color: inherit; }
+  #model-menu .sel .mm-badge { margin-right: 6px; }
   #cstatus { max-width: 760px; margin: 6px auto 0; min-height: 16px; font-size: 12px; color: var(--accent); text-align: center; }
   .disclaimer { max-width: 760px; margin: 2px auto 0; font-size: 11px; color: var(--text-muted); text-align: center; }
   @media (max-width: 520px) {
@@ -566,7 +574,15 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
   }
   .att .x:hover { background: var(--bg); color: var(--text-main); }
   .att.loading { opacity: 0.6; }
-  body.home #atts { position: absolute; left: 12px; right: 12px; bottom: 100%; margin-bottom: 8px; justify-content: center; }
+  /* attachments live INSIDE the box, on their own line above the text (Gemini-style), on the new-chat bar too */
+  body.home #composer { flex-wrap: wrap; }
+  body.home #composer.with-atts { border-radius: 24px; }
+  body.home #atts { flex-basis: 100%; order: -1; margin: 4px 4px 6px; justify-content: flex-start; }
+  .att.pic { position: relative; padding: 0; border-radius: 16px; overflow: hidden; background: transparent; }
+  .att.pic img { width: 96px; height: 96px; margin: 0; border-radius: 16px; }
+  .att.pic .meta { display: none; }
+  .att.pic .x { position: absolute; top: 5px; right: 5px; margin: 0; background: rgba(0, 0, 0, .55); color: #fff; border-radius: 50%; }
+  .att.pic .x:hover { background: rgba(0, 0, 0, .75); color: #fff; }
   body.home #composer { position: relative; }
   #composer.dragging { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
   .uatts { display: flex; flex-wrap: wrap; justify-content: flex-end; margin-bottom: 6px; max-width: 460px; }
@@ -931,7 +947,8 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
 
   // ---- attachments ------------------------------------------------
   function attChip(a, removable, idx) {
-    var d = document.createElement('div'); d.className = 'att' + (a.kind === 'image' && !removable ? ' photo' : '');
+    var d = document.createElement('div');
+    d.className = 'att' + (a.kind === 'image' && !removable ? ' photo' : '') + (removable && a.thumb ? ' pic' : '');
     if (a.loading) d.className += ' loading';
     var ext = (a.name.split('.').pop() || 'file').slice(0, 4);
     if (a.thumb) { var im = document.createElement('img'); im.src = a.thumb; d.appendChild(im); }
@@ -955,6 +972,7 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     var box = document.getElementById('atts'); box.innerHTML = '';
     composerAtts.forEach(function (a, i) { box.appendChild(attChip(a, true, i)); });
     box.classList.toggle('has', composerAtts.length > 0);
+    var comp = document.getElementById('composer'); if (comp) comp.classList.toggle('with-atts', composerAtts.length > 0);
     refreshSend();
   }
   function readAndEmit(file) {
@@ -1120,14 +1138,27 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     document.getElementById('plus').addEventListener('click', function (e) {
       e.stopPropagation(); var m = document.getElementById('plus-menu'); var was = m.classList.contains('hidden'); closeMenus(); if (was) m.classList.remove('hidden');
     });
-    document.getElementById('model').addEventListener('click', function (e) {
-      e.stopPropagation(); var m = document.getElementById('model-menu'); var was = m.classList.contains('hidden'); closeMenus(); if (was) m.classList.remove('hidden');
+    var mbtn = document.getElementById('model'), mmenu = document.getElementById('model-menu');
+    function openModelMenu() { clearTimeout(MM.timer); if (mmenu.classList.contains('hidden')) { closeMenus(); MM.view = 'main'; drawModelMenu(); mmenu.classList.remove('hidden'); } }
+    function laterCloseModelMenu() { clearTimeout(MM.timer); MM.timer = setTimeout(function () { mmenu.classList.add('hidden'); }, 350); }
+    mbtn.addEventListener('click', function (e) {
+      e.stopPropagation(); if (mmenu.classList.contains('hidden')) openModelMenu(); else mmenu.classList.add('hidden');
     });
+    if (window.matchMedia && matchMedia('(hover: hover)').matches) {        // mouse: opens on touch, closes on leaving
+      mbtn.addEventListener('mouseenter', openModelMenu); mbtn.addEventListener('mouseleave', laterCloseModelMenu);
+      mmenu.addEventListener('mouseenter', function () { clearTimeout(MM.timer); }); mmenu.addEventListener('mouseleave', laterCloseModelMenu);
+    }
     document.getElementById('plus-menu').addEventListener('click', function (e) {
       var b = e.target.closest('button'); if (!b) return; closeMenus(); ginkEmit('menu', b.getAttribute('data-act'));
     });
     document.getElementById('model-menu').addEventListener('click', function (e) {
-      var b = e.target.closest('button'); if (!b) return; closeMenus(); ginkEmit('model', b.getAttribute('data-id'));
+      e.stopPropagation(); var b = e.target.closest('button'); if (!b) return;
+      if (b.hasAttribute('data-view')) { MM.view = b.getAttribute('data-view'); drawModelMenu(); return; }
+      if (b.hasAttribute('data-back')) { MM.view = 'main'; drawModelMenu(); return; }
+      if (b.hasAttribute('data-effort')) { MM.effort = b.getAttribute('data-effort'); drawModelMenu(); closeMenus();
+        ginkEmit('setting', {key: 'effort', value: MM.effort}); return; }
+      if (b.hasAttribute('data-id')) { closeMenus(); MM.current = b.getAttribute('data-id'); setModels([], MM.current);
+        ginkEmit('model', MM.current); }
     });
     document.addEventListener('click', closeMenus);
     refreshSend(); t.focus();
@@ -1146,15 +1177,57 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
   function setDictating(on) { var m = document.getElementById('mic'); m.classList.toggle('on', on); m.disabled = on; }
   function setStatus(text) { document.getElementById('cstatus').innerText = text || ''; }
   function insertComposerText(text) { var t = cin(); t.value = t.value ? (t.value.replace(/\\s+$/, '') + ' ' + text) : text; autoGrow(); refreshSend(); t.focus(); }
+  // ---- The model menu (like Claude's): the current model, Effort, More models (only Gink's three)
+  var GINK_MODELS = [
+    {id: 'openai/gpt-oss-120b', name: 'Gink Crystal', desc: 'For complex work and everyday tasks'},
+    {id: 'openai/gpt-oss-20b', name: 'Gink Flake', desc: 'The fastest, for quick answers'},
+    {id: 'qwen/qwen3.8-27b', name: 'Gink Prism', desc: 'Careful reasoning, in many languages'}];
+  var EFFORTS = [['low', 'Low'], ['medium', 'Medium', 'Recommended'], ['high', 'High'], ['extra', 'Extra'],
+                 ['max', 'Max', '\u26a0 Uses more of your limit']];
+  var MM = {current: '', names: {}, available: [], effort: 'medium', view: 'main', timer: null};
+  function mmInfo(id) {
+    for (var i = 0; i < GINK_MODELS.length; i++) if (GINK_MODELS[i].id === id) return GINK_MODELS[i];
+    return {id: id, name: MM.names[id] || 'Gink', desc: ''};
+  }
   function setModels(models, currentId) {
-    var menu = document.getElementById('model-menu'); menu.innerHTML = '';
-    models.forEach(function (m) {
-      var b = document.createElement('button'); b.setAttribute('data-id', m.id);
-      b.innerHTML = '<span></span><span class="hint"></span>';
-      b.children[0].innerText = m.name; b.children[1].innerText = m.tier || '';
-      if (m.id === currentId) { b.classList.add('sel'); document.getElementById('model-name').innerText = m.name; document.getElementById('model-tier').innerText = m.tier || ''; }
-      menu.appendChild(b);
-    });
+    MM.available = (models || []).map(function (m) { MM.names[m.id] = m.name; return m.id; });
+    MM.current = currentId || MM.current;
+    document.getElementById('model-name').innerText = mmInfo(MM.current).name;
+    document.getElementById('model-tier').innerText = '';
+    drawModelMenu();
+  }
+  window.setEffort = function (e) { if (e) { MM.effort = e; drawModelMenu(); } };
+  function mmButton(attrs, html) {
+    var b = document.createElement('button'); Object.keys(attrs).forEach(function (k) { b.setAttribute(k, attrs[k]); });
+    b.innerHTML = html; return b;
+  }
+  function esc(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+  function drawModelMenu() {
+    var menu = document.getElementById('model-menu'); if (!menu) return; menu.innerHTML = '';
+    if (MM.view === 'effort') {
+      menu.appendChild(mmButton({'data-back': '1', 'class': 'mm-back'}, '\u2039&nbsp; Effort'));
+      var note = document.createElement('div'); note.className = 'mm-note';
+      note.textContent = 'Higher effort means more thorough responses, but takes longer and uses your limits faster.'; menu.appendChild(note);
+      EFFORTS.forEach(function (e) {
+        menu.appendChild(mmButton({'data-effort': e[0], 'class': e[0] === MM.effort ? 'sel' : ''},
+          '<span>' + esc(e[1]) + '</span>' + (e[2] ? '<span class="mm-badge' + (e[0] === 'max' ? ' warn' : '') + '">' + esc(e[2]) + '</span>' : '')));
+      });
+      return;
+    }
+    if (MM.view === 'models') {
+      menu.appendChild(mmButton({'data-back': '1', 'class': 'mm-back'}, '\u2039&nbsp; More models'));
+      GINK_MODELS.filter(function (m) { return !MM.available.length || MM.available.indexOf(m.id) >= 0; }).forEach(function (m) {
+        menu.appendChild(mmButton({'data-id': m.id, 'class': 'mm-model' + (m.id === MM.current ? ' sel' : '')},
+          '<span class="mm-col"><span class="mm-name">' + esc(m.name) + '</span><span class="mm-desc">' + esc(m.desc) + '</span></span>'));
+      });
+      return;
+    }
+    var cur = mmInfo(MM.current);
+    menu.appendChild(mmButton({'data-view': 'models', 'class': 'mm-model sel'},
+      '<span class="mm-col"><span class="mm-name">' + esc(cur.name) + '</span><span class="mm-desc">' + esc(cur.desc) + '</span></span>'));
+    var effortName = (EFFORTS.filter(function (e) { return e[0] === MM.effort; })[0] || EFFORTS[1])[1];
+    menu.appendChild(mmButton({'data-view': 'effort'}, '<span>Effort</span><span class="hint">' + esc(effortName) + '&nbsp; \u203a</span>'));
+    menu.appendChild(mmButton({'data-view': 'models'}, '<span>More models</span><span class="hint">\u203a</span>'));
   }
 
   var LOADING_CHAT = false;                   // while a whole chat is drawn at once, no jumping
@@ -1559,6 +1632,9 @@ class WebChatFeed:
 
     async def show_whats_new(self, version: str, sections: list):
         await self._js(f"showWhatsNew({json.dumps(version)}, {json.dumps(sections)})")
+
+    async def set_effort(self, effort: str):
+        await self._js(f"setEffort({json.dumps(effort or 'medium')})")
 
     async def show_recalled(self, items: list):
         await self._js(f"showRecalled({json.dumps([{'text': i.get('text', '')} for i in items])})")

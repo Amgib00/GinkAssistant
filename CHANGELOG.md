@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.55 (October 2026)
+
+- "Play Floating (Genom Världar - English Version)": Gink plays the exact song (YouTube on computers,
+  your music app on Android, or Spotify if you ask), and understands "close Safari" too
+- A new model menu: point at the model to see it, choose the Effort (Low to Max), and pick
+  Gink Crystal, Gink Flake or Gink Prism
+- The greeting uses your name (never your email) and changes each time
+- Pictures you attach show inside the message box
+
 ## 0.1.54 (October 2026)
 
 - Gink can ask you questions with tap-to-answer choices (and "Something else") when it needs your
