@@ -1433,3 +1433,8 @@ New services/live_info.py (all free, no API keys):
   last 10 min, window.__sentAt; web openSession resets it; >= 900 px; longest block >= 30 lines).
 - Drift fix (seen in the screenshot: 37 next to line 36): the viewer's <code> took the page's 13px/20.8px;
   now inherits 12.5px/20px like the numbers.
+
+## 0.1.57: design preview in the code viewer
+- HTML/SVG/XML (by extension, with markup inside) -> .cvtabs Preview | Code; cvShow('preview') = iframe
+  srcdoc, sandbox="allow-scripts allow-modals" (no allow-same-origin: localStorage throws); SVG wrapped
+  and centred. Browser-tested (script ran, sign-in blocked).

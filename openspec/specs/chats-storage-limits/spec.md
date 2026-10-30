@@ -46,3 +46,10 @@ Code blocks of 15 lines or more SHALL offer "Open", showing the code in a side p
 #### Scenario: A long file in an answer
 - **WHEN** Gink answers with "Here's voice_bridge.py" and 40 lines of Python
 - **THEN** the viewer opens titled "Voice bridge" with a PY badge and 40 numbered lines
+
+### Requirement: Design preview
+For HTML and SVG code the viewer SHALL offer Preview and Code, opening on Preview: the page or graphic rendered in a sandbox that runs its scripts but cannot reach Gink (no same-origin access).
+
+#### Scenario: An HTML card
+- **WHEN** Gink answers with an HTML card that runs a script and tries to read Gink's sign-in
+- **THEN** the preview shows the card with its script's result, and the sign-in stays unreachable

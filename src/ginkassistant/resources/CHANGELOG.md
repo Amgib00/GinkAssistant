@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.57 (October 2026)
+
+- Designs: when Gink writes a web page or a graphic (HTML, SVG), the code viewer shows it rendered
+  (Preview) next to its code
+
 ## 0.1.56 (October 2026)
 
 - A code viewer: long code opens in a panel beside the chat, with the file's name, Copy or

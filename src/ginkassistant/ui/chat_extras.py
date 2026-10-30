@@ -260,6 +260,11 @@ CSS = r"""
   #codeview .cvmenu button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 7px 12px; }
   #codeview .cvmenu button:hover { background: var(--elevated); }
   #codeview .cvbody { flex: 1; overflow: auto; }
+  #codeview .cvframe { flex: 1; width: 100%; border: 0; background: #fff; }
+  #codeview .cvtabs { display: inline-flex; margin-left: 10px; border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+  #codeview .cvtabs button { border: 0 !important; border-radius: 0 !important; background: transparent !important; padding: 4px 11px !important; color: var(--text-muted) !important; }
+  #codeview .cvtabs button.on { background: var(--elevated) !important; color: var(--text-main) !important; font-weight: 600; }
+  #codeview [hidden] { display: none !important; }
   #codeview .cvbody .code-block { margin: 0; border: 0; border-radius: 0; }
   #codeview .cvbody code { font-size: inherit; line-height: inherit; }   /* same line height as the numbers: no drift */
   #codeview .cvbody .code-block-body { border: 0; border-radius: 0; max-height: none !important; }
@@ -825,7 +830,8 @@ JS = r"""
     var v = document.getElementById('codeview');
     if (!v) {
       v = document.createElement('aside'); v.id = 'codeview'; v.setAttribute('aria-label', 'Code viewer');
-      v.innerHTML = '<div class="cvh"><span class="cvt"></span><span class="cvb"></span><span class="cvg"></span>' +
+      v.innerHTML = '<div class="cvh"><span class="cvt"></span><span class="cvb"></span>' +
+        '<span class="cvtabs" hidden><button data-tab="preview">Preview</button><button data-tab="code">Code</button></span><span class="cvg"></span>' +
         '<button class="cvcopy">Copy</button><button class="cvmore" aria-label="More">\u2304</button>' +
         '<button class="cvicon cvwide" title="Expand" aria-label="Expand">\u2922</button>' +
         '<button class="cvicon cvclose" title="Close" aria-label="Close">\u00d7</button></div><div class="cvbody"></div>';
@@ -840,6 +846,7 @@ JS = r"""
           if (a === 'copy') v.querySelector('.cvcopy').click(); else ginkEmit('save_code', {name: CV.name, code: CV.text}); };
         v.appendChild(m);
       };
+      v.querySelector('.cvtabs').onclick = function (e) { var t = e.target.getAttribute && e.target.getAttribute('data-tab'); if (t) cvShow(t); };
       v.querySelector('.cvwide').onclick = function () { var w = v.classList.toggle('wide'); this.title = w ? 'Make smaller' : 'Expand'; };
       v.querySelector('.cvclose').onclick = function () { v.remove(); document.body.classList.remove('viewer-open'); };
       document.addEventListener('click', function () { var m = v.querySelector('.cvmenu'); if (m) m.remove(); });
@@ -848,8 +855,28 @@ JS = r"""
     var body = block.querySelector('.code-block-body');
     // inside a .code-block wrapper so the numbers and the code share the same styling (they drifted apart otherwise)
     v.querySelector('.cvbody').innerHTML = body ? '<div class="code-block cv-inner" data-enh="1">' + body.outerHTML + '</div>' : '';
+    var design = /^(html?|svg|xml)$/.test(ext) && /<(html|body|div|svg|style|section|main|h1|p)\b/i.test(CV.text);
+    v.querySelector('.cvtabs').hidden = !design;
+    cvShow(design ? 'preview' : 'code');
     document.body.classList.add('viewer-open');
   };
+  // Designs (HTML, SVG): Preview | Code. The preview is a sealed sandbox: its scripts run, but it can't reach Gink.
+  function cvShow(tab) {
+    var v = document.getElementById('codeview'); if (!v) return;
+    var body = v.querySelector('.cvbody'), old = v.querySelector('.cvframe');
+    v.querySelectorAll('.cvtabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-tab') === tab); });
+    if (tab === 'preview') {
+      body.hidden = true;
+      if (!old) {
+        old = document.createElement('iframe'); old.className = 'cvframe'; old.setAttribute('sandbox', 'allow-scripts allow-modals');
+        old.setAttribute('title', 'Preview'); v.appendChild(old);
+      }
+      var html = /^\s*<svg\b/i.test(CV.text) ? '<!doctype html><body style="margin:0;display:grid;place-items:center;min-height:100vh">' + CV.text + '</body>' : CV.text;
+      old.srcdoc = html; old.hidden = false;
+    } else {
+      body.hidden = false; if (old) old.hidden = true;
+    }
+  }
   // A new answer with long code opens it by itself on larger screens (never for chats opened from history)
   window.__sentAt = 0;
   window.autoOpenCode = function (el) {

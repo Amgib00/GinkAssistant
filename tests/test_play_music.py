@@ -73,3 +73,10 @@ def test_code_viewer_wiring():
     page = open(os.path.join(root, "src", "ginkassistant", "ui", "web_chat_view.py"), encoding="utf-8").read()
     assert "if (!LOADING_CHAT && window.autoOpenCode) autoOpenCode(el);" in page and "window.__sentAt = Date.now();" in page
     assert "window.__sentAt = 0;" in open(os.path.join(root, "webapp", "bridge.js"), encoding="utf-8").read()
+
+
+def test_design_preview_is_sandboxed():
+    root = os.path.join(os.path.dirname(__file__), "..")
+    extras = open(os.path.join(root, "src", "ginkassistant", "ui", "chat_extras.py"), encoding="utf-8").read()
+    assert "old.setAttribute('sandbox', 'allow-scripts allow-modals');" in extras        # never allow-same-origin
+    assert "allow-same-origin" not in extras and "function cvShow(tab)" in extras
