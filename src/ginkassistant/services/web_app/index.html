@@ -973,6 +973,25 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
   #jump.show { opacity: 1; pointer-events: auto; transform: translateX(-50%); }
   body.pinned #jump { left: calc(50% + var(--side-w) / 2); }
   body.home #jump { display: none; }
+  /* Question cards (Gink asks with tappable choices) */
+  .qcard { border: 1px solid var(--border); border-radius: 16px; background: var(--surface); margin: 10px 0; overflow: hidden; max-width: 640px; }
+  .qcard .qq { font-weight: 650; padding: 14px 16px 6px; }
+  .qcard .qo { display: block; width: 100%; text-align: left; background: none; border: 0; border-top: 1px solid var(--border);
+               padding: 12px 16px; font: inherit; color: var(--text-main); cursor: pointer; }
+  .qcard .qo:hover, .qcard .qo.on { background: var(--elevated); }
+  .qcard .qo.on { font-weight: 650; }
+  .qcard .qe { display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); padding: 8px 16px; }
+  .qcard .qe input { flex: 1; border: 0; outline: none; background: transparent; font: inherit; color: var(--text-main); padding: 4px 0; }
+  .qcard .qf { display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border); padding: 8px 12px; color: var(--text-muted); }
+  .qcard .qf button { background: none; border: 0; font: inherit; color: var(--text-main); cursor: pointer; padding: 4px 8px; border-radius: 8px; }
+  .qcard .qf button:disabled { opacity: .35; cursor: default; }
+  .qcard .qsend { width: 32px; height: 32px; border-radius: 50% !important; background: var(--text-main) !important; color: var(--surface) !important; }
+  .qcard.done .qo, .qcard.done .qe, .qcard.done .qf .qsend, .qcard.done .qf .qskip { display: none; }
+  .qcard .qans { padding: 0 16px 12px; color: var(--text-muted); }
+  /* "Recalled memory" above an answer */
+  .recalled { display: flex; gap: 8px; align-items: baseline; color: var(--text-muted); font-size: 13.5px; margin: 6px 0 2px; cursor: pointer; }
+  .recalled b { color: var(--text-main); font-weight: 600; } .recalled .rm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 520px; }
+  .recalled.open .rm { white-space: normal; }
 
   /* ---------- the orb (shared by intro, picker, conversation, Settings) ---------- */
   .vorb { position: relative; border-radius: 50%; overflow: hidden; flex: none;
@@ -1968,6 +1987,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     stopSpinClock(id);
     upgradeVideoLinks(el);
     upgradeFileLinks(el);
+    if (window.upgradeQuestionCards) upgradeQuestionCards(el);     // before code blocks: ```ask``` becomes a card
     enhanceCodeBlocks(el);
     addGinkActions(el, id);
     var logoImg = document.createElement('img');
@@ -2982,6 +3002,61 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     d.appendChild(box); d.onclick = function (e) { if (e.target === d) d.remove(); };
     document.body.appendChild(d); ok.focus();
   };
+  // ---- Question cards: an answer's ```ask {"questions":[{"q":..., "options":[...]}]}``` becomes tappable choices
+  window.upgradeQuestionCards = function (root) {
+    Array.prototype.slice.call(root.querySelectorAll('.code-block')).forEach(function (block) {
+      var label = block.querySelector('.code-block-label'); if (!label || label.textContent.trim().toLowerCase() !== 'ask') return;
+      var data; try { data = JSON.parse(block.querySelector('code').textContent); } catch (e) { return; }
+      var qs = (data.questions || []).filter(function (q) { return q && q.q && (q.options || []).length; }).slice(0, 3);
+      if (!qs.length) return;
+      var card = document.createElement('div'); card.className = 'qcard'; card.setAttribute('role', 'group');
+      var st = { i: 0, answers: qs.map(function () { return null; }) };
+      function el(t, c, txt) { var x = document.createElement(t); if (c) x.className = c; if (txt != null) x.textContent = txt; return x; }
+      function draw() {
+        card.innerHTML = ''; var q = qs[st.i];
+        card.appendChild(el('div', 'qq', q.q));
+        q.options.slice(0, 4).forEach(function (o) {
+          var b = el('button', 'qo' + (st.answers[st.i] === String(o) ? ' on' : ''), String(o));
+          b.onclick = function () { st.answers[st.i] = String(o); next(); }; card.appendChild(b);
+        });
+        var row = el('div', 'qe'); row.appendChild(el('span', '', '\u270e'));
+        var inp = el('input'); inp.placeholder = 'Something else'; inp.setAttribute('aria-label', 'Something else');
+        var own = st.answers[st.i]; if (own && q.options.map(String).indexOf(own) < 0) inp.value = own;
+        inp.onkeydown = function (e) { if (e.key === 'Enter' && inp.value.trim()) { e.preventDefault(); st.answers[st.i] = inp.value.trim(); next(); } };
+        row.appendChild(inp); card.appendChild(row);
+        var f = el('div', 'qf');
+        var prev = el('button', '', '\u2039'); prev.disabled = st.i === 0; prev.onclick = function () { st.i--; draw(); };
+        var nx = el('button', '', '\u203a'); nx.disabled = st.i === qs.length - 1; nx.onclick = function () { st.i++; draw(); };
+        f.appendChild(prev); f.appendChild(el('span', '', (st.i + 1) + ' of ' + qs.length)); f.appendChild(nx);
+        var gap = el('span'); gap.style.flex = '1'; f.appendChild(gap);
+        var skip = el('button', 'qskip', 'Skip'); skip.onclick = function () { st.answers[st.i] = st.answers[st.i] || '(skipped)'; next(); };
+        var send = el('button', 'qsend', '\u2191'); send.setAttribute('aria-label', 'Send the answers');
+        send.disabled = st.answers.some(function (a) { return !a; }); send.onclick = submit;
+        f.appendChild(skip); f.appendChild(send); card.appendChild(f);
+      }
+      function next() { if (st.i < qs.length - 1) st.i++; draw(); }
+      function submit() {
+        var text = qs.map(function (q, i) { return q.q + ' ' + st.answers[i]; }).join('\n');
+        card.classList.add('done'); card.innerHTML = '';
+        card.appendChild(el('div', 'qq', 'Your answers'));
+        qs.forEach(function (q, i) { card.appendChild(el('div', 'qans', q.q + ' \u2014 ' + st.answers[i])); });
+        ginkEmit('send', text);
+      }
+      draw(); block.parentNode.replaceChild(card, block);
+    });
+  };
+  // ---- "Recalled memory": the memories Gink is using for this answer
+  window.showRecalled = function (items) {
+    if (!items || !items.length) return;
+    var feed = document.getElementById('feed') || document.body;
+    var row = document.createElement('div'); row.className = 'recalled'; row.setAttribute('role', 'note');
+    var icon = document.createElement('span'); icon.textContent = '\u21ba'; row.appendChild(icon);
+    var b = document.createElement('b'); b.textContent = items.length === 1 ? 'Recalled memory' : 'Recalled ' + items.length + ' memories'; row.appendChild(b);
+    var m = document.createElement('span'); m.className = 'rm'; m.textContent = items.map(function (x) { return x.text || x; }).join(' \u00b7 ');
+    row.appendChild(m); row.title = 'Tap to see all';
+    row.onclick = function () { row.classList.toggle('open'); };
+    feed.appendChild(row);
+  };
 
   // ======================= voice conversation =======================
   // keyboard preferences (Settings -> Keyboard); Python sends them with setKeyboardPrefs()
@@ -3581,7 +3656,8 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
            (voice ? " You're in a live voice conversation: reply in one to three short, natural spoken sentences, " +
                     "with no lists, headings, code, links or emojis." : "") +
            (W.prefs.instructions ? "\n\nThe person's own instructions for you (follow them unless they're unsafe): " +
-                                  String(W.prefs.instructions).slice(0, 2000) : "");
+                                  String(W.prefs.instructions).slice(0, 2000) : "") + memoryNote() +
+           (voice ? "" : " " + "When you genuinely need the person's preferences or details before you can help well (planning a trip, recommending something, a workout plan...), you may ask 1 to 3 short questions as tappable choices: write one short sentence, then a fenced code block with the language ask containing JSON like {\"questions\": [{\"q\": \"Your question?\", \"options\": [\"Choice 1\", \"Choice 2\", \"Choice 3\"]}]} (2 to 4 short options each). The person can also type their own answer. Don't use it for simple questions, facts, or when they already said what they want.");
   }
   // questions that need the internet search the web on their own, whatever model is picked
   var WEB_RE = /\b(search|look up|google|find out|latest|news|headlines|today'?s|this week|right now|currently|price of|cost of|how much (is|are|does)|exchange rate|who won|score|results? of|release date|weather|recherche|cherche|actualit\u00e9s?|derni\u00e8res? nouvelles|prix d|aujourd'hui|cette semaine)\b/i;
@@ -3625,6 +3701,7 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     }
     var s = W.sessions[W.current];
     hideWelcome(); addUserMessage(text, atts.map(chipOf));
+    if (W.prefs.use_memory !== false && window.showRecalled) showRecalled(recallMemories(text));   // "Recalled memory"
     s.messages.push({ role: "user", content: historyText(text, atts), ts: stamp() }); touch(s.id); refreshSidebar();
     var content = buildContent(text, atts);
     W.atts = []; showAtts();
@@ -3831,6 +3908,38 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
   }
 
   // ---------------------------------------------------------------- sync with the desktop app
+  // ---- memories (synced from the apps: "remember that ...")
+  W.memories = load("gink_memories", null);
+  function takeMemories(docs) {
+    var m = W.memories || {};
+    (docs || []).forEach(function (d) { if (d.deleted) delete m[d.id]; else m[d.id] = { text: (d.payload || {}).text || "", created: (d.payload || {}).created || 0 }; });
+    W.memories = m; save("gink_memories", m);
+  }
+  if (W.memories === null && W.token) {                     // first time: every memory, once (later: only changes)
+    api("/sync", { since: 0, push: {} }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j) takeMemories((j.changes || {}).memories); }).catch(function () {});
+  }
+  var MEM_STOP = ("a an and are as at be but by can could did do does for from had has have how i if in into is it its me my no not of on or " +
+    "our so than that the their them then there these they this to was we were what when where which who why will with would you your yes " +
+    "please tell about just like some any also very really want need know").split(" ");
+  function memWords(t) { return (String(t || "").toLowerCase().match(/[\p{L}\p{N}_']+/gu) || []).filter(function (w) { return w.length >= 3 && MEM_STOP.indexOf(w) < 0; }); }
+  function recallMemories(text) {                           // shared meaningful words, best first, at most 3
+    var q = memWords(text), out = [];
+    if (!q.length || !W.memories) return [];
+    Object.keys(W.memories).forEach(function (id) {
+      var m = W.memories[id], mine = memWords(m.text), score = 0, seen = {};
+      mine.forEach(function (w) { if (!seen[w] && q.indexOf(w) >= 0) { seen[w] = 1; score += 1 + w.length / 10; } });
+      if (score) out.push({ score: score, created: m.created, text: m.text });
+    });
+    out.sort(function (a, b) { return (b.score - a.score) || (b.created - a.created); });
+    return out.slice(0, 3);
+  }
+  function memoryNote() {
+    if (W.prefs.use_memory === false || !W.memories) return "";
+    var all = Object.keys(W.memories).map(function (k) { return W.memories[k]; }).sort(function (a, b) { return a.created - b.created; }).slice(-40);
+    return all.length ? "\n\nThings the user asked you to remember about them (use them when relevant, don't recite them unprompted):\n" +
+                        all.map(function (m) { return "- " + m.text; }).join("\n") : "";
+  }
   function sync() {
     if (!W.token || W.syncing) return;
     W.syncing = true;
@@ -3843,6 +3952,7 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
       if (!j) return;
       push.forEach(function (d) { delete W.dirty[d.id]; });
       var changedCurrent = false;
+      takeMemories((j.changes || {}).memories);
       ((j.changes || {}).chats || []).forEach(function (d) {
         var mine = W.sessions[d.id];
         if (mine && mine.updated >= d.updated) return;                          // newest copy wins

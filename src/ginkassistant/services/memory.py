@@ -100,6 +100,11 @@ class MemoryStore:
                 "SELECT uid, text, created FROM memories WHERE deleted=0 ORDER BY created").fetchall()
         return [{"uid": r["uid"], "text": r["text"], "created": r["created"]} for r in rows]
 
+    def recall(self, query: str, k: int = 3) -> List[dict]:
+        """The memories that match a message (shared meaningful words), best first -- shown as
+        "Recalled memory" above the answer. The same scoring as the web app's recallMemories()."""
+        return recall(self.list(), query, k)
+
     def as_prompt(self) -> str:
         items = self.list()[-MAX_MEMORIES_IN_PROMPT:]
         if not items:
@@ -132,3 +137,27 @@ class MemoryStore:
         if applied:
             self._changed()
         return applied
+
+
+STOP = frozenset("""a an and are as at be but by can could did do does for from had has have how i if in into is it its
+me my no not of on or our so than that the their them then there these they this to was we were what when where which
+who why will with would you your yes please tell about just like some any also very really want need know""".split())
+
+
+def _words(text: str) -> set:
+    import re
+    return {w for w in re.findall(r"[\w']+", (text or "").lower()) if len(w) >= 3 and w not in STOP}
+
+
+def recall(memories: list, query: str, k: int = 3) -> list:
+    """Score = shared meaningful words (longer words count a little more); ties: the newest first."""
+    q = _words(query)
+    if not q:
+        return []
+    scored = []
+    for m in memories:
+        shared = q & _words(m.get("text", ""))
+        if shared:
+            scored.append((sum(1 + len(w) / 10 for w in shared), m.get("created", 0), m))
+    scored.sort(key=lambda t: (-t[0], -t[1]))
+    return [m for _, _, m in scored[:k]]

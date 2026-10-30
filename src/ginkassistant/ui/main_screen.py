@@ -614,6 +614,10 @@ def build_main_screen(app: toga.App, email: str):
                     return  # news+TV handled everything, including navigation
 
             save_draft(current_session["id"], "")              # sent -> no draft any more
+            if message and prefs.load(app).get("use_memory", True):     # "Recalled memory": what Gink is using
+                recalled = app.memory.recall(message)
+                if recalled:
+                    await web_chat.show_recalled(recalled)
             reply = await answer(message, route, attachments=attachments)
             asyncio.create_task(maybe_auto_title(current_session["id"], message, reply))
         except Exception as exc:

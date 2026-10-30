@@ -224,6 +224,25 @@ CSS = r"""
   #jump.show { opacity: 1; pointer-events: auto; transform: translateX(-50%); }
   body.pinned #jump { left: calc(50% + var(--side-w) / 2); }
   body.home #jump { display: none; }
+  /* Question cards (Gink asks with tappable choices) */
+  .qcard { border: 1px solid var(--border); border-radius: 16px; background: var(--surface); margin: 10px 0; overflow: hidden; max-width: 640px; }
+  .qcard .qq { font-weight: 650; padding: 14px 16px 6px; }
+  .qcard .qo { display: block; width: 100%; text-align: left; background: none; border: 0; border-top: 1px solid var(--border);
+               padding: 12px 16px; font: inherit; color: var(--text-main); cursor: pointer; }
+  .qcard .qo:hover, .qcard .qo.on { background: var(--elevated); }
+  .qcard .qo.on { font-weight: 650; }
+  .qcard .qe { display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); padding: 8px 16px; }
+  .qcard .qe input { flex: 1; border: 0; outline: none; background: transparent; font: inherit; color: var(--text-main); padding: 4px 0; }
+  .qcard .qf { display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border); padding: 8px 12px; color: var(--text-muted); }
+  .qcard .qf button { background: none; border: 0; font: inherit; color: var(--text-main); cursor: pointer; padding: 4px 8px; border-radius: 8px; }
+  .qcard .qf button:disabled { opacity: .35; cursor: default; }
+  .qcard .qsend { width: 32px; height: 32px; border-radius: 50% !important; background: var(--text-main) !important; color: var(--surface) !important; }
+  .qcard.done .qo, .qcard.done .qe, .qcard.done .qf .qsend, .qcard.done .qf .qskip { display: none; }
+  .qcard .qans { padding: 0 16px 12px; color: var(--text-muted); }
+  /* "Recalled memory" above an answer */
+  .recalled { display: flex; gap: 8px; align-items: baseline; color: var(--text-muted); font-size: 13.5px; margin: 6px 0 2px; cursor: pointer; }
+  .recalled b { color: var(--text-main); font-weight: 600; } .recalled .rm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 520px; }
+  .recalled.open .rm { white-space: normal; }
 """
 
 HTML = r"""
@@ -703,6 +722,61 @@ JS = r"""
     ok.onclick = function () { d.remove(); }; row.appendChild(ok); box.appendChild(row);
     d.appendChild(box); d.onclick = function (e) { if (e.target === d) d.remove(); };
     document.body.appendChild(d); ok.focus();
+  };
+  // ---- Question cards: an answer's ```ask {"questions":[{"q":..., "options":[...]}]}``` becomes tappable choices
+  window.upgradeQuestionCards = function (root) {
+    Array.prototype.slice.call(root.querySelectorAll('.code-block')).forEach(function (block) {
+      var label = block.querySelector('.code-block-label'); if (!label || label.textContent.trim().toLowerCase() !== 'ask') return;
+      var data; try { data = JSON.parse(block.querySelector('code').textContent); } catch (e) { return; }
+      var qs = (data.questions || []).filter(function (q) { return q && q.q && (q.options || []).length; }).slice(0, 3);
+      if (!qs.length) return;
+      var card = document.createElement('div'); card.className = 'qcard'; card.setAttribute('role', 'group');
+      var st = { i: 0, answers: qs.map(function () { return null; }) };
+      function el(t, c, txt) { var x = document.createElement(t); if (c) x.className = c; if (txt != null) x.textContent = txt; return x; }
+      function draw() {
+        card.innerHTML = ''; var q = qs[st.i];
+        card.appendChild(el('div', 'qq', q.q));
+        q.options.slice(0, 4).forEach(function (o) {
+          var b = el('button', 'qo' + (st.answers[st.i] === String(o) ? ' on' : ''), String(o));
+          b.onclick = function () { st.answers[st.i] = String(o); next(); }; card.appendChild(b);
+        });
+        var row = el('div', 'qe'); row.appendChild(el('span', '', '\u270e'));
+        var inp = el('input'); inp.placeholder = 'Something else'; inp.setAttribute('aria-label', 'Something else');
+        var own = st.answers[st.i]; if (own && q.options.map(String).indexOf(own) < 0) inp.value = own;
+        inp.onkeydown = function (e) { if (e.key === 'Enter' && inp.value.trim()) { e.preventDefault(); st.answers[st.i] = inp.value.trim(); next(); } };
+        row.appendChild(inp); card.appendChild(row);
+        var f = el('div', 'qf');
+        var prev = el('button', '', '\u2039'); prev.disabled = st.i === 0; prev.onclick = function () { st.i--; draw(); };
+        var nx = el('button', '', '\u203a'); nx.disabled = st.i === qs.length - 1; nx.onclick = function () { st.i++; draw(); };
+        f.appendChild(prev); f.appendChild(el('span', '', (st.i + 1) + ' of ' + qs.length)); f.appendChild(nx);
+        var gap = el('span'); gap.style.flex = '1'; f.appendChild(gap);
+        var skip = el('button', 'qskip', 'Skip'); skip.onclick = function () { st.answers[st.i] = st.answers[st.i] || '(skipped)'; next(); };
+        var send = el('button', 'qsend', '\u2191'); send.setAttribute('aria-label', 'Send the answers');
+        send.disabled = st.answers.some(function (a) { return !a; }); send.onclick = submit;
+        f.appendChild(skip); f.appendChild(send); card.appendChild(f);
+      }
+      function next() { if (st.i < qs.length - 1) st.i++; draw(); }
+      function submit() {
+        var text = qs.map(function (q, i) { return q.q + ' ' + st.answers[i]; }).join('\n');
+        card.classList.add('done'); card.innerHTML = '';
+        card.appendChild(el('div', 'qq', 'Your answers'));
+        qs.forEach(function (q, i) { card.appendChild(el('div', 'qans', q.q + ' \u2014 ' + st.answers[i])); });
+        ginkEmit('send', text);
+      }
+      draw(); block.parentNode.replaceChild(card, block);
+    });
+  };
+  // ---- "Recalled memory": the memories Gink is using for this answer
+  window.showRecalled = function (items) {
+    if (!items || !items.length) return;
+    var feed = document.getElementById('feed') || document.body;
+    var row = document.createElement('div'); row.className = 'recalled'; row.setAttribute('role', 'note');
+    var icon = document.createElement('span'); icon.textContent = '\u21ba'; row.appendChild(icon);
+    var b = document.createElement('b'); b.textContent = items.length === 1 ? 'Recalled memory' : 'Recalled ' + items.length + ' memories'; row.appendChild(b);
+    var m = document.createElement('span'); m.className = 'rm'; m.textContent = items.map(function (x) { return x.text || x; }).join(' \u00b7 ');
+    row.appendChild(m); row.title = 'Tap to see all';
+    row.onclick = function () { row.classList.toggle('open'); };
+    feed.appendChild(row);
   };
 """
 

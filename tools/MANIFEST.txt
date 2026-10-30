@@ -256,6 +256,7 @@ tests/test_android_voice.py
 tests/test_app_icons.py
 tests/test_archive_storage_limits.py
 tests/test_billing.py
+tests/test_cards_memory_narration.py
 tests/test_chat_extras.py
 tests/test_check_project.py
 tests/test_claude.py

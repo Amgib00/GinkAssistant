@@ -117,6 +117,7 @@
   .step pre { margin:0; padding:9px 12px; max-height:260px; overflow:auto; background:var(--code); border-top:1px solid var(--line);
               font:12.5px/1.5 ui-monospace,Menlo,monospace; white-space:pre-wrap; word-break:break-word; }
   .step .ok { color:var(--accent); } .step .bad { color:var(--bad); }
+  .step.note { padding:8px 11px; color:var(--muted); font-size:13.5px; }
   .step pre .dl { display:block; padding:0 4px; } .step pre .add { background:rgba(63,125,18,.16); }
   .step pre .del { background:rgba(196,43,28,.14); } .step pre .hunk { color:var(--muted); }
   .drop { position:fixed; inset:0; z-index:50; display:grid; place-items:center; background:rgba(63,125,18,.12);
@@ -436,12 +437,16 @@
     var box = el("div", "steps"), open = live || steps.length <= 3;
     var head = el("button", "sh"); head.type = "button";
     var n = steps.filter(function (x) { return x.kind === "command"; }).length;
-    head.textContent = (live ? "Working\u2026 " : "") + steps.length + (steps.length === 1 ? " step" : " steps") +
+    var acts = steps.filter(function (x) { return x.kind !== "note"; }).length;            // narration isn't a step
+    head.textContent = (live ? "Working\u2026 " : "") + acts + (acts === 1 ? " step" : " steps") +
                        (n ? " \u00b7 ran " + n + (n === 1 ? " command" : " commands") : "");
     var arrow = el("span", "", open ? "\u2304" : "\u203a"); head.appendChild(arrow);
     var list = el("div"); list.hidden = !open;
     head.onclick = function () { list.hidden = !list.hidden; arrow.textContent = list.hidden ? "\u203a" : "\u2304"; };
     steps.forEach(function (st, i) {
+      if (st.kind === "note") {                               // Genie's narration: "Debugging why ..."
+        var nrow = el("div", "step note", st.title); list.appendChild(nrow); return;
+      }
       var row = el("div", "step"), btn = el("button"); btn.type = "button";
       btn.appendChild(el("span", st.kind === "error" ? "bad" : "", STEP_ICON[st.kind] || "\u2022"));
       var title = st.title + (st.kind === "command" ? (st.output == null ? "  \u00b7 running\u2026" : "") : "");
@@ -472,7 +477,10 @@
       m.appendChild(go);
     }
     if (changes && changes.length) {
-      var ch = el("div", "ch");
+      var ch = el("div", "ch"), seen = {};
+      changes = changes.filter(function (c) {                  // each file once: created then changed -> "created"
+        if (seen[c.path]) { if (c.action === "deleted") seen[c.path].action = "deleted"; return false; }
+        seen[c.path] = c = Object.assign({}, c); return true; }).map(function (c) { return seen[c.path]; });
       changes.forEach(function (c) {
         var b = el("button", "ghost", (c.action === "created" ? "+ " : c.action === "deleted" ? "\u2212 " : "\u270e ") + c.path);
         b.disabled = c.action === "deleted"; b.onclick = function () { openFile(c.path); }; ch.appendChild(b);

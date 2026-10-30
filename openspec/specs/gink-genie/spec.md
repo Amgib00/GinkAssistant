@@ -172,3 +172,10 @@ On screens up to 700 px wide the workspace SHALL fit the screen without sideways
 #### Scenario: Opening a file on a phone
 - **WHEN** the person taps cart.js in the Files tab
 - **THEN** the Code tab opens with cart.js and its Save button visible
+
+### Requirement: Genie narrates and debugs itself
+Genie SHALL say in one short sentence what it is doing before each group of actions (shown in its step list), and after writing or changing code SHALL run it, fix the errors it finds and run it again before answering.
+
+#### Scenario: A bug in the first version
+- **WHEN** Genie's first run fails with an error
+- **THEN** a step says what it is debugging, the file is updated, and a second run succeeds before the answer

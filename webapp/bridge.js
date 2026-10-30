@@ -346,7 +346,8 @@
            (voice ? " You're in a live voice conversation: reply in one to three short, natural spoken sentences, " +
                     "with no lists, headings, code, links or emojis." : "") +
            (W.prefs.instructions ? "\n\nThe person's own instructions for you (follow them unless they're unsafe): " +
-                                  String(W.prefs.instructions).slice(0, 2000) : "");
+                                  String(W.prefs.instructions).slice(0, 2000) : "") + memoryNote() +
+           (voice ? "" : " " + "When you genuinely need the person's preferences or details before you can help well (planning a trip, recommending something, a workout plan...), you may ask 1 to 3 short questions as tappable choices: write one short sentence, then a fenced code block with the language ask containing JSON like {\"questions\": [{\"q\": \"Your question?\", \"options\": [\"Choice 1\", \"Choice 2\", \"Choice 3\"]}]} (2 to 4 short options each). The person can also type their own answer. Don't use it for simple questions, facts, or when they already said what they want.");
   }
   // questions that need the internet search the web on their own, whatever model is picked
   var WEB_RE = /\b(search|look up|google|find out|latest|news|headlines|today'?s|this week|right now|currently|price of|cost of|how much (is|are|does)|exchange rate|who won|score|results? of|release date|weather|recherche|cherche|actualit\u00e9s?|derni\u00e8res? nouvelles|prix d|aujourd'hui|cette semaine)\b/i;
@@ -390,6 +391,7 @@
     }
     var s = W.sessions[W.current];
     hideWelcome(); addUserMessage(text, atts.map(chipOf));
+    if (W.prefs.use_memory !== false && window.showRecalled) showRecalled(recallMemories(text));   // "Recalled memory"
     s.messages.push({ role: "user", content: historyText(text, atts), ts: stamp() }); touch(s.id); refreshSidebar();
     var content = buildContent(text, atts);
     W.atts = []; showAtts();
@@ -596,6 +598,38 @@
   }
 
   // ---------------------------------------------------------------- sync with the desktop app
+  // ---- memories (synced from the apps: "remember that ...")
+  W.memories = load("gink_memories", null);
+  function takeMemories(docs) {
+    var m = W.memories || {};
+    (docs || []).forEach(function (d) { if (d.deleted) delete m[d.id]; else m[d.id] = { text: (d.payload || {}).text || "", created: (d.payload || {}).created || 0 }; });
+    W.memories = m; save("gink_memories", m);
+  }
+  if (W.memories === null && W.token) {                     // first time: every memory, once (later: only changes)
+    api("/sync", { since: 0, push: {} }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j) takeMemories((j.changes || {}).memories); }).catch(function () {});
+  }
+  var MEM_STOP = ("a an and are as at be but by can could did do does for from had has have how i if in into is it its me my no not of on or " +
+    "our so than that the their them then there these they this to was we were what when where which who why will with would you your yes " +
+    "please tell about just like some any also very really want need know").split(" ");
+  function memWords(t) { return (String(t || "").toLowerCase().match(/[\p{L}\p{N}_']+/gu) || []).filter(function (w) { return w.length >= 3 && MEM_STOP.indexOf(w) < 0; }); }
+  function recallMemories(text) {                           // shared meaningful words, best first, at most 3
+    var q = memWords(text), out = [];
+    if (!q.length || !W.memories) return [];
+    Object.keys(W.memories).forEach(function (id) {
+      var m = W.memories[id], mine = memWords(m.text), score = 0, seen = {};
+      mine.forEach(function (w) { if (!seen[w] && q.indexOf(w) >= 0) { seen[w] = 1; score += 1 + w.length / 10; } });
+      if (score) out.push({ score: score, created: m.created, text: m.text });
+    });
+    out.sort(function (a, b) { return (b.score - a.score) || (b.created - a.created); });
+    return out.slice(0, 3);
+  }
+  function memoryNote() {
+    if (W.prefs.use_memory === false || !W.memories) return "";
+    var all = Object.keys(W.memories).map(function (k) { return W.memories[k]; }).sort(function (a, b) { return a.created - b.created; }).slice(-40);
+    return all.length ? "\n\nThings the user asked you to remember about them (use them when relevant, don't recite them unprompted):\n" +
+                        all.map(function (m) { return "- " + m.text; }).join("\n") : "";
+  }
   function sync() {
     if (!W.token || W.syncing) return;
     W.syncing = true;
@@ -608,6 +642,7 @@
       if (!j) return;
       push.forEach(function (d) { delete W.dirty[d.id]; });
       var changedCurrent = false;
+      takeMemories((j.changes || {}).memories);
       ((j.changes || {}).chats || []).forEach(function (d) {
         var mine = W.sessions[d.id];
         if (mine && mine.updated >= d.updated) return;                          // newest copy wins

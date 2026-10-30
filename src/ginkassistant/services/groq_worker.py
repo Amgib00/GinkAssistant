@@ -78,6 +78,7 @@ DEFAULT_SYSTEM_PROMPT = (
     "copyable, downloadable block instead of plain chat text. Still talk "
     "normally around it -- a short line introducing it is fine, just "
     "don't put ordinary conversational replies in a document block."
+    ' When you genuinely need the person\'s preferences or details before you can help well (planning a trip, recommending something, a workout plan...), you may ask 1 to 3 short questions as tappable choices: write one short sentence, then a fenced code block with the language ask containing JSON like {"questions": [{"q": "Your question?", "options": ["Choice 1", "Choice 2", "Choice 3"]}]} (2 to 4 short options each). The person can also type their own answer. Don\'t use it for simple questions, facts, or when they already said what they want.'
 )
 
 SPOKEN_REPLY_PROMPT = (

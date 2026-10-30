@@ -4877,8 +4877,9 @@ GENIE_SYSTEM = (
     "web app: index.html, styles.css, app.js...). Web projects must run by opening index.html: no build step, no "
     "frameworks from the internet, relative paths only. Read a file before changing it. Keep each file under "
     "250 KB. Never include passwords, API keys or secrets. Pictures in the project (marked \u201cpicture\u201d by "
-    "list_files) can be used by their path, e.g. <img src=\"images/logo.png\">; you can't create or edit pictures. Use run_command to check your work (for example run the "
-    "tests). The user can run .py and .js files and pytest tests "
+    "list_files) can be used by their path, e.g. <img src=\"images/logo.png\">; you can't create or edit pictures. Before each group of tool calls, write ONE short sentence saying what you're doing "
+    "(for example \u201cDebugging why the total is wrong\u201d). After writing or changing code, run it with run_command "
+    "(the tests if there are any), fix any error you find and run it again, until it works, before you reply. The user can run .py and .js files and pytest tests "
     "in their browser (Python 3.14 via Pyodide: the standard library and pure-Python packages; no input(), no "
     "servers, no internet access, only the project's files) -- write code that works there, and put Python tests "
     "in test_*.py files. When done, reply with a short summary of what you built or changed and how to use or "
@@ -5182,6 +5183,10 @@ async def _genie_drive(state: dict) -> dict:
                 return {"reply": reply, "changes": state["changes"], "steps": state["steps"], "rounds": state["rounds"],
                         "checkpoint": state.get("checkpoint"), "plan": state.get("mode") == "plan"}
             state["messages"].append({"role": "assistant", "content": msg.get("content") or "", "tool_calls": calls})
+            note = " ".join(str(msg.get("content") or "").split())[:200]
+            if note:                                        # Genie's one-line narration: "Debugging why ..."
+                state["steps"].append({"kind": "note", "title": note})
+                _genie_report(state)
             state["queue"] = list(calls)
 
 

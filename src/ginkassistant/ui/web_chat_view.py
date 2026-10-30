@@ -1419,6 +1419,7 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     stopSpinClock(id);
     upgradeVideoLinks(el);
     upgradeFileLinks(el);
+    if (window.upgradeQuestionCards) upgradeQuestionCards(el);     // before code blocks: ```ask``` becomes a card
     enhanceCodeBlocks(el);
     addGinkActions(el, id);
     var logoImg = document.createElement('img');
@@ -1558,6 +1559,9 @@ class WebChatFeed:
 
     async def show_whats_new(self, version: str, sections: list):
         await self._js(f"showWhatsNew({json.dumps(version)}, {json.dumps(sections)})")
+
+    async def show_recalled(self, items: list):
+        await self._js(f"showRecalled({json.dumps([{'text': i.get('text', '')} for i in items])})")
 
     async def set_prompts(self, prompts: list):
         await self._js(f"setPrompts({json.dumps(prompts)})")

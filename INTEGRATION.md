@@ -1402,3 +1402,13 @@ New services/live_info.py (all free, no API keys):
   (one call, scrollDown suppressed) -> glideToEnd() (top -> smooth to the end; last .msg-logo gets
   .landing = one spin; reduced motion: instant). Web openSession calls glideToEnd too.
 - app.py MainWindow(title=""). Browser-checked: 0 "Thinking", glide in 6 steps to the exact end.
+
+## 0.1.54: question cards, recalled memories, Genie narration + self-debugging (owner's screenshots)
+- Cards: the AI writes ```ask {"questions":[{"q","options"}]}```; the page's upgradeQuestionCards (in
+  finalizeMessage, before enhanceCodeBlocks) turns the "ask" code box into a card (options, Something
+  else, Skip, n of m, send -> ginkEmit('send', answers)). Prompt note in groq_worker + bridge.
+- Memories: services/memory.recall() (shared meaningful words); apps show web_chat.show_recalled();
+  web keeps W.memories from /sync changes.memories (first time: since 0, once), recallMemories() (same
+  scoring), memoryNote() in the system prompt. Browser-tested both.
+- Genie: assistant content alongside tool calls -> {"kind": "note"} step; GENIE_SYSTEM asks for one
+  sentence per group and run -> fix -> rerun. Browser-tested with real Pyodide (exit 1 -> fixed -> 413.0).

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.54 (October 2026)
+
+- Gink can ask you questions with tap-to-answer choices (and "Something else") when it needs your
+  preferences, for example to plan a trip
+- Gink recalls your memories automatically: the ones that match your message show as "Recalled
+  memory" above the answer, in the apps and now on the web too
+- Gink Genie tells you what it's doing at each step, and runs, debugs and fixes its own code before
+  answering
+
 ## 0.1.53 (October 2026)
 
 - Opening a chat from the sidebar now glides smoothly to its end, with the Gink snowflake spinning

@@ -29,3 +29,10 @@ When signed in, the person's prompts SHALL be kept with their account: each devi
 #### Scenario: Deleting on another device
 - **WHEN** a prompt is deleted on one device
 - **THEN** it is gone from the "/" menu on the other devices the next time Gink starts there
+
+### Requirement: Question cards and recalled memories
+When Gink genuinely needs the person's preferences it SHALL be able to ask 1 to 3 questions as a card with 2 to 4 tappable options each, "Something else", Skip and paging, sending all answers as the person's next message; and before each answer the memories matching the message (shared meaningful words, at most 3) SHALL be shown as "Recalled memory" and used, in the apps and on the web (memories reach the web through sync), unless memory is turned off.
+
+#### Scenario: Asking about exams
+- **WHEN** the person saved "My exams start on 12 November" and asks "When are my exams?"
+- **THEN** "Recalled memory: My exams start on 12 November" appears above the answer
