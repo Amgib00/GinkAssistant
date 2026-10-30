@@ -1376,3 +1376,22 @@ New services/live_info.py (all free, no API keys):
   (no message content) and passes Retry-After; web: plain sentence for provider 429.
 - Hey Gink: the owner's old 0.1.0 zip had the same "macOS.permissions" (plural) bug -> the installed
   Mac app never had the microphone; it only worked via `briefcase dev` (Terminal's permission).
+
+## 0.1.51: automatic model fallback (Groq limits are per model)
+- The app's "fallback" was openai/gpt-oss-120b -- the same model as Gink Crystal, so a limit failed
+  twice. Server (Groq path, stream + non-stream): on 429/503/404 (or 400 model gone) try up to 3 of
+  GROQ_FALLBACK_ORDER (available ids only; browser_search -> GPT-OSS only; photos -> none), drop
+  reasoning_effort for non-GPT-OSS, X-Gink-Model names the answering model, log "-> trying X".
+  App: a 429 from the server is shown at once (no second round of 4 tries).
+
+## 0.1.52: bug hunt (cross-checks across platforms)
+- Scans: undefined names (none); page events vs handlers (stop is handled in composer_loop: OK);
+  Settings actions vs controller/bridge -> permanent tests in tests/test_no_dead_buttons.py.
+- Web fixes: open "pro" + gink://pro -> website pricing; mailto/tel/sms links; settings_action
+  upgrade/open_url/sync_now/export/delete_chats/delete_account (confirmations stay in Settings'
+  confirmDanger); the page's link catcher now lets <a download> through (it blocked EVERY download).
+- Instructions: were device-only despite "on all your devices"; now synced (in all three SYNCED
+  lists, 2000 chars), applied to the apps' profile, saved + used in the web's system prompt.
+- Settings rows marked apps: true are dropped on the web (photo, natural-voice test, memory list,
+  city/location, briefing time/try, server address); S.info (not `info`, which broke Settings
+  entirely -- caught in the browser). Apps: unknown actions now say so; _a_upgrade added.

@@ -395,6 +395,8 @@ class GroqBrain:
             friendly = _limit_message(err)
             if friendly:
                 return await self._emit(friendly, on_token)
+            if getattr(err, "status_code", 0) == 429:       # the server already tried other models: say why
+                return await self._emit(_problem_message(err), on_token)
             if images:
                 return await self._emit(f"The photo couldn't be read by `{active_model}` ({err}). "
                                         "Try again, or set `GINK_VISION_MODEL` in `.env`.", on_token)

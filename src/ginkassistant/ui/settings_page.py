@@ -271,7 +271,7 @@ SETTINGS_JS = r"""
            options: (info.speech_langs || [['en-US', 'English (United States)']])},
           {type: 'select', key: 'voice_speed', label: 'Speed', options: [['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast']]},
           {type: 'toggle', key: 'read_aloud', label: 'Read replies aloud', desc: 'Speak answers to typed messages too. Voice conversations are always spoken.'},
-          {type: 'button', label: 'Natural voice', desc: 'Check that the human-sounding voice works. If it doesn\u2019t, Gink uses a standard voice and this tells you why.', action: 'test_voice', text: 'Test'}]},
+          {apps: true, type: 'button', label: 'Natural voice', desc: 'Check that the human-sounding voice works. If it doesn\u2019t, Gink uses a standard voice and this tells you why.', action: 'test_voice', text: 'Test'}]},
         {title: 'Hey Gink', rows: [
           {type: 'toggle', key: 'wake_enabled', label: 'Listen for \u201cHey Gink\u201d', disabled: info.wake_supported === false,
            desc: 'Say \u201cHey Gink\u201d to ask something hands-free. Listening for it happens entirely on this computer \u2014 nothing is sent anywhere until you say it.' +
@@ -288,7 +288,7 @@ SETTINGS_JS = r"""
         {title: 'Shortcuts', rows: SHORTCUTS().map(function (sc) { return {type: 'html', label: sc[0], html: sc[1].map(function (key) { return '<kbd class="kbd">' + esc(key) + '</kbd>'; }).join('<span class="kplus">+</span>')}; })}]},
       {id: 'account', group: 'Settings', title: 'Account', sections: [
         {title: 'Profile', rows: [
-          {type: 'photo', label: 'Profile photo', desc: 'PNG, JPEG or WebP, up to 10 MB.'},
+          {apps: true, type: 'photo', label: 'Profile photo', desc: 'PNG, JPEG or WebP, up to 10 MB.'},
           {type: 'text', key: 'full_name', label: 'Full name', placeholder: 'Your full name'},
           {type: 'text', key: 'nickname', label: 'What should Gink call you?', placeholder: 'e.g. Ibrahim'},
           {type: 'select', key: 'work', label: 'What best describes your work?', desc: 'Gink uses this to pick examples that fit you.',
@@ -326,7 +326,7 @@ SETTINGS_JS = r"""
           {type: 'button', label: 'Delete your account', desc: 'Permanently deletes your account and everything synced to it. Payment records are kept for accounting, without your name or email. This can\u2019t be undone.', action: 'delete_account', text: 'Delete account', style: 'danger-ghost'}]}]},
       {id: 'privacy', group: 'Settings', title: 'Privacy', sections: [
         {title: 'Your data', rows: [
-          {type: 'toggle', key: 'use_memory', label: 'Use memories in answers', desc: 'When off, Gink ignores what you asked it to remember (they stay saved \u2014 manage them under Memory).'},
+          {apps: true, type: 'toggle', key: 'use_memory', label: 'Use memories in answers', desc: 'When off, Gink ignores what you asked it to remember (they stay saved \u2014 manage them under Memory).'},
           {type: 'button', label: 'Export my data', desc: 'Save your chats, Workspace, memories and settings as a file.', action: 'export', text: 'Export'},
           {type: 'button', label: 'Delete all chats', desc: 'Removes every conversation from this device and your other devices.', action: 'delete_chats', text: 'Delete all', style: 'danger-ghost'}]},
         {title: 'Archived chats', rows: [
@@ -374,10 +374,10 @@ SETTINGS_JS = r"""
           {type: 'textarea', key: 'instructions', label: 'Gink will keep these in mind in every chat, on all your devices.',
            placeholder: 'e.g. Keep answers short. When I learn something new, analogies help me. I study medicine in Dakar.',
            action: 'save_instructions', text: 'Save'}]},
-        {title: 'What Gink remembers', rows: [{type: 'list', items: (L.memories || []).map(function (m) {
+        {title: 'What Gink remembers', rows: [{apps: true, type: 'list', items: (L.memories || []).map(function (m) {
             return {t: m.text, button: {text: 'Forget', action: 'forget_memory', value: m.uid}}; }),
           empty: 'Nothing yet. Say \u201cremember that my exams start on 12 November\u201d in the chat.'}].concat(
-          (L.memories || []).length ? [{type: 'button', label: 'Forget everything', action: 'forget_all', text: 'Forget all', style: 'danger-ghost'}] : [])}]},
+          (L.memories || []).length ? [{apps: true, type: 'button', label: 'Forget everything', action: 'forget_all', text: 'Forget all', style: 'danger-ghost'}] : [])}]},
       {id: 'personalization', group: 'Settings', title: 'Personalization', sections: [
         {title: 'Prompt library', rows: [
           {type: 'note', text: 'Type / at the start of a message to pick a prompt. Gink includes some; add your own here.'},
@@ -416,26 +416,26 @@ SETTINGS_JS = r"""
       {id: 'location', group: 'Settings', title: 'Location', sections: [
         {title: 'Your location', rows: [
           {type: 'info', label: 'Your area', value: info.location_text || ''},
-          {type: 'input', key: 'city', label: 'City', desc: 'Used for weather, air quality, sunrise and sunset, prayer times and your briefing. Leave empty to use an approximate location from your connection.',
+          {apps: true, type: 'input', key: 'city', label: 'City', desc: 'Used for weather, air quality, sunrise and sunset, prayer times and your briefing. Leave empty to use an approximate location from your connection.',
            placeholder: 'e.g. Dakar', action: 'save_city', text: 'Save'},
-          {type: 'button', label: 'Use my approximate location', desc: 'Estimate your city from your internet connection.', action: 'detect_location', text: 'Detect'},
+          {apps: true, type: 'button', label: 'Use my approximate location', desc: 'Estimate your city from your internet connection.', action: 'detect_location', text: 'Detect'},
           {type: 'toggle', key: 'use_location', label: 'Use location in answers', desc: 'When off, Gink doesn\u2019t use your city or estimate where you are \u2014 it asks when it needs a place.'}]},
         {title: 'About this location', rows: [
           {type: 'note', text: 'Your general area is estimated from your IP address. An IP address is assigned to your device by your internet provider, and it\u2019s needed to connect to websites and online services. Gink doesn\u2019t keep a history of your location.'}]}]},
       {id: 'briefing', group: 'Settings', title: 'Morning briefing', sections: [
         {title: 'Daily briefing', rows: [
           {type: 'toggle', key: 'briefing_enabled', label: 'Brief me every morning', desc: 'Weather, today\u2019s plans, open tasks and a headline.'},
-          {type: 'input', key: 'briefing_time', label: 'Time', desc: '24-hour time, e.g. 07:30.', placeholder: '07:30', action: 'save_briefing_time', text: 'Save', narrow: true},
+          {apps: true, type: 'input', key: 'briefing_time', label: 'Time', desc: '24-hour time, e.g. 07:30.', placeholder: '07:30', action: 'save_briefing_time', text: 'Save', narrow: true},
           {type: 'toggle', key: 'briefing_speak', label: 'Read it aloud'},
           {type: 'toggle', key: 'briefing_projects', label: 'Pick up where you left off', desc: 'Add tasks in progress, recent conversations and files you were editing, with a nudge to continue or finish them. File names stay on this computer.'},
-          {type: 'button', label: 'Try it now', action: 'brief_now', text: 'Brief me'}]}]},
+          {apps: true, type: 'button', label: 'Try it now', action: 'brief_now', text: 'Brief me'}]}]},
       {id: 'sync', group: 'Settings', title: 'Sync', sections: [
         {title: 'Your devices', rows: [
           {type: 'info', label: 'Status', value: info.sync_status || '\u2014', desc: 'Chats, Workspace and memories follow your account. Alarms stay on each device.'},
           {type: 'button', label: 'Sync now', action: 'sync_now', text: 'Sync now'}]}]},
       {id: 'advanced', group: 'More', title: 'Advanced', sections: [
         {title: 'Connection', rows: [
-          {type: 'input', key: 'server_url', label: 'Login server', desc: 'Only change this if you know your Gink server\u2019s address. Empty = default.', placeholder: info.default_server || '', action: 'save_server', text: 'Save & test'}]},
+          {apps: true, type: 'input', key: 'server_url', label: 'Login server', desc: 'Only change this if you know your Gink server\u2019s address. Empty = default.', placeholder: info.default_server || '', action: 'save_server', text: 'Save & test'}]},
         {title: 'Startup', rows: [
           {type: 'toggle', key: 'launch_at_login', label: 'Open Gink when I log in', disabled: !info.launch_supported,
            desc: info.launch_supported ? 'Start Gink automatically on this computer.' : 'Available in the installed Mac app.'}]}]},
@@ -559,6 +559,11 @@ SETTINGS_JS = r"""
       b.innerHTML = (SICON[p.id] || SICON.general) + esc(p.title); nav.appendChild(b);
     });
     var html = '';
+    if (S.info && S.info.web) panels.forEach(function (p) {   // rows marked apps: only in the Gink apps, never on the web
+      p.sections = p.sections.map(function (sec) {
+        return Object.assign({}, sec, {rows: (sec.rows || []).filter(function (r) { return r && !r.apps; })}); })
+        .filter(function (sec) { return sec.rows.length; });
+    });
     if (q) {                               // search across every panel
       panels.forEach(function (p) {
         var hits = [];

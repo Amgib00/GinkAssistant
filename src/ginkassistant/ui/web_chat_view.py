@@ -728,6 +728,7 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     if (link && link.getAttribute('href')) {
       var href = link.getAttribute('href');
       if (href.charAt(0) === '#') return;            // in-page anchors stay here
+      if (link.hasAttribute('download')) return;     // downloads (Export...) must reach the browser
       e.preventDefault();
       ginkEmit('open_url', link.href || href);
       link.classList.add('opening');

@@ -941,6 +941,13 @@ def build_main_screen(app: toga.App, email: str):
                 _queue_pref_upload({k: v for k, v in prefs.synced(prefs.load(app)).items() if v != prefs.DEFAULTS.get(k)})
             return
         pref_sync["seen"] = remote["updated"]
+        theirs = dict(remote.get("prefs") or {})
+        if "instructions" in theirs:                        # these live in the profile, not in prefs
+            text = str(theirs.pop("instructions") or "")
+            if text != str((app.profile.get() or {}).get("instructions") or ""):
+                app.profile.update(instructions=text)
+                await settings.push()
+        remote = dict(remote, prefs=theirs)
         mine = prefs.load(app)
         from .settings_controller import CHOICES
         changed = {k: v for k, v in prefs.synced(remote.get("prefs") or {}).items() if mine.get(k) != v

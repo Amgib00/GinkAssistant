@@ -314,8 +314,9 @@ class SettingsController:
     async def on_action(self, name: str, value=None):
         try:
             handler = getattr(self, "_a_" + (name or ""), None)
-            if handler is None:
-                return
+            if handler is None:                       # never fail silently: a button that does nothing is a bug
+                print(f"[gink] Settings action without a handler: {name!r}", flush=True)
+                return await self.web.settings_toast("That isn\u2019t available here yet.", "err")
             await handler(value)
         except ApiError as exc:
             await self.web.settings_toast(str(exc), "err")
@@ -372,7 +373,9 @@ class SettingsController:
         await self.web.settings_toast(f"Location set to {place['name']}" + (f", {place['country']}" if place.get("country") else "") + ".")
 
     async def _a_save_instructions(self, text):
-        self.app.profile.update(instructions=str(text or ""))
+        self.app.profile.update(instructions=str(text or "")[:2000])
+        for cb in list(prefs.on_change):                # on all your devices
+            cb({"instructions": str(text or "")[:2000]})
         await self.push()
         await self.web.settings_toast("Instructions saved \u2014 Gink will follow them in every chat.")
 
@@ -672,6 +675,9 @@ class SettingsController:
                                                   lambda p: data_export.write_export(p, data))
         if path:
             await self.web.settings_toast(f"Exported to {path}")
+
+    async def _a_upgrade(self, _):                     # Settings > Plan > Upgrade
+        self.open_pro()
 
     async def _a_delete_account(self, _):
         token = getattr(self.app, "session_token", None)

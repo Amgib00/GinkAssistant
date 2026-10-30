@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.52 (October 2026)
+
+- Fixed on the web: Upgrade (in Settings and in the daily-limit message) now opens the plans page;
+  Delete account, Export my data, Delete all chats and Sync now work; email and phone links in
+  answers open; settings that only exist in the apps are no longer shown on the web
+- Your instructions for Gink now really apply on all your devices, the web included
+- Settings buttons never do nothing silently: if something isn't available, Gink says so
+
+## 0.1.51 (October 2026)
+
+- When an AI model is at its daily limit, busy or unavailable, Gink automatically answers with
+  another model instead of failing
+
 ## 0.1.50 (October 2026)
 
 - When the AI service refuses a message, Gink now says why (for example that its limit is reached

@@ -1511,6 +1511,34 @@ async def _current_model(requested: str, needs_vision: bool = False) -> str:
     return requested
 
 
+# When a Groq model is at its limit (limits are per model), unavailable or overloaded, other models
+# usually still answer: try up to 3 of them, best first (a searching request: GPT-OSS only; photos: none).
+GROQ_FALLBACK_ORDER = ("openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b", "llama-3.3-70b-versatile",
+                       "meta-llama/llama-4-scout-17b-16e-instruct", "llama-3.1-8b-instant")
+
+
+def _fallback_ok(status: int, text) -> bool:
+    raw = text.decode("utf-8", "replace") if isinstance(text, bytes) else str(text or "")
+    return status in (429, 503, 404) or (status == 400 and any(k in raw for k in ("model_decommissioned", "model_not_found", "does not exist")))
+
+
+def _next_models(body: dict, tried: list) -> list:
+    if _has_images(body.get("messages") or []):
+        return []
+    searching = any(isinstance(t, dict) and t.get("type") == "browser_search" for t in body.get("tools") or [])
+    available = _groq_models.get("ids") or set()
+    out = [m for m in GROQ_FALLBACK_ORDER if m not in tried and (not searching or m.startswith("openai/gpt-oss"))
+           and (not available or m in available)]
+    return out[:max(0, 4 - len(tried))]
+
+
+def _for_model(body: dict, model: str) -> dict:
+    out = dict(body, model=model)
+    if not model.startswith("openai/gpt-oss"):
+        out.pop("reasoning_effort", None)            # only GPT-OSS takes it
+    return out
+
+
 def _fit_reasoning(body: dict, cap: int):
     """GPT-OSS reasons before answering, and the reasoning counts toward max_tokens. A short
     limit (old apps ask 24 tokens for a chat title) would be spent on reasoning, leaving an
@@ -2021,10 +2049,20 @@ async def ai_chat(request: Request):
     from fastapi.responses import JSONResponse, StreamingResponse
     if body.get("stream"):
         client = httpx.AsyncClient(timeout=httpx.Timeout(120, connect=15))
-        req = client.build_request("POST", f"{base}/chat/completions", json=body, headers=headers)
-        upstream = await client.send(req, stream=True)
-        if upstream.status_code != 200:
+        tried = [body["model"]]
+        while True:
+            req = client.build_request("POST", f"{base}/chat/completions", json=body, headers=headers)
+            upstream = await client.send(req, stream=True)
+            if upstream.status_code == 200:
+                break
             text = await upstream.aread()
+            nxt = [] if wants_claude or not _fallback_ok(upstream.status_code, text) else _next_models(body, tried)
+            if not nxt:
+                break
+            print(f"[gink] AI provider refused: HTTP {upstream.status_code} model={body.get('model')} -> trying {nxt[0]}", flush=True)
+            await upstream.aclose()
+            body = _for_model(body, nxt[0]); tried.append(nxt[0])
+        if upstream.status_code != 200:
             await upstream.aclose()
             await client.aclose()
             # in the server's logs (Render > Logs): why the AI provider refused, without the person's messages
@@ -2053,9 +2091,17 @@ async def ai_chat(request: Request):
             finally:
                 await upstream.aclose()
                 await client.aclose()
-        return StreamingResponse(relay(), media_type="text/event-stream")
+        return StreamingResponse(relay(), media_type="text/event-stream",
+                                 headers={"X-Gink-Model": body["model"]} if len(tried) > 1 else None)
     async with httpx.AsyncClient(timeout=120) as client:
-        r = await client.post(f"{base}/chat/completions", json=body, headers=headers)
+        tried = [body["model"]]
+        while True:
+            r = await client.post(f"{base}/chat/completions", json=body, headers=headers)
+            nxt = [] if r.status_code == 200 or wants_claude or not _fallback_ok(r.status_code, r.text) else _next_models(body, tried)
+            if not nxt:
+                break
+            print(f"[gink] AI provider refused: HTTP {r.status_code} model={body.get('model')} -> trying {nxt[0]}", flush=True)
+            body = _for_model(body, nxt[0]); tried.append(nxt[0])
     if r.status_code != 200:
         print(f"[gink] AI provider refused: HTTP {r.status_code} model={body.get('model')} {r.text[:300]}", flush=True)
     try:
@@ -5854,7 +5900,7 @@ SYNCED_PREFS = frozenset({
     "theme", "chat_font", "motion", "style_base", "style_warmth", "style_enthusiasm", "style_emoji", "style_headers",
     "reply_language", "voice_speed", "read_aloud", "speech_lang", "web_search", "use_memory", "video_suggestions",
     "notify_reminders", "agent_confirm", "send_key", "briefing_enabled", "briefing_time", "briefing_city",
-    "briefing_speak", "wake_followup", "voice", "model", "genie_mode",
+    "briefing_speak", "wake_followup", "voice", "model", "genie_mode", "instructions",
 })
 _PREFS_TABLE = "CREATE TABLE IF NOT EXISTS account_preferences (email TEXT PRIMARY KEY, data TEXT NOT NULL, updated REAL NOT NULL)"
 
@@ -5878,7 +5924,7 @@ def _clean_prefs(raw) -> dict:
             continue
         if isinstance(v, bool) or (isinstance(v, (int, float)) and abs(v) < 1e9):
             out[k] = v
-        elif isinstance(v, str) and len(v) <= 300:
+        elif isinstance(v, str) and len(v) <= (2000 if k == "instructions" else 300):
             out[k] = v
     return out
 

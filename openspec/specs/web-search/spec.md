@@ -25,3 +25,10 @@ Web searches SHALL be limited per day (GINK_FREE_SEARCH_DAILY, default 10; GINK_
 #### Scenario: Allowance used up
 - **WHEN** the day's searches are used up
 - **THEN** search requests get 429 with a clear message, and normal chat still works
+
+### Requirement: Another model answers when one can't
+When the AI provider refuses a request because the model is at its limit, overloaded or unavailable, the server SHALL try up to 3 other available models (best first; searching requests only other GPT-OSS models; requests with photos none), removing settings the other model doesn't support, and SHALL say which model answered; other refusals SHALL return their reason at once.
+
+#### Scenario: The main model is at its daily limit
+- **WHEN** GPT-OSS 120B answers "rate limit reached"
+- **THEN** the answer comes from GPT-OSS 20B and the response names it

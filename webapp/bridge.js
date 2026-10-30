@@ -22,6 +22,7 @@
     current: null, busy: null, pendingCode: null, syncing: false
   };
   var DESKTOP_ONLY = "That\u2019s available in the Gink app on your computer or phone.";
+  var PRICING = "https://amgib00.github.io/GinkAssistant/pricing.html";      // the website's plans page
 
   // ---------------------------------------------------------------- server
   function api(path, body, opts) {
@@ -341,7 +342,9 @@
            " You're running in a web browser: you can't set alarms, reminders or tasks or control the user's computer here; " +
            "if asked, say that the Gink app can do it." +
            (voice ? " You're in a live voice conversation: reply in one to three short, natural spoken sentences, " +
-                    "with no lists, headings, code, links or emojis." : "");
+                    "with no lists, headings, code, links or emojis." : "") +
+           (W.prefs.instructions ? "\n\nThe person's own instructions for you (follow them unless they're unsafe): " +
+                                  String(W.prefs.instructions).slice(0, 2000) : "");
   }
   // questions that need the internet search the web on their own, whatever model is picked
   var WEB_RE = /\b(search|look up|google|find out|latest|news|headlines|today'?s|this week|right now|currently|price of|cost of|how much (is|are|does)|exchange rate|who won|score|results? of|release date|weather|recherche|cherche|actualit\u00e9s?|derni\u00e8res? nouvelles|prix d|aujourd'hui|cette semaine)\b/i;
@@ -712,7 +715,7 @@
   var SYNCED_PREFS = ["theme", "chat_font", "motion", "style_base", "style_warmth", "style_enthusiasm", "style_emoji", "style_headers",
     "reply_language", "voice_speed", "read_aloud", "speech_lang", "web_search", "use_memory", "video_suggestions",
     "notify_reminders", "agent_confirm", "send_key", "briefing_enabled", "briefing_time", "briefing_city",
-    "briefing_speak", "wake_followup", "voice", "model", "genie_mode"];
+    "briefing_speak", "wake_followup", "voice", "model", "genie_mode", "instructions"];
   var PREFSYNC = { pending: {}, timer: null, seen: parseFloat(LS.getItem("gink_prefs_seen") || "0") };
   function queuePrefs(key, value) {
     PREFSYNC.pending[key] = value; clearTimeout(PREFSYNC.timer);
@@ -800,11 +803,14 @@
     open_url: function (u) {
       u = String(u || "");
       if (/^https?:\/\//i.test(u)) window.open(u, "_blank", "noopener");
+      else if (/^(mailto|tel|sms):/i.test(u)) location.href = u;                 // email, call, text: the device's app
+      else if (/^gink:\/\/pro/i.test(u)) window.open(PRICING, "_blank", "noopener");  // "Upgrade to Gink Pro"
       else if (/^gink:/i.test(u)) { setStatus(DESKTOP_ONLY); setTimeout(function () { setStatus(""); }, 3000); }
     },
     play_video: function (v) { var u = (v && (v.url || v)) || ""; if (/^https?:\/\//i.test(u)) window.open(u, "_blank", "noopener"); },
     save_code: function (v) { if (v && v.code != null) download(String(v.name || "code.txt"), String(v.code)); },
     open: function (what) { if (what === "genie") { window.open("/genie", "_blank"); return; }
+      if (what === "pro") { window.open(PRICING, "_blank", "noopener"); return; }           // Settings > Plan > Upgrade
       if (what === "settings") { openSettings("general"); pushSettings(); } else { setStatus(DESKTOP_ONLY); setTimeout(function () { setStatus(""); }, 3000); } },
     menu: function (what) { HANDLERS.open(what); },
     setting: function (v) {
@@ -876,6 +882,39 @@
       if (name === "lockdown_on" || name === "lockdown_off") {
         return api("/account/lockdown", { on: name === "lockdown_on" }).then(function () {
           settingsToast(name === "lockdown_on" ? "Lockdown mode is on." : "Lockdown mode is off."); loadLockdown(); });
+      }
+      if (name === "upgrade") { window.open(PRICING, "_blank", "noopener"); return; }
+      if (name === "save_instructions") {
+        W.prefs.instructions = String(v.value || "").slice(0, 2000); save("gink_prefs", W.prefs);
+        queuePrefs("instructions", W.prefs.instructions); pushSettings();
+        return settingsToast("Instructions saved \u2014 Gink will follow them in every chat, on all your devices.");
+      }
+      if (name === "open_url" && v.value) return HANDLERS.open_url(v.value);
+      if (name === "sync_now") { sync(); return settingsToast("Syncing your chats\u2026"); }
+      if (name === "export") {                                   // chats, prompts and settings from this browser, as a file
+        var data = { exported: new Date().toISOString(), email: W.email, prefs: W.prefs, prompts: myPrompts(),
+                     chats: Object.keys(W.sessions).map(function (k) { return W.sessions[k]; })
+                       .filter(function (c) { return !c.deleted && !c.temporary; }) };
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+        a.download = "gink-export-" + new Date().toISOString().slice(0, 10) + ".json";
+        document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+        return settingsToast("Your data was saved as a file.");
+      }
+      if (name === "delete_chats") {
+        // Settings already asked "Delete all chats?" (confirmDanger)
+        Object.keys(W.sessions).forEach(function (k) { var c = W.sessions[k]; if (!c.temporary) { c.deleted = true; c.messages = []; touch(k); } });
+        refreshSidebar(); newChat(); sync();
+        return settingsToast("All chats deleted.");
+      }
+      if (name === "delete_account") {
+        // Settings already asked for DELETE to be typed (confirmDanger)
+        return api("/account/delete", { confirm: "DELETE" }).then(function (r) {
+          if (!r.ok) return errorText(r).then(function (t) { settingsToast(t, "err"); });
+          ["gink_sessions", "gink_dirty", "gink_prompts", "gink_prefs", "gink_since", "gink_prefs_seen"].forEach(function (k) { LS.removeItem(k); });
+          W.sessions = {}; W.dirty = {};
+          signOut("Your account was deleted.");
+        });
       }
       if (name === "log_out" || name === "logout") {             // end this browser's session on the server too
         return api("/auth/logout", {}, { noLogout: true }).catch(function () {}).then(function () { signOut(""); });
