@@ -195,7 +195,7 @@ The start screen SHALL say "Start building with Gink Genie", offer example promp
 - **THEN** the prompt box holds the expense tracker idea, ready to send
 
 ### Requirement: Live preview tab
-On computers the workspace SHALL offer a Preview tab showing the project's site in a sandbox without same-origin access (it cannot read Gink's sign-in), reloading by itself when the project's files change while it is showing, with Reload and Open; previews SHALL only be framed by Gink's own pages.
+The workspace SHALL offer a Preview tab (on phones, next to Files, Code and Genie) showing the project's site in a sandbox without same-origin access (it cannot read Gink's sign-in), reloading by itself when the project's files change while it is showing, with Reload and Open; previews SHALL only be framed by Gink's own pages.
 
 #### Scenario: Saving a change
 - **WHEN** the person saves index.html and opens Preview

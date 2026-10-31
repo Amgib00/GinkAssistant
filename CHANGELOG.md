@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.61 (October 2026)
+
+- Gink Genie on phones has the Preview tab too, next to Files, Code and Genie
+
 ## 0.1.60 (October 2026)
 
 - Gink Genie: a Preview tab shows your website or app running right next to the code, and

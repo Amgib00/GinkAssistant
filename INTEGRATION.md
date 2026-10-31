@@ -1461,3 +1461,7 @@ New services/live_info.py (all free, no API keys):
   reloadPreview() on showing, previewChanged() (from renderTree, debounced 400 ms, only while showing);
   Reload / Open. Server preview CSP adds frame-ancestors 'self' (others can't frame previews).
 - Test guard: no "\uXXXX" escapes in genie.html's HTML (they render as text).
+
+## 0.1.61: Genie preview on phones
+- #mtabs Preview (tab('preview') reloads); .pview base styles now apply to every screen (hidden unless
+  d-preview / m-preview); previewChanged() also while m-preview on phones. Checked at 390 px.
