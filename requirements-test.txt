@@ -31,3 +31,4 @@ tomli; python_version < "3.11"
 segno
 webauthn>=3.0.1; sys_platform != "darwin" or platform_machine != "x86_64"
 webauthn>=2.7,<3; sys_platform == "darwin" and platform_machine == "x86_64"   # 3.x needs cryptography 49+: no Intel-Mac builds
+cbor2>=5.6.5,<6; sys_platform == "darwin" and platform_machine == "x86_64"   # 6.x has no Intel-Mac builds (needs Rust)

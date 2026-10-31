@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.67 (October 2026)
+
+- For developers: the passkey package's helper (cbor2) now installs on Intel Macs without Rust
+
 ## 0.1.66 (October 2026)
 
 - For developers: everything installs on Intel Macs (the passkey package needed a newer encryption

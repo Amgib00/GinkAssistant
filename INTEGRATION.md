@@ -1500,3 +1500,8 @@ New services/live_info.py (all free, no API keys):
   requirements-test.txt: Intel Macs get webauthn>=2.7,<3 (cryptography>=44.0.2). All 25 passkey tests
   and the full suite pass with webauthn 2.7.0 + cryptography 48.0.1. The server (Linux) keeps 3.x.
   test_intel_macs_can_install_everything evaluates both files' markers as an Intel Mac.
+
+## 0.1.67: Intel-Mac install, part 2 (cbor2)
+- webauthn 2.7 needs cbor2>=5.6.5; pip chose cbor2 6.1.5, which has no cp310 macOS x86_64 wheel and
+  needs Rust. Intel Macs: cbor2>=5.6.5,<6 (5.7.1 wheel exists). Passkey/2FA/QR tests pass with
+  cbor2 5.7.1 + webauthn 2.7.0 + cryptography 48.0.1.

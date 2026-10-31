@@ -56,3 +56,4 @@ def test_intel_macs_can_install_everything():
     assert crypto_ok, rules["cryptography"]
     assert all("3.0.1" not in s for s in rules["webauthn"]), "Intel Macs must not get webauthn 3.x"
     assert all("2.7.0" in s for s in rules["webauthn"])
+    assert all("5.7.1" in s and "6.1.5" not in s for s in rules["cbor2"]), "cbor2 6.x must be built with Rust on Intel Macs"
