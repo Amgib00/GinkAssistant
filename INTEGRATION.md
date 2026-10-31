@@ -1559,3 +1559,8 @@ New services/live_info.py (all free, no API keys):
   timer): now only 401/403 (or the first load) sign out; hiccups keep figures + 'Couldn't refresh'.
 - Server: _health (in memory: started, ai_refused, ai_fallbacks, live_ok/failed, newest 8 problems with
   the provider's own message; never user content) -> /admin/stats 'health'. Browser-tested.
+
+## 0.1.76: owner dashboard 'Right now'
+- _record_activity(email, model) in ai_chat (anonymous sha256 id, in memory, last hour only) +
+  _models_used; _right_now(): online_5min, requests_1h, per_minute[60], top 5 models. admin.html shows
+  them (wide cards, sparkline with per-minute tooltips, Gink model names). Browser-checked.

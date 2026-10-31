@@ -26,3 +26,23 @@ def test_dashboard_refreshes_by_itself_and_keeps_you_signed_in():
     assert 'id="auto"' in page and "}, 30000);" in page and "visibilitychange" in page and "setInterval(tick, 1000)" in page
     assert "if (e.auth || !data)" in page               # only a rejected key (or the first load) logs out
     assert "clearInterval(timer)" not in page           # Lock no longer stops refreshing for good
+
+
+def test_right_now_counts_anonymously_and_forgets_after_an_hour(monkeypatch):
+    import json, time as _t
+    from ginkassistant.services import backend_server as b
+    b._activity.clear(); b._models_used.clear()
+    clock = {"t": 1_000_000.0}
+    monkeypatch.setattr(b.time, "time", lambda: clock["t"])
+    b._record_activity("old@example.com", "openai/gpt-oss-20b")              # 2 hours ago: forgotten
+    clock["t"] += 7200
+    for who, model in (("ib@example.com", "openai/gpt-oss-120b"), ("ib@example.com", "openai/gpt-oss-120b"), ("awa@example.com", "openai/gpt-oss-20b")):
+        b._record_activity(who, model)
+    clock["t"] += 600                                                          # 10 minutes later: one more
+    b._record_activity("awa@example.com", "openai/gpt-oss-20b")
+    now = b._right_now()
+    assert now["requests_1h"] == 4 and now["online_5min"] == 1                 # the old one dropped; Awa online
+    assert now["per_minute"][59] == 1 and now["per_minute"][49] == 3 and len(now["per_minute"]) == 60
+    assert now["models"][0] == {"model": "openai/gpt-oss-20b", "requests": 3}  # since the server started
+    assert "example.com" not in json.dumps(now) and all("@" not in w for _, w, _ in b._activity)   # never who
+    b._activity.clear(); b._models_used.clear()

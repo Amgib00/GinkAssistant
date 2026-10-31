@@ -24,6 +24,13 @@
   .auto { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin-right: 6px; cursor: pointer; }
   .stale { font-size: 12.5px; color: #b25e00; background: rgba(255, 170, 0, .14); border-radius: 999px; padding: 3px 10px; margin-right: 6px; }
   .up { color: #2e7d32; } .down { color: #c0392b; }
+  .spark { display: block; width: 100%; height: 46px; margin-top: 8px; }
+  .card.wide { grid-column: span 2; }
+  @media (max-width: 520px) { .card.wide { grid-column: span 1; } }
+  .spark rect { fill: #3f7d12; } .spark rect.zero { fill: var(--line); }
+  .mlist { margin: 6px 0 0; padding: 0; list-style: none; font-size: 13px; }
+  .mlist li { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; }
+  .mlist li span:last-child { color: var(--muted); }
   #dash.loading .when::after { content: " \00b7 refreshing\2026"; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 12px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
@@ -69,6 +76,9 @@
   </header>
   <div id="warnings"></div>
   <div class="services" id="services"></div>
+
+  <h2>Right now</h2>
+  <div class="grid" id="rightnow"></div>
 
   <h2>Server health <span class="note">(since the server last started)</span></h2>
   <div class="grid" id="health"></div>
@@ -167,6 +177,21 @@
   function render() {
     var d = data, s = d.services;
     tick();
+    var rn = d.now || {}, rh = $("rightnow"); rh.innerHTML = "";
+    card(rh, "Online now", fmt(rn.online_5min), "people in the last 5 minutes");
+    card(rh, "Requests", fmt(rn.requests_1h), "in the last hour");
+    var pm = rn.per_minute || [], peak = Math.max.apply(null, pm.concat([1]));
+    var svg = '<svg class="spark" viewBox="0 0 600 46" preserveAspectRatio="none" role="img" aria-label="Requests per minute, last hour">';
+    pm.forEach(function (n, i) { var hgt = n ? Math.max(3, Math.round(42 * n / peak)) : 2;
+      svg += '<rect' + (n ? '' : ' class="zero"') + ' x="' + (i * 10 + 1) + '" y="' + (46 - hgt) + '" width="8" height="' + hgt + '"><title>' +
+             (59 - i) + ' min ago: ' + n + '</title></rect>'; });
+    rh.lastChild.insertAdjacentHTML("beforeend", svg + "</svg>"); rh.lastChild.classList.add("wide");
+    card(rh, "Models in use", fmt((rn.models || []).reduce(function (a, m) { return a + m.requests; }, 0)), "requests since the server started");
+    var ml = el("ul", "mlist");
+    var GINK = {"openai/gpt-oss-120b": "Gink Crystal", "openai/gpt-oss-20b": "Gink Flake", "qwen/qwen3.8-27b": "Gink Prism"};
+    (rn.models || []).forEach(function (m) { var li = el("li"), nm = el("span", "", GINK[m.model] || m.model); nm.title = m.model;
+      li.appendChild(nm); li.appendChild(el("span", "", fmt(m.requests))); ml.appendChild(li); });
+    rh.lastChild.appendChild(ml); rh.lastChild.classList.add("wide");
     var h = d.health || {}, hh = $("health"); hh.innerHTML = "";
     card(hh, "Running for", dur(h.uptime_s || 0), h.version ? "latest release " + h.version : "");
     card(hh, "AI refusals", fmt(h.ai_refused), h.ai_refused ? "see the latest problems below" : "none \u2713");

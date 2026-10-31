@@ -2001,6 +2001,32 @@ def _count_search(email: str, plan: str, turn: str = ""):
 _health = {"started": time.time(), "ai_refused": 0, "ai_fallbacks": 0, "live_ok": 0, "live_failed": 0, "problems": []}
 
 
+_activity = []                                    # (time, anonymous person id, model) for the last hour, newest last
+_models_used = {}                                # model -> requests since the server started
+
+
+def _record_activity(email: str, model: str) -> None:
+    now = time.time()
+    who = hashlib.sha256(("gink-activity:" + (email or "")).encode()).hexdigest()[:12]   # counted, never shown
+    _activity.append((now, who, str(model or "")))
+    while _activity and _activity[0][0] < now - 3600:
+        _activity.pop(0)
+    _models_used[str(model or "")] = _models_used.get(str(model or ""), 0) + 1
+
+
+def _right_now() -> dict:
+    now = time.time()
+    per_minute = [0] * 60                          # oldest first: index 59 is the current minute
+    for t, _, _ in _activity:
+        age = int((now - t) // 60)
+        if 0 <= age < 60:
+            per_minute[59 - age] += 1
+    top = sorted(_models_used.items(), key=lambda kv: -kv[1])[:5]
+    return {"online_5min": len({w for t, w, _ in _activity if t >= now - 300}),
+            "requests_1h": sum(per_minute), "per_minute": per_minute,
+            "models": [{"model": m, "requests": n} for m, n in top]}
+
+
 def _note_problem(kind: str, status: int, model: str, reason) -> None:
     raw = reason.decode("utf-8", "replace") if isinstance(reason, bytes) else str(reason or "")
     try:                                                   # the provider's message, not the whole JSON
@@ -2158,6 +2184,7 @@ async def ai_chat(request: Request):
         body["model"] = SEARCH_MODEL                                         # web search runs on GPT-OSS
     body["model"] = GINK_MODEL_NAMES.get(str(body["model"]).lower(), body["model"])   # "gink-frost" -> Claude Sonnet
     await _add_live_context(body)                    # today's date; live data (weather...) when asked
+    _record_activity(email, body["model"])           # owner dashboard: "Right now" (anonymous, in memory)
     wants_claude = str(body["model"]).startswith("claude-")
     if wants_claude and not _env("ANTHROPIC_API_KEY"):
         wants_claude, body["model"] = False, TEXT_MODELS_BEST_FIRST[0]   # no Anthropic key here: Groq instead
@@ -3128,7 +3155,7 @@ def admin_stats(request: Request):
     health = {"uptime_s": int(now - _health["started"]), "ai_refused": _health["ai_refused"],
               "ai_fallbacks": _health["ai_fallbacks"], "live_ok": _health["live_ok"], "live_failed": _health["live_failed"],
               "problems": list(_health["problems"]), "version": (_release_cache.get("data") or {}).get("version") or ""}
-    return {"generated": now, "users": users, "health": health,
+    return {"generated": now, "users": users, "health": health, "now": _right_now(),
             "today": {**(total([today]) if today in per_day else {k: 0 for k in keys}),
                       "active_users": per_day.get(today, {}).get("active_users", 0)},
             "last7": total(week), "daily": [per_day[d] for d in days], "revenue_30d": revenue,

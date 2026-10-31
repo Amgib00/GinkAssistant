@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.76 (October 2026)
+
+- Owner dashboard: a "Right now" section: people online in the last 5 minutes, requests in the last
+  hour minute by minute, and which models are answering
+
 ## 0.1.75 (October 2026)
 
 - Owner dashboard: refreshes by itself every 30 seconds (with an on/off switch), no longer signs you
