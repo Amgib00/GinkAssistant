@@ -122,3 +122,10 @@ When signed in, personal settings (appearance, writing style, reply language, vo
 #### Scenario: Dark theme on another device
 - **WHEN** the person switches to the dark theme on one device
 - **THEN** another device opens in the dark theme
+
+### Requirement: Connected apps use the registered Google address
+Connecting a Google app SHALL send people back to the same address as Sign in with Google, which tells the two apart by the one-time state, so only one address needs registering with Google.
+
+#### Scenario: Connecting Google Calendar
+- **WHEN** the person connects Google Calendar from Settings
+- **THEN** Google returns to /auth/google/callback and the calendar shows as connected

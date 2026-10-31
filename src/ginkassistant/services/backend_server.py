@@ -835,6 +835,10 @@ async def _oauth_callback(provider: str, request: Request):
 
 @app.get("/auth/{provider}/callback")
 async def oauth_callback_get(provider: str, request: Request):
+    state = request.query_params.get("state", "")
+    if provider == "google" and state and state in _connect_states:            # a Connected apps sign-in
+        return await connected_callback(request, code=request.query_params.get("code", ""), state=state,
+                                        error=request.query_params.get("error", ""))
     return await _oauth_callback(provider, request)
 
 
@@ -4001,7 +4005,10 @@ def _google_keys():
 
 
 def _connect_redirect(request: Request) -> str:
-    return _public_base(request).rstrip("/") + "/connected/google/callback"
+    """Connected apps come back to the SAME address as "Sign in with Google" (already registered in Google
+    Cloud): a separate /connected/google/callback had to be registered too, and wasn't -> Google showed
+    "Error 400: redirect_uri_mismatch". The callback tells the two apart by the one-time state."""
+    return _public_base(request).rstrip("/") + "/auth/google/callback"
 
 
 def _service(service: str) -> dict:

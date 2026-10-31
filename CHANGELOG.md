@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.63 (October 2026)
+
+- Fixed: the in-app viewer (videos, web pages) always shows its close button, with a short title
+- Fixed: connecting Google apps in Settings showed "Error 400: redirect_uri_mismatch"
+- Skeleton screens: pages in the viewer and lists in Settings show placeholders while they load
+
 ## 0.1.62 (October 2026)
 
 - Gink Genie shows what it built: a new website opens in Preview by itself, and answers that change

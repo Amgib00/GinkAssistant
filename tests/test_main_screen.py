@@ -175,8 +175,8 @@ def test_video_card_and_links_open_viewer(tmp_path, monkeypatch):
         for _ in range(40):
             await asyncio.sleep(0.05)
             if len(root.children) == 3 and "first" not in seen:
-                seen["first"] = root.children[2].children[1].url
-        seen["final"] = root.children[2].children[1].url
+                seen["first"] = [w for w in root.children[2].children if hasattr(w, "url")][0].url
+        seen["final"] = [w for w in root.children[2].children if hasattr(w, "url")][0].url   # the WebView, not the skeleton
         seen["children"] = len(root.children)
         app._main_screen_token = None
         app.task_scheduler.stop()

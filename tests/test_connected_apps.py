@@ -190,3 +190,18 @@ def test_agent_actions_and_must_ask():
     a, executed = agent_with([lock])
     asyncio.run(a.run("Get ready for the night", confirm=confirm, ask_sensitive=False))  # optional questions: off
     assert asked == [] and executed == ["set_dark_mode", "lock_screen"]
+
+
+def test_connecting_uses_the_registered_google_address(srv):
+    """Error 400 redirect_uri_mismatch: /connected/google/callback was never registered in Google Cloud.
+    Connected apps now come back to /auth/google/callback (the sign-in one) and are told apart by state."""
+    b, c, h, db = srv
+    url = c.post("/connected/calendar/begin", headers=h).json()["url"]
+    q = dict(urllib.parse.parse_qsl(urllib.parse.urlparse(url).query))
+    assert q["redirect_uri"].endswith("/auth/google/callback")
+    STATE["granted"] = " ".join(b.CONNECT_SERVICES["calendar"]["scopes"])
+    page = c.get("/auth/google/callback", params={"code": "auth-code", "state": q["state"]})
+    assert page.status_code == 200 and "connected" in page.text.lower()
+    assert {x["id"]: x["connected"] for x in c.get("/connected", headers=h).json()["services"]}["calendar"]
+    # an ordinary "Sign in with Google" (a state that isn't a connection) still goes to sign-in
+    assert c.get("/auth/google/callback", params={"code": "x", "state": "not-a-connection"}).status_code in (200, 302, 303, 307, 400)

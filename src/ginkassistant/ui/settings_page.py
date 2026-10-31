@@ -199,6 +199,14 @@ SETTINGS_CSS = r"""
   #s-toast.show { opacity: 1; }
   #s-toast.err { background: #B4261C; }
   .s-empty { color: var(--text-muted); font-size: 14px; padding: 20px 0; }
+  .s-skel { padding: 4px 0; }
+  .sk-row { display: flex; align-items: center; gap: 12px; padding: 10px 2px; }
+  .sk-col { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+  .sk { display: block; border-radius: 6px; background: linear-gradient(90deg, var(--border) 25%, var(--elevated, #eee) 50%, var(--border) 75%);
+        background-size: 200% 100%; animation: sk-shine 1.3s ease-in-out infinite; }
+  .sk-dot { width: 34px; height: 34px; border-radius: 50%; flex: none; } .sk-l1 { height: 12px; width: 45%; } .sk-l2 { height: 10px; width: 70%; }
+  @keyframes sk-shine { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+  @media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
   @media (max-width: 700px) {
     #settings-back { padding: 0; }
     .settings { border-radius: 0; max-height: none; flex-direction: column; }
@@ -539,6 +547,11 @@ SETTINGS_JS = r"""
       return '<div class="s-row stack"><div class="lab"><b>' + esc(r.label) + '</b></div><div class="meter2 ' + (pct >= 100 ? 'full' : pct >= 80 ? 'high' : '') +
              '"><i style="width:' + pct + '%"></i></div><div class="lab"><span>' + esc(r.desc || '') + '</span></div></div>';
     } else if (r.type === 'list') {
+      if (!r.items.length && /^Loading/.test(r.empty || '')) {       // skeleton rows while the list loads
+        return '<div class="s-skel" aria-busy="true" aria-label="' + esc(r.empty) + '">' +
+          [0, 1, 2].map(function () { return '<div class="sk-row"><span class="sk sk-dot"></span><span class="sk-col">' +
+            '<span class="sk sk-l1"></span><span class="sk sk-l2"></span></span></div>'; }).join('') + '</div>';
+      }
       if (!r.items.length) return '<div class="s-empty">' + esc(r.empty || '') + '</div>';
       return '<div class="s-list">' + r.items.map(function (it) {
         return '<div class="s-item"><div class="t">' + esc(it.t) + '</div>' + (it.m ? '<div class="m">' + esc(it.m) + '</div>' : '') +

@@ -43,3 +43,10 @@ For HTML and SVG designs the code viewer SHALL offer Publish, which turns a frag
 #### Scenario: Publishing a card
 - **WHEN** the person presses Publish on an HTML card in the viewer
 - **THEN** a public /s/ link is shown and serves the card without outside scripts or password fields
+
+### Requirement: Viewer close button and loading skeletons
+The in-app viewer SHALL keep its close button visible (first in the bar) with a short title (the page's title or the site's name, never a long address), and SHALL show a skeleton while a page loads; Settings lists that are still loading SHALL show skeleton rows.
+
+#### Scenario: A long YouTube address
+- **WHEN** the viewer opens a YouTube search page without a title
+- **THEN** the bar shows "YouTube" and the close button

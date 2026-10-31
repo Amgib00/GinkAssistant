@@ -42,14 +42,24 @@ class Viewer:
         self.size_btn = toga.Button("\u2194 Wider", on_press=self._toggle_width, style=Pack(**btn))
         self.ext_btn = toga.Button("Open in browser \u2197", on_press=self._external, style=Pack(**btn))
         self.close_btn = toga.Button("\u2715", on_press=lambda w: self.close(), style=Pack(width=36, **btn))
+        # the close button comes FIRST: a long title can never push it out of sight (it did, with a long URL)
         bar_children = ([self.back_btn, self.title, self.ext_btn] if self.mobile
-                        else [self.title, self.size_btn, self.ext_btn, self.close_btn])
+                        else [self.close_btn, self.title, self.size_btn, self.ext_btn])
         bar = toga.Box(children=bar_children,
                        style=Pack(direction=ROW, align_items=CENTER, margin=(8, 10), background_color=BG_SURFACE))
-        self.web = toga.WebView(style=Pack(flex=1))
+        self.web = toga.WebView(style=Pack(flex=1), on_webview_load=self._loaded)
+        # skeleton screen: grey lines in the shape of a page while it loads (instead of a blank area)
+        bars = []
+        for w, h, gap in ((None, 150, 0), (260, 14, 16), (None, 12, 10), (None, 12, 8), (200, 12, 8), (None, 90, 18), (240, 14, 16), (None, 12, 10)):
+            st = dict(height=h, margin=(gap, 16, 0, 16), background_color=BORDER)
+            if w:
+                st["width"] = w
+            bars.append(toga.Box(style=Pack(**st)))
+        self.skeleton = toga.Box(children=bars, style=Pack(direction=COLUMN, flex=1, background_color=BG_SURFACE))
         style = Pack(direction=COLUMN, flex=1, background_color=BG_SURFACE) if self.mobile else \
             Pack(direction=COLUMN, width=WIDTHS[self._width_i], background_color=BG_SURFACE)
-        self.view = toga.Box(children=[bar, self.web], style=style)
+        self.view = toga.Box(children=[bar, self.skeleton, self.web], style=style)
+        self._loading(False)
         if not self.mobile:
             # thin divider so the panel reads as separate from the chat
             self.divider = toga.Box(style=Pack(width=1, background_color=BORDER))
@@ -60,10 +70,46 @@ class Viewer:
             return self.app.main_window.content is self.view
         return self.view in self.host.children
 
+    @staticmethod
+    def short_title(url: str, title: str = "") -> str:
+        """A short bar title: the page's title, else the site's name ("YouTube"), never a long address."""
+        if title and not title.startswith(("http://", "https://")):
+            return title if len(title) <= 40 else title[:39] + "\u2026"
+        from urllib.parse import urlparse
+        host = (urlparse(url).hostname or "").lower()
+        for pre in ("www.", "m.", "music."):
+            host = host[len(pre):] if host.startswith(pre) else host
+        known = {"youtube.com": "YouTube", "youtu.be": "YouTube", "spotify.com": "Spotify", "google.com": "Google",
+                 "wikipedia.org": "Wikipedia"}
+        for k, v in known.items():
+            if host == k or host.endswith("." + k):
+                return v
+        return host or "Web page"
+
+    def _loading(self, on: bool):
+        """Skeleton while loading. The page view stays in the window (so it keeps loading), just squeezed."""
+        self.skeleton.style.display = "pack" if on else "none"
+        self.web.style.flex = 0 if on else 1
+        self.web.style.height = 1 if on else 1
+        if not on:
+            try:
+                del self.web.style.height
+            except Exception:
+                pass
+
+    def _loaded(self, widget=None, **kw):
+        self._loading(False)
+
     def show(self, url: str, title: str = ""):
         self.url = url
-        self.title.text = (title or url)[:90]
+        self.title.text = self.short_title(url, title)
+        self._loading(True)
         self.web.url = url
+        try:                                               # some systems never report "loaded": stop waiting anyway
+            import asyncio
+            asyncio.get_event_loop().call_later(6, self._loading, False)
+        except Exception:
+            self._loading(False)
         if self.is_open:
             return
         if self.mobile:

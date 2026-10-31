@@ -1469,3 +1469,12 @@ New services/live_info.py (all free, no API keys):
 ## 0.1.62: Preview after building
 - draw(): "See it in Preview" when changes touch .html/.css/.js and index.html exists; build() opens
   showPreview() after sendToGenie resolves for a new project with index.html. Browser-tested.
+
+## 0.1.63: viewer close button, Google connect redirect, skeletons
+- Viewer: a long URL title pushed the bar's buttons (incl. the close X) out of the 560 px panel. Now
+  close first + short_title() (page title <= 40 chars, else the site's name). Skeleton Box while
+  loading (WebView kept in the window, squeezed; on_webview_load or 6 s).
+- Connected apps sent redirect_uri .../connected/google/callback, never registered in Google Cloud
+  -> "Error 400: redirect_uri_mismatch". Now .../auth/google/callback (registered for sign-in);
+  /auth/google/callback hands a known _connect_states state to connected_callback. Old route kept.
+- Settings: lists with no items and an empty text starting "Loading" draw 3 shimmer rows.
