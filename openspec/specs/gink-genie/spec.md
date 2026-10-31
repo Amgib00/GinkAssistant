@@ -179,3 +179,17 @@ Genie SHALL say in one short sentence what it is doing before each group of acti
 #### Scenario: A bug in the first version
 - **WHEN** Genie's first run fails with an error
 - **THEN** a step says what it is debugging, the file is updated, and a second run succeeds before the answer
+
+### Requirement: Studio layout
+On computers Genie SHALL show a projects sidebar, a top bar with the project's name (click to rename), Share and GitHub as icons and a "more" menu with the other project actions, the conversation in the centre with a Code tab for the open file, and files and settings on the right. Phones keep their own layout.
+
+#### Scenario: Opening a file
+- **WHEN** the person clicks cart.js in the files panel
+- **THEN** the Code tab opens showing cart.js, and the Genie tab brings the conversation back
+
+### Requirement: Start screen with ideas
+The start screen SHALL say "Start building with Gink Genie", offer example prompts and starter cards that glow on hover, and choosing one SHALL fill the prompt box.
+
+#### Scenario: Choosing a starter card
+- **WHEN** the person clicks the Expense tracker card
+- **THEN** the prompt box holds the expense tracker idea, ready to send

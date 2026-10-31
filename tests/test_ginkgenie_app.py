@@ -77,7 +77,7 @@ def test_lamp_icon_and_living_genie():
 def test_genie_page_commands_steps_and_files():
     genie = open(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "genie.html"), encoding="utf-8").read()
     assert "Upload ZIP" not in genie and 'id="upload2" multiple' in genie and 'id="upload3" multiple' in genie
-    for part in ('class="s-title">New project', 'id="open-btn"', "function stepsBlock", "function runCommand", "/ask/continue",
+    for part in ('<h1>Start building with<br>Gink Genie</h1>', 'id="open-btn"', "function stepsBlock", "function runCommand", "/ask/continue",
                  "function addFiles", 'addEventListener("drop"', "Available: python FILE, pytest, node FILE, ls, cat FILE"):
         assert part in genie, part
 
@@ -102,4 +102,18 @@ def test_phone_layout_wiring():
     for part in ("@media (max-width: 700px)", 'id="mtabs"', 'id="more"', "header .hb { display:none !important; }", "function tab(name)"):
         assert part in genie, part
     for bid in ("new", "preview", "download", "share", "github", "rename", "duplicate", "del"):    # every action reachable on phones
-        assert re.search(r'<button class="[^"]* hb" id="%s"' % bid, genie), bid
+        assert re.search(r'<button class="[^"]* hb\b[^"]*" id="%s"' % bid, genie), bid
+
+
+
+def test_studio_layout():
+    """AI Studio-style: projects sidebar, the four buttons only in the "more" menu, Share + GitHub as icons."""
+    genie = open(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "genie.html"), encoding="utf-8").read()
+    for bid in ("preview", "download", "rename", "duplicate"):
+        assert re.search(r'<button class="[^"]* dm[^"]*" id="%s"' % bid, genie), bid          # hidden from the header
+    assert "header .brand, header #pick, header .dm { display:none !important; }" in genie
+    for bid in ("share", "github"):
+        m = re.search(r'<button class="([^"]*)" id="%s"[^>]*>(.*?)</button>' % bid, genie, re.S)
+        assert " ic" in m.group(1) and m.group(2).lstrip().startswith("<svg"), bid             # icons, not words
+    for part in ('id="side"', 'id="plist"', 'id="ctabs"', "function renderSide", "function dview", 'class="hero"', 'class="card big c1"'):
+        assert part in genie, part

@@ -1447,3 +1447,11 @@ New services/live_info.py (all free, no API keys):
   handle_composer_event made ApiClient local to the whole function -> the feedback branch raised
   UnboundLocalError (thumbs-down never sent). Now `from ..services import api_client as _api`, plus a
   permanent AST test (test_the_event_handler_never_shadows_module_names).
+
+## 0.1.59: Genie studio layout (owner's AI Studio recordings)
+- >= 701 px: body grid (#side | header/#start/#work); #side = brand, #side-new, #plist (renderSide()
+  mirrors the hidden #pick), Back to Gink; header shows #ptitle-wrap (pencil -> #rename), Share/GitHub
+  as .ic SVG icons, #more; .dm buttons (preview, download, rename, duplicate, del, new, back) hidden
+  but clicked from the menu. #work = #ctabs (Genie | Code + file) over .chat/.editor (dview()),
+  .files on the right with .rs Settings (a third .mode-btn). Start: .hero (examples, 3 glowing cards
+  -> fill #idea). Phones unchanged (checked 390 px). All element ids kept.

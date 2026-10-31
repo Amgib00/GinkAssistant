@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.59 (October 2026)
+
+- Gink Genie has a new look: your projects in a sidebar, a cleaner top bar (Share and GitHub as
+  icons, everything else in the menu), the conversation in the centre with a Code tab, and a start
+  screen with ideas to build
+
 ## 0.1.58 (October 2026)
 
 - Publish a design: press Publish in the code viewer to put a page or graphic Gink made online,

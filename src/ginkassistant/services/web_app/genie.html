@@ -156,31 +156,113 @@
     .ebar { flex-wrap:wrap; gap:6px; padding:6px 8px; } .ebar button { padding:5px 10px; font-size:12.5px; }
     .s-bottom { padding-top:150px; } .s-info { gap:10px; }
   }
+  #side, #ctabs, .ptitle { display:none; }
+  @media (min-width: 701px) {
+    body { display:grid; grid-template-columns:248px minmax(0,1fr); grid-template-rows:auto minmax(0,1fr); height:100vh; }
+    #side { display:flex; flex-direction:column; grid-column:1; grid-row:1 / span 2; background:var(--panel); border-right:1px solid var(--line);
+            padding:14px 12px; gap:4px; min-height:0; overflow:auto; }
+    #side .sbrand { display:flex; align-items:center; gap:9px; font-size:17px; padding:2px 6px 12px; }
+    #side .sbrand .lamp { width:30px; height:30px; display:grid; place-items:center; border-radius:9px; background:#151D23; color:#A8F03C; }
+    #side .snew { text-align:left; background:var(--bg); color:var(--text); box-shadow:inset 0 0 0 1px var(--line); border-radius:10px; padding:9px 12px; font-weight:600; }
+    #side .snew:hover { box-shadow:inset 0 0 0 1px var(--accent); }
+    #side .slabel { font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding:16px 8px 6px; }
+    #side .sp { display:block; width:100%; text-align:left; background:none; color:var(--text); font-weight:500; border-radius:9px; padding:8px 10px;
+                white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    #side .sp:hover { background:var(--sel); } #side .sp.on { background:var(--sel); color:var(--accent); font-weight:650; }
+    #side .sback { color:var(--muted); font-size:13px; padding:8px; }
+    header { grid-column:2; flex-wrap:nowrap; padding:10px 16px; }
+    header .brand, header #pick, header .dm { display:none !important; }
+    header .ptitle { display:flex; align-items:center; gap:4px; font-weight:650; font-size:15.5px; min-width:0; }
+    header .ptitle[hidden] { display:none !important; }
+    header .ptitle #ptitle { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    header .ic { width:34px; height:34px; padding:0; display:inline-grid; place-items:center; border-radius:50%; }
+    #more { display:inline-flex; width:34px; height:34px; padding:0; justify-content:center; align-items:center; border-radius:50%; font-size:18px; }
+    #start, #work { grid-column:2; grid-row:2; min-height:0; }
+    #work { display:grid; grid-template-columns:minmax(0,1fr) 300px !important; grid-template-rows:auto minmax(0,1fr) !important; }
+    #work[hidden] { display:none !important; }
+    #ctabs { display:flex; gap:4px; grid-column:1; grid-row:1; padding:8px 16px 0; border-bottom:1px solid var(--line); }
+    #ctabs button { background:none; color:var(--muted); border-radius:9px 9px 0 0; padding:8px 14px; font-weight:600; box-shadow:none; }
+    #ctabs button.on { color:var(--text); box-shadow:inset 0 -2px 0 var(--accent); }
+    #ctabs #ctab-file { font-weight:500; color:var(--muted); margin-left:6px; }
+    #work > .chat, #work > .editor { grid-column:1; grid-row:2; min-height:0; border:0 !important; }
+    body:not(.d-code) #work > .editor { display:none !important; }
+    body.d-code #work > .chat { display:none !important; }
+    #work > .chat .msgs, #work > .chat .ask { width:100%; max-width:860px; margin-left:auto; margin-right:auto; }
+    #work > .files { grid-column:2; grid-row:1 / span 2; border-left:1px solid var(--line); border-right:0; max-height:none; display:flex; flex-direction:column; }
+    #work > .files #tree { flex:1; overflow:auto; }
+    .rs { border-top:1px solid var(--line); padding:10px 4px 4px; }
+    .rs-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 8px; font-size:13.5px; }
+    .s-center { display:none; }
+  }
+  /* the start screen's welcome: text and examples on the left, starter cards on the right (glow on hover) */
+  .hero { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); gap:40px; align-items:center; max-width:1100px; margin:0 auto; padding:40px 32px 10px; width:100%; }
+  .hero h1 { font-size:34px; line-height:1.15; letter-spacing:-.02em; margin:0 0 12px; }
+  .hero p { color:var(--muted); margin:0 0 18px; max-width:420px; }
+  .hero .ex { display:block; background:none; color:var(--text); font-weight:500; padding:7px 0; box-shadow:none; text-align:left; border-radius:0; }
+  .hero .ex:hover { color:var(--accent); }
+  .hero-r { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .card { position:relative; height:150px; border-radius:16px; overflow:hidden; text-align:left; padding:0; color:#fff; box-shadow:0 0 0 1px var(--line);
+          transition:transform .2s, box-shadow .2s; background:#151D23; }
+  .card.big { grid-column:1 / span 2; height:190px; }
+  .card .art { position:absolute; inset:0; }
+  .card.c1 .art { background:radial-gradient(circle at 75% 30%, #A8F03C 0 18%, transparent 19%), linear-gradient(135deg, #1d2b36, #0f1a12); }
+  .card.c2 .art { background:radial-gradient(circle at 30% 35%, #7fd3ff 0 22%, transparent 23%), linear-gradient(135deg, #2a2440, #13202b); }
+  .card.c3 .art { background:repeating-linear-gradient(90deg, #A8F03C 0 14px, transparent 14px 20px) 20% 62%/60% 14px no-repeat, linear-gradient(135deg, #10251a, #0d1a24); }
+  .card .ct { position:absolute; left:14px; bottom:12px; font-weight:700; font-size:15px; text-shadow:0 1px 6px rgba(0,0,0,.5); }
+  .card .go { position:absolute; right:12px; top:10px; font-size:12px; background:rgba(255,255,255,.92); color:#151D23; border-radius:999px; padding:3px 9px;
+              opacity:0; transition:opacity .2s; }
+  .card:hover, .card:focus-visible { transform:translateY(-2px); box-shadow:0 0 0 1px #A8F03C, 0 0 26px rgba(168,240,60,.45); }
+  .card:hover .go, .card:focus-visible .go { opacity:1; }
+  @media (max-width: 900px) { .hero { grid-template-columns:1fr; padding:24px 16px 6px; gap:18px; } .hero h1 { font-size:26px; } }
+  @media (max-width: 700px) { .hero-r { display:none; } }
+  @media (prefers-reduced-motion: reduce) { .card { transition:none; } .card:hover { transform:none; } }
   [hidden] { display:none !important; }
   @media (max-width: 900px) { main { grid-template-columns:1fr; grid-template-rows:auto 45vh auto; } .files { max-height:160px; border-right:0; border-bottom:1px solid var(--line); }
     .editor { border-right:0; } .chat { min-height:380px; } }
 </style>
 </head>
 <body>
+<nav id="side" aria-label="Projects">
+  <div class="sbrand"><span class="lamp" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><g transform="matrix(-1 0 0 1 24 0)"><path d="M2 10.2c1.9.1 3.4 1.2 4.7 2.2 1 .8 2.2 1.4 3.7 1.4h4c2 0 3.7-1.2 4.2-3"/><path d="M7.2 13.4c.7 2 2.6 3.2 4.8 3.2h1.6c2.1 0 3.9-1.3 4.5-3.2"/><path d="M10.6 10.9c0-1.5 1.1-2.6 2.6-2.6s2.6 1.1 2.6 2.6"/><path d="M13.2 8.3V6.9"/><circle cx="13.2" cy="5.9" r="1.1" fill="currentColor" stroke="none"/><path d="M18.6 11.2c1.3-.4 2.7.2 3 1.4.3 1.2-.6 2.4-2 2.6-.5.1-1 0-1.4-.2"/><path d="M11.4 16.6l-.6 2.2h5l-.6-2.2"/><path d="M9.6 18.8h6.6"/></g></svg></span><b>Gink Genie</b></div>
+  <button class="snew" id="side-new" type="button">+ New project</button>
+  <div class="slabel">Projects</div>
+  <div id="plist"></div>
+  <div class="grow"></div>
+  <a href="/app" class="sback">&#8592; Back to Gink</a>
+</nav>
 <header>
   <div class="brand"><span class="lamp" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><g transform="matrix(-1 0 0 1 24 0)"><path d="M2 10.2c1.9.1 3.4 1.2 4.7 2.2 1 .8 2.2 1.4 3.7 1.4h4c2 0 3.7-1.2 4.2-3"/><path d="M7.2 13.4c.7 2 2.6 3.2 4.8 3.2h1.6c2.1 0 3.9-1.3 4.5-3.2"/><path d="M10.6 10.9c0-1.5 1.1-2.6 2.6-2.6s2.6 1.1 2.6 2.6"/><path d="M13.2 8.3V6.9"/><circle cx="13.2" cy="5.9" r="1.1" fill="currentColor" stroke="none"/><path d="M18.6 11.2c1.3-.4 2.7.2 3 1.4.3 1.2-.6 2.4-2 2.6-.5.1-1 0-1.4-.2"/><path d="M11.4 16.6l-.6 2.2h5l-.6-2.2"/><path d="M9.6 18.8h6.6"/></g></svg></span> Gink Genie</div>
   <select id="pick" aria-label="Project"></select>
-  <button class="ghost hb" id="new">New project</button>
+  <div class="ptitle" id="ptitle-wrap" hidden><span id="ptitle"></span><button class="ghost ic" id="ptitle-edit" type="button" title="Rename project" aria-label="Rename project">&#9998;</button></div>
+  <button class="ghost hb dm" id="new">New project</button>
   <div class="grow"></div>
-  <button class="ghost hb" id="preview" hidden>Preview</button>
-  <button class="ghost hb" id="download" hidden>Download ZIP</button>
-  <button class="ghost hb" id="share" hidden>Share</button>
-  <button class="ghost hb" id="github" hidden>GitHub</button>
-  <button class="ghost hb" id="rename" hidden>Rename</button>
-  <button class="ghost hb" id="duplicate" hidden>Duplicate</button>
-  <button class="danger hb" id="del" hidden>Delete</button>
-  <a href="/app" class="hb" style="color:var(--muted);font-size:13px">Back to Gink</a>
+  <button class="ghost hb dm" id="preview" hidden>Preview</button>
+  <button class="ghost hb dm" id="download" hidden>Download ZIP</button>
+  <button class="ghost hb ic" id="share" hidden title="Share" aria-label="Share"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></button>
+  <button class="ghost hb ic" id="github" hidden title="GitHub" aria-label="GitHub"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.08 0 4.41-2.69 5.39-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg></button>
+  <button class="ghost hb dm" id="rename" hidden>Rename</button>
+  <button class="ghost hb dm" id="duplicate" hidden>Duplicate</button>
+  <button class="danger hb dm" id="del" hidden>Delete</button>
+  <a href="/app" class="hb dm" style="color:var(--muted);font-size:13px">Back to Gink</a>
   <button class="ghost" id="more" aria-haspopup="true" aria-expanded="false" title="More">&#8943;</button>
   <div id="more-menu" role="menu" hidden></div>
 </header>
 
 <section class="start" id="start" hidden>
-  <div class="s-title">New project</div>
+  <div class="hero">
+    <div class="hero-l">
+      <h1>Start building with<br>Gink Genie</h1>
+      <p>Websites, apps, games and scripts. Describe it, and Genie writes the code, runs it and fixes it.</p>
+      <button class="ex" type="button" data-ex="Make a to-do list app that remembers my tasks">Make a to-do list app that remembers my tasks</button>
+      <button class="ex" type="button" data-ex="Build a landing page for my bakery with a menu and opening hours">Build a landing page for my bakery</button>
+      <button class="ex" type="button" data-ex="Write a Python script that sorts my photos into folders by date">Sort my photos into folders by date</button>
+    </div>
+    <div class="hero-r">
+      <button class="card big c1" type="button" data-ex="Build an expense tracker: add spending by category, see totals and a monthly chart"><span class="art"></span><span class="ct">Expense tracker</span><span class="go">Use this idea &#8599;</span></button>
+      <button class="card c2" type="button" data-ex="Make a personal portfolio website with my projects, skills and a contact form"><span class="art"></span><span class="ct">Portfolio website</span><span class="go">Use this idea &#8599;</span></button>
+      <button class="card c3" type="button" data-ex="Make a snake game that runs in the browser, with a score and speed levels"><span class="art"></span><span class="ct">Snake game</span><span class="go">Use this idea &#8599;</span></button>
+    </div>
+  </div>
   <div class="s-center">
     <div class="s-card">
       <div class="s-row on"><span>&#128193; New project</span><span aria-hidden="true">&#10003;</span></div>
@@ -200,15 +282,20 @@
       <button id="go" class="send" aria-label="Build it" title="Build it">&#8593;</button>
     </div>
     <div class="s-info"><span>&#9729; Browser sandbox</span><button class="ghost mode-btn" type="button" aria-pressed="false" title="Plan first: Genie proposes a plan before changing anything">Auto</button><span class="note" id="start-note"></span>
-      <div class="grow"></div><span>GPT-OSS 120B</span><span class="note">Medium</span></div>
+      <div class="grow"></div><span>Gink Crystal</span><span class="note">Medium</span></div>
   </div>
 </section>
 
 <nav id="mtabs" aria-label="Panels"><button data-tab="files">Files</button><button data-tab="code">Code</button><button data-tab="chat">Genie</button></nav>
 <main id="work" hidden>
+  <div id="ctabs" role="tablist"><button data-v="chat" class="on" role="tab">Genie</button><button data-v="code" role="tab">Code<span id="ctab-file"></span></button></div>
   <nav class="files" aria-label="Files">
     <div class="t">Files <button class="ghost" id="newfile">+ New</button></div>
     <div id="tree"></div>
+    <div class="rs"><div class="t">Settings</div>
+      <div class="rs-row"><span>Mode</span><button class="ghost mode-btn" type="button" aria-pressed="false" title="Plan first: Genie proposes a plan before changing anything">Auto</button></div>
+      <div class="rs-row"><span>Model</span><span class="note">Gink Crystal</span></div>
+      <div class="rs-row"><span>Runs in</span><span class="note">Browser sandbox</span></div></div>
   </nav>
   <section class="editor">
     <div class="ebar"><span class="name" id="fname">Choose a file</span><span class="dirty" id="dirty" hidden>&bull;</span>
@@ -294,21 +381,43 @@
       S.projects = j.projects || [];
       var pick = $("pick"); pick.innerHTML = "";
       S.projects.forEach(function (p) { var o = el("option", "", p.name + " (" + p.files + (p.files === 1 ? " file)" : " files)")); o.value = p.id; pick.appendChild(o); });
-      pick.hidden = !S.projects.length;
+      pick.hidden = !S.projects.length; renderSide();
       if (listOnly && S.project) { pick.value = S.project.id; return; }     // just refresh the list: keep the chat
       var want = selectId || (S.project && S.project.id) || (S.projects[0] && S.projects[0].id);
       if (want) { pick.value = want; return openProject(want); }
       showStart();
     });
   }
+  // the sidebar's projects list (computers) -- mirrors the hidden project picker
+  function renderSide() {
+    var L = $("plist"); if (!L) return; L.innerHTML = "";
+    if (!S.projects.length) L.appendChild(el("div", "note", "No projects yet.")).style.padding = "4px 10px";
+    S.projects.forEach(function (p) {
+      var b = el("button", "sp" + (S.project && S.project.id === p.id ? " on" : ""), p.name); b.type = "button";
+      b.title = p.name + " \u00b7 " + p.files + (p.files === 1 ? " file" : " files");
+      b.onclick = function () {
+        if (S.project && S.project.id === p.id) return;
+        if (dirty() && !confirm("Leave without saving?")) return;
+        $("pick").value = p.id; openProject(p.id);
+      };
+      L.appendChild(b);
+    });
+    var cur = S.project && S.projects.filter(function (p) { return p.id === S.project.id; })[0];
+    $("ptitle-wrap").hidden = !S.project; if (S.project) $("ptitle").textContent = (cur || S.project).name;
+  }
+  function dview(v) {                                       // computers: Genie (chat) or Code in the centre
+    document.body.classList.toggle("d-code", v === "code");
+    document.querySelectorAll("#ctabs button").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-v") === v); });
+  }
   function showStart() {
-    document.body.classList.add("m-start");
+    document.body.classList.add("m-start"); setTimeout(renderSide, 0);
     S.project = null; $("start").hidden = false; $("work").hidden = true;
     ["preview", "download", "del", "github", "rename", "duplicate", "share"].forEach(function (id) { $(id).hidden = true; });
   }
   function openProject(id) {
     return api("/genie/projects/" + encodeURIComponent(id)).then(function (j) {
       S.project = j.project; S.files = j.files || []; S.path = ""; S.saved = ""; document.body.classList.remove("m-start");
+      renderSide(); dview("chat");
       $("start").hidden = true; $("work").hidden = false;
       ["preview", "download", "del", "github", "rename", "duplicate", "share"].forEach(function (x) { $(x).hidden = false; });
       $("msgs").innerHTML = ""; (S.log[id] || []).forEach(function (m) { draw(m); }); renderTree(); clearEditor();
@@ -383,7 +492,7 @@
   function clearEditor() {
     setTimeout(gutter, 0); $("fname").textContent = "Choose a file"; $("code").value = ""; $("code").disabled = true; $("delfile").hidden = true; $("renfile").hidden = true; setDirty(); }
   function openFile(path) {
-    if (PHONE_TAB()) tab("code");
+    if (PHONE_TAB()) tab("code"); else dview("code");
     if (dirty() && !confirm("You have unsaved changes in " + S.path + ". Leave without saving?")) return;
     loadFile(path);
   }
@@ -739,7 +848,16 @@
 
   // ---- wiring
   $("go").onclick = build;
-  $("send").onclick = ask;
+  $("send").onclick = function () { dview("chat"); ask(); };
+  $("side-new").onclick = function () { $("new").click(); };
+  $("ptitle-edit").onclick = function () { $("rename").click(); };
+  document.querySelectorAll("#ctabs button").forEach(function (b) { b.onclick = function () { dview(b.getAttribute("data-v")); }; });
+  new MutationObserver(function () {                         // the Code tab shows the open file's name
+    var n = $("fname").textContent; $("ctab-file").textContent = n && n !== "Choose a file" ? " \u00b7 " + n.replace(/ \u00b7 picture$/, "") : "";
+  }).observe($("fname"), { childList: true, characterData: true, subtree: true });
+  document.querySelectorAll(".hero [data-ex]").forEach(function (b) {      // examples and starter cards fill the box
+    b.onclick = function () { var t = $("idea"); t.value = b.getAttribute("data-ex"); t.dispatchEvent(new Event("input")); t.focus(); };
+  });
   $("instr").onkeydown = function (e) { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); ask(); } };
   $("code").oninput = function () { setDirty(); gutter(); };
   $("code").addEventListener("scroll", function () { $("gutter").scrollTop = this.scrollTop; });
