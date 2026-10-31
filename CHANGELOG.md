@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.74 (October 2026)
+
+- Real-time answers through the Gink API and on the web: today's date always, and live weather,
+  time, currency, crypto prices, air quality, sunrise and sunset and prayer times when you ask for them
+
 ## 0.1.73 (October 2026)
 
 - On GitHub: tidying and triaging pull requests works with every version of the gh tool (gh pr edit

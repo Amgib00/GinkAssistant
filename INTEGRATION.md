@@ -1543,3 +1543,12 @@ New services/live_info.py (all free, no API keys):
   (repository.pullRequest.projectCards)' -- gh pr edit queries retired classic Projects. The tidy tool
   and the workflow now use REST: POST issues/N/labels, POST issues/N/assignees, PATCH issues/N milestone
   (number, created if missing). The test's fake gh fails pr edit like the owner's.
+
+## 0.1.74: real-time info through the server (developer API, web app)
+- _add_live_context(body) in ai_chat (after the request checks, before Claude/Groq): appends the UTC date
+  to the first system message (or adds one); _live_requests() detects weather/air/sun/prayer/time (with a
+  place 'in/for/at X'), currency ('100 dollars in cfa'), crypto ('bitcoin price'); _live_facts() calls
+  live_info.LiveInfo (6 s each, max 3) and adds time-stamped data; no place -> 'ask which city'.
+  'gink_live': false skips fetching and is popped. Dockerfile copies live_info.py.
+- SLIP caught by tests: the new block went between @app.post(...) and ai_chat, so the route returned the
+  live_info module. Fixed + test_every_route_decorator_sits_on_its_function.

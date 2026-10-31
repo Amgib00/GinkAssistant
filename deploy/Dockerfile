@@ -11,6 +11,8 @@ COPY src/ginkassistant/services/billing_catalog.py ./billing_catalog.py
 # Gink on the web (/app): the safe formatter and the pre-built web app (tools/build_web_app.py)
 COPY src/ginkassistant/services/markdown_render.py ./markdown_render.py
 COPY src/ginkassistant/services/attachments.py ./attachments.py
+# real-time information in answers (weather, time, currency...): backend_server._add_live_context
+COPY src/ginkassistant/services/live_info.py ./live_info.py
 COPY src/ginkassistant/services/web_app ./web_app
 ENV PORT=8000
 EXPOSE 8000

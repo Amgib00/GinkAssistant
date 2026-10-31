@@ -283,6 +283,7 @@ tests/test_ginkgenie_app.py
 tests/test_hey_gink.py
 tests/test_ios_startup.py
 tests/test_languages_auto.py
+tests/test_live_answers.py
 tests/test_live_info.py
 tests/test_location.py
 tests/test_main_screen.py

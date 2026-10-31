@@ -72,3 +72,17 @@ POST /v1/batches SHALL accept up to 100 chat requests (each with a unique custom
 #### Scenario: Someone else's code
 - **WHEN** a person is asked by someone else to enter a code
 - **THEN** the page tells them to choose Deny, and Deny gives the device nothing
+
+### Requirement: Real-time information in answers
+Every chat request through the server SHALL include the current date and time; when the newest message asks for live data (weather, time in a place, currency, crypto prices, air quality, sunrise and sunset, prayer times), the server SHALL fetch it with a short time limit and give it to the model, time-stamped.
+
+#### Scenario: Weather through the API
+- **WHEN** a developer's request asks "What's the weather in Dakar today?"
+- **THEN** the model receives Dakar's current weather and today's date before answering
+
+### Requirement: Developers control live data
+Without a place the server SHALL tell the model to ask for one, and developers SHALL be able to turn the fetching off with "gink_live": false, which is never sent on to the AI service.
+
+#### Scenario: Turning it off
+- **WHEN** a request sets "gink_live": false
+- **THEN** nothing is fetched, the date is still included, and the setting is removed before the AI service

@@ -1996,6 +1996,123 @@ def _count_search(email: str, plan: str, turn: str = ""):
     return None
 
 
+# ================================================================ Real-time information in answers
+# The AI has no clock and no internet: every chat through the server (the developer API, the web app,
+# the apps) gets today's date and time, and messages asking for live data get it fetched first
+# (weather, time in a place, currency, crypto, air quality, sunrise/sunset, prayer times).
+# Developers can turn the fetching off with "gink_live": false.
+def _live_lib():
+    try:
+        from . import live_info as L
+    except ImportError:                       # Docker: modules sit side by side
+        import live_info as L
+    return L
+
+
+_LIVE_STOP = r"(?:today|tonight|tomorrow|now|right now|this week|this weekend|please|currently|at the moment)"
+_LIVE_PLACE = re.compile(r"\b(?:in|for|at|near)\s+([^\W\d][\w'\u2019.-]*(?:[ ,-]+[^\W\d][\w'\u2019.-]*){0,3})", re.I | re.U)
+_LIVE_KINDS = (
+    ("weather", re.compile(r"\b(weather|forecast|temperature|rain(?:ing|y)?|sunny|humid(?:ity)?|windy?|degrees|how (?:hot|cold))\b", re.I)),
+    ("air", re.compile(r"\b(air quality|aqi|air pollution)\b", re.I)),
+    ("sun", re.compile(r"\b(sunrise|sunset)\b", re.I)),
+    ("prayer", re.compile(r"\b(prayer times?|salah|salat|fajr|dhuhr|asr|maghrib|isha)\b", re.I)),
+    ("time", re.compile(r"\b(what time|time is it|current time|local time|time now)\b", re.I)),
+)
+_LIVE_MONEY = {"dollar": "USD", "dollars": "USD", "usd": "USD", "euro": "EUR", "euros": "EUR", "eur": "EUR", "pound": "GBP",
+               "pounds": "GBP", "gbp": "GBP", "naira": "NGN", "ngn": "NGN", "cfa": "XOF", "xof": "XOF", "franc": "XOF", "francs": "XOF",
+               "cedi": "GHS", "cedis": "GHS", "ghs": "GHS", "leone": "SLE", "leones": "SLE", "sle": "SLE", "rand": "ZAR", "zar": "ZAR",
+               "shilling": "KES", "shillings": "KES", "kes": "KES", "yen": "JPY", "jpy": "JPY", "yuan": "CNY", "cny": "CNY",
+               "dirham": "MAD", "dirhams": "MAD", "mad": "MAD", "cad": "CAD", "aud": "AUD", "chf": "CHF", "inr": "INR", "rupee": "INR", "rupees": "INR"}
+_LIVE_CURRENCY = re.compile(r"(\d[\d,]*(?:\.\d+)?)?\s*\b(%s)\b\s+(?:to|in|into)\s+\b(%s)\b" % ("|".join(_LIVE_MONEY), "|".join(_LIVE_MONEY)), re.I)
+_LIVE_CRYPTO = re.compile(r"\b(bitcoin|btc|ethereum|eth|solana|sol|dogecoin|doge|bnb|xrp|cardano|ada)\b", re.I)
+_LIVE_CRYPTO_IDS = {"btc": "bitcoin", "eth": "ethereum", "sol": "solana", "doge": "dogecoin", "bnb": "binancecoin",
+                    "xrp": "ripple", "ada": "cardano"}
+
+
+def _last_user_text(messages: list) -> str:
+    for m in reversed(messages):
+        if isinstance(m, dict) and m.get("role") == "user":
+            c = m.get("content")
+            if isinstance(c, str):
+                return c
+            if isinstance(c, list):
+                return " ".join(p.get("text", "") for p in c if isinstance(p, dict) and p.get("type") == "text")
+    return ""
+
+
+def _live_place(text: str) -> str:
+    m = _LIVE_PLACE.search(text or "")
+    if not m:
+        return ""
+    words = re.split(r"\s+", re.sub(r"[?!.,;:]+$", "", m.group(1)).strip())
+    keep = []
+    for w in words:
+        if re.fullmatch(_LIVE_STOP, w.strip(",.?!"), re.I) or w.lower() in ("the", "and", "is", "like", "be", "will"):
+            break
+        keep.append(w.rstrip(".?!"))
+    return " ".join(keep).strip(" ,")[:60]                 # "Saint-Louis, Senegal" keeps its comma
+
+
+def _live_requests(text: str) -> list:
+    """What to fetch for this message: [(kind, args), ...] (at most 3)."""
+    out, place = [], _live_place(text)
+    for kind, rx in _LIVE_KINDS:
+        if rx.search(text or "") and place:
+            day = "tomorrow" if re.search(r"\btomorrow\b", text, re.I) else "today" if kind in ("sun", "prayer") else "now"
+            out.append((kind, {"place": place, "day": day}))
+    m = _LIVE_CURRENCY.search(text or "")
+    if m and _LIVE_MONEY[m.group(2).lower()] != _LIVE_MONEY[m.group(3).lower()]:
+        amount = float((m.group(1) or "1").replace(",", ""))
+        out.append(("currency", {"amount": amount, "from": _LIVE_MONEY[m.group(2).lower()], "to": _LIVE_MONEY[m.group(3).lower()]}))
+    c = _LIVE_CRYPTO.search(text or "")
+    if c and re.search(r"\b(price|worth|value|cost|trading|rate)\b", text, re.I):
+        out.append(("crypto", {"coin": _LIVE_CRYPTO_IDS.get(c.group(1).lower(), c.group(1).lower())}))
+    return out[:3]
+
+
+async def _live_facts(text: str) -> list:
+    wanted = _live_requests(text)
+    if not wanted:
+        return []
+    li = _live_lib().LiveInfo()
+    calls = {"weather": lambda a: li.get_weather(a["place"], a["day"]), "air": lambda a: li.get_air_quality(a["place"]),
+             "sun": lambda a: li.get_sun_times(a["place"], a["day"]), "prayer": lambda a: li.get_prayer_times(a["place"], a["day"]),
+             "time": lambda a: li.get_time(a["place"]),
+             "currency": lambda a: li.convert_currency(a["amount"], a["from"], a["to"]),
+             "crypto": lambda a: li.get_crypto_price(a["coin"])}
+
+    async def one(kind, args):
+        try:
+            r = await asyncio.wait_for(calls[kind](args), timeout=6)
+        except Exception:
+            return None
+        msg = (r or {}).get("message") or ""
+        if not msg and (r or {}).get("time"):
+            msg = f"The time in {args.get('place')} is {r['time']} ({r.get('tz', '')})."
+        return msg if (r or {}).get("ok") and msg else None
+    return [x for x in await asyncio.gather(*(one(k, a) for k, a in wanted)) if x]
+
+
+async def _add_live_context(body: dict) -> None:
+    """Today's date/time always; live data when the newest message asks for it (unless gink_live is false)."""
+    import datetime as _dtm
+    live = body.pop("gink_live", True) is not False
+    now = _dtm.datetime.now(_dtm.timezone.utc)
+    note = f"Current date and time: {now:%A %d %B %Y, %H:%M} UTC."
+    text = _last_user_text(body["messages"])
+    facts = await _live_facts(text) if live and text else []
+    if facts:
+        note += ("\n\nLive data fetched just now for this message (use it, and say it's current as of "
+                 f"{now:%H:%M} UTC; don't claim you can't access real-time information):\n" + "\n\n".join(facts))
+    elif live and text and any(rx.search(text) for _, rx in _LIVE_KINDS) and not _live_place(text):
+        note += " If they ask about the weather or similar without saying where, ask which city or town."
+    first = body["messages"][0]
+    if isinstance(first, dict) and first.get("role") == "system" and isinstance(first.get("content"), str):
+        first["content"] = first["content"] + "\n\n" + note
+    else:
+        body["messages"].insert(0, {"role": "system", "content": note})
+
+
 @app.post("/ai/openai/v1/chat/completions")
 async def ai_chat(request: Request):
     email = _email_from_auth(request)
@@ -2021,6 +2138,7 @@ async def ai_chat(request: Request):
     if web:
         body["model"] = SEARCH_MODEL                                         # web search runs on GPT-OSS
     body["model"] = GINK_MODEL_NAMES.get(str(body["model"]).lower(), body["model"])   # "gink-frost" -> Claude Sonnet
+    await _add_live_context(body)                    # today's date; live data (weather...) when asked
     wants_claude = str(body["model"]).startswith("claude-")
     if wants_claude and not _env("ANTHROPIC_API_KEY"):
         wants_claude, body["model"] = False, TEXT_MODELS_BEST_FIRST[0]   # no Anthropic key here: Groq instead

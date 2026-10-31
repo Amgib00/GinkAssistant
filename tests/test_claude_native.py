@@ -120,7 +120,8 @@ def test_through_the_server_non_streaming(server):
     assert r.json()["usage"]["prompt_tokens_details"]["cached_tokens"] == 1500
     sent = seen[-1]
     assert sent["key"] == "anthropic-secret" and sent["version"] == "2023-06-01"
-    assert sent["body"]["cache_control"] == {"type": "ephemeral"} and sent["body"]["system"] == "You are Gink."
+    assert sent["body"]["cache_control"] == {"type": "ephemeral"} and sent["body"]["system"].startswith("You are Gink.")
+    assert "Current date and time:" in sent["body"]["system"]                  # the server adds today's date
 
 
 def test_through_the_server_streaming_with_a_tool_call(server):
