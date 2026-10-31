@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.70 (October 2026)
+
+- On GitHub: the pull-request tools are up to date (labeler 7, add-to-project 2)
+
 ## 0.1.69 (October 2026)
 
 - On GitHub: only collaborators can open pull requests, and every pull request is labelled, assigned,

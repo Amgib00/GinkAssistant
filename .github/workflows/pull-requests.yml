@@ -75,7 +75,7 @@ jobs:
           LABELS
 
       - name: Labels from the changed files
-        uses: actions/labeler@v5
+        uses: actions/labeler@v7
         with:
           configuration-path: .github/labeler.yml
           sync-labels: false
@@ -98,7 +98,7 @@ jobs:
         # Needs: Settings > Secrets and variables > Actions: variable GINK_PROJECT_URL (the project's link)
         # and secret GINK_PROJECT_TOKEN (a token with "project" access) -- skipped until both exist.
         if: (github.event.action == 'opened' || github.event.action == 'reopened') && vars.GINK_PROJECT_URL != ''
-        uses: actions/add-to-project@v1.0.2
+        uses: actions/add-to-project@v2.0.0
         with:
           project-url: ${{ vars.GINK_PROJECT_URL }}
           github-token: ${{ secrets.GINK_PROJECT_TOKEN }}

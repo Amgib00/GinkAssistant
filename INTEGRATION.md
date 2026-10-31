@@ -1519,3 +1519,9 @@ New services/live_info.py (all free, no API keys):
   actions/add-to-project when vars.GINK_PROJECT_URL + secrets.GINK_PROJECT_TOKEN exist.
   .github/CODEOWNERS (* @Amgib00) requests reviews. dependabot.yml: labels, assignees, ignores the
   Intel-Mac pins (webauthn, cbor2), numpy note corrected.
+
+## 0.1.70: Dependabot #22/#23 applied in the project
+- actions/labeler v5 -> v7 (ESM only, no input changes) and actions/add-to-project 1.0.2 -> 2.0.0 (same
+  inputs; node24), checked in their READMEs/action.yml. Applied HERE, not merged on GitHub: the publish
+  script makes GitHub match the local folder, so a GitHub-merged PR would be undone by the next publish;
+  Dependabot closes its PRs once main has the versions. #24 (12 python updates): list it first.
