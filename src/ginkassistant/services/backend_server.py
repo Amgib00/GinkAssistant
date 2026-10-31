@@ -1996,6 +1996,22 @@ def _count_search(email: str, plan: str, turn: str = ""):
     return None
 
 
+# ================================================================ Server health (owner dashboard)
+# In memory since the server started: never anyone's messages, only counts and the AI provider's own reasons.
+_health = {"started": time.time(), "ai_refused": 0, "ai_fallbacks": 0, "live_ok": 0, "live_failed": 0, "problems": []}
+
+
+def _note_problem(kind: str, status: int, model: str, reason) -> None:
+    raw = reason.decode("utf-8", "replace") if isinstance(reason, bytes) else str(reason or "")
+    try:                                                   # the provider's message, not the whole JSON
+        raw = (_json.loads(raw).get("error") or {}).get("message") or raw
+    except Exception:
+        pass
+    _health["problems"].insert(0, {"at": time.time(), "kind": kind, "status": int(status or 0), "model": str(model or ""),
+                                   "reason": " ".join(str(raw).split())[:160]})
+    del _health["problems"][8:]
+
+
 # ================================================================ Real-time information in answers
 # The AI has no clock and no internet: every chat through the server (the developer API, the web app,
 # the apps) gets today's date and time, and messages asking for live data get it fetched first
@@ -2084,8 +2100,11 @@ async def _live_facts(text: str) -> list:
     async def one(kind, args):
         try:
             r = await asyncio.wait_for(calls[kind](args), timeout=6)
-        except Exception:
+        except Exception as exc:
+            _health["live_failed"] += 1
+            _note_problem(f"Live {kind}", 0, "", f"{type(exc).__name__}: {exc}" if str(exc) else type(exc).__name__)
             return None
+        _health["live_ok" if (r or {}).get("ok") else "live_failed"] += 1
         msg = (r or {}).get("message") or ""
         if not msg and (r or {}).get("time"):
             msg = f"The time in {args.get('place')} is {r['time']} ({r.get('tz', '')})."
@@ -2192,6 +2211,7 @@ async def ai_chat(request: Request):
             if not nxt:
                 break
             print(f"[gink] AI provider refused: HTTP {upstream.status_code} model={body.get('model')} -> trying {nxt[0]}", flush=True)
+            _health["ai_fallbacks"] += 1
             await upstream.aclose()
             body = _for_model(body, nxt[0]); tried.append(nxt[0])
         if upstream.status_code != 200:
@@ -2200,6 +2220,8 @@ async def ai_chat(request: Request):
             # in the server's logs (Render > Logs): why the AI provider refused, without the person's messages
             print(f"[gink] AI provider refused: HTTP {upstream.status_code} model={body.get('model')} "
                   f"{text[:300].decode('utf-8', 'replace') if isinstance(text, bytes) else str(text)[:300]}", flush=True)
+            _health["ai_refused"] += 1
+            _note_problem("AI refused", upstream.status_code, body.get("model"), text)
             try:
                 return JSONResponse(status_code=upstream.status_code, content=_json.loads(text),
                                     headers={k: v for k, v in (("Retry-After", upstream.headers.get("retry-after")),) if v})
@@ -2233,9 +2255,12 @@ async def ai_chat(request: Request):
             if not nxt:
                 break
             print(f"[gink] AI provider refused: HTTP {r.status_code} model={body.get('model')} -> trying {nxt[0]}", flush=True)
+            _health["ai_fallbacks"] += 1
             body = _for_model(body, nxt[0]); tried.append(nxt[0])
     if r.status_code != 200:
         print(f"[gink] AI provider refused: HTTP {r.status_code} model={body.get('model')} {r.text[:300]}", flush=True)
+        _health["ai_refused"] += 1
+        _note_problem("AI refused", r.status_code, body.get("model"), r.text)
     try:
         data = r.json()
         if web and r.status_code == 200:
@@ -3100,7 +3125,10 @@ def admin_stats(request: Request):
             con.close()
     keys = ("messages", "calls", "images", "voice_chars", "claude", "searches")
     total = lambda ds: {k: sum(per_day[d][k] for d in ds) for k in keys}
-    return {"generated": now, "users": users,
+    health = {"uptime_s": int(now - _health["started"]), "ai_refused": _health["ai_refused"],
+              "ai_fallbacks": _health["ai_fallbacks"], "live_ok": _health["live_ok"], "live_failed": _health["live_failed"],
+              "problems": list(_health["problems"]), "version": (_release_cache.get("data") or {}).get("version") or ""}
+    return {"generated": now, "users": users, "health": health,
             "today": {**(total([today]) if today in per_day else {k: 0 for k in keys}),
                       "active_users": per_day.get(today, {}).get("active_users", 0)},
             "last7": total(week), "daily": [per_day[d] for d in days], "revenue_30d": revenue,

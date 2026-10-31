@@ -1552,3 +1552,10 @@ New services/live_info.py (all free, no API keys):
   'gink_live': false skips fetching and is popped. Dockerfile copies live_info.py.
 - SLIP caught by tests: the new block went between @app.post(...) and ai_chat, so the route returned the
   live_info module. Fixed + test_every_route_decorator_sits_on_its_function.
+
+## 0.1.75: owner dashboard auto-refresh + server health
+- admin.html: 30 s refresh while visible (+ at once on returning), remembered switch, 'Updated N s ago',
+  R key, 'vs yesterday' deltas. BUG FIXED: any failed refresh logged the owner out (and Lock killed the
+  timer): now only 401/403 (or the first load) sign out; hiccups keep figures + 'Couldn't refresh'.
+- Server: _health (in memory: started, ai_refused, ai_fallbacks, live_ok/failed, newest 8 problems with
+  the provider's own message; never user content) -> /admin/stats 'health'. Browser-tested.

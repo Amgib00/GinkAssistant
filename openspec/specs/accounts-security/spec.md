@@ -129,3 +129,10 @@ Connecting a Google app SHALL send people back to the same address as Sign in wi
 #### Scenario: Connecting Google Calendar
 - **WHEN** the person connects Google Calendar from Settings
 - **THEN** Google returns to /auth/google/callback and the calendar shows as connected
+
+### Requirement: Owner dashboard refreshes by itself
+The owner dashboard SHALL refresh every 30 seconds while visible (and at once when the tab is shown again), with a remembered on/off switch and an "Updated … ago" line; a failed refresh SHALL keep the figures with a retry note, and only a rejected key SHALL sign the owner out. It SHALL show server health since the last start (running time, AI refusals, model switches, live-data lookups, latest problems) without anyone's messages.
+
+#### Scenario: The server restarts while the dashboard is open
+- **WHEN** a refresh fails because the server isn't answering
+- **THEN** the figures stay with "Couldn't refresh — retrying" and the owner stays signed in

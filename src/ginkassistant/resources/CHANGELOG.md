@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.75 (October 2026)
+
+- Owner dashboard: refreshes by itself every 30 seconds (with an on/off switch), no longer signs you
+  out when a refresh fails, shows changes since yesterday, and a new Server health section
+
 ## 0.1.74 (October 2026)
 
 - Real-time answers through the Gink API and on the web: today's date always, and live weather,

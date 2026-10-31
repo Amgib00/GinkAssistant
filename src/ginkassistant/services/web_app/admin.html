@@ -21,6 +21,10 @@
   button.quiet { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1.5px var(--line); }
   input { font: inherit; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
   h2 { font-size: 16px; margin: 28px 0 10px; }
+  .auto { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin-right: 6px; cursor: pointer; }
+  .stale { font-size: 12.5px; color: #b25e00; background: rgba(255, 170, 0, .14); border-radius: 999px; padding: 3px 10px; margin-right: 6px; }
+  .up { color: #2e7d32; } .down { color: #c0392b; }
+  #dash.loading .when::after { content: " \00b7 refreshing\2026"; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 12px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
   .card .label { color: var(--muted); font-size: 13px; }
@@ -59,10 +63,19 @@
 <div id="dash" class="wrap" hidden>
   <header>
     <h1>Gink owner dashboard</h1><span class="when" id="when"></span><span class="spacer"></span>
-    <button class="quiet" id="refresh">Refresh</button><button class="quiet" id="lock">Lock</button>
+    <span class="stale" id="stale" hidden></span>
+    <label class="auto"><input type="checkbox" id="auto"> Auto-refresh</label>
+    <button class="quiet" id="refresh" title="Refresh now (R)">Refresh</button><button class="quiet" id="lock">Lock</button>
   </header>
   <div id="warnings"></div>
   <div class="services" id="services"></div>
+
+  <h2>Server health <span class="note">(since the server last started)</span></h2>
+  <div class="grid" id="health"></div>
+  <div class="card" id="problems-card" style="margin-top:12px" hidden>
+    <div class="label">Latest problems</div>
+    <table><thead><tr><th>When</th><th>What</th><th>Model</th><th>Reason</th></tr></thead><tbody id="problems"></tbody></table>
+  </div>
 
   <h2>People</h2>
   <div class="grid" id="people"></div>
@@ -126,17 +139,46 @@
     if (sub) c.appendChild(el("div", "sub", sub)); host.appendChild(c);
   }
   function show(loggedIn) { $("login").hidden = loggedIn; $("dash").hidden = !loggedIn; }
+  var loadedAt = 0, busy = false;
   function load() {
+    if (busy || !key) return Promise.resolve();
+    busy = true; $("dash").classList.add("loading");
     return fetch("/admin/stats", { headers: { "x-admin-key": key } }).then(function (r) {
-      if (r.status === 403 || r.status === 429) return r.json().then(function (j) { throw new Error(j.detail || "Owner only."); });
+      if (r.status === 403 || r.status === 401) return r.json().then(function (j) { var e = new Error(j.detail || "Owner only."); e.auth = true; throw e; });
       if (!r.ok) throw new Error("The server had a problem (" + r.status + ").");
       return r.json();
-    }).then(function (j) { data = j; show(true); render(); })
-      .catch(function (e) { key = ""; try { sessionStorage.removeItem("gink_admin_key"); } catch (x) {} show(false); $("login-err").textContent = e.message; });
+    }).then(function (j) { data = j; loadedAt = Date.now(); $("stale").hidden = true; show(true); render(); tick(); })
+      .catch(function (e) {
+        if (e.auth || !data) {                                     // a wrong key (or the first load): back to the key screen
+          key = ""; try { sessionStorage.removeItem("gink_admin_key"); } catch (x) {} show(false); $("login-err").textContent = e.message;
+        } else {                                                   // a hiccup: keep the figures, say so, try again soon
+          $("stale").hidden = false; $("stale").textContent = "Couldn\u2019t refresh \u2014 retrying";
+        }
+      }).then(function () { busy = false; $("dash").classList.remove("loading"); });
+  }
+  function ago(sec) { return sec < 5 ? "just now" : sec < 60 ? sec + " s ago" : Math.floor(sec / 60) + " min ago"; }
+  function tick() { if (loadedAt) $("when").textContent = "Updated " + ago(Math.round((Date.now() - loadedAt) / 1000)); }
+  function dur(s) { var d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+                    return d ? d + " d " + h + " h" : h ? h + " h " + m + " min" : m + " min"; }
+  function delta(now, before) {
+    var n = (now || 0) - (before || 0); if (!n) return "same as yesterday";
+    return '<span class="' + (n > 0 ? "up" : "down") + '">' + (n > 0 ? "\u25b2 " : "\u25bc ") + fmt(Math.abs(n)) + "</span> vs yesterday";
   }
   function render() {
     var d = data, s = d.services;
-    $("when").textContent = "Updated " + new Date(d.generated * 1000).toLocaleTimeString();
+    tick();
+    var h = d.health || {}, hh = $("health"); hh.innerHTML = "";
+    card(hh, "Running for", dur(h.uptime_s || 0), h.version ? "latest release " + h.version : "");
+    card(hh, "AI refusals", fmt(h.ai_refused), h.ai_refused ? "see the latest problems below" : "none \u2713");
+    card(hh, "Model switches", fmt(h.ai_fallbacks), "another model answered when one was at its limit");
+    card(hh, "Live data", fmt(h.live_ok), (h.live_failed ? fmt(h.live_failed) + " failed" : "no failures") + " \u00b7 weather, currency\u2026");
+    var pb = $("problems"); pb.innerHTML = ""; $("problems-card").hidden = !(h.problems || []).length;
+    (h.problems || []).forEach(function (x) {
+      var tr = el("tr");
+      [new Date(x.at * 1000).toLocaleTimeString(), x.kind + (x.status ? " (" + x.status + ")" : ""), x.model || "\u2014", x.reason].forEach(function (v) {
+        tr.appendChild(el("td", "", v)); });
+      pb.appendChild(tr);
+    });
     var w = $("warnings"); w.innerHTML = "";
     if (s.storage !== "disk") w.appendChild(el("div", "warn", "Data is stored temporarily (Render free plan): accounts, keys and payments are erased on every update. Upgrade to Starter + disk."));
     if (!s.email) w.appendChild(el("div", "warn", "Email isn't set up: sign-up codes only appear in Render's logs. Add BREVO_API_KEY and EMAIL_FROM in Render (free plan: Gmail SMTP is blocked)."));
@@ -157,8 +199,11 @@
     card(pp, "API keys", fmt(u.api_keys_active), "active");
     card(pp, "Active today", fmt(d.today.active_users), "people who chatted");
     var t = d.today, l = d.last7, us = $("usage"); us.innerHTML = "";
+    var yd = (d.daily || [])[(d.daily || []).length - 2] || {};
     card(us, "Messages", fmt(t.messages), fmt(l.messages) + " in 7 days");
+    us.lastChild.appendChild(el("div", "sub")).innerHTML = delta(t.messages, yd.messages);
     card(us, "AI calls", fmt(t.calls), fmt(l.calls) + " in 7 days");
+    us.lastChild.appendChild(el("div", "sub")).innerHTML = delta(t.calls, yd.calls);
     card(us, "Claude", fmt(t.claude), fmt(l.claude) + " in 7 days");
     card(us, "Web searches", fmt(t.searches), fmt(l.searches) + " in 7 days");
     card(us, "Images", fmt(t.images), fmt(l.images) + " in 7 days");
@@ -230,9 +275,20 @@
       .then(function (j) { out.textContent = j.sent ? "Sent \u2713 \u2014 check that inbox (and its spam folder)." : "Not sent: " + (j.reason || j.detail || "unknown reason"); })
       .catch(function () { out.textContent = "The server didn\u2019t answer."; });
   };
-  $("lock").onclick = function () { key = ""; try { sessionStorage.removeItem("gink_admin_key"); } catch (e) {} clearInterval(timer); $("key").value = ""; show(false); };
+  $("lock").onclick = function () { key = ""; try { sessionStorage.removeItem("gink_admin_key"); } catch (e) {} data = null; loadedAt = 0; $("key").value = ""; show(false); };
+  var auto = true; try { auto = localStorage.getItem("gink_admin_auto") !== "off"; } catch (e) {}
+  $("auto").checked = auto;
+  $("auto").onchange = function () { auto = this.checked; try { localStorage.setItem("gink_admin_auto", auto ? "on" : "off"); } catch (e) {}
+                                     if (auto) load(); };
+  document.addEventListener("visibilitychange", function () {                // back on the tab: fresh figures at once
+    if (document.visibilityState === "visible" && auto && key && Date.now() - loadedAt > 10000) load();
+  });
+  document.addEventListener("keydown", function (e) {
+    if ((e.key === "r" || e.key === "R") && !e.metaKey && !e.ctrlKey && key && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) load();
+  });
   if (key) load(); else show(false);
-  timer = setInterval(function () { if (key && document.visibilityState === "visible") load(); }, 60000);
+  timer = setInterval(function () { if (auto && key && document.visibilityState === "visible") load(); }, 30000);
+  setInterval(tick, 1000);
 })();
 </script>
 </body>
