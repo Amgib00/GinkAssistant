@@ -35,3 +35,24 @@ def test_requirement_files_agree_on_numpy():
                 if l.strip().startswith("numpy") and 'python_version>="3.13"' not in l.replace(" ", "")}
     main, test = numpy_lines("requirements.txt"), numpy_lines("requirements-test.txt")
     assert test <= main or not test, f"numpy rules differ: requirements.txt {main} vs requirements-test.txt {test}"
+
+
+def test_intel_macs_can_install_everything():
+    """webauthn 3.x needs cryptography 49+, which has no Intel-Mac builds (Gink allows <49 there):
+    pip searched back to a 2019 cryptography and failed. Intel Macs get webauthn 2.7+ (tested)."""
+    from packaging.requirements import Requirement
+    intel_mac = {"sys_platform": "darwin", "platform_machine": "x86_64", "python_version": "3.10",
+                 "platform_system": "Darwin", "platform_release": "19.6.0"}
+    rules = {}
+    for name in ("requirements.txt", "requirements-test.txt"):
+        for line in open(os.path.join(ROOT, name), encoding="utf-8"):
+            line = line.split(" #")[0].strip()
+            if not line or line.startswith(("#", "-")):
+                continue
+            r = Requirement(line)
+            if r.marker is None or r.marker.evaluate(intel_mac):
+                rules.setdefault(r.name.lower(), []).append(r.specifier)
+    crypto_ok = [v for v in ("48.0.1",) if all(v in s for s in rules["cryptography"])]
+    assert crypto_ok, rules["cryptography"]
+    assert all("3.0.1" not in s for s in rules["webauthn"]), "Intel Macs must not get webauthn 3.x"
+    assert all("2.7.0" in s for s in rules["webauthn"])

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.66 (October 2026)
+
+- For developers: everything installs on Intel Macs (the passkey package needed a newer encryption
+  package than Intel Macs can have)
+
 ## 0.1.65 (October 2026)
 
 - Fixed: asking Gink to open a folder by name (like "GinkAssistant") could open the wrong one

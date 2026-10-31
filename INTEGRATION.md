@@ -1493,3 +1493,10 @@ New services/live_info.py (all free, no API keys):
 - Mac-proof tests: check_project fakes _old_mac (unless the test sets Catalina); symlink tests skip on
   case-insensitive disks; release test uses git without "init -b" (git < 2.28); the check-step test
   skips when python3 has no tomllib. Missing segno/webauthn there: install ran before the new files.
+
+## 0.1.66: Intel-Mac install (webauthn vs cryptography)
+- webauthn 3.0.1 requires cryptography>=49, which has no Intel-Mac wheels; Gink pins <49 there, so pip
+  backtracked to cryptography 2.6 and failed (segno/webauthn never installed on the owner's Mac).
+  requirements-test.txt: Intel Macs get webauthn>=2.7,<3 (cryptography>=44.0.2). All 25 passkey tests
+  and the full suite pass with webauthn 2.7.0 + cryptography 48.0.1. The server (Linux) keeps 3.x.
+  test_intel_macs_can_install_everything evaluates both files' markers as an Intel Mac.

@@ -29,4 +29,5 @@ numpy>=2.2.2,<2.3; python_version < "3.13"   # the same as requirements.txt (the
 numpy; python_version >= "3.13"          # numpy 1.x has no builds for Python 3.13
 tomli; python_version < "3.11"
 segno
-webauthn>=3.0.1
+webauthn>=3.0.1; sys_platform != "darwin" or platform_machine != "x86_64"
+webauthn>=2.7,<3; sys_platform == "darwin" and platform_machine == "x86_64"   # 3.x needs cryptography 49+: no Intel-Mac builds
