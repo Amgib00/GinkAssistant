@@ -8,6 +8,8 @@ updates:
     schedule:
       interval: "monthly"
     open-pull-requests-limit: 2
+    labels: ["dependencies"]
+    assignees: ["Amgib00"]               # reviews: .github/CODEOWNERS asks the owner automatically
     groups:
       python-dependencies:
         patterns: ["*"]
@@ -16,9 +18,13 @@ updates:
       - dependency-name: "pydantic"       # 2.13.4 desktop server; 1.10.26 on phones
       - dependency-name: "numba"          # Intel-Mac build pin
       - dependency-name: "llvmlite"       # pairs with numba
-      - dependency-name: "numpy"          # librosa / numba need numpy 1.x
+      - dependency-name: "numpy"          # 2.2.x: numba 0.62 / shazamio; 2.3 drops Python 3.10
       - dependency-name: "cryptography"   # 49+ has no Intel-Mac builds
+      - dependency-name: "webauthn"       # 2.x on Intel Macs (3.x needs cryptography 49+)
+      - dependency-name: "cbor2"          # 5.x on Intel Macs (6.x has no Intel-Mac builds)
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
+    labels: ["dependencies", "ci"]
+    assignees: ["Amgib00"]

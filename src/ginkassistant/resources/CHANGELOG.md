@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.69 (October 2026)
+
+- On GitHub: only collaborators can open pull requests, and every pull request is labelled, assigned,
+  put in the next-release milestone and sent for review automatically
+
 ## 0.1.68 (October 2026)
 
 - For developers: the server's startup uses FastAPI's current method (the old one is being removed),

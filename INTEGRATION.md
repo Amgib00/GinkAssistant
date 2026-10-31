@@ -1511,3 +1511,11 @@ New services/live_info.py (all free, no API keys):
   will remove it, and the server would then not start. _resume_batches now runs from _lifespan
   (FastAPI(lifespan=...)); test checks batches resume and that no on_event startup hooks remain.
   The third warning (starlette's anyio.abc.BlockingPortal) is in a library, not Gink.
+
+## 0.1.69: pull requests (owner's request)
+- .github/workflows/pull-requests.yml (pull_request_target, never checks out PR code): gate closes PRs
+  from non-collaborators (collaborators/permission API; owner and dependabot allowed); triage creates
+  the 9 labels, runs actions/labeler (.github/labeler.yml), assigns the owner, milestone 'Next release',
+  actions/add-to-project when vars.GINK_PROJECT_URL + secrets.GINK_PROJECT_TOKEN exist.
+  .github/CODEOWNERS (* @Amgib00) requests reviews. dependabot.yml: labels, assignees, ignores the
+  Intel-Mac pins (webauthn, cbor2), numpy note corrected.

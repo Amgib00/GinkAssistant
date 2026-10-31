@@ -1,0 +1,28 @@
+# Labels added to pull requests by the files they change (.github/workflows/pull-requests.yml).
+app:
+  - changed-files:
+      - any-glob-to-any-file: ["src/ginkassistant/ui/**", "src/ginkassistant/app.py", "src/ginkassistant/services/!(backend_server).py"]
+server:
+  - changed-files:
+      - any-glob-to-any-file: ["src/ginkassistant/services/backend_server.py", "deploy/**", "render.yaml"]
+web:
+  - changed-files:
+      - any-glob-to-any-file: ["webapp/**", "src/ginkassistant/services/web_app/**"]
+genie:
+  - changed-files:
+      - any-glob-to-any-file: ["src/ginkgenie/**", "src/ginkassistant/services/web_app/genie.html", "src/ginkassistant/services/web_app/runner.html"]
+tests:
+  - changed-files:
+      - any-glob-to-any-file: ["tests/**"]
+docs:
+  - changed-files:
+      - any-glob-to-any-file: ["*.md", "openspec/**", "deploy/*.md", "cli/README.md"]
+ci:
+  - changed-files:
+      - any-glob-to-any-file: [".github/**", "tools/**"]
+website:
+  - changed-files:
+      - any-glob-to-any-file: ["website/**"]
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file: ["requirements*.txt", "deploy/requirements-server.txt", "pyproject.toml", "cli/pyproject.toml"]

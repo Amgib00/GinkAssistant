@@ -1,0 +1,104 @@
+# Pull requests: only collaborators may open them; every accepted one is labelled, assigned,
+# put in the "Next release" milestone, added to the project (when set up) and sent for review
+# (.github/CODEOWNERS asks the owner automatically).
+#
+# SAFETY: pull_request_target runs with write access, so this workflow NEVER checks out or runs
+# the pull request's own code -- it only reads its metadata and the base branch's settings.
+name: Pull requests
+
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    name: Only collaborators
+    runs-on: ubuntu-latest
+    outputs:
+      allowed: ${{ steps.check.outputs.allowed }}
+    steps:
+      - name: Is the author a collaborator?
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          allowed=false
+          case "$AUTHOR" in
+            "dependabot[bot]"|"github-actions[bot]"|"$OWNER") allowed=true ;;
+            *)
+              perm=$(gh api "repos/$REPO/collaborators/$AUTHOR/permission" --jq .permission 2>/dev/null || echo none)
+              case "$perm" in admin|maintain|write) allowed=true ;; esac ;;
+          esac
+          if [ "$allowed" != true ]; then
+            gh pr comment "$PR" -R "$REPO" --body "Thanks for your interest in Gink! Pull requests here can only be opened by the project's collaborators, so this one is being closed. Ideas and bug reports are very welcome as an issue instead."
+            gh pr close "$PR" -R "$REPO"
+            echo "Closed: $AUTHOR isn't a collaborator."
+          fi
+          echo "allowed=$allowed" >> "$GITHUB_OUTPUT"
+
+  triage:
+    name: Labels, assignee, milestone, project
+    needs: gate
+    if: needs.gate.outputs.allowed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Make sure the labels exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          while IFS='|' read -r name color text; do
+            gh label create "$name" -R "$REPO" --color "$color" --description "$text" --force >/dev/null
+          done << 'LABELS'
+          app|1f6feb|The Gink apps (desktop and phone)
+          server|8250df|The Gink server
+          web|0e8a16|The web app
+          genie|a8f03c|Gink Genie
+          tests|fbca04|Tests
+          docs|c5def5|Documentation and specs
+          ci|5319e7|Builds, releases and tools
+          website|bfdadc|The website
+          dependencies|0366d6|Package updates
+          LABELS
+
+      - name: Labels from the changed files
+        uses: actions/labeler@v5
+        with:
+          configuration-path: .github/labeler.yml
+          sync-labels: false
+
+      - name: Assignee and milestone
+        if: github.event.action == 'opened' || github.event.action == 'reopened'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          gh pr edit "$PR" -R "$REPO" --add-assignee "$OWNER"
+          if ! gh api "repos/$REPO/milestones?state=open" --jq '.[].title' | grep -qx "Next release"; then
+            gh api "repos/$REPO/milestones" -f title="Next release" -f description="Changes going into the next Gink release" >/dev/null
+          fi
+          gh pr edit "$PR" -R "$REPO" --milestone "Next release"
+
+      - name: Add to the project
+        # Needs: Settings > Secrets and variables > Actions: variable GINK_PROJECT_URL (the project's link)
+        # and secret GINK_PROJECT_TOKEN (a token with "project" access) -- skipped until both exist.
+        if: (github.event.action == 'opened' || github.event.action == 'reopened') && vars.GINK_PROJECT_URL != ''
+        uses: actions/add-to-project@v1.0.2
+        with:
+          project-url: ${{ vars.GINK_PROJECT_URL }}
+          github-token: ${{ secrets.GINK_PROJECT_TOKEN }}
