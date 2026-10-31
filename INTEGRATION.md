@@ -1478,3 +1478,18 @@ New services/live_info.py (all free, no API keys):
   -> "Error 400: redirect_uri_mismatch". Now .../auth/google/callback (registered for sign-in);
   /auth/google/callback hands a known _connect_states state to connected_callback. Old route kept.
 - Settings: lists with no items and an empty text starting "Loading" draw 3 shimmer rows.
+
+## 0.1.64: requirement files agree on numpy
+- pip install -r requirements.txt -r requirements-test.txt failed (ResolutionImpossible): test file said
+  numpy<2.0 on Python < 3.13, requirements.txt numpy>=2.2.2,<2.3. The whole suite passes with numpy
+  2.2.6 on Python 3.10, so the test file now matches; test_requirement_files_agree_on_numpy guards it.
+- Owner's dev environment: ~/.venvs/ginkassistant (a venv, not conda).
+
+## 0.1.65: tests pass on the owner's Mac (21 failures there, none a Gink bug except one)
+- tests/conftest.py disables dotenv during tests: app.py's load_dotenv put the owner's GINK_PUBLIC_URL
+  and GROQ key into the run (reproduced: 4 failures with a real-style .env, 0 with the fix).
+- REAL BUG: ComputerControl._folder took a plain name relative to the working directory (returned
+  "GinkAssistant"). Now only absolute/~ paths are used as given.
+- Mac-proof tests: check_project fakes _old_mac (unless the test sets Catalina); symlink tests skip on
+  case-insensitive disks; release test uses git without "init -b" (git < 2.28); the check-step test
+  skips when python3 has no tomllib. Missing segno/webauthn there: install ran before the new files.

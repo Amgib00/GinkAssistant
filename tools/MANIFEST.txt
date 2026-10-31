@@ -245,6 +245,7 @@ src/ginkgenie/__init__.py
 src/ginkgenie/__main__.py
 src/ginkgenie/app.py
 src/ginkgenie/resources/ginkgenie.png
+tests/conftest.py
 tests/fake_android.py
 tests/test_actions.py
 tests/test_actions_briefing_mic.py

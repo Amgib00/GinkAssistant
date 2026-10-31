@@ -21,9 +21,9 @@ def version_of(path):
 
 def test_publish_works_when_the_whole_block_is_pasted(tmp_path):
     fake = tmp_path / "github.git"
-    sh(f"git init -q --bare -b main {fake}", tmp_path)
+    sh(f"git init -q --bare {fake} && git -C {fake} symbolic-ref HEAD refs/heads/main", tmp_path)   # git < 2.28 has no -b
     seed = tmp_path / "seed"; seed.mkdir()
-    sh("git init -q -b main && printf '[project]\\nversion = \"0.0.1\"\\n' > pyproject.toml && echo MIT > LICENSE && "
+    sh("git init -q && git checkout -q -b main && printf '[project]\\nversion = \"0.0.1\"\\n' > pyproject.toml && echo MIT > LICENSE && "
        "git add -A && git -c user.email=t@t -c user.name=t commit -qm old && git push -q " + str(fake) + " main", seed)
     work = tmp_path / "gink"
     shutil.copytree(ROOT, work, ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache", ".git", "*.egg-info"))
@@ -40,6 +40,8 @@ def test_publish_works_when_the_whole_block_is_pasted(tmp_path):
 
 
 def test_release_check_step(tmp_path):
+    if subprocess.run(["python3", "-c", "import tomllib"], capture_output=True).returncode != 0:
+        pytest.skip("the release check runs on GitHub with Python 3.11+ as python3; this computer's python3 is older")
     wf = yaml.safe_load(open(os.path.join(ROOT, ".github", "workflows", "release.yml")))
     step = [s for s in wf["jobs"]["check"]["steps"] if s.get("id") == "v"][0]
     assert "check" in wf["jobs"]["publish"]["needs"]                               # it reads check's version

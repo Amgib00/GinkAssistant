@@ -170,7 +170,7 @@ class ComputerControl:
         if key in STD_FOLDERS:
             return os.path.expanduser(STD_FOLDERS[key])
         p = os.path.expanduser(name.strip())
-        if os.path.isdir(p):
+        if os.path.isabs(p) and os.path.isdir(p):        # only full paths as they are ("GinkAssistant" is a name to find)
             return p
         home = os.path.expanduser("~")
         if MAC:                                         # a folder anywhere in the home folder, by name

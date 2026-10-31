@@ -1,8 +1,18 @@
+import pytest
 """tools/check_project.py: finds and safely repairs the layout problems that put builds/icons in the wrong place."""
 import os, shutil, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "tools"))
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 
+
+
+def _case_insensitive_disk(path) -> bool:
+    """macOS disks usually treat "macos" and "macOS" as one name: the symlink tests need a Linux-like disk."""
+    probe = path / "CaseProbe"; probe.mkdir(exist_ok=True)
+    try:
+        return (path / "caseprobe").exists()
+    finally:
+        probe.rmdir()
 
 def make_messy_copy(tmp):
     proj = tmp / "GinkAssistant"
@@ -61,6 +71,8 @@ def test_real_project_is_clean():
 
 def test_one_folder_counted_once_when_names_ignore_case(tmp_path, monkeypatch):
     """On a Mac disk ./macOS, ./macos and ./MacOS are the same folder -- report and move it once."""
+    if _case_insensitive_disk(tmp_path):
+        pytest.skip("this disk ignores upper/lower case in names (macOS): checked on GitHub's Linux machines")
     import check_project as cp
     proj = make_messy_copy(tmp_path)
     (proj / "macos").symlink_to(proj / "macOS", target_is_directory=True)     # same folder, other spelling
@@ -78,6 +90,8 @@ def _fake_env(monkeypatch, cp, env_version, cmd_path, cmd_version):
     monkeypatch.setattr(cp.shutil, "which", lambda name: cmd_path)
     class R: stdout = cmd_version
     monkeypatch.setattr(subprocess, "run", lambda *a, **k: R())
+    if getattr(cp._old_mac, "__name__", "") == "_old_mac":                   # unless the test pretends to be on Catalina
+        monkeypatch.setattr(cp, "_old_mac", lambda: "")                      # not this computer's macOS version
 
 
 def test_old_briefcase_is_spotted(monkeypatch):
@@ -140,6 +154,8 @@ def test_newer_macs_keep_04x(monkeypatch):
 
 def test_real_name_ignores_listing_order(tmp_path, monkeypatch):
     """GitHub's Linux machines listed the shortcut first -- the real folder must still win."""
+    if _case_insensitive_disk(tmp_path):
+        pytest.skip("this disk ignores upper/lower case in names (macOS): checked on GitHub's Linux machines")
     import check_project as cp
     proj = make_messy_copy(tmp_path)
     (proj / "macos").symlink_to(proj / "macOS", target_is_directory=True)

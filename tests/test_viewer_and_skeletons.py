@@ -24,3 +24,14 @@ def test_settings_lists_show_skeleton_rows_while_loading():
     page = open(os.path.join(ROOT, "src", "ginkassistant", "ui", "settings_page.py"), encoding="utf-8").read()
     assert "if (!r.items.length && /^Loading/.test(r.empty || ''))" in page and "@keyframes sk-shine" in page
     assert "@media (prefers-reduced-motion: reduce) { .sk { animation: none; } }" in page
+
+
+def test_requirement_files_agree_on_numpy():
+    """Installing both files together failed: requirements-test.txt said numpy<2.0, requirements.txt numpy 2.2."""
+    import re
+    def numpy_lines(name):
+        text = open(os.path.join(ROOT, name), encoding="utf-8").read()
+        return {re.sub(r"\s+#.*", "", l).split(";")[0].replace(" ", "") for l in text.splitlines()
+                if l.strip().startswith("numpy") and 'python_version>="3.13"' not in l.replace(" ", "")}
+    main, test = numpy_lines("requirements.txt"), numpy_lines("requirements-test.txt")
+    assert test <= main or not test, f"numpy rules differ: requirements.txt {main} vs requirements-test.txt {test}"

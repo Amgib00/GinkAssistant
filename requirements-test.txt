@@ -25,7 +25,7 @@ toga-core
 toga-dummy
 tzdata
 uvicorn
-numpy<2.0.0; python_version < "3.13"
+numpy>=2.2.2,<2.3; python_version < "3.13"   # the same as requirements.txt (they must agree)
 numpy; python_version >= "3.13"          # numpy 1.x has no builds for Python 3.13
 tomli; python_version < "3.11"
 segno

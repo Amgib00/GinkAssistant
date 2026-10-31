@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.65 (October 2026)
+
+- Fixed: asking Gink to open a folder by name (like "GinkAssistant") could open the wrong one
+- For developers: the tests now pass on a Mac too (they no longer read your .env, and handle older
+  macOS, git and bash)
+
+## 0.1.64 (October 2026)
+
+- For developers: requirements.txt and requirements-test.txt can now be installed together (they
+  disagreed about numpy)
+
 ## 0.1.63 (October 2026)
 
 - Fixed: the in-app viewer (videos, web pages) always shows its close button, with a short title
