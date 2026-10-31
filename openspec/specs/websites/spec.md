@@ -36,3 +36,10 @@ Right after Gink builds or updates a website in a chat, an instruction about it 
 #### Scenario: "Good, add more to it"
 - **WHEN** the person writes "good add more to it" just after their website was built
 - **THEN** the same website is updated and the reply links to it
+
+### Requirement: Publish a design from the code viewer
+For HTML and SVG designs the code viewer SHALL offer Publish, which turns a fragment or an SVG into a whole page and publishes it as one of the person's websites (cleaned exactly like AI-made sites, within the per-account website limit, without using the daily AI limit), then shows the public link with Copy link and Open, or the reason it failed.
+
+#### Scenario: Publishing a card
+- **WHEN** the person presses Publish on an HTML card in the viewer
+- **THEN** a public /s/ link is shown and serves the card without outside scripts or password fields

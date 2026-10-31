@@ -1438,3 +1438,12 @@ New services/live_info.py (all free, no API keys):
 - HTML/SVG/XML (by extension, with markup inside) -> .cvtabs Preview | Code; cvShow('preview') = iframe
   srcdoc, sandbox="allow-scripts allow-modals" (no allow-same-origin: localStorage throws); SVG wrapped
   and centred. Browser-tested (script ran, sign-in blocked).
+
+## 0.1.58: publish designs from the code viewer
+- POST /sites/publish {html, title}: _site_clean (no passwords, outside scripts/CSS; size), SITES_PER_ACCOUNT,
+  no _count_call (no AI). Viewer: .cvpub (designs only) -> ginkEmit('publish_design', {html: cvFullPage(),
+  title}) -> apps ApiClient.publish_site / web bridge -> cvPublished(url, error) bar (Copy link, Open).
+- REGRESSION caught by test_chat_extras: "from ..services.api_client import ApiClient" inside
+  handle_composer_event made ApiClient local to the whole function -> the feedback branch raised
+  UnboundLocalError (thumbs-down never sent). Now `from ..services import api_client as _api`, plus a
+  permanent AST test (test_the_event_handler_never_shadows_module_names).

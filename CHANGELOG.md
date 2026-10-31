@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.58 (October 2026)
+
+- Publish a design: press Publish in the code viewer to put a page or graphic Gink made online,
+  with a link to share
+
 ## 0.1.57 (October 2026)
 
 - Designs: when Gink writes a web page or a graphic (HTML, SVG), the code viewer shows it rendered

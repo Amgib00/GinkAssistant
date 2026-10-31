@@ -84,3 +84,16 @@ def test_no_window_title_and_chats_glide_open():
     main = read("src", "ginkassistant", "ui", "main_screen.py")
     assert "await web_chat.load_chat(history, _new_message_id)" in main  # one step: no "Thinking..." flicker
     assert "if (window.glideToEnd) glideToEnd();" in read("webapp", "bridge.js")
+
+
+def test_the_event_handler_never_shadows_module_names():
+    """A local 'from x import ApiClient' made ApiClient local to the whole handler and broke feedback."""
+    import ast
+    src = read("src", "ginkassistant", "ui", "main_screen.py")
+    tree = ast.parse(src)
+    module_names = {a.asname or a.name for n in tree.body if isinstance(n, (ast.Import, ast.ImportFrom)) for a in n.names}
+    fn = next(n for n in ast.walk(tree) if isinstance(n, ast.AsyncFunctionDef) and n.name == "handle_composer_event")
+    nested = {id(x) for d in ast.walk(fn) if isinstance(d, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)) and d is not fn
+              for x in ast.walk(d)}
+    local = {a.asname or a.name for n in ast.walk(fn) if isinstance(n, ast.ImportFrom) and id(n) not in nested for a in n.names}
+    assert not (local & module_names), f"handle_composer_event imports module names locally: {sorted(local & module_names)}"

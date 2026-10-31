@@ -251,6 +251,9 @@ class ApiClient:
     async def security_history(self, token: str) -> list:
         return (await self._authed("GET", "/account/security-history", token)).get("events", [])
 
+    async def publish_site(self, token: str, html: str, title: str = "") -> dict:
+        return await self._authed("POST", "/sites/publish", token, json={"html": html, "title": title}, timeout=60)
+
     async def get_preferences(self, token: str) -> dict:
         return await self._authed("GET", "/account/preferences", token)
 

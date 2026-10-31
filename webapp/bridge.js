@@ -803,6 +803,12 @@
   // ---------------------------------------------------------------- the events the page sends
   var HANDLERS = {
     send: function (v) { send(String(v || "")); },
+    publish_design: function (v) {                                       // the code viewer's Publish
+      api("/sites/publish", { html: (v || {}).html || "", title: (v || {}).title || "" }).then(function (r) {
+        if (!r.ok) return errorText(r).then(function (t) { cvPublished(null, t); });
+        return r.json().then(function (j) { cvPublished(j.url); });
+      }).catch(function () { cvPublished(null, "Couldn\u2019t reach Gink. Check your connection."); });
+    },
     stop: function () { if (W.busy && W.busy.abort) W.busy.abort(); stopSpeaking(); },
     new_chat: newChat,
     temporary: function (on) { W.tempMode = !!on; setTemporary(!!on); },

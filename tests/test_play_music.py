@@ -80,3 +80,19 @@ def test_design_preview_is_sandboxed():
     extras = open(os.path.join(root, "src", "ginkassistant", "ui", "chat_extras.py"), encoding="utf-8").read()
     assert "old.setAttribute('sandbox', 'allow-scripts allow-modals');" in extras        # never allow-same-origin
     assert "allow-same-origin" not in extras and "function cvShow(tab)" in extras
+
+
+def test_publish_a_design(tmp_path, monkeypatch):
+    monkeypatch.setenv("GINK_DB_PATH", str(tmp_path / "p.db"))
+    from fastapi.testclient import TestClient
+    from ginkassistant.services import backend_server as b
+    c = TestClient(b.app)
+    h = {"Authorization": "Bearer " + b._token_response("ib@example.com", "I")["token"]}
+    page = ("<!doctype html><html><head><title>My card</title><script src='https://evil.example/x.js'></script></head>"
+            "<body><input type=password><h1>Hi</h1></body></html>")
+    r = c.post("/sites/publish", headers=h, json={"html": page, "title": "Card"}).json()
+    assert r["title"] == "My card" and "/s/" + r["id"] in r["url"]
+    shown = c.get("/s/" + r["id"]).text
+    assert "<h1>Hi</h1>" in shown and "evil.example" not in shown and "password" not in shown       # cleaned like AI sites
+    assert c.post("/sites/publish", headers=h, json={"html": "just text"}).status_code == 422
+    assert c.post("/sites/publish", json={"html": page}).status_code == 401

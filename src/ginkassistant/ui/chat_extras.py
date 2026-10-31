@@ -261,6 +261,12 @@ CSS = r"""
   #codeview .cvmenu button:hover { background: var(--elevated); }
   #codeview .cvbody { flex: 1; overflow: auto; }
   #codeview .cvframe { flex: 1; width: 100%; border: 0; background: #fff; }
+  #codeview .cvpub { background: var(--text-main) !important; color: var(--surface) !important; border-color: var(--text-main) !important; font-weight: 600; }
+  #codeview .cvpubbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 12px; font-size: 13px;
+                        border-bottom: 1px solid var(--border); background: var(--elevated); }
+  #codeview .cvpubbar.err { color: var(--danger, #c0392b); }
+  #codeview .cvpubbar .cvurl { font-family: ui-monospace, Menlo, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 55%; }
+  #codeview .cvpubbar button { border: 1px solid var(--border); background: var(--surface); color: var(--text-main); border-radius: 8px; padding: 3px 9px; font: inherit; cursor: pointer; }
   #codeview .cvtabs { display: inline-flex; margin-left: 10px; border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
   #codeview .cvtabs button { border: 0 !important; border-radius: 0 !important; background: transparent !important; padding: 4px 11px !important; color: var(--text-muted) !important; }
   #codeview .cvtabs button.on { background: var(--elevated) !important; color: var(--text-main) !important; font-weight: 600; }
@@ -832,6 +838,7 @@ JS = r"""
       v = document.createElement('aside'); v.id = 'codeview'; v.setAttribute('aria-label', 'Code viewer');
       v.innerHTML = '<div class="cvh"><span class="cvt"></span><span class="cvb"></span>' +
         '<span class="cvtabs" hidden><button data-tab="preview">Preview</button><button data-tab="code">Code</button></span><span class="cvg"></span>' +
+        '<button class="cvpub" hidden>Publish</button>' +
         '<button class="cvcopy">Copy</button><button class="cvmore" aria-label="More">\u2304</button>' +
         '<button class="cvicon cvwide" title="Expand" aria-label="Expand">\u2922</button>' +
         '<button class="cvicon cvclose" title="Close" aria-label="Close">\u00d7</button></div><div class="cvbody"></div>';
@@ -846,6 +853,10 @@ JS = r"""
           if (a === 'copy') v.querySelector('.cvcopy').click(); else ginkEmit('save_code', {name: CV.name, code: CV.text}); };
         v.appendChild(m);
       };
+      v.querySelector('.cvpub').onclick = function () {
+        this.disabled = true; this.textContent = 'Publishing\u2026';
+        ginkEmit('publish_design', {html: cvFullPage(CV.text, v.querySelector('.cvt').textContent), title: v.querySelector('.cvt').textContent});
+      };
       v.querySelector('.cvtabs').onclick = function (e) { var t = e.target.getAttribute && e.target.getAttribute('data-tab'); if (t) cvShow(t); };
       v.querySelector('.cvwide').onclick = function () { var w = v.classList.toggle('wide'); this.title = w ? 'Make smaller' : 'Expand'; };
       v.querySelector('.cvclose').onclick = function () { v.remove(); document.body.classList.remove('viewer-open'); };
@@ -857,8 +868,34 @@ JS = r"""
     v.querySelector('.cvbody').innerHTML = body ? '<div class="code-block cv-inner" data-enh="1">' + body.outerHTML + '</div>' : '';
     var design = /^(html?|svg|xml)$/.test(ext) && /<(html|body|div|svg|style|section|main|h1|p)\b/i.test(CV.text);
     v.querySelector('.cvtabs').hidden = !design;
+    var pub = v.querySelector('.cvpub'); pub.hidden = !design; pub.disabled = false; pub.textContent = 'Publish';
+    var bar = v.querySelector('.cvpubbar'); if (bar) bar.remove();
     cvShow(design ? 'preview' : 'code');
     document.body.classList.add('viewer-open');
+  };
+  // A fragment or an SVG becomes a whole page (to preview and to publish)
+  function cvFullPage(text, title) {
+    if (/<!doctype html|<html[\s>]/i.test(text)) return text;
+    var svg = /^\s*<svg\b/i.test(text), t = document.createElement('div'); t.textContent = title || 'My design';
+    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
+      '<title>' + t.innerHTML + '</title></head><body' + (svg ? ' style="margin:0;display:grid;place-items:center;min-height:100vh"' : '') +
+      '>' + text + '</body></html>';
+  }
+  // Publishing finished: the link (Copy link, Open), or why it failed
+  window.cvPublished = function (url, error) {
+    var v = document.getElementById('codeview'); if (!v) return;
+    var pub = v.querySelector('.cvpub'); pub.disabled = false; pub.textContent = 'Publish';
+    var bar = v.querySelector('.cvpubbar'); if (bar) bar.remove();
+    bar = document.createElement('div'); bar.className = 'cvpubbar' + (url ? '' : ' err');
+    if (url) {
+      pub.hidden = true;
+      var a = document.createElement('span'); a.className = 'cvurl'; a.textContent = url;
+      var cp = document.createElement('button'); cp.textContent = 'Copy link';
+      cp.onclick = function () { copyText(url, function () { cp.textContent = 'Copied'; setTimeout(function () { cp.textContent = 'Copy link'; }, 1500); }); };
+      var op = document.createElement('button'); op.textContent = 'Open'; op.onclick = function () { ginkEmit('open_url', url); };
+      bar.appendChild(document.createTextNode('Published \u00b7 ')); bar.appendChild(a); bar.appendChild(cp); bar.appendChild(op);
+    } else bar.textContent = error || 'Publishing didn\u2019t work. Please try again.';
+    v.querySelector('.cvh').insertAdjacentElement('afterend', bar);
   };
   // Designs (HTML, SVG): Preview | Code. The preview is a sealed sandbox: its scripts run, but it can't reach Gink.
   function cvShow(tab) {
@@ -871,8 +908,7 @@ JS = r"""
         old = document.createElement('iframe'); old.className = 'cvframe'; old.setAttribute('sandbox', 'allow-scripts allow-modals');
         old.setAttribute('title', 'Preview'); v.appendChild(old);
       }
-      var html = /^\s*<svg\b/i.test(CV.text) ? '<!doctype html><body style="margin:0;display:grid;place-items:center;min-height:100vh">' + CV.text + '</body>' : CV.text;
-      old.srcdoc = html; old.hidden = false;
+      old.srcdoc = cvFullPage(CV.text, ''); old.hidden = false;
     } else {
       body.hidden = false; if (old) old.hidden = true;
     }

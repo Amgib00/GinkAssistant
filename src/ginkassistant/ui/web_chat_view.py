@@ -1635,6 +1635,9 @@ class WebChatFeed:
     async def show_whats_new(self, version: str, sections: list):
         await self._js(f"showWhatsNew({json.dumps(version)}, {json.dumps(sections)})")
 
+    async def cv_published(self, url: str = "", error: str = ""):
+        await self._js(f"cvPublished({json.dumps(url or None)}, {json.dumps(error)})")
+
     async def set_effort(self, effort: str):
         await self._js(f"setEffort({json.dumps(effort or 'medium')})")
 

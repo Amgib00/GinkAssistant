@@ -1046,6 +1046,19 @@ def build_main_screen(app: toga.App, email: str):
             end_voice_session()
         elif kind == "dictate":
             await dictate()
+        elif kind == "publish_design" and isinstance(value, dict):          # the code viewer's Publish
+            # (not "from ... import ApiClient" here: that would make ApiClient local to this whole function
+            # and break the feedback branch below -- caught by test_chat_extras)
+            from ..services import api_client as _api
+            token = getattr(app, "session_token", None)
+            if not token:
+                await web_chat.cv_published(error="Sign in to Gink to publish your design.")
+            else:
+                try:
+                    r = await _api.ApiClient(app.state.base_url).publish_site(token, value.get("html", ""), value.get("title", ""))
+                    await web_chat.cv_published(url=r.get("url", ""))
+                except Exception as exc:
+                    await web_chat.cv_published(error=str(exc) or "Publishing didn\u2019t work. Please try again.")
         elif kind == "model" and value:
             brain.preferred_model = value
             prefs.save(app, model=value)                    # remembered, and on every device

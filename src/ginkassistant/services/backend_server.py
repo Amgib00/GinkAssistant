@@ -3488,6 +3488,25 @@ async def site_create(request: Request, data: dict = Body(...)):
     return {"id": site_id, "title": title, "url": _site_url(request, site_id)}
 
 
+@app.post("/sites/publish")
+def site_publish(request: Request, data: dict = Body(...)):
+    """Publish a design from the code viewer as a website (cleaned like AI-made sites; no AI call, so no daily limit)."""
+    email = _email_from_auth(request)
+    if _sites_db(lambda con: con.execute("SELECT COUNT(*) FROM sites WHERE email=?", (email,)).fetchone()[0]) >= SITES_PER_ACCOUNT:
+        raise HTTPException(status_code=409, detail=f"You have {SITES_PER_ACCOUNT} websites already. Delete one to publish another.")
+    try:
+        html, title = _site_clean(str(data.get("html") or ""))
+    except ValueError:
+        raise HTTPException(status_code=422, detail="That doesn't look like a web page, or it's too large to publish.")
+    name = " ".join(str(data.get("title") or "").split())[:80]
+    if name and title == "My website":
+        title = name
+    site_id, now = secrets.token_urlsafe(6).replace("_", "x").replace("-", "y"), time.time()
+    _sites_db(lambda con: con.execute("INSERT INTO sites (id, email, title, prompt, html, created, updated) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                      (site_id, email, title, "(published from the code viewer)", html, now, now)))
+    return {"id": site_id, "title": title, "url": _site_url(request, site_id)}
+
+
 @app.post("/sites/{site_id}/edit")
 async def site_edit(site_id: str, request: Request, data: dict = Body(...)):
     instruction = " ".join(str(data.get("instruction") or "").split())[:2000]
