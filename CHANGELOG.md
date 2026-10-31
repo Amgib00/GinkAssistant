@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.60 (October 2026)
+
+- Gink Genie: a Preview tab shows your website or app running right next to the code, and
+  refreshes by itself when files change
+
 ## 0.1.59 (October 2026)
 
 - Gink Genie has a new look: your projects in a sidebar, a cleaner top bar (Share and GitHub as

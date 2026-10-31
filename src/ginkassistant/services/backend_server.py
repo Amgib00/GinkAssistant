@@ -5588,7 +5588,7 @@ def genie_preview(key: str, request: Request, path: str = ""):
     origin = _public_base(request).rstrip("/")
     csp = (f"sandbox allow-scripts allow-forms allow-modals allow-popups; default-src {origin} data: blob:; "
            f"script-src {origin} 'unsafe-inline'; style-src {origin} 'unsafe-inline'; img-src {origin} data: blob: https:; "
-           f"connect-src {origin}; form-action 'none'; base-uri 'none'")
+           f"connect-src {origin}; form-action 'none'; base-uri 'none'; frame-ancestors 'self'")   # only Gink may frame it
     ext = os.path.splitext(want)[1].lower()
     return Response(content, media_type=MIME.get(ext, "text/plain") + "; charset=utf-8",
                     headers={"Content-Security-Policy": csp, "X-Content-Type-Options": "nosniff",

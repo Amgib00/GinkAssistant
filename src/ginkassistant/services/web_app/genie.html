@@ -186,7 +186,11 @@
     #ctabs #ctab-file { font-weight:500; color:var(--muted); margin-left:6px; }
     #work > .chat, #work > .editor { grid-column:1; grid-row:2; min-height:0; border:0 !important; }
     body:not(.d-code) #work > .editor { display:none !important; }
-    body.d-code #work > .chat { display:none !important; }
+    body.d-code #work > .chat, body.d-preview #work > .chat { display:none !important; }
+    #work > .pview { grid-column:1; grid-row:2; min-height:0; display:none; flex-direction:column; }
+    body.d-preview #work > .pview { display:flex; }
+    .pview .pbar { display:flex; align-items:center; gap:8px; padding:8px 14px; border-bottom:1px solid var(--line); }
+    .pview iframe { flex:1; width:100%; border:0; background:#fff; }
     #work > .chat .msgs, #work > .chat .ask { width:100%; max-width:860px; margin-left:auto; margin-right:auto; }
     #work > .files { grid-column:2; grid-row:1 / span 2; border-left:1px solid var(--line); border-right:0; max-height:none; display:flex; flex-direction:column; }
     #work > .files #tree { flex:1; overflow:auto; }
@@ -288,7 +292,13 @@
 
 <nav id="mtabs" aria-label="Panels"><button data-tab="files">Files</button><button data-tab="code">Code</button><button data-tab="chat">Genie</button></nav>
 <main id="work" hidden>
-  <div id="ctabs" role="tablist"><button data-v="chat" class="on" role="tab">Genie</button><button data-v="code" role="tab">Code<span id="ctab-file"></span></button></div>
+  <div id="ctabs" role="tablist"><button data-v="chat" class="on" role="tab">Genie</button><button data-v="code" role="tab">Code<span id="ctab-file"></span></button><button data-v="preview" role="tab">Preview</button></div>
+  <section class="pview" aria-label="Preview">
+    <div class="pbar"><span class="note">Live preview &middot; runs in a sealed sandbox</span><div class="grow"></div>
+      <button class="ghost" id="preload" type="button" title="Reload the preview">&#8635; Reload</button>
+      <button class="ghost" id="popen" type="button" title="Open in its own tab">&#10530; Open</button></div>
+    <iframe id="pframe" title="Preview" sandbox="allow-scripts allow-forms allow-modals allow-popups"></iframe>
+  </section>
   <nav class="files" aria-label="Files">
     <div class="t">Files <button class="ghost" id="newfile">+ New</button></div>
     <div id="tree"></div>
@@ -405,9 +415,21 @@
     var cur = S.project && S.projects.filter(function (p) { return p.id === S.project.id; })[0];
     $("ptitle-wrap").hidden = !S.project; if (S.project) $("ptitle").textContent = (cur || S.project).name;
   }
-  function dview(v) {                                       // computers: Genie (chat) or Code in the centre
+  function dview(v) {                                       // computers: Genie (chat), Code or Preview in the centre
     document.body.classList.toggle("d-code", v === "code");
+    document.body.classList.toggle("d-preview", v === "preview");
+    if (v === "preview") reloadPreview();
     document.querySelectorAll("#ctabs button").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-v") === v); });
+  }
+  // the live preview: reloads by itself when the project's files change (only while it's showing)
+  var previewTimer = null;
+  function reloadPreview() {
+    if (!S.project || !S.project.preview_url) return;
+    $("pframe").src = S.project.preview_url + (S.project.preview_url.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now();
+  }
+  function previewChanged() {
+    if (!document.body.classList.contains("d-preview")) return;
+    clearTimeout(previewTimer); previewTimer = setTimeout(reloadPreview, 400);
   }
   function showStart() {
     document.body.classList.add("m-start"); setTimeout(renderSide, 0);
@@ -436,7 +458,7 @@
     });
   }
   function renderTree() {
-    setTimeout(runButtons, 0);
+    setTimeout(runButtons, 0); previewChanged();
     var tree = $("tree"); tree.innerHTML = ""; var lastDir = null;
     if (!S.files.length) tree.appendChild(el("div", "note", "No files yet. Ask Genie to build something."));
     S.files.forEach(function (f) {
@@ -850,6 +872,8 @@
   $("go").onclick = build;
   $("send").onclick = function () { dview("chat"); ask(); };
   $("side-new").onclick = function () { $("new").click(); };
+  $("preload").onclick = reloadPreview;
+  $("popen").onclick = function () { if (S.project) openOutside(S.project.preview_url); };
   $("ptitle-edit").onclick = function () { $("rename").click(); };
   document.querySelectorAll("#ctabs button").forEach(function (b) { b.onclick = function () { dview(b.getAttribute("data-v")); }; });
   new MutationObserver(function () {                         // the Code tab shows the open file's name

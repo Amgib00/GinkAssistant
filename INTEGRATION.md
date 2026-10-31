@@ -1455,3 +1455,9 @@ New services/live_info.py (all free, no API keys):
   but clicked from the menu. #work = #ctabs (Genie | Code + file) over .chat/.editor (dview()),
   .files on the right with .rs Settings (a third .mode-btn). Start: .hero (examples, 3 glowing cards
   -> fill #idea). Phones unchanged (checked 390 px). All element ids kept.
+
+## 0.1.60: Genie live preview tab
+- #ctabs Preview -> .pview (#pframe sandbox allow-scripts/forms/modals/popups, no same-origin);
+  reloadPreview() on showing, previewChanged() (from renderTree, debounced 400 ms, only while showing);
+  Reload / Open. Server preview CSP adds frame-ancestors 'self' (others can't frame previews).
+- Test guard: no "\uXXXX" escapes in genie.html's HTML (they render as text).

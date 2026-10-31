@@ -117,3 +117,24 @@ def test_studio_layout():
         assert " ic" in m.group(1) and m.group(2).lstrip().startswith("<svg"), bid             # icons, not words
     for part in ('id="side"', 'id="plist"', 'id="ctabs"', "function renderSide", "function dview", 'class="hero"', 'class="card big c1"'):
         assert part in genie, part
+
+
+def test_preview_tab_and_no_stray_escapes():
+    genie = open(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "genie.html"), encoding="utf-8").read()
+    assert 'sandbox="allow-scripts allow-forms allow-modals allow-popups"' in genie and "allow-same-origin" not in genie
+    assert 'data-v="preview"' in genie and "function reloadPreview" in genie and "previewChanged();" in genie
+    html_only = re.sub(r"<script>.*?</script>", "", genie, flags=re.S)
+    assert not re.findall(r"\\u[0-9a-fA-F]{4}", html_only), "JavaScript escapes show up as text in HTML"
+
+
+def test_preview_may_only_be_framed_by_gink(tmp_path, monkeypatch):
+    monkeypatch.setenv("GINK_DB_PATH", str(tmp_path / "pf.db"))
+    from fastapi.testclient import TestClient
+    from ginkassistant.services import backend_server as b
+    c = TestClient(b.app)
+    h = {"Authorization": "Bearer " + b._token_response("ib@example.com", "I")["token"]}
+    pid = c.post("/genie/projects", headers=h, json={"name": "P"}).json()["project"]["id"]
+    c.put(f"/genie/projects/{pid}/file", headers=h, json={"path": "index.html", "content": "<h1>x</h1>"})
+    url = c.get(f"/genie/projects/{pid}", headers=h).json()["project"]["preview_url"].replace("http://testserver", "")
+    csp = c.get(url).headers["content-security-policy"]
+    assert "frame-ancestors 'self'" in csp and "sandbox allow-scripts" in csp
