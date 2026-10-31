@@ -6,10 +6,9 @@
 <meta name="robots" content="noindex">
 <title>Gink owner dashboard</title>
 <style>
-  :root { --bg: #F4F6F2; --card: #FFFFFF; --text: #151D23; --muted: #5D6B64; --line: #E1E5E0; --lime: #A8F03C; --accent: #3F7D12;
-          --warn-bg: #FFF4E5; --warn: #8A4B00; --c1: #3F7D12; --c2: #C26A00; --c3: #2F6FB3; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #11181D; --card: #1A242B; --text: #E9EFEA; --muted: #9AABA3; --line: rgba(233,239,234,.12);
-          --accent: #A8F03C; --warn-bg: #3A2A12; --warn: #FFC879; --c1: #A8F03C; --c2: #FFB547; --c3: #7DB7FF; } }
+  /* "Glow" (the owner's chosen design D): deep navy, glowing teal / green / sky figures */
+  :root { --bg: #0A1520; --card: #0F2131; --text: #E2ECF3; --muted: #93A8B8; --line: #1F3E52; --lime: #A8F03C; --accent: #2DD4BF;
+          --warn-bg: rgba(251, 146, 60, .12); --warn: #FDBA74; --c1: #38BDF8; --c2: #FB923C; --c3: #4ADE80; color-scheme: dark; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
@@ -17,17 +16,35 @@
   header h1 { font-size: 22px; margin: 0; }
   header .when { color: var(--muted); font-size: 13px; }
   header .spacer { flex: 1; }
-  button { font: inherit; font-weight: 650; border: 0; border-radius: 999px; padding: 8px 16px; cursor: pointer; background: var(--text); color: var(--bg); }
+  button { font: inherit; font-weight: 650; border: 0; border-radius: 10px; padding: 8px 16px; min-height: 40px; cursor: pointer; background: #2DD4BF; color: #04211D; }
   button.quiet { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1.5px var(--line); }
   input { font: inherit; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
   h2 { font-size: 16px; margin: 28px 0 10px; }
   .auto { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin-right: 6px; cursor: pointer; }
   .stale { font-size: 12.5px; color: #b25e00; background: rgba(255, 170, 0, .14); border-radius: 999px; padding: 3px 10px; margin-right: 6px; }
-  .up { color: #2e7d32; } .down { color: #c0392b; }
+  .up { color: #86EFAC; } .down { color: #FDBA74; }
+  .stale { color: #FDBA74 !important; background: rgba(251, 146, 60, .14) !important; }
+  .card { box-shadow: 0 0 22px rgba(45, 212, 191, .06) inset; }
+  .grid > .card:nth-child(4n+1) .big { color: #5EEAD4; text-shadow: 0 0 18px rgba(94, 234, 212, .45); }
+  .grid > .card:nth-child(4n+2) .big { color: #86EFAC; text-shadow: 0 0 18px rgba(134, 239, 172, .45); }
+  .grid > .card:nth-child(4n+3) .big { color: #7DD3FC; text-shadow: 0 0 18px rgba(125, 211, 252, .45); }
+  .grid > .card:nth-child(4n+4) .big { color: #E2ECF3; }
+  #rightnow { align-items: start; }
+  #health > .card:nth-child(2) .big { color: #E2ECF3; text-shadow: none; }        /* refusals: neutral when there are none... */
+  #health > .card.bad .big { color: #FDBA74 !important; text-shadow: 0 0 18px rgba(253, 186, 116, .45) !important; }   /* ...amber when any */
+  #health > .card.bad { border-color: #7A4A1E; }
+  .glowcard { border-color: #2DD4BF !important; box-shadow: 0 0 30px rgba(45, 212, 191, .16) !important; }
+  .area { display: block; width: 100%; height: 120px; margin-top: 10px; }
+  .donut { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+  .ubar { display: grid; grid-template-columns: 130px minmax(0, 1fr) 70px; align-items: center; gap: 10px; font-size: 14px; margin: 10px 0; }
+  .ubar .track { height: 12px; border-radius: 6px; background: #15303F; }
+  .ubar .fill { height: 12px; border-radius: 6px; background: linear-gradient(90deg, #22C55E, #2DD4BF); box-shadow: 0 0 12px rgba(45, 212, 191, .35); }
+  .ubar strong { text-align: right; font-variant-numeric: tabular-nums; }
+  .ring { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
   .spark { display: block; width: 100%; height: 46px; margin-top: 8px; }
   .card.wide { grid-column: span 2; }
   @media (max-width: 520px) { .card.wide { grid-column: span 1; } }
-  .spark rect { fill: #3f7d12; } .spark rect.zero { fill: var(--line); }
+  .spark rect { fill: #1E7F74; } .spark rect.zero { fill: var(--line); }
   .mlist { margin: 6px 0 0; padding: 0; list-style: none; font-size: 13px; }
   .mlist li { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; }
   .mlist li span:last-child { color: var(--muted); }
@@ -92,11 +109,12 @@
 
   <h2>Usage today <span class="note">(last 7 days in small print)</span></h2>
   <div class="grid" id="usage"></div>
+  <div class="card" style="margin-top:12px"><strong>Usage today</strong><div id="usagebars"></div></div>
 
   <div class="two" style="margin-top:12px">
     <div class="card">
       <strong>Last 14 days</strong>
-      <div class="legend"><span><i style="background:var(--c1)"></i>Messages</span><span><i style="background:var(--c2)"></i>Claude</span><span><i style="background:var(--c3)"></i>Web searches</span></div>
+      <div class="legend"><span><i style="background:var(--c1)"></i>Messages</span><span><i style="background:var(--c2);height:3px;vertical-align:3px"></i>AI calls</span></div>
       <svg id="chart" viewBox="0 0 640 220" width="100%" role="img" aria-label="Daily usage over the last 14 days"></svg>
     </div>
     <div class="card">
@@ -115,7 +133,7 @@
     </div>
     <div class="card">
       <strong>Feedback, last 7 days</strong>
-      <p id="fb"></p>
+      <div class="ring"><svg id="ring" width="120" height="120" viewBox="0 0 42 42" role="img" aria-label="Helpful answers"></svg><p id="fb"></p></div>
       <table><thead><tr><th>Top reasons for thumbs down</th><th class="num">Times</th></tr></thead><tbody id="reasons"></tbody></table>
     </div>
   </div>
@@ -181,20 +199,34 @@
     card(rh, "Online now", fmt(rn.online_5min), "people in the last 5 minutes");
     card(rh, "Requests", fmt(rn.requests_1h), "in the last hour");
     var pm = rn.per_minute || [], peak = Math.max.apply(null, pm.concat([1]));
-    var svg = '<svg class="spark" viewBox="0 0 600 46" preserveAspectRatio="none" role="img" aria-label="Requests per minute, last hour">';
-    pm.forEach(function (n, i) { var hgt = n ? Math.max(3, Math.round(42 * n / peak)) : 2;
-      svg += '<rect' + (n ? '' : ' class="zero"') + ' x="' + (i * 10 + 1) + '" y="' + (46 - hgt) + '" width="8" height="' + hgt + '"><title>' +
-             (59 - i) + ' min ago: ' + n + '</title></rect>'; });
+    var pts = pm.map(function (n, i) { return (i * 600 / 59).toFixed(1) + "," + (116 - 108 * n / peak).toFixed(1); }).join(" ");
+    var svg = '<svg class="area" viewBox="0 0 600 120" preserveAspectRatio="none" role="img" aria-label="Requests per minute, last hour">' +
+      '<defs><linearGradient id="tealfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2DD4BF" stop-opacity=".45"/>' +
+      '<stop offset="1" stop-color="#2DD4BF" stop-opacity="0"/></linearGradient></defs>' +
+      '<polygon points="0,120 ' + pts + ' 600,120" fill="url(#tealfill)"/><polyline points="' + pts + '" fill="none" stroke="#2DD4BF" stroke-width="3" stroke-linejoin="round"/>';
+    pm.forEach(function (n, i) { svg += '<rect x="' + (i * 10) + '" y="0" width="10" height="120" fill="transparent"><title>' + (59 - i) + " min ago: " + n + "</title></rect>"; });
     rh.lastChild.insertAdjacentHTML("beforeend", svg + "</svg>"); rh.lastChild.classList.add("wide");
     card(rh, "Models in use", fmt((rn.models || []).reduce(function (a, m) { return a + m.requests; }, 0)), "requests since the server started");
     var ml = el("ul", "mlist");
     var GINK = {"openai/gpt-oss-120b": "Gink Crystal", "openai/gpt-oss-20b": "Gink Flake", "qwen/qwen3.8-27b": "Gink Prism"};
-    (rn.models || []).forEach(function (m) { var li = el("li"), nm = el("span", "", GINK[m.model] || m.model); nm.title = m.model;
-      li.appendChild(nm); li.appendChild(el("span", "", fmt(m.requests))); ml.appendChild(li); });
-    rh.lastChild.appendChild(ml); rh.lastChild.classList.add("wide");
+    var COLORS = ["#2DD4BF", "#38BDF8", "#4ADE80", "#FB923C", "#A78BFA"], mods = rn.models || [];
+    var mtotal = mods.reduce(function (a, m) { return a + m.requests; }, 0), acc = 0;
+    var ring = '<svg width="150" height="150" viewBox="0 0 42 42" role="img" aria-label="Share of requests by model">' +
+      '<circle cx="21" cy="21" r="15.9" fill="none" stroke="#183448" stroke-width="6"/>';
+    mods.forEach(function (m, i) { var pct = mtotal ? 100 * m.requests / mtotal : 0;
+      ring += '<circle cx="21" cy="21" r="15.9" fill="none" stroke="' + COLORS[i % 5] + '" stroke-width="6" stroke-dasharray="' + pct.toFixed(2) + " " +
+              (100 - pct).toFixed(2) + '" stroke-dashoffset="' + (25 - acc).toFixed(2) + '"><title>' + (GINK[m.model] || m.model) + ": " + m.requests + "</title></circle>";
+      acc += pct; });
+    var box = el("div", "donut"); box.insertAdjacentHTML("beforeend", ring + "</svg>");
+    mods.forEach(function (m, i) { var li = el("li"), nm = el("span", "", GINK[m.model] || m.model); nm.title = m.model;
+      nm.insertAdjacentHTML("afterbegin", '<i style="display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px;background:' + COLORS[i % 5] + '"></i>');
+      li.appendChild(nm); li.appendChild(el("span", "", fmt(m.requests) + (mtotal ? " \u00b7 " + Math.round(100 * m.requests / mtotal) + "%" : ""))); ml.appendChild(li); });
+    ml.style.minWidth = "180px"; box.appendChild(ml);
+    rh.lastChild.appendChild(box); rh.lastChild.classList.add("wide", "glowcard");
     var h = d.health || {}, hh = $("health"); hh.innerHTML = "";
     card(hh, "Running for", dur(h.uptime_s || 0), h.version ? "latest release " + h.version : "");
     card(hh, "AI refusals", fmt(h.ai_refused), h.ai_refused ? "see the latest problems below" : "none \u2713");
+    if (h.ai_refused) hh.lastChild.classList.add("bad");
     card(hh, "Model switches", fmt(h.ai_fallbacks), "another model answered when one was at its limit");
     card(hh, "Live data", fmt(h.live_ok), (h.live_failed ? fmt(h.live_failed) + " failed" : "no failures") + " \u00b7 weather, currency\u2026");
     var pb = $("problems"); pb.innerHTML = ""; $("problems-card").hidden = !(h.problems || []).length;
@@ -240,7 +272,18 @@
       var tr = el("tr"); tr.appendChild(el("td", "", r.currency)); tr.appendChild(el("td", "num", fmt(r.amount)));
       tr.appendChild(el("td", "num", fmt(r.payments))); rv.appendChild(tr);
     });
-    var f = d.feedback_7d, total = f.up + f.down;
+    var ub = $("usagebars"); ub.innerHTML = "";
+    var items = [["Messages", t.messages], ["AI calls", t.calls], ["Web searches", t.searches], ["Claude", t.claude], ["Images", t.images],
+                 ["Voice (characters)", t.voice_chars]], umax = Math.max(1, Math.max.apply(null, items.map(function (x) { return x[1] || 0; })));
+    items.forEach(function (x) { var row = el("div", "ubar"); row.appendChild(el("span", "", x[0]));
+      var tr = el("div", "track"), fl = el("div", "fill"); fl.style.width = Math.max(x[1] ? 3 : 0, Math.round(100 * (x[1] || 0) / umax)) + "%";
+      tr.appendChild(fl); row.appendChild(tr); row.appendChild(el("strong", "", fmt(x[1]))); ub.appendChild(row); });
+    var f = d.feedback_7d, total = f.up + f.down, share = total ? Math.round(100 * f.up / total) : 0;
+    $("ring").innerHTML = '<circle cx="21" cy="21" r="15.9" fill="none" stroke="#183448" stroke-width="4.5"/>' +
+      (total ? '<circle cx="21" cy="21" r="15.9" fill="none" stroke="#4ADE80" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="' + share + " " +
+               (100 - share) + '" stroke-dashoffset="25"/>' : "") +
+      '<text x="21" y="23.2" text-anchor="middle" style="fill:#86EFAC;font-size:7px;font-weight:700">' + (total ? share + "%" : "\u2014") + "</text>";
+    $("ring").setAttribute("aria-label", total ? share + "% of rated answers were helpful" : "No feedback yet");
     $("fb").textContent = total ? ("\uD83D\uDC4D " + fmt(f.up) + "   \uD83D\uDC4E " + fmt(f.down) + "   (" + Math.round(100 * f.up / total) + "% positive)") : "No feedback yet.";
     var rs = $("reasons"); rs.innerHTML = "";
     f.top_reasons.forEach(function (r) { var tr = el("tr"); tr.appendChild(el("td", "", r.reason)); tr.appendChild(el("td", "num", fmt(r.count))); rs.appendChild(tr); });
@@ -249,19 +292,19 @@
       " messages, " + lm.pro_claude_daily + " Claude messages and " + lm.pro_search_daily + " web searches a day. Change these in Render (Environment).";
     rates();
   }
-  function chart(days) {
+  function chart(days) {                                       // messages as bars, AI calls as a line (Glow)
     var svg = $("chart"), W = 640, H = 220, pad = 28, n = days.length;
-    var max = Math.max(1, Math.max.apply(null, days.map(function (x) { return Math.max(x.messages, x.claude, x.searches); })));
-    var bw = (W - pad * 2) / n, parts = [];
+    var max = Math.max(1, Math.max.apply(null, days.map(function (x) { return Math.max(x.messages, x.calls || 0); })));
+    var bw = (W - pad * 2) / n, parts = ['<defs><linearGradient id="skybar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#38BDF8"/>' +
+      '<stop offset="1" stop-color="#1D6FA5"/></linearGradient></defs>'], line = [];
     days.forEach(function (x, i) {
-      var x0 = pad + i * bw;
-      [["messages", "var(--c1)"], ["claude", "var(--c2)"], ["searches", "var(--c3)"]].forEach(function (k, j) {
-        var h = (H - pad * 2) * (x[k[0]] / max), w = bw / 3.6;
-        parts.push('<rect x="' + (x0 + 3 + j * (w + 1)).toFixed(1) + '" y="' + (H - pad - h).toFixed(1) + '" width="' + w.toFixed(1) +
-                   '" height="' + Math.max(h, 0).toFixed(1) + '" rx="2" fill="' + k[1] + '"><title>' + x.day + ": " + x[k[0]] + " " + k[0] + "</title></rect>");
-      });
+      var x0 = pad + i * bw, h = (H - pad * 2) * (x.messages / max);
+      parts.push('<rect x="' + (x0 + 4).toFixed(1) + '" y="' + (H - pad - h).toFixed(1) + '" width="' + (bw - 8).toFixed(1) + '" height="' +
+                 Math.max(h, 0).toFixed(1) + '" rx="3" fill="url(#skybar)"><title>' + x.day + ": " + x.messages + " messages</title></rect>");
+      line.push((x0 + bw / 2).toFixed(1) + "," + (H - pad - (H - pad * 2) * ((x.calls || 0) / max)).toFixed(1));
       if (i % 2 === 0) parts.push('<text x="' + (x0 + bw / 2).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + x.day.slice(5) + "</text>");
     });
+    parts.push('<polyline points="' + line.join(" ") + '" fill="none" stroke="#FB923C" stroke-width="3" stroke-linejoin="round"/>');
     parts.push('<text x="' + pad + '" y="14">' + max + "</text>");
     parts.push('<line x1="' + pad + '" x2="' + (W - pad) + '" y1="' + (H - pad) + '" y2="' + (H - pad) + '" stroke="var(--line)"/>');
     svg.innerHTML = parts.join("");                            // numbers and dates only (from our own server)

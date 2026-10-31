@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.77 (October 2026)
+
+- The owner dashboard has a new look ("Glow"): glowing figures on deep navy, a donut of the models in
+  use, a requests area chart, usage bars, a messages and AI-calls chart and a helpful-answers gauge
+
 ## 0.1.76 (October 2026)
 
 - Owner dashboard: a "Right now" section: people online in the last 5 minutes, requests in the last

@@ -46,3 +46,12 @@ def test_right_now_counts_anonymously_and_forgets_after_an_hour(monkeypatch):
     assert now["models"][0] == {"model": "openai/gpt-oss-20b", "requests": 3}  # since the server started
     assert "example.com" not in json.dumps(now) and all("@" not in w for _, w, _ in b._activity)   # never who
     b._activity.clear(); b._models_used.clear()
+
+
+def test_glow_design():
+    """The owner chose design D ("Glow"): navy, glowing figures, donut, area chart, gradient bars, combo chart, ring."""
+    page = open(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "admin.html"), encoding="utf-8").read()
+    for part in ("--bg: #0A1520", 'el("div", "donut")', 'class="area"', 'id="usagebars"', 'id="ring"', "url(#skybar)",
+                 'stroke="#FB923C" stroke-width="3"', 'if (h.ai_refused) hh.lastChild.classList.add("bad");'):
+        assert part in page, part
+    assert "fonts.googleapis" not in page        # the page's security rules only allow its own files: system fonts

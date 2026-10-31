@@ -1564,3 +1564,9 @@ New services/live_info.py (all free, no API keys):
 - _record_activity(email, model) in ai_chat (anonymous sha256 id, in memory, last hour only) +
   _models_used; _right_now(): online_5min, requests_1h, per_minute[60], top 5 models. admin.html shows
   them (wide cards, sparkline with per-minute tooltips, Gink model names). Browser-checked.
+
+## 0.1.77: owner dashboard in 'Glow' (the owner's choice D from the design canvas)
+- admin.html restyled, every feature kept: palette always dark (#0A1520), glowing .big figures by position
+  (AI refusals neutral, amber .bad when any), requests area chart (tooltips per minute), models donut +
+  legend (Gink names, %), 'Usage today' gradient bars, 14-day combo (messages bars + AI calls line),
+  feedback ring gauge. System fonts (CSP default-src 'self'). Checked in a browser with real activity.
