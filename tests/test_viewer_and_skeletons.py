@@ -57,3 +57,18 @@ def test_intel_macs_can_install_everything():
     assert all("3.0.1" not in s for s in rules["webauthn"]), "Intel Macs must not get webauthn 3.x"
     assert all("2.7.0" in s for s in rules["webauthn"])
     assert all("5.7.1" in s and "6.1.5" not in s for s in rules["cbor2"]), "cbor2 6.x must be built with Rust on Intel Macs"
+
+
+def test_unfinished_batches_resume_when_the_server_starts(tmp_path, monkeypatch):
+    """Startup work moved from @app.on_event (being removed from FastAPI) to a lifespan function."""
+    monkeypatch.setenv("GINK_DB_PATH", str(tmp_path / "b.db"))
+    from fastapi.testclient import TestClient
+    from ginkassistant.services import backend_server as b
+    rows = [("b-running",), ("b-queued",)]
+    monkeypatch.setattr(b, "_dev_db", lambda fn: rows)
+    started = []
+    monkeypatch.setattr(b, "_start_batch", started.append)
+    with TestClient(b.app):                      # entering runs the startup (lifespan)
+        pass
+    assert started == ["b-running", "b-queued"]
+    assert not b.app.router.on_startup, "use the lifespan function, not @app.on_event"

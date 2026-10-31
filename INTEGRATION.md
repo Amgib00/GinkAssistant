@@ -1505,3 +1505,9 @@ New services/live_info.py (all free, no API keys):
 - webauthn 2.7 needs cbor2>=5.6.5; pip chose cbor2 6.1.5, which has no cp310 macOS x86_64 wheel and
   needs Rust. Intel Macs: cbor2>=5.6.5,<6 (5.7.1 wheel exists). Passkey/2FA/QR tests pass with
   cbor2 5.7.1 + webauthn 2.7.0 + cryptography 48.0.1.
+
+## 0.1.68: lifespan instead of @app.on_event
+- The owner's clean Mac run (377 passed) showed 'on_event is deprecated' (from Gink's code): FastAPI
+  will remove it, and the server would then not start. _resume_batches now runs from _lifespan
+  (FastAPI(lifespan=...)); test checks batches resume and that no on_event startup hooks remain.
+  The third warning (starlette's anyio.abc.BlockingPortal) is in a library, not Gink.

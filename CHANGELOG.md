@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.68 (October 2026)
+
+- For developers: the server's startup uses FastAPI's current method (the old one is being removed),
+  so the server keeps starting with future FastAPI versions
+
 ## 0.1.67 (October 2026)
 
 - For developers: the passkey package's helper (cbor2) now installs on Intel Macs without Rust

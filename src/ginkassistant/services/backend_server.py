@@ -76,7 +76,17 @@ MAX_VERIFY_ATTEMPTS = 5
 MAX_EMAIL_LENGTH = 254  # RFC 5321
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
-app = FastAPI(title="Gink Assistant Backend", docs_url=None, redoc_url=None, openapi_url=None)
+from contextlib import asynccontextmanager
+
+
+@asynccontextmanager
+async def _lifespan(_app):
+    """Startup work (FastAPI's current way; @app.on_event is being removed): resume unfinished batches."""
+    await _resume_batches()
+    yield
+
+
+app = FastAPI(title="Gink Assistant Backend", docs_url=None, redoc_url=None, openapi_url=None, lifespan=_lifespan)
 # ^ no automatic /docs, /redoc or /openapi.json: they listed every endpoint, owner tools included.
 #   The Developer API's own description is at /v1/openapi.json.
 
@@ -3831,8 +3841,7 @@ def _start_batch(batch_id: str):
         _batch_tasks[batch_id] = asyncio.ensure_future(_run_batch(batch_id))
 
 
-@app.on_event("startup")
-async def _resume_batches():
+async def _resume_batches():                  # run at startup by _lifespan
     """After a server restart, unfinished batches carry on where they stopped."""
     try:
         for (bid,) in _dev_db(lambda con: con.execute("SELECT id FROM batches WHERE status IN ('queued','running')").fetchall()):
