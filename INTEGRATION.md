@@ -1465,3 +1465,7 @@ New services/live_info.py (all free, no API keys):
 ## 0.1.61: Genie preview on phones
 - #mtabs Preview (tab('preview') reloads); .pview base styles now apply to every screen (hidden unless
   d-preview / m-preview); previewChanged() also while m-preview on phones. Checked at 390 px.
+
+## 0.1.62: Preview after building
+- draw(): "See it in Preview" when changes touch .html/.css/.js and index.html exists; build() opens
+  showPreview() after sendToGenie resolves for a new project with index.html. Browser-tested.

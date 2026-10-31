@@ -200,3 +200,10 @@ The workspace SHALL offer a Preview tab (on phones, next to Files, Code and Geni
 #### Scenario: Saving a change
 - **WHEN** the person saves index.html and opens Preview
 - **THEN** the preview shows the saved change
+
+### Requirement: Preview after building
+When an answer changed a web page's files (HTML, CSS or JavaScript) in a project with index.html, the answer SHALL offer "See it in Preview"; after a new project is built from the start screen and has index.html, the Preview SHALL open by itself.
+
+#### Scenario: Building a bakery page
+- **WHEN** the person asks for a bakery landing page from the start screen
+- **THEN** the Preview tab opens showing the page once Genie has answered

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.62 (October 2026)
+
+- Gink Genie shows what it built: a new website opens in Preview by itself, and answers that change
+  a page have a "See it in Preview" button
+
 ## 0.1.61 (October 2026)
 
 - Gink Genie on phones has the Preview tab too, next to Files, Code and Genie

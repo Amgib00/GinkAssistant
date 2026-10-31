@@ -430,6 +430,7 @@
     if (!S.project || !S.project.preview_url) return;
     $("pframe").src = S.project.preview_url + (S.project.preview_url.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now();
   }
+  function showPreview() { if (PHONE_TAB()) tab("preview"); else dview("preview"); }
   function previewChanged() {
     var c = document.body.classList;
     if (!(c.contains("d-preview") || (c.contains("m-preview") && PHONE_TAB()))) return;
@@ -620,6 +621,10 @@
         var b = el("button", "ghost", (c.action === "created" ? "+ " : c.action === "deleted" ? "\u2212 " : "\u270e ") + c.path);
         b.disabled = c.action === "deleted"; b.onclick = function () { openFile(c.path); }; ch.appendChild(b);
       });
+      if (changes.some(function (c) { return /\.(html?|css|js)$/i.test(c.path) && c.action !== "deleted"; }) &&
+          S.files.some(function (f) { return f.path === "index.html"; })) {      // a website changed: see it
+        var pv = el("button", "ghost", "\u25b6 See it in Preview"); pv.onclick = showPreview; ch.appendChild(pv);
+      }
       if (entry.checkpoint) {                                   // put the project back as it was before this request
         var u = el("button", "ghost", "\u21b6 Undo these changes"); u.title = "Put the project back as it was before this request";
         u.onclick = function () { undo(entry.checkpoint, u); }; ch.appendChild(u);
@@ -773,7 +778,9 @@
     $("go").disabled = true; genieWorking(true); $("start-note").textContent = "Starting\u2026";
     api("/genie/projects", { body: { name: idea.slice(0, 50) } }).then(function (j) {
       $("start-note").textContent = ""; $("idea").value = "";
-      return loadProjects(j.project.id).then(function () { return sendToGenie(idea); });
+      return loadProjects(j.project.id).then(function () { return sendToGenie(idea); }).then(function () {
+        if (S.files.some(function (f) { return f.path === "index.html"; })) showPreview();   // a new website: show it
+      });
     }).catch(function (e) { $("start-note").textContent = e.message; genieSay("Hmm, that didn\u2019t work. Try again?", 4000); })
       .then(function () { genieWorking(false); $("go").disabled = false; });
   }

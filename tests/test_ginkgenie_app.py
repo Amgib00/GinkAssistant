@@ -123,6 +123,7 @@ def test_preview_tab_and_no_stray_escapes():
     genie = open(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "genie.html"), encoding="utf-8").read()
     assert 'sandbox="allow-scripts allow-forms allow-modals allow-popups"' in genie and "allow-same-origin" not in genie
     assert 'data-v="preview"' in genie and "function reloadPreview" in genie and "previewChanged();" in genie
+    assert "\\u25b6 See it in Preview" in genie and "function showPreview()" in genie        # answers + new builds
     assert '<button data-tab="preview">Preview</button>' in genie and "body.m-preview main > .pview { display:flex !important; }" in genie
     html_only = re.sub(r"<script>.*?</script>", "", genie, flags=re.S)
     assert not re.findall(r"\\u[0-9a-fA-F]{4}", html_only), "JavaScript escapes show up as text in HTML"
