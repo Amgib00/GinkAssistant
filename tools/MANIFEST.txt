@@ -336,6 +336,7 @@ tools/grant_pro.py
 tools/make_genie_icons.py
 tools/make_icons.py
 tools/publish_to_github.sh
+tools/tidy_pull_requests.py
 webapp/bridge.js
 webapp/signin.html
 website/assets/demo.js

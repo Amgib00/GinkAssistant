@@ -46,3 +46,40 @@ def test_reviews_labels_and_dependabot():
     assert pip["labels"] == ["dependencies"] and pip["assignees"] == ["Amgib00"]
     ignored = {i["dependency-name"] for i in pip["ignore"]}
     assert {"webauthn", "cbor2", "cryptography", "numpy"} <= ignored        # the Intel-Mac pins stay put
+
+
+def test_tidy_tool_previews_then_fixes_open_and_closed_pull_requests(tmp_path):
+    import json, sys
+    prs = [{"number": 24, "title": "Bump the python-dependencies group", "state": "OPEN", "labels": [], "assignees": [], "milestone": None},
+           {"number": 5, "title": "Docs", "state": "MERGED", "labels": [{"name": "docs"}], "assignees": [{"login": "Amgib00"}], "milestone": None},
+           {"number": 6, "title": "Server fix", "state": "CLOSED", "labels": [], "assignees": [], "milestone": None}]
+    files = {"24": ["requirements.txt", "deploy/requirements-server.txt"], "5": ["README.md"], "6": ["src/ginkassistant/services/backend_server.py", "tests/test_x.py"]}
+    log = tmp_path / "gh.log"
+    (tmp_path / "bin").mkdir()
+    fake = tmp_path / "bin" / "gh"
+    (tmp_path / "prs.json").write_text(json.dumps(prs)); (tmp_path / "files.json").write_text(json.dumps(files))
+    fake.write_text("#!" + sys.executable + """
+import json, sys
+d = %r
+a = sys.argv[1:]
+open(d + "/gh.log", "a").write(" ".join(a) + "\\n")
+if a[:2] == ["pr", "list"]:
+    print(open(d + "/prs.json").read())
+elif a[:2] == ["pr", "view"]:
+    print(json.dumps({"files": [{"path": x} for x in json.load(open(d + "/files.json"))[a[2]]]}))
+elif a[:1] == ["api"] and "milestones?state=open" in a[1]:
+    print("")
+""" % str(tmp_path))
+    fake.chmod(0o755)
+    env = {**os.environ, "PATH": f"{tmp_path / 'bin'}:{os.environ['PATH']}"}
+    tool = os.path.join(ROOT, "tools", "tidy_pull_requests.py")
+    out = subprocess.run([sys.executable, tool], env=env, capture_output=True, text=True, check=True).stdout
+    assert "would be updated" in out and "pr edit" not in log.read_text()            # the preview changes nothing
+    log.write_text("")
+    subprocess.run([sys.executable, tool, "--apply"], env=env, capture_output=True, text=True, check=True)
+    calls = log.read_text()
+    assert "pr edit 24 -R Amgib00/GinkAssistant --add-label dependencies,server --add-assignee Amgib00 --milestone Next release" in calls
+    assert "pr edit 6 -R Amgib00/GinkAssistant --add-label server,tests --add-assignee Amgib00" in calls   # closed: no milestone
+    assert "pr edit 5 " not in calls                                                     # already tidy
+    assert calls.count("label create") == 9 and "milestones -f title=Next release" in calls
+    assert "pr close" not in calls and "pr merge" not in calls and "pr reopen" not in calls

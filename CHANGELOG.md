@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.72 (October 2026)
+
+- For the owner: tools/tidy_pull_requests.py gives every existing pull request (open and closed) its
+  labels and assignee, and open ones the next-release milestone
+
 ## 0.1.71 (October 2026)
 
 - Newer versions of the server's building blocks (FastAPI 0.162 and 11 others), tested in full

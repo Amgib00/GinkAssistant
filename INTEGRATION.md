@@ -1532,3 +1532,8 @@ New services/live_info.py (all free, no API keys):
   requirements-test.txt).
 - Found while checking: tests/test_pull_requests.py imports yaml, but CI installs only requirements-test.txt
   (no PyYAML) -> it would fail there, and test_release_tooling silently skipped (importorskip). PyYAML added.
+
+## 0.1.72: tidy existing pull requests (open + closed)
+- tools/tidy_pull_requests.py (gh): labels from .github/labeler.yml (own glob->regex incl. ** and !(x)),
+  owner as assignee when none, 'Next release' milestone for OPEN only; preview by default, --apply to
+  do it; never closes/merges/reopens. Tested end to end with a fake gh.
