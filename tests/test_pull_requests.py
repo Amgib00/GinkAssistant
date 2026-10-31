@@ -31,6 +31,7 @@ def test_only_collaborators_may_open_pull_requests(tmp_path):
 def test_the_workflow_never_runs_the_pull_requests_code():
     text = open(os.path.join(ROOT, ".github", "workflows", "pull-requests.yml")).read()
     assert "pull_request_target" in text and "actions/checkout" not in text and "head.sha" not in text
+    assert "gh pr edit" not in text            # it asks about retired classic Projects and fails
     triage = WF["jobs"]["triage"]
     assert triage["needs"] == "gate" and "allowed == 'true'" in triage["if"]
 
@@ -67,8 +68,12 @@ if a[:2] == ["pr", "list"]:
     print(open(d + "/prs.json").read())
 elif a[:2] == ["pr", "view"]:
     print(json.dumps({"files": [{"path": x} for x in json.load(open(d + "/files.json"))[a[2]]]}))
+elif a[:2] == ["pr", "edit"]:          # like the owner's gh: classic Projects are retired
+    sys.stderr.write("GraphQL: Projects (classic) is being deprecated (repository.pullRequest.projectCards)\\n"); sys.exit(1)
 elif a[:1] == ["api"] and "milestones?state=open" in a[1]:
     print("")
+elif a[:1] == ["api"] and a[1].endswith("/milestones"):
+    print("7")
 """ % str(tmp_path))
     fake.chmod(0o755)
     env = {**os.environ, "PATH": f"{tmp_path / 'bin'}:{os.environ['PATH']}"}
@@ -78,8 +83,10 @@ elif a[:1] == ["api"] and "milestones?state=open" in a[1]:
     log.write_text("")
     subprocess.run([sys.executable, tool, "--apply"], env=env, capture_output=True, text=True, check=True)
     calls = log.read_text()
-    assert "pr edit 24 -R Amgib00/GinkAssistant --add-label dependencies,server --add-assignee Amgib00 --milestone Next release" in calls
-    assert "pr edit 6 -R Amgib00/GinkAssistant --add-label server,tests --add-assignee Amgib00" in calls   # closed: no milestone
-    assert "pr edit 5 " not in calls                                                     # already tidy
+    assert "api -X POST repos/Amgib00/GinkAssistant/issues/24/labels -f labels[]=dependencies -f labels[]=server" in calls
+    assert "api -X POST repos/Amgib00/GinkAssistant/issues/24/assignees -f assignees[]=Amgib00" in calls
+    assert "api -X PATCH repos/Amgib00/GinkAssistant/issues/24 -F milestone=7" in calls
+    assert "issues/6/labels -f labels[]=server -f labels[]=tests" in calls and "issues/6 -F milestone" not in calls   # closed: no milestone
+    assert "issues/5/" not in calls and "pr edit" not in calls                           # already tidy; never gh pr edit
     assert calls.count("label create") == 9 and "milestones -f title=Next release" in calls
     assert "pr close" not in calls and "pr merge" not in calls and "pr reopen" not in calls

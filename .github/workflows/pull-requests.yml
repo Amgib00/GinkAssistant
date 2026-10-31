@@ -88,11 +88,13 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           OWNER: ${{ github.repository_owner }}
         run: |
-          gh pr edit "$PR" -R "$REPO" --add-assignee "$OWNER"
-          if ! gh api "repos/$REPO/milestones?state=open" --jq '.[].title' | grep -qx "Next release"; then
-            gh api "repos/$REPO/milestones" -f title="Next release" -f description="Changes going into the next Gink release" >/dev/null
+          # REST calls: the gh "pr edit" command also asks about classic Projects (retired by GitHub) and fails
+          gh api -X POST "repos/$REPO/issues/$PR/assignees" -f "assignees[]=$OWNER" >/dev/null
+          no=$(gh api "repos/$REPO/milestones?state=open" --jq '.[] | select(.title=="Next release") | .number')
+          if [ -z "$no" ]; then
+            no=$(gh api "repos/$REPO/milestones" -f title="Next release" -f description="Changes going into the next Gink release" --jq .number)
           fi
-          gh pr edit "$PR" -R "$REPO" --milestone "Next release"
+          gh api -X PATCH "repos/$REPO/issues/$PR" -F "milestone=$no" >/dev/null
 
       - name: Add to the project
         # Needs: Settings > Secrets and variables > Actions: variable GINK_PROJECT_URL (the project's link)

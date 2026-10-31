@@ -1537,3 +1537,9 @@ New services/live_info.py (all free, no API keys):
 - tools/tidy_pull_requests.py (gh): labels from .github/labeler.yml (own glob->regex incl. ** and !(x)),
   owner as assignee when none, 'Next release' milestone for OPEN only; preview by default, --apply to
   do it; never closes/merges/reopens. Tested end to end with a fake gh.
+
+## 0.1.73: no more gh pr edit
+- Owner's run: 'gh pr edit ... failed: GraphQL: Projects (classic) is being deprecated
+  (repository.pullRequest.projectCards)' -- gh pr edit queries retired classic Projects. The tidy tool
+  and the workflow now use REST: POST issues/N/labels, POST issues/N/assignees, PATCH issues/N milestone
+  (number, created if missing). The test's fake gh fails pr edit like the owner's.

@@ -33,6 +33,18 @@ def gh(*args, check=True) -> str:
     return r.stdout
 
 
+def edit(number: int, add_labels: list, assign: bool, milestone):
+    """Through the REST API: `gh pr edit` also asks about classic Projects, which GitHub retired -> it fails
+    ("Projects (classic) is being deprecated ... projectCards")."""
+    issue = f"repos/{REPO}/issues/{number}"           # a pull request is an issue for labels/assignees/milestone
+    if add_labels:
+        gh("api", "-X", "POST", f"{issue}/labels", *sum((["-f", f"labels[]={x}"] for x in add_labels), []))
+    if assign:
+        gh("api", "-X", "POST", f"{issue}/assignees", "-f", f"assignees[]={OWNER}")
+    if milestone:
+        gh("api", "-X", "PATCH", issue, "-F", f"milestone={milestone}")
+
+
 def glob_to_regex(pattern: str) -> str:
     """labeler's globs: ** (any folders), * and ? (within a name), !(a|b) (anything but)."""
     out, i = "", 0
@@ -76,31 +88,28 @@ def main(apply: bool):
     prs = json.loads(gh("pr", "list", "-R", REPO, "--state", "all", "--limit", "500",
                         "--json", "number,title,state,labels,assignees,milestone"))
     print(f"{len(prs)} pull requests in {REPO}{'' if apply else '  (showing only: add --apply to do it)'}\n")
+    milestone_no = None
     if apply:
         for name, (color, text) in LABELS.items():
             gh("label", "create", name, "-R", REPO, "--color", color, "--description", text, "--force")
-        titles = gh("api", f"repos/{REPO}/milestones?state=open", "--jq", ".[].title").split("\n")
-        if MILESTONE not in titles and any(p["state"] == "OPEN" for p in prs):
-            gh("api", f"repos/{REPO}/milestones", "-f", f"title={MILESTONE}", "-f", "description=Changes going into the next Gink release")
+        if any(p["state"] == "OPEN" and not p["milestone"] for p in prs):
+            found = gh("api", f"repos/{REPO}/milestones?state=open", "--jq", f'.[] | select(.title=="{MILESTONE}") | .number').strip()
+            milestone_no = found or gh("api", f"repos/{REPO}/milestones", "-f", f"title={MILESTONE}", "-f",
+                                       "description=Changes going into the next Gink release", "--jq", ".number").strip()
     changed = 0
     for p in sorted(prs, key=lambda p: p["number"]):
         files = [f["path"] for f in json.loads(gh("pr", "view", str(p["number"]), "-R", REPO, "--json", "files"))["files"]]
         have = {l["name"] for l in p["labels"]}
         add = sorted(labels_for(files, rules) - have)
-        args = []
-        if add:
-            args += ["--add-label", ",".join(add)]
-        if not p["assignees"]:
-            args += ["--add-assignee", OWNER]
-        if p["state"] == "OPEN" and not p["milestone"]:
-            args += ["--milestone", MILESTONE]
-        what = ", ".join(x for x in (f"labels {', '.join(add)}" if add else "", "assign you" if not p["assignees"] else "",
-                                     "milestone 'Next release'" if "--milestone" in args else "") if x) or "nothing to do"
+        assign = not p["assignees"]
+        wants_milestone = p["state"] == "OPEN" and not p["milestone"]
+        what = ", ".join(x for x in (f"labels {', '.join(add)}" if add else "", "assign you" if assign else "",
+                                     "milestone 'Next release'" if wants_milestone else "") if x) or "nothing to do"
         print(f"  #{p['number']:<4} {p['state'].lower():<6} {p['title'][:55]:<55}  {what}")
-        if args:
+        if add or assign or wants_milestone:
             changed += 1
             if apply:
-                gh("pr", "edit", str(p["number"]), "-R", REPO, *args)
+                edit(p["number"], add, assign, milestone_no if wants_milestone else None)
     print(f"\n{changed} pull request(s) {'updated' if apply else 'would be updated'}.")
 
 

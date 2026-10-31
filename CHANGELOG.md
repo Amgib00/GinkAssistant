@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.73 (October 2026)
+
+- On GitHub: tidying and triaging pull requests works with every version of the gh tool (gh pr edit
+  failed on GitHub's retired classic Projects)
+
 ## 0.1.72 (October 2026)
 
 - For the owner: tools/tidy_pull_requests.py gives every existing pull request (open and closed) its
