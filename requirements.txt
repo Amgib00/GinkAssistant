@@ -28,7 +28,7 @@ std-nslog; sys_platform == "darwin"
 
 # --- the built-in server (services/backend_server.py) ---
 pydantic==2.13.4
-fastapi>=0.115.0
+fastapi>=0.162.0
 uvicorn
 python-multipart
 PyJWT
@@ -43,8 +43,8 @@ pygame
 pyttsx3; sys_platform != "darwin"       # Mac uses the built-in `say` voice instead
 vosk
 sounddevice
-shazamio>=0.8.1             # older versions pull in pytest and pin a vulnerable anyio
-anyio>=4.14.2
+shazamio>=0.9.0             # older versions pull in pytest and pin a vulnerable anyio
+anyio>=4.15.1
 numpy>=2.2.2,<2.3           # shazamio 0.8 needs 2.2+; 2.3 drops Python 3.10
 librosa
 scipy

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.71 (October 2026)
+
+- Newer versions of the server's building blocks (FastAPI 0.162 and 11 others), tested in full
+- For developers: the GitHub test run now also checks the release and pull-request workflows
+
 ## 0.1.70 (October 2026)
 
 - On GitHub: the pull-request tools are up to date (labeler 7, add-to-project 2)

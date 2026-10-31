@@ -1525,3 +1525,10 @@ New services/live_info.py (all free, no API keys):
   inputs; node24), checked in their READMEs/action.yml. Applied HERE, not merged on GitHub: the publish
   script makes GitHub match the local folder, so a GitHub-merged PR would be undone by the next publish;
   Dependabot closes its PRs once main has the versions. #24 (12 python updates): list it first.
+
+## 0.1.71: Dependabot #24 applied (12 python minimums) + PyYAML for tests
+- Verified first: the full suite passes on Python 3.10 with fastapi 0.162 / starlette 1.7 / pydantic 2.13.4,
+  uvicorn 0.54, pypdf 6.21, markdown 3.10, etc. Same 14 floor bumps as the PR (server, requirements.txt,
+  requirements-test.txt).
+- Found while checking: tests/test_pull_requests.py imports yaml, but CI installs only requirements-test.txt
+  (no PyYAML) -> it would fail there, and test_release_tooling silently skipped (importorskip). PyYAML added.
