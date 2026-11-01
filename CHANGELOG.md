@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.80 (October 2026)
+
+- Gink searches the web by itself when your question needs current information (news, prices,
+  results, who holds a position...), preferring official sources
+- Sources: a button under each answer shows where it comes from, official sources first
+
 ## 0.1.79 (October 2026)
 
 - When something breaks, you see it: the server records every crash and error, the owner dashboard

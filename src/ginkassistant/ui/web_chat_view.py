@@ -1497,6 +1497,7 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     enhanceCodeBlocks(el);
     if (!LOADING_CHAT && window.autoOpenCode) autoOpenCode(el);        // long code in a new answer: the viewer
     addGinkActions(el, id);
+    if (window.upgradeSources) upgradeSources(el);                     // the Sources list -> a button in that row
     var logoImg = document.createElement('img');
     logoImg.className = 'msg-logo arriving';
     logoImg.src = SPIN_URI;

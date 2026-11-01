@@ -32,3 +32,24 @@ When the AI provider refuses a request because the model is at its limit, overlo
 #### Scenario: The main model is at its daily limit
 - **WHEN** GPT-OSS 120B answers "rate limit reached"
 - **THEN** the answer comes from GPT-OSS 20B and the response names it
+
+### Requirement: Gink searches by itself
+In the apps and on the web, messages that need current or factual information from the web SHALL be searched automatically, except writing, coding and translating requests (unless they ask to search) and questions live data answers; "gink_web": false turns it off, developer API keys decide for themselves, and over the daily search allowance the answer comes without searching.
+
+#### Scenario: A question about a country's president
+- **WHEN** someone asks "Who is the president of Ghana?" without choosing Gink Search
+- **THEN** Gink searches the web before answering
+
+### Requirement: Official sources first
+Searches SHALL prefer official and primary sources (government sites, the organisation's own website, official documentation), and official sources SHALL be listed first and marked official.
+
+#### Scenario: Ranking sources
+- **WHEN** a search returns a news site and a government site
+- **THEN** the government site is listed first, marked official
+
+### Requirement: Sources button
+An answer's sources SHALL appear as a Sources button in its row of actions (the sites' initials and a count), opening the list with each source's title, site and an Official badge where it applies.
+
+#### Scenario: Opening the sources
+- **WHEN** the person clicks "2 sources" under an answer
+- **THEN** the list opens with the official source first

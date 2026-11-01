@@ -53,7 +53,9 @@ def test_search_requests_use_browser_search(srv):
         s = sent[-1]
         assert s["model"] == "openai/gpt-oss-120b" and s["tools"] == [{"type": "browser_search"}]
         assert s["tool_choice"] == "required" and s["reasoning_effort"] == "low" and "gink_web" not in s
-    assert ask(c, h, model="gink-crystal").status_code == 200 and "tools" not in sent[-1]     # normal chat: no search
+    # an ordinary chat message doesn't search ("bridge news" now searches by itself: it asks for news)
+    r = c.post("/ai/openai/v1/chat/completions", headers=h, json={"model": "gink-crystal", "messages": [{"role": "user", "content": "explain how bridges hold weight"}]})
+    assert r.status_code == 200 and "tools" not in sent[-1]
 
 
 def test_answers_are_clean_and_list_their_sources(srv):

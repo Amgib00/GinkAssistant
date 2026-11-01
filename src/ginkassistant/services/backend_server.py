@@ -1875,7 +1875,57 @@ SEARCH_ALIASES = {"gink-search"}
 _CITE = re.compile(r"【[^】]{0,60}】")
 
 
+# ---- Automatic search: messages that need current or factual information from the web search by
+# themselves (apps and web app; the developer API decides for itself). Not writing/coding/translating
+# requests (unless they say "search"), and not weather & co (live data answers those).
+_SEARCH_ASK = re.compile(r"\b(search|look (it )?up|google|find (me |out )?|on the (web|internet)|online|recherche|cherche)\b", re.I)
+_SEARCH_NEEDS = re.compile(
+    r"\b(latest|newest|recent(ly)?|news|headlines?|breaking|today'?s?|tonight|yesterday|this (week|month|year)|right now|currently|"
+    r"current|as of|20(2[5-9]|3\d)|price|prices|cost of|how much (is|are|does|do)|exchange rate|stock|share price|score|scores|"
+    r"results?|who won|winner|standings|fixtures?|schedule|release date|released|launch(ed|es)?|new version|update[sd]?|"
+    r"election|president|prime minister|minister|ceo|who is the|who runs|opening hours|open now|near me|address of|"
+    r"phone number|official (site|website|page)|website of|population of|ranking|trending|viral|"
+    r"actualit\u00e9s?|derni\u00e8res? nouvelles|prix|aujourd'hui|cette semaine)\b", re.I)
+_SEARCH_LINK = re.compile(r"https?://|\b[\w-]+\.(com|org|net|gov|edu|io|ai|sn|ng|gh|sl|fr|uk|co)\b", re.I)
+_SEARCH_NOT = re.compile(r"^\s*(please\s+)?(write|compose|draft|translate|summari[sz]e|rewrite|fix|debug|code|create|make|draw|"
+                         r"generate|poem|story|explain this|correct)\b", re.I)
+
+
+def _needs_search(text: str) -> bool:
+    t = (text or "").strip()
+    if len(t) < 6:
+        return False
+    if _SEARCH_ASK.search(t):
+        return True                               # they asked for it
+    if _SEARCH_NOT.search(t) or _live_requests(t):
+        return False                              # a writing task, or live data covers it (weather, currency...)
+    return bool(_SEARCH_NEEDS.search(t) or _SEARCH_LINK.search(t))
+
+
+_SEARCH_NOTE = ("Search the web for this. Prefer official and primary sources (government sites, the organisation's own "
+                "website, official documentation and statistics), then reputable news outlets. Check the information is "
+                "current, give dates where they matter, and say when sources disagree.")
+_OFFICIAL = re.compile(r"\.(gov|gouv|gob|go|govt|int|mil|edu|ac)(\.[a-z]{2})?$|\.(gov|gouv|gob|go|edu|ac)\.[a-z]{2,3}$", re.I)
+
+
+def _is_official(url: str) -> bool:
+    host = (url.split("/")[2] if "://" in url else url).split(":")[0].lower()
+    return bool(_OFFICIAL.search(host))
+
+
+def _rank_sources(sources: list) -> list:
+    """Official sources first (government, international bodies, universities), then the rest in order."""
+    for s in sources:
+        s["official"] = _is_official(s["url"])
+    return sorted(sources, key=lambda s: 0 if s["official"] else 1)
+
+
 def _prepare_search(body: dict):
+    msgs = body.get("messages") or []
+    if msgs and isinstance(msgs[0], dict) and msgs[0].get("role") == "system" and isinstance(msgs[0].get("content"), str):
+        msgs[0]["content"] += "\n\n" + _SEARCH_NOTE           # official sources first
+    else:
+        msgs.insert(0, {"role": "system", "content": _SEARCH_NOTE})
     body["tools"] = [{"type": "browser_search"}]      # Groq's built-in tool (custom tools can't be mixed in)
     body["tool_choice"] = "required"
     body["reasoning_effort"] = "low"                   # Groq's advice: shorter, cheaper browsing
@@ -1906,7 +1956,8 @@ def _find_sources(obj, out=None, depth=0) -> list:
 def _sources_md(sources: list) -> str:
     if not sources:
         return ""
-    lines = [f"- [{s['title'].replace('[', '(').replace(']', ')')}]({s['url']})" for s in sources[:6]]
+    lines = [f"- [{s['title'].replace('[', '(').replace(']', ')')}]({s['url']})" + (" \u00b7 official" if s.get("official") else "")
+             for s in _rank_sources(sources)[:8]]
     return "\n\n**Sources**\n" + "\n".join(lines)
 
 
@@ -2226,7 +2277,13 @@ async def ai_chat(request: Request):
     # the app groups one question's calls under X-Gink-Turn; API callers can't (every API call counts)
     turn = "" if getattr(request.state, "gink_api_email", None) else request.headers.get("x-gink-turn", "")
     # Claude (Anthropic) or Groq: decided once, here
-    web = str(body["model"]).lower() in SEARCH_ALIASES or body.pop("gink_web", False) is True
+    asked = body.pop("gink_web", None)
+    web = str(body["model"]).lower() in SEARCH_ALIASES or asked is True
+    auto, chosen_model = False, body["model"]
+    developer = (request.headers.get("authorization") or "").split(" ")[-1].startswith(API_KEY_PREFIX)
+    if (not web and asked is not False and not developer and not str(body["model"]).startswith("claude-")
+            and not _has_images(body.get("messages") or []) and _needs_search(_last_user_text(body.get("messages") or []))):
+        web = auto = True                         # Gink searches by itself when the answer needs the web
     if web:
         body["model"] = SEARCH_MODEL                                         # web search runs on GPT-OSS
     body["model"] = GINK_MODEL_NAMES.get(str(body["model"]).lower(), body["model"])   # "gink-frost" -> Claude Sonnet
@@ -2253,7 +2310,9 @@ async def ai_chat(request: Request):
     if web:
         blocked = _count_search(email, plan, turn)
         if blocked is not None:
-            return blocked
+            if not auto:
+                return blocked
+            web, body["model"] = False, chosen_model          # automatic search over today's allowance: answer anyway
     body["max_tokens"] = min(int(body.get("max_tokens") or MAX_TOKENS[plan]), MAX_TOKENS[plan])
     if wants_claude:
         body["model"] = await _current_claude_model(str(body["model"]))

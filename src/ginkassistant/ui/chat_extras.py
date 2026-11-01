@@ -277,6 +277,21 @@ CSS = r"""
   body.viewer-open { padding-right: min(50vw, 780px); }
   body.viewer-open #composer-wrap { right: min(50vw, 780px); }
   @media (max-width: 899px) { #codeview { width: 100vw; } body.viewer-open { padding-right: 0; } body.viewer-open #composer-wrap { right: 0; } }
+  /* Sources: a button in the answer's action row, opening the list (official ones first, with a badge) */
+  .ga.gsrc { width: auto; display: inline-flex; align-items: center; gap: 7px; padding: 0 10px 0 6px; border-radius: 999px;
+             font-size: 13px; font-weight: 600; color: var(--text-main); }
+  .gsrc .stack { display: inline-flex; }
+  .gsrc .stack span { width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 10.5px;
+                      font-weight: 700; color: #fff; margin-left: -6px; box-shadow: 0 0 0 2px var(--surface); }
+  .gsrc .stack span:first-child { margin-left: 0; }
+  .gsources { margin: 8px 0 4px; border: 1px solid var(--border); border-radius: 14px; padding: 6px; max-width: 560px; background: var(--surface); }
+  .gsources a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; color: var(--text-main); text-decoration: none; }
+  .gsources a:hover { background: var(--elevated); }
+  .gsources .si { width: 28px; height: 28px; border-radius: 8px; flex: none; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 13px; }
+  .gsources .st { display: flex; flex-direction: column; min-width: 0; }
+  .gsources .st b { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gsources .st small { color: var(--text-muted); font-size: 12px; }
+  .gsources .off { margin-left: auto; flex: none; font-size: 11px; font-weight: 700; color: #1F6F3A; background: #DDF5E3; border-radius: 999px; padding: 2px 8px; }
 """
 
 HTML = r"""
@@ -921,6 +936,52 @@ JS = r"""
     Array.prototype.forEach.call(el.querySelectorAll('.code-block'), function (b) {
       var n = codeText(b).split('\n').length; if (n > most) { most = n; best = b; } });
     if (best && most >= 30) openCodeViewer(best);
+  };
+  // ---- Sources: the answer's "Sources" list becomes a button in its action row (official ones first)
+  var SRC_COLORS = ['#2F6FB3', '#3F7D12', '#B4530F', '#7A3FB3', '#0F7C74', '#A3274F'];
+  function srcHost(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } }
+  function srcColor(h) { var n = 0; for (var i = 0; i < h.length; i++) n = (n * 31 + h.charCodeAt(i)) % 997; return SRC_COLORS[n % SRC_COLORS.length]; }
+  window.upgradeSources = function (el) {
+    var head = null;
+    Array.prototype.forEach.call(el.querySelectorAll('strong'), function (s) {
+      if (!head && /^sources$/i.test((s.textContent || '').trim()) && s.parentNode && s.parentNode.tagName === 'P') head = s;
+    });
+    if (!head) return;
+    var p = head.parentNode, list = [], nodes = [p];
+    function take(scope) {
+      Array.prototype.forEach.call(scope.querySelectorAll('a[href^="http"]'), function (a) {
+        var after = '', n = a.nextSibling;
+        while (n && !(n.nodeType === 1 && (n.tagName === 'A' || n.tagName === 'BR'))) { after += n.textContent || ''; n = n.nextSibling; }
+        var li = a.closest('li'); if (li) after += li.textContent.replace(a.textContent, '');
+        list.push({ url: a.href, title: (a.textContent || '').trim() || srcHost(a.href), official: /official/i.test(after) });
+      });
+    }
+    take(p);
+    var next = p.nextElementSibling;
+    if (next && (next.tagName === 'UL' || next.tagName === 'OL')) { take(next); nodes.push(next); }
+    if (!list.length) return;
+    var bar = el.querySelector('.gactions'); if (!bar) return;
+    nodes.forEach(function (n) { n.remove(); });
+    var btn = document.createElement('button'); btn.className = 'ga gsrc'; btn.type = 'button';
+    btn.setAttribute('aria-expanded', 'false'); btn.title = 'Where this answer comes from';
+    var stack = document.createElement('span'); stack.className = 'stack'; stack.setAttribute('aria-hidden', 'true');
+    list.slice(0, 3).forEach(function (s) { var h = srcHost(s.url), i = document.createElement('span');
+      i.textContent = h.charAt(0).toUpperCase(); i.style.background = srcColor(h); stack.appendChild(i); });
+    btn.appendChild(stack);
+    btn.appendChild(document.createTextNode(list.length + (list.length === 1 ? ' source' : ' sources')));
+    var panel = document.createElement('div'); panel.className = 'gsources'; panel.hidden = true; panel.setAttribute('role', 'list');
+    list.forEach(function (s) {
+      var h = srcHost(s.url), a = document.createElement('a'); a.href = s.url; a.setAttribute('role', 'listitem'); a.title = s.url;
+      var ic = document.createElement('span'); ic.className = 'si'; ic.textContent = h.charAt(0).toUpperCase(); ic.style.background = srcColor(h);
+      var tx = document.createElement('span'); tx.className = 'st';
+      var b = document.createElement('b'); b.textContent = s.title; var sm = document.createElement('small'); sm.textContent = h;
+      tx.appendChild(b); tx.appendChild(sm); a.appendChild(ic); a.appendChild(tx);
+      if (s.official) { var o = document.createElement('span'); o.className = 'off'; o.textContent = 'Official'; a.appendChild(o); }
+      panel.appendChild(a);
+    });
+    btn.onclick = function (e) { e.stopPropagation(); panel.hidden = !panel.hidden; btn.setAttribute('aria-expanded', String(!panel.hidden)); };
+    bar.insertBefore(btn, bar.firstChild);
+    bar.parentNode.insertBefore(panel, bar.nextSibling);
   };
 """
 

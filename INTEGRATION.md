@@ -1586,3 +1586,13 @@ New services/live_info.py (all free, no API keys):
   restart count only later ones), '(N)' in the tab title, rows of new problems in red, 'Alert me'
   notifications (also hidden tab: checks every 60 s when on), badge click = seen + flash the health tile;
   health minis: AI refusals, Errors, Model switches, Live data. Browser-tested with a crashing page.
+
+## 0.1.80: automatic search + official sources + Sources button
+- _needs_search(text) (ask words; recency/changing facts; links/domains; not writing/coding/translating
+  or live-data questions) -> ai_chat searches automatically (not for gink_live_ API keys, Claude,
+  photos; gink_web false = off); over _count_search's allowance an automatic search falls back to the
+  chosen model. _SEARCH_NOTE asks for official/primary sources; _rank_sources puts .gov/.gouv/.gob/
+  .go.xx/.int/.edu/.ac.xx first and marks them ' · official' in the Sources list.
+- Page: upgradeSources(el) after addGinkActions: the 'Sources' paragraph/list becomes a .gsrc button
+  (initials stack + count) at the start of the action row, opening .gsources (title, site, Official).
+  Browser-tested end to end with a simulated search answer.
