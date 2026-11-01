@@ -109,7 +109,8 @@ async def _security_headers(request, call_next):
         raise
     finally:
         _current_request.reset(token)
-    if response.status_code >= 500 and not request.url.path.startswith(("/ai/", "/v1/")):   # AI errors: noted with their reason
+    if (response.status_code >= 500 and not request.url.path.startswith(("/ai/", "/v1/"))      # AI errors: noted with their reason
+            and not getattr(request.state, "gink_problem_noted", False)):                         # already noted precisely
         try:
             _note_problem("Server error", response.status_code, "", f"on {request.url.path}")
         except Exception:
@@ -236,11 +237,35 @@ def _send_email(to: str, subject: str, text: str, html: str = "") -> str:
     return "no email service is set up (BREVO_API_KEY, or GMAIL_USER + GMAIL_APP_PASSWORD)"
 
 
+EMAIL_FAILED = ("We couldn\u2019t send your code right now. Please try again in a few minutes, "
+                "or continue with Google.")
+
+
+def _email_not_set_up(reason: str) -> bool:
+    """No email service configured at all (not a failure): codes then go to the server log, as the owner
+    dashboard says. A configured service that fails is an error instead -- codes never go to logs then."""
+    return "no email service is set up" in (reason or "").lower()
+
+
+def _email_not_sent(what: str, email: str, reason: str) -> None:
+    """The owner sees why (dashboard problems + alert email): never the code, only the address's domain."""
+    print(f"[Gink] Email not sent ({reason}) -- {what} for {email}", flush=True)
+    try:
+        _note_problem("Email not sent", 0, "", f"{what} to \u2026@{email.split('@')[-1]}: {reason}")
+    except Exception:
+        pass
+
+
 def _dispatch_otp(email: str, otp: str) -> None:
+    """Sends the sign-in code. Raises 503 when it couldn't be sent (it used to say "sent" and nothing came)."""
     reason = _send_email(email, "Your Gink code", f"Your Gink code is: {otp}\n\nIt expires in 5 minutes.",
                          _code_html("Here\u2019s your Gink sign-in code:", otp, 5))
     if reason:
-        print(f"[Gink] Email not sent ({reason}) -- code for {email}: {otp}")
+        if _email_not_set_up(reason):                  # setting up: the owner signs in with the code from the log
+            print(f"[Gink] No email service yet -- sign-in code for {email}: {otp}", flush=True)
+            return
+        _email_not_sent("sign-in code", email, reason)
+        raise HTTPException(status_code=503, detail=EMAIL_FAILED)
 
 
 def _sweep_expired_locked():
@@ -304,8 +329,9 @@ def send_otp(email: str):
                                  "Someone (hopefully you) asked to sign in to Gink with this email address, but there's no "
                                  "Gink account for it yet.\n\nCreate one here: https://gink-server.onrender.com/signup\n\n"
                                  "If it wasn't you, you can ignore this email.")
-            if reason:
-                print(f"[Gink] No-account notice not emailed ({reason}) -- for {email}")
+            if reason:                                   # same answer as for a real account: reveals nothing
+                _email_not_sent("no-account notice", email, reason)
+                raise HTTPException(status_code=503, detail=EMAIL_FAILED)
         return {"status": "success"}
     otp = f"{secrets.randbelow(1_000_000):06d}"               # cryptographic, like sign-up and reset codes
 
@@ -322,8 +348,15 @@ def send_otp(email: str):
 
     try:
         _dispatch_otp(email, otp)
+    except HTTPException:
+        with _otp_lock:
+            _otp_store.pop(email, None)                # nothing was sent: they can try again straight away
+        raise
     except Exception as exc:
-        print(f"[Gink] Email dispatch failed, falling back to console -- your OTP for {email} is: {otp} ({exc})")
+        _email_not_sent("sign-in code", email, f"{type(exc).__name__}: {exc}")
+        with _otp_lock:
+            _otp_store.pop(email, None)
+        raise HTTPException(status_code=503, detail=EMAIL_FAILED)
     return {"status": "success"}
 
 
@@ -517,12 +550,17 @@ def _token_response(email: str, name: str = "") -> dict:
     return {"token": jwt.encode(payload, _get_secret_key(), algorithm=ALGORITHM), "email": email, "name": name or ""}
 
 
-def _send_code_email(email: str, code: str, subject: str, intro: str):
-    """Sign-up / reset codes. When email can't be sent, the code goes to the server log, with the reason."""
+def _send_code_email(email: str, code: str, subject: str, intro: str) -> bool:
+    """Sign-up / reset codes. False when it couldn't be sent (the owner sees why on the dashboard)."""
     reason = _send_email(email, f"Gink - {subject}", f"{intro}\n\nYour code: {code}\n\nIt expires in 10 minutes.",
                          _code_html(intro, code, 10))
     if reason:
-        print(f"[Gink] Email not sent ({reason}) -- {subject} code for {email}: {code}")
+        if _email_not_set_up(reason):                  # setting up: the code is in the owner's log
+            print(f"[Gink] No email service yet -- {subject} code for {email}: {code}", flush=True)
+            return True
+        _email_not_sent(subject.lower() + " code", email, reason)
+        return False
+    return True
 
 
 def _check_code(store: dict, email: str, code: str) -> dict:
@@ -556,7 +594,10 @@ def register(data: dict = Body(...)):
     with _otp_lock:
         _pending_signups[email] = {"name": name, "pw_hash": _hash_password(password), "code": code,
                                    "expiry": time.time() + 600, "attempts": 0}
-    _send_code_email(email, code, "Verify your email", f"Welcome to Gink{', ' + name if name else ''}!")
+    if not _send_code_email(email, code, "Verify your email", f"Welcome to Gink{', ' + name if name else ''}!"):
+        with _otp_lock:
+            _pending_signups.pop(email, None)
+        raise HTTPException(status_code=503, detail=EMAIL_FAILED)     # instead of waiting for an email that never comes
     return {"status": "code_sent"}
 
 
@@ -603,6 +644,7 @@ def forgot(data: dict = Body(...)):
         with _otp_lock:
             _reset_codes[email] = {"code": code, "expiry": time.time() + 600, "attempts": 0}
         _send_code_email(email, code, "Reset your password", "Someone asked to reset your Gink password.")
+        # (a failure isn't shown here: it would reveal that this email has an account -- the owner sees it)
     return {"status": "code_sent"}
 
 
@@ -2095,6 +2137,12 @@ def _note_problem(kind: str, status: int, model: str, reason) -> None:
     raw = reason.decode("utf-8", "replace") if isinstance(reason, bytes) else str(reason or "")
     try:                                                   # the provider's message, not the whole JSON
         raw = (_json.loads(raw).get("error") or {}).get("message") or raw
+    except Exception:
+        pass
+    try:
+        req = _current_request.get(None)
+        if req is not None and kind != "Server error":
+            req.state.gink_problem_noted = True        # the middleware won't add a generic "Server error" too
     except Exception:
         pass
     _health["seq"] += 1

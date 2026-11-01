@@ -73,7 +73,7 @@ def test_reset_and_social_sign_in_are_gated_too(srv, monkeypatch):
     b, c, db = srv
     turn_on(b, c, {"Authorization": "Bearer " + login(c)["token"]})
     assert "token" not in b._login_response("ib@example.com", "Ibrahim")             # Google/GitHub/... path
-    monkeypatch.setattr(b, "_send_code_email", lambda *a, **k: None)
+    monkeypatch.setattr(b, "_send_code_email", lambda *a, **k: True)          # sent
     c.post("/auth/forgot", json={"email": "ib@example.com"})
     code = b._reset_codes["ib@example.com"]["code"]
     r = c.post("/auth/reset", json={"email": "ib@example.com", "code": code, "password": "brand new pass 42"}).json()
@@ -179,7 +179,7 @@ def test_email_codes_only_for_existing_accounts(srv, monkeypatch):
 def test_code_emails_are_limited(srv, monkeypatch):
     """Sign-up / reset / email sign-in used to send a code on every request (inbox flooding)."""
     b, c, db = srv
-    monkeypatch.setattr(b, "_send_code_email", lambda *a, **k: None)
+    monkeypatch.setattr(b, "_send_code_email", lambda *a, **k: True)          # sent
     monkeypatch.setattr(b, "_dispatch_otp", lambda *a, **k: None)
     monkeypatch.setattr(b, "_send_email", lambda *a, **k: "")
     b._code_sends.clear(); b._otp_store.clear(); b._no_account_notices.clear()

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.86 (November 2026)
+
+- Fixed: when a sign-up or sign-in code couldn't be emailed, Gink said it was sent and nothing came.
+  Now it says so (and you can try again at once), and the owner dashboard shows the exact reason
+- Security: sign-in codes are no longer written to the server's logs when email fails
+
 ## 0.1.85 (November 2026)
 
 - For developers on macOS 10.15: tools/check_project.py explains that Mac apps for this macOS are

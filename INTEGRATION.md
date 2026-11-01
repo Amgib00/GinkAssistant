@@ -1634,3 +1634,11 @@ New services/live_info.py (all free, no API keys):
   Stub-3.8..3.11 (checked), and newer Briefcase makes apps that need macOS 11. Two environments: gink312
   (run Gink, tests, PyCharm) + gink-build311 (Python 3.11.9 installer, briefcase==0.3.15) for local apps.
   check_project.check_briefcase says so on old macOS + Python >= 3.12.
+
+## 0.1.86: email failures are never reported as 'sent'
+- Owner couldn't create an account / get codes: _dispatch_otp and _send_code_email only printed the
+  reason and the routes returned success. Now a configured-but-failing service -> 503 EMAIL_FAILED
+  (register, send-otp incl. the no-account notice; stores cleared so retry is immediate) and
+  _note_problem('Email not sent', reason, recipient's domain only). /auth/forgot stays neutral (no
+  account probing) but notes the problem. Codes go to the log ONLY when no email service is set up.
+- _note_problem marks the request (state.gink_problem_noted): no duplicate generic 'Server error'.
