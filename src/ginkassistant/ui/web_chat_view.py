@@ -1058,10 +1058,13 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
 
   // ---- composer + bridge ----------------------------------------------
   // Toga's WebView has no JS->Python callback, so the page queues events
-  // and Python polls ginkTake() a few times a second (WebChatFeed.poll).
-  var ginkEvents = [];
-  function ginkEmit(type, value) { ginkEvents.push({type: type, value: value === undefined ? null : value}); }
-  function ginkTake() { var out = JSON.stringify(ginkEvents); ginkEvents = []; return out; }
+  // and Python polls ginkTake(ack, page) a few times a second (WebChatFeed.poll, ui/page_events.py).
+  var ginkEvents = [], ginkSeq = 0, ginkPage = String(Date.now()) + Math.random().toString(36).slice(2, 8);
+  function ginkEmit(type, value) { ginkEvents.push({seq: ++ginkSeq, type: type, value: value === undefined ? null : value}); }
+  function ginkTake(ack, page) {   /* ui/page_events.py: kept until the next poll confirms it arrived */
+    if (page === ginkPage) ginkEvents = ginkEvents.filter(function (e) { return e.seq > ack; });
+    return JSON.stringify({page: ginkPage, events: ginkEvents});
+  }
 
   var SEND_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
   var WAVE_ICON = null;
@@ -1574,19 +1577,10 @@ class WebChatFeed:
         """Collects what the user did in the HTML composer since the last
         call: [{"type": "send"|"dictate"|"voice_toggle"|"menu"|"model",
         "value": ...}]. Never raises; returns [] if the page isn't ready."""
-        try:
-            raw = await asyncio.wait_for(self.web_view.evaluate_javascript("ginkTake()"), timeout=2.0)
-        except Exception:
-            return []
-        try:
-            if isinstance(raw, (list, dict)):
-                return raw if isinstance(raw, list) else []
-            data = json.loads(raw) if raw else []
-            if isinstance(data, str):          # some platforms JSON-encode the string again
-                data = json.loads(data)
-            return data if isinstance(data, list) else []
-        except Exception:
-            return []
+        if getattr(self, "_events", None) is None:
+            from .page_events import EventQueue
+            self._events = EventQueue()
+        return await self._events.take(self.web_view)        # each event exactly once (ui/page_events.py)
 
     async def set_busy(self, busy: bool):
         await self._js(f"setComposerBusy({'true' if busy else 'false'})")

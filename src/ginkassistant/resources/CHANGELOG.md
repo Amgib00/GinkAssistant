@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.92 (November 2026)
+
+- Fixed: on a slow phone, a message you sent (or a tap) could vanish when the screen answered Gink
+  late. Every tap and message is now delivered once, and only once, on every screen
+
 ## 0.1.91 (November 2026)
 
 - Android: "Identify a song" works. Gink records about 8 seconds and your Gink server asks Shazam;

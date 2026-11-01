@@ -99,9 +99,12 @@ PAGE = r"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport
   </section>
 </main>
 <script>
-  var ginkEvents = [];
-  function ginkEmit(type, value) { ginkEvents.push({type: type, value: value === undefined ? null : value}); }
-  function ginkTake() { var out = JSON.stringify(ginkEvents); ginkEvents = []; return out; }
+  var ginkEvents = [], ginkSeq = 0, ginkPage = String(Date.now()) + Math.random().toString(36).slice(2, 8);
+  function ginkEmit(type, value) { ginkEvents.push({seq: ++ginkSeq, type: type, value: value === undefined ? null : value}); }
+  function ginkTake(ack, page) {   /* ui/page_events.py: kept until the next poll confirms it arrived */
+    if (page === ginkPage) ginkEvents = ginkEvents.filter(function (e) { return e.seq > ack; });
+    return JSON.stringify({page: ginkPage, events: ginkEvents});
+  }
   var STYLES = __STYLES__, ASPECTS = __ASPECTS__, state = {style: 'photo', aspect: '1:1', busy: false};
   function $(id) { return document.getElementById(id); }
   function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
@@ -193,12 +196,10 @@ class MediaStudio:
         await self.js(f"{fn}({', '.join(json.dumps(a) for a in args)})")
 
     async def poll(self):
-        try:
-            raw = await asyncio.wait_for(self.web.evaluate_javascript("ginkTake()"), timeout=2)
-            data = json.loads(raw) if isinstance(raw, str) and raw else (raw or [])
-            return json.loads(data) if isinstance(data, str) else (data if isinstance(data, list) else [])
-        except Exception:
-            return []
+        if getattr(self, "_events", None) is None:
+            from .page_events import EventQueue
+            self._events = EventQueue()
+        return await self._events.take(self.web)              # each event exactly once (ui/page_events.py)
 
     def alive(self):
         return getattr(self.app, "_media_studio_token", None) is self.token

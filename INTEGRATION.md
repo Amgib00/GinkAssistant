@@ -1703,3 +1703,14 @@ New services/live_info.py (all free, no API keys):
 - song_recognition.identify_ambient_song: _record (Android AudioRecord / desktop sounddevice) -> shazamio here
   if installed, else server (server["fn"] set by main_screen) -> local fingerprint DB. SongProblem = a reason
   for the person; main_screen.identify_song shows it, and take_mic()/resume_wake() around it.
+
+## 0.1.92: page events exactly once (ui/page_events.py)
+- Traced the "every user message twice" report: the send path is single (composer -> one 'send' event ->
+  send_query guard -> answer() adds one bubble, saves once; brain.ask(save_user=False)); sync echoes of our own
+  pushes are skipped (local updated >= remote); a reload racing a send can't duplicate (clearFeed first, and
+  reloads wait while _sending). The original report predates the HTML composer (Toga TextInput + Button).
+- Real bug found instead: ginkTake() emptied the page queue as it answered; poll() gave up after 2 s, so on a slow
+  WebView the events were gone (a sent message vanished). Now: events numbered (seq) + page id; ginkTake(ack,
+  page) drops only acknowledged ones; EventQueue skips seq <= ack -> exactly once; new page id -> ack reset.
+  Same QUEUE_JS in chat, login and Media Studio (test checks they match). Web (bridge.js) doesn't poll: unchanged.
+- tests/test_page_events.py: unit + whole main screen on a WebView slower than the 2 s wait; checked in Chromium.

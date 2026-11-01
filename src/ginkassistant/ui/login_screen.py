@@ -371,9 +371,12 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
   if (window.Element && !Element.prototype.closest) Element.prototype.closest = function (sel) {
     var el = this; while (el && el.nodeType === 1) { if (el.matches(sel)) return el; el = el.parentElement; } return null;
   };
-  var ginkEvents = [];
-  function ginkEmit(type, value) { ginkEvents.push({type: type, value: value === undefined ? null : value}); }
-  function ginkTake() { var out = JSON.stringify(ginkEvents); ginkEvents = []; return out; }
+  var ginkEvents = [], ginkSeq = 0, ginkPage = String(Date.now()) + Math.random().toString(36).slice(2, 8);
+  function ginkEmit(type, value) { ginkEvents.push({seq: ++ginkSeq, type: type, value: value === undefined ? null : value}); }
+  function ginkTake(ack, page) {   /* ui/page_events.py: kept until the next poll confirms it arrived */
+    if (page === ginkPage) ginkEvents = ginkEvents.filter(function (e) { return e.seq > ack; });
+    return JSON.stringify({page: ginkPage, events: ginkEvents});
+  }
   function $(id) { return document.getElementById(id); }
 
   var current = 'login', history_ = [], resendTimer = null;
@@ -629,14 +632,10 @@ class LoginController:
         await self.js(f"{fn}({', '.join(json.dumps(a) for a in args)})")
 
     async def poll(self) -> list:
-        try:
-            raw = await asyncio.wait_for(self.web_view.evaluate_javascript("ginkTake()"), timeout=2)
-            data = json.loads(raw) if isinstance(raw, str) and raw else (raw or [])
-            if isinstance(data, str):
-                data = json.loads(data)
-            return data if isinstance(data, list) else []
-        except Exception:
-            return []
+        if getattr(self, "_events", None) is None:
+            from .page_events import EventQueue
+            self._events = EventQueue()
+        return await self._events.take(self.web_view)        # each event exactly once (ui/page_events.py)
 
     def alive(self) -> bool:
         return getattr(self.app, "_login_screen_token", None) is self.token

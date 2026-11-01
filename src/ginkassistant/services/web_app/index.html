@@ -1704,10 +1704,13 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 
   // ---- composer + bridge ----------------------------------------------
   // Toga's WebView has no JS->Python callback, so the page queues events
-  // and Python polls ginkTake() a few times a second (WebChatFeed.poll).
-  var ginkEvents = [];
-  function ginkEmit(type, value) { ginkEvents.push({type: type, value: value === undefined ? null : value}); }
-  function ginkTake() { var out = JSON.stringify(ginkEvents); ginkEvents = []; return out; }
+  // and Python polls ginkTake(ack, page) a few times a second (WebChatFeed.poll, ui/page_events.py).
+  var ginkEvents = [], ginkSeq = 0, ginkPage = String(Date.now()) + Math.random().toString(36).slice(2, 8);
+  function ginkEmit(type, value) { ginkEvents.push({seq: ++ginkSeq, type: type, value: value === undefined ? null : value}); }
+  function ginkTake(ack, page) {   /* ui/page_events.py: kept until the next poll confirms it arrived */
+    if (page === ginkPage) ginkEvents = ginkEvents.filter(function (e) { return e.seq > ack; });
+    return JSON.stringify({page: ginkPage, events: ginkEvents});
+  }
 
   var SEND_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
   var WAVE_ICON = null;

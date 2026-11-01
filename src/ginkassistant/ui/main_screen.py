@@ -600,14 +600,10 @@ def build_main_screen(app: toga.App, email: str):
     _sending = {"value": False}
 
     async def send_query(text: str):
-        # Guards against a double-send -- reported as every user message
-        # appearing twice in the feed. Nothing in this file's own
-        # handler wiring double-binds on_press/on_confirm (checked), so
-        # this is a defensive fix for whatever's actually double-firing
-        # (possibly a platform-level double-dispatch of the button press)
-        # rather than a located-and-patched root cause. Checked and set
-        # synchronously, before any `await`, so it closes the gap even
-        # if two calls land back to back in the same event-loop tick.
+        # One message at a time. (The old "every message twice" report came from the
+        # Toga text box + button era, long replaced by the HTML composer; page events are
+        # now numbered and handled exactly once -- ui/page_events.py.) Checked and set
+        # synchronously, before any `await`, so two calls in the same tick can't both pass.
         if _sending["value"]:
             return
         message = text.strip()

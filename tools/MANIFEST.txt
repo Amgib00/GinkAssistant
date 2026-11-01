@@ -244,6 +244,7 @@ src/ginkassistant/ui/login_screen.py
 src/ginkassistant/ui/logo_svg.py
 src/ginkassistant/ui/main_screen.py
 src/ginkassistant/ui/media_studio_screen.py
+src/ginkassistant/ui/page_events.py
 src/ginkassistant/ui/pro_screen.py
 src/ginkassistant/ui/settings_controller.py
 src/ginkassistant/ui/settings_page.py
@@ -310,6 +311,7 @@ tests/test_no_dead_buttons.py
 tests/test_offline_song_engine.py
 tests/test_owner_dashboard.py
 tests/test_owner_dashboard_live.py
+tests/test_page_events.py
 tests/test_phone_signin.py
 tests/test_play_music.py
 tests/test_prompts.py
