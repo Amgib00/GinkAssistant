@@ -446,6 +446,7 @@
             try {
               var d = JSON.parse(data);
               if (d.error) { text += (text ? "\n\n" : "") + (d.error.message || "The AI service had a problem."); setPlainText(aid, text); return; }
+              if (d.gink_status === "searching") setSpinLabel(aid, "Searching the web\u2026");   // automatic searches too
               var piece = d.choices && d.choices[0] && d.choices[0].delta && d.choices[0].delta.content;
               if (piece) { text += piece; setPlainText(aid, narrow(text)); }
             } catch (e) {}

@@ -583,7 +583,8 @@ def build_main_screen(app: toga.App, email: str):
 
         try:
             reply = await brain.ask(message, on_token=on_token, system_prompt=SPOKEN_REPLY_PROMPT if spoken else None,
-                                    attachments=attachments, save_user=False)
+                                    attachments=attachments, save_user=False,
+                                    on_status=lambda text: asyncio.ensure_future(web_chat.set_spin_label(msg_id, text)))
         except asyncio.CancelledError:
             # Stop ring: keep what was already written, mark it, and save the turn
             stream["pending"] = False

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.81 (November 2026)
+
+- When Gink searches the web, the spinner says "Searching the web..." (automatic searches included)
+
 ## 0.1.80 (October 2026)
 
 - Gink searches the web by itself when your question needs current information (news, prices,

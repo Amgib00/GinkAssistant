@@ -1596,3 +1596,11 @@ New services/live_info.py (all free, no API keys):
 - Page: upgradeSources(el) after addGinkActions: the 'Sources' paragraph/list becomes a .gsrc button
   (initials stack + count) at the start of the action row, opening .gsources (title, site, Official).
   Browser-tested end to end with a simulated search answer.
+
+## 0.1.81: 'Searching the web...' for automatic searches
+- Server: a searched stream starts with {choices: [], gink_status: 'searching'} (apps and web skip pieces
+  without choices as text). Apps: groq_worker reads chunk.gink_status -> on_status (passed into
+  _cloud_reply -- pyflakes caught it missing there, which would have crashed every app answer) ->
+  web_chat.set_spin_label. Web: bridge chat() -> setSpinLabel(aid). Tests run the real GroqBrain.ask.
+  Status piece only for Gink's own clients (not gink_live_ API keys): developers' code often reads
+  choices[0] of every piece (an older test did exactly that and failed).

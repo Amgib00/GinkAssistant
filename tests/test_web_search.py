@@ -71,7 +71,7 @@ def test_streamed_answers_are_clean_even_when_a_mark_is_split(srv):
                   json={"model": "gink-search", "stream": True, "messages": [{"role": "user", "content": "bridge news"}]}) as r:
         frames = [l[5:].strip() for l in r.iter_lines() if l.startswith("data:")]
     assert frames[-1] == "[DONE]"
-    chunks = [json.loads(f) for f in frames[:-1]]
+    chunks = [ch for ch in (json.loads(f) for f in frames[:-1]) if ch.get("choices")]   # like the apps: skip status pieces
     text = "".join(ch["choices"][0]["delta"].get("content") or "" for ch in chunks)
     assert "【" not in text and "†" not in text and "on 12 October 2026. It links Dakar and Thiès." in text
     assert text.endswith("- [Dakar–Thiès link](https://example.org/link)") and "**Sources**" in text

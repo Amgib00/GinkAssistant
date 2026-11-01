@@ -335,7 +335,7 @@ class GroqBrain:
         system_prompt = self._with_memory(system_prompt or DEFAULT_SYSTEM_PROMPT)
 
         if self.client and self.api_key:
-            return await self._cloud_reply(query, on_token, system_prompt, attachments, save_user)
+            return await self._cloud_reply(query, on_token, system_prompt, attachments, save_user, on_status=on_status)
 
         if any(a.kind == "image" for a in attachments):
             return await self._emit("Looking at photos needs the Groq connection (`GROQ_API_KEY`), "
@@ -374,6 +374,7 @@ class GroqBrain:
         system_prompt: str,
         attachments: Optional[list] = None,
         save_user: bool = True,
+        on_status: Optional[Callable[[str], None]] = None,
     ) -> str:
         from .attachments import build_prompt_text, history_text
         attachments = attachments or []
@@ -451,6 +452,12 @@ class GroqBrain:
 
         full_response = ""
         async for chunk in stream:
+            status = getattr(chunk, "gink_status", None)          # the server: "searching" (the web)
+            if status == "searching" and on_status:
+                try:
+                    on_status("Searching the web\u2026")
+                except Exception:
+                    pass
             if chunk.choices and chunk.choices[0].delta:
                 token = chunk.choices[0].delta.content
                 if token:

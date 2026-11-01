@@ -2364,6 +2364,11 @@ async def ai_chat(request: Request):
         async def relay():
             try:
                 if web:                                        # tidy the answer, then list the sources
+                    # first: "searching" (the spinner says "Searching the web..." -- automatic searches included).
+                    # Only for Gink's own apps and web app: developers' code often reads choices[0] of every piece.
+                    if not developer:
+                        yield "data: " + _json.dumps({"id": "gink-status", "object": "chat.completion.chunk", "created": int(time.time()),
+                                                      "model": body["model"], "choices": [], "gink_status": "searching"}) + "\n\n"
                     tidy = _SearchStream()
                     async for piece in upstream.aiter_text():
                         for out in tidy.feed(piece):
