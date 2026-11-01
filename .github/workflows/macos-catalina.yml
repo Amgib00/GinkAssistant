@@ -1,0 +1,141 @@
+# Builds Gink for Intel Macs on macOS 10.15 Catalina and newer (Gink-mac-catalina.dmg), on GitHub's
+# Intel Mac -- the same recipe as the owner's 2012 MacBook ("gbrief"), so that Mac isn't needed to
+# make a Catalina build any more.
+# Run it: GitHub -> Actions -> "Mac app (Catalina)" -> Run workflow. Result: the run's page -> Artifacts.
+#
+# Why it's different from macos.yml (macOS 11+):
+#   * Briefcase 0.3.15 + Python 3.11: newer Briefcase uses a Python and launcher built for macOS 11,
+#     and Briefcase 0.3.15's template has launchers for Python <= 3.11 (INTEGRATION.md, 0.1.85).
+#   * GitHub's Mac runs macOS 15, so pip would pick packages built for macOS 14+. Instead every package
+#     is fetched for macOS 10.9-10.15 first (a "wheelhouse"), and Briefcase may install ONLY from there
+#     (PIP_NO_INDEX / PIP_FIND_LINKS: Briefcase 0.3.15's pip inherits the environment).
+#   * Briefcase 0.3.15 builds every app in pyproject.toml, so Gink Genie is left out of this copy.
+#   * The app is thinned to Intel only (lipo), then tools/check_mac_min_os.py reads every program and
+#     library inside: the job FAILS if anything needs a macOS newer than 10.15.
+# Ad-hoc signed, not notarized: the first time, right-click Gink -> Open -> Open.
+name: Mac app (Catalina)
+
+on:
+  workflow_dispatch:
+  workflow_call:          # for release.yml, once this edition is proven
+
+jobs:
+  catalina:
+    name: Mac app (Intel, macOS 10.15+)
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "10.15"
+      WHEELS: ${{ github.workspace }}/wheels
+      APP: build/ginkassistant/macos/app/Gink.app
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Tools (Briefcase 0.3.15)
+        run: python -m pip install --upgrade pip wheel setuptools packaging cmake scikit-build-core "briefcase==0.3.15"
+
+      - name: Build PortAudio (static, for macOS 10.15)
+        run: |
+          git clone --depth 1 --branch v19.7.0 https://github.com/PortAudio/portaudio "$RUNNER_TEMP/portaudio"
+          cmake -S "$RUNNER_TEMP/portaudio" -B "$RUNNER_TEMP/pa-build" -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/pa" -DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET" \
+            -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DPA_BUILD_SHARED=OFF \
+            -DPA_BUILD_STATIC=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+          cmake --build "$RUNNER_TEMP/pa-build" --config Release -j 4
+          cmake --install "$RUNNER_TEMP/pa-build"
+          rm -f "$RUNNER_TEMP"/pa/lib/*.dylib
+
+      - name: Build the source-only packages (srt, pyaudio, llama-cpp-python) for macOS 10.15
+        env:
+          ARCHFLAGS: "-arch x86_64"
+        run: |
+          mkdir -p "$WHEELS"
+          python -m pip wheel --no-deps -w "$WHEELS" srt
+          CFLAGS="-I$RUNNER_TEMP/pa/include" \
+          LDFLAGS="-L$RUNNER_TEMP/pa/lib -framework CoreAudio -framework AudioToolbox -framework AudioUnit -framework CoreFoundation -framework CoreServices" \
+            python -m pip wheel --no-deps --no-binary pyaudio -w "$WHEELS" "pyaudio==0.2.14"
+          CMAKE_ARGS="-DGGML_NATIVE=OFF -DGGML_METAL=OFF -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15" \
+            python -m pip wheel --no-deps -w "$WHEELS" llama-cpp-python
+          ls -l "$WHEELS"
+
+      - name: Fetch every other package, built for macOS 10.15 or older
+        run: |
+          python - <<'PY' > mac-requirements.txt
+          import tomllib
+          from packaging.requirements import Requirement
+          app = tomllib.load(open("pyproject.toml", "rb"))["tool"]["briefcase"]["app"]["ginkassistant"]
+          env = {"sys_platform": "darwin", "platform_system": "Darwin", "platform_machine": "x86_64",
+                 "python_version": "3.11", "python_full_version": "3.11.9"}
+          for r in app.get("requires", []) + app["macOS"].get("requires", []):
+              req = Requirement(r)
+              if req.marker and not req.marker.evaluate(env):
+                  continue
+              if req.name.lower() in ("pyaudio", "llama-cpp-python"):     # built in the step above
+                  continue
+              req.marker = None
+              print(req)
+          PY
+          cat mac-requirements.txt
+          PLAT=()
+          for v in 10_9 10_10 10_11 10_12 10_13 10_14 10_15; do
+            PLAT+=(--platform "macosx_${v}_x86_64" --platform "macosx_${v}_universal2" --platform "macosx_${v}_intel")
+          done
+          python -m pip download --only-binary=:all: --python-version 3.11 --implementation cp "${PLAT[@]}" \
+            --find-links "$WHEELS" -d "$WHEELS" -r mac-requirements.txt
+          ls "$WHEELS" | wc -l
+
+      - name: Only the Gink app (Briefcase 0.3.15 builds every app it finds)
+        run: |
+          python - <<'PY'
+          import re
+          text = open("pyproject.toml", encoding="utf-8").read()
+          out, skip = [], False
+          for line in text.splitlines(keepends=True):
+              m = re.match(r"\s*\[([^\]]+)\]", line)
+              if m:
+                  skip = m.group(1).startswith("tool.briefcase.app.ginkgenie")
+              if not skip:
+                  out.append(line)
+          open("pyproject.toml", "w", encoding="utf-8").write("".join(out))
+          PY
+          grep -c ginkgenie pyproject.toml || true
+
+      - name: Build the app (packages only from the wheelhouse)
+        env:
+          PIP_NO_INDEX: "1"
+          PIP_FIND_LINKS: ${{ github.workspace }}/wheels
+          PIP_ONLY_BINARY: ":all:"
+        run: |
+          briefcase create macOS app --no-input
+          briefcase build macOS app --no-input
+          ls "$APP/Contents"
+
+      - name: Intel only (thin every universal file)
+        run: |
+          find "$APP" -type f -print0 | while IFS= read -r -d '' f; do
+            info=$(lipo -info "$f" 2>/dev/null) || continue
+            case "$info" in
+              *"fat file"*x86_64*)
+                lipo -thin x86_64 "$f" -output "$f.x86_64" && cat "$f.x86_64" > "$f" && rm "$f.x86_64" ;;
+            esac
+          done
+          du -sh "$APP"
+
+      - name: Check every program and library opens on macOS 10.15
+        run: python tools/check_mac_min_os.py "$APP" --max 10.15 --arch x86_64
+
+      - name: Package (.dmg, ad-hoc signed)
+        run: |
+          briefcase package macOS app --adhoc-sign --no-input
+          ls -l dist
+          DMG=$(ls dist/*.dmg | head -1)
+          cp "$DMG" Gink-mac-catalina.dmg
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Gink-mac-catalina
+          path: Gink-mac-catalina.dmg
+          retention-days: 14

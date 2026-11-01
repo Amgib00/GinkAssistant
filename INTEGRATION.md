@@ -1714,3 +1714,19 @@ New services/live_info.py (all free, no API keys):
   page) drops only acknowledged ones; EventQueue skips seq <= ack -> exactly once; new page id -> ack reset.
   Same QUEUE_JS in chat, login and Media Studio (test checks they match). Web (bridge.js) doesn't poll: unchanged.
 - tests/test_page_events.py: unit + whole main screen on a WebView slower than the 2 s wait; checked in Chromium.
+
+## 0.1.93: Catalina Mac build on GitHub (.github/workflows/macos-catalina.yml)
+- macos.yml makes macOS 11+ apps (Briefcase 0.4.x). The owner's Catalina app came only from the 2012 Mac
+  (gbrief: Python 3.11 + Briefcase 0.3.15, Intel-only thinning, re-signing). Same recipe on macos-15-intel.
+- The trap on a macOS 15 runner: pip picks wheels for the runner's macOS (e.g. numpy macosx_14_0 Accelerate).
+  So: build srt/pyaudio(static PortAudio)/llama-cpp-python wheels for 10.15 x86_64, then `pip download
+  --only-binary --platform macosx_10_{9..15}_{x86_64,universal2,intel} --python-version 3.11 --find-links`,
+  then Briefcase installs with PIP_NO_INDEX/PIP_FIND_LINKS/PIP_ONLY_BINARY (0.3.15's pip run copies os.environ;
+  only PYTHONPATH is overridden -- checked in its source).
+- Checked against PyPI metadata (cp311, macOS 10.15 x86_64): every package has a wheel except srt (sdist ->
+  built), vosk (0.3.45 has none -> 0.3.44) and scipy (1.18 none -> 1.17.1); librosa resolves to 0.11.
+- 0.3.15 builds every app in pyproject: the job strips [tool.briefcase.app.ginkgenie*] from its copy.
+- tools/check_mac_min_os.py: pure-Python Mach-O reader (fat 32/64, LC_BUILD_VERSION, LC_VERSION_MIN_MACOSX);
+  fails on any x86_64 slice newer than --max or a file with no x86_64 slice. Verified on numpy's real macOS
+  wheel (10.9). Runs after thinning, before packaging.
+- Not in release.yml yet: add it once a run passes (workflow_call is ready).

@@ -33,7 +33,9 @@ Run Briefcase from this folder. Apps are built in `build/ginkassistant/<platform
 python -m briefcase create macOS && python -m briefcase build macOS && python -m briefcase run macOS
 ```
 - **macOS 10.15 Catalina:** use Briefcase 0.3.15 (newer Briefcase makes apps that need macOS 11+);
-  `requirements.txt` picks the right version.
+  `requirements.txt` picks the right version. Or let GitHub build it: Actions -> **Mac app (Catalina)**
+  -> Run workflow (`Gink-mac-catalina.dmg`; the job checks every file opens on macOS 10.15).
+- Will a built app open on an older Mac? `python tools/check_mac_min_os.py path/to/Gink.app --max 10.15`.
 - **Android** and **iOS** are built on GitHub (Actions tab) -- see `deploy/IOS_AND_WEB.md`.
 - Check your setup any time: `python tools/check_project.py` (`--fix` repairs it).
 - New icon: replace `icons/source-icon.png`, run `python tools/make_icons.py`.

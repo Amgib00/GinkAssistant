@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.93 (November 2026)
+
+- For older Intel Macs: Gink for macOS 10.15 Catalina can now be built on GitHub (Actions >
+  "Mac app (Catalina)"), and every file in it is checked to open on Catalina before it's packaged
+
 ## 0.1.92 (November 2026)
 
 - Fixed: on a slow phone, a message you sent (or a tap) could vanish when the screen answered Gink

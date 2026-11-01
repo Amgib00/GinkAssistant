@@ -7,6 +7,7 @@
 .github/workflows/genie.yml
 .github/workflows/ios.yml
 .github/workflows/linux.yml
+.github/workflows/macos-catalina.yml
 .github/workflows/macos.yml
 .github/workflows/pull-requests.yml
 .github/workflows/release.yml
@@ -278,7 +279,9 @@ tests/test_archive_storage_limits.py
 tests/test_auto_search_sources.py
 tests/test_billing.py
 tests/test_cards_memory_narration.py
+tests/test_catalina_workflow.py
 tests/test_chat_extras.py
+tests/test_check_mac_min_os.py
 tests/test_check_project.py
 tests/test_claude.py
 tests/test_claude_native.py
@@ -346,6 +349,7 @@ tools/MANIFEST.txt
 tools/backup_db.py
 tools/build_web_app.py
 tools/build_website.py
+tools/check_mac_min_os.py
 tools/check_project.py
 tools/gink_dataset/README.md
 tools/gink_dataset/evaluate.py
