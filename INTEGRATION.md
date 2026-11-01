@@ -1648,3 +1648,15 @@ New services/live_info.py (all free, no API keys):
   returned http://127.0.0.1:8000 on desktop (the in-app server: no Render env, separate accounts, no sync).
   Now ONLINE_SERVER everywhere; LOCAL_SERVER kept for Settings > Advanced > Login server; app.py starts
   the built-in server only when the chosen address is local. Saved choices (server.json) still win.
+
+## 0.1.88: accounts survive publishes (Render Starter + disk)
+- Free plan = no disk: users.db lived in the container and was erased on every restart/publish. Owner chose a
+  Render disk over Postgres (no code rewrite: every table already goes through _db() and GINK_DB_PATH).
+- render.yaml: plan starter, disk gink-data at /var/data (1 GB), GINK_DB_PATH=/var/data/gink.db.
+- _storage_status(): Render is detected by RENDER / RENDER_SERVICE_ID; the DB folder (or a parent) must be a
+  mount point (os.path.ismount), else "temporary". Shown in /health (mode only, no path) and the owner
+  dashboard (storage_ok + storage_detail); checked at startup -> _note_problem("Storage") -> owner alert.
+- SQLite: journal_mode=WAL set once at startup; connect timeout=10 s instead of failing on a busy write.
+- GET /admin/backup (_require_owner) = sqlite3 backup API into a temp file, streamed, deleted afterwards;
+  tools/backup_db.py downloads it. gink-backup-*.db is git-ignored and outside MANIFEST.txt.
+- A disk means one instance and a few seconds offline per publish (Render limitation).

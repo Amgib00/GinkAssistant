@@ -300,7 +300,8 @@
     tick();
     // ---- warnings (one compact line) and the services in the header
     var w = $("warnings"); w.innerHTML = "";
-    if (s.storage !== "disk") w.appendChild(el("div", "warn", "Temporary storage: data is erased on every update \u2014 upgrade Render to Starter + disk"));
+    if (s.storage === "temporary") w.appendChild(el("div", "warn", "Temporary storage: accounts are erased on every update \u2014 " + (s.storage_detail || "add a Render disk")));
+    else if (s.storage === "disk" && s.storage_ok === false) w.appendChild(el("div", "warn", s.storage_detail || "The disk can\u2019t be written to"));
     if (!s.email) w.appendChild(el("div", "warn", "Email isn\u2019t set up: add BREVO_API_KEY and EMAIL_FROM in Render"));
     var sv = $("services"); sv.innerHTML = "";
     [["groq", "Groq AI"], ["anthropic", "Claude"], ["gemini", "Images + voices"], ["email", "Email"], ["sms", "Phone codes"]].forEach(function (p) {

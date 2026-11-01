@@ -48,6 +48,39 @@ Notes, honestly:
 - Free Render services sleep when idle; the first request can take
   ~30-60 s to wake up.
 
+## Keeping accounts (Starter plan + disk)
+
+On the free plan Render has no disk, so every restart or publish erased all accounts.
+`render.yaml` now asks for the **Starter** plan with a 1 GB disk at `/var/data`, and sets
+`GINK_DB_PATH=/var/data/gink.db`.
+
+1. **Created with the Blueprint?** Render -> Blueprints -> your blueprint -> **Manual sync**.
+   Render shows the plan change and the new disk; approve it.
+   **Created by hand?** gink-server -> Settings -> **Instance type**: Starter. Then **Disks** ->
+   Add disk: name `gink-data`, mount path `/var/data`, size 1 GB. Then **Environment** ->
+   add `GINK_DB_PATH` = `/var/data/gink.db`.
+2. Wait for the deploy, then open `https://gink-server.onrender.com/health`. It must show
+   `"storage": "disk"`. If it shows `"temporary"`, the disk or `GINK_DB_PATH` is missing (the
+   owner dashboard and the server log say which).
+3. Test it: sign up, publish again, and sign in with the same account.
+
+Good to know: the old free-plan accounts are already gone, so everyone signs up once more. A server
+with a disk restarts for a few seconds on each publish, and runs as one instance.
+
+### Backups
+
+Render snapshots the disk every day (gink-server -> Disks). For your own copy:
+
+```bash
+python tools/backup_db.py
+```
+
+It asks for the server and your `GINK_ADMIN_KEY` and saves `gink-backup-<date>.db`. Keep it private
+-- it holds everyone's accounts -- and never add it to the repo.
+
+To restore: gink-server -> Disks -> restore a snapshot. (Restoring your own file is a manual job:
+open the **Shell** tab, stop using the server, and replace `/var/data/gink.db` with the backup.)
+
 ## Test it locally with Docker (optional)
 
 ```bash

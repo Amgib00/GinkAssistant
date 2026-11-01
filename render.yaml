@@ -2,23 +2,24 @@
 # voices, and Gink on the web at /app).
 # Render -> New -> Blueprint -> pick this repository, then fill in the values it asks for.
 #
-# FREE PLAN (for trying it out): the server sleeps after ~15 minutes without visitors
-# (the next visit takes about a minute to wake it), and ITS DATA IS ERASED on every
-# restart or redeploy -- accounts, chats and payments. Fine for testing; not for users.
-# FOR REAL USERS: set plan to "starter" and uncomment the `disk:` block and GINK_DB_PATH
-# below, so the database lives on a disk that survives restarts.
+# STARTER PLAN + DISK (for real users): accounts, chats sync and payments live in one SQLite
+# file on a 1 GB disk at /var/data, which survives restarts and every new publish. The server
+# never sleeps. Render takes a snapshot of the disk every day; tools/backup_db.py downloads
+# your own copy too. A server with a disk restarts briefly on each publish (a few seconds offline).
+# Check it worked: https://gink-server.onrender.com/health shows "storage": "disk".
+# (The free plan has no disk: everything was erased on every restart or publish.)
 services:
   - type: web
     name: gink-server
     runtime: docker
-    plan: free
+    plan: starter
     dockerfilePath: ./deploy/Dockerfile
     dockerContext: .
     healthCheckPath: /health
-    # disk:                       # needs a paid plan (e.g. starter)
-    #   name: gink-data
-    #   mountPath: /var/data
-    #   sizeGB: 1
+    disk:
+      name: gink-data
+      mountPath: /var/data
+      sizeGB: 1                   # can be made bigger later in Render, never smaller
     envVars:
       # --- secrets: Render asks you for these (never put them in this file) ---
       - key: GROQ_API_KEY          # the AI (console.groq.com) -- only ever stored here, never in the app
@@ -60,9 +61,9 @@ services:
         generateValue: true
       - key: GINK_ALERT_EMAIL      # your email: alerts when something breaks (needs email set up; at most 1 per 15 min)
         sync: false
-      # --- for real users: keep the database on the disk above ---
-      # - key: GINK_DB_PATH
-      #   value: /var/data/gink.db
+      # --- the database lives on the disk above (must be inside /var/data) ---
+      - key: GINK_DB_PATH
+        value: /var/data/gink.db
       # --- plain settings ---
       - key: GINK_FREE_DAILY
         value: "30"

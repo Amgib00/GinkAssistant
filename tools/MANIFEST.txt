@@ -130,6 +130,9 @@ openspec/changes/add-connected-apps/tasks.md
 openspec/changes/add-parental-controls/proposal.md
 openspec/changes/add-parental-controls/specs/parental-controls/spec.md
 openspec/changes/add-parental-controls/tasks.md
+openspec/changes/add-persistent-storage/proposal.md
+openspec/changes/add-persistent-storage/specs/server-storage/spec.md
+openspec/changes/add-persistent-storage/tasks.md
 openspec/changes/add-phone-signin/proposal.md
 openspec/changes/add-phone-signin/specs/phone-signin/spec.md
 openspec/changes/add-phone-signin/tasks.md
@@ -302,6 +305,7 @@ tests/test_pull_requests.py
 tests/test_release_tooling.py
 tests/test_screens_and_server.py
 tests/test_security_lockdown_style.py
+tests/test_server_storage.py
 tests/test_sessions_security.py
 tests/test_settings_and_account.py
 tests/test_settings_sync.py
@@ -323,6 +327,7 @@ tests/test_web_search.py
 tests/test_websites.py
 tests/test_whats_new.py
 tools/MANIFEST.txt
+tools/backup_db.py
 tools/build_web_app.py
 tools/build_website.py
 tools/check_project.py

@@ -54,7 +54,7 @@ def test_numbers_are_exact(owner):
     assert len(d["daily"]) == 14 and d["daily"][-1]["messages"] == 8
     assert d["revenue_30d"] == [{"currency": "XOF", "amount": 3000.0, "payments": 1}]                       # pending not counted
     assert d["feedback_7d"]["up"] == 2 and d["feedback_7d"]["down"] == 3 and d["feedback_7d"]["top_reasons"][0] == {"reason": "wrong", "count": 2}
-    assert d["services"]["groq"] is True and d["services"]["anthropic"] is False and d["services"]["storage"] == "temporary"
+    assert d["services"]["groq"] is True and d["services"]["anthropic"] is False and d["services"]["storage"] == "local"      # not on Render
 
 
 def test_owner_only_with_lockout(owner, monkeypatch):

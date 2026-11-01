@@ -81,7 +81,9 @@ from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def _lifespan(_app):
-    """Startup work (FastAPI's current way; @app.on_event is being removed): resume unfinished batches."""
+    """Startup work (FastAPI's current way; @app.on_event is being removed): check where accounts are
+    stored, then resume unfinished batches."""
+    _check_storage_at_startup()
     await _resume_batches()
     yield
 
@@ -288,8 +290,10 @@ def _validate_email(email: str):
 @app.get("/health")
 async def health():
     """Lets the app's "Test connection" button (services/server_config.py)
-    check this server is reachable without sending anyone an email."""
-    return {"status": "ok", "service": "gink-backend"}
+    check this server is reachable without sending anyone an email.
+    "storage" is "disk" (accounts survive restarts), "temporary" (erased on every restart or
+    publish) or "local" (a server on someone's own computer). The path itself is never shown."""
+    return {"status": "ok", "service": "gink-backend", "storage": _storage_status()["mode"]}
 
 
 _code_sends = {}              # (kind, email) -> recent send times: no flooding anyone's inbox
@@ -432,10 +436,68 @@ def _db_path() -> Path:
     return Path("users.db")
 
 
+# ---- Where accounts live. On Render, only a mounted disk survives a restart or a new publish:
+# everything else in the container is erased. render.yaml mounts the disk at /var/data and sets
+# GINK_DB_PATH=/var/data/gink.db. _storage_status() checks that the disk is really there, so a
+# missing disk shows up in /health, the owner dashboard and the startup log -- not as lost accounts.
+def _on_render() -> bool:
+    return bool(os.environ.get("RENDER", "").strip() or os.environ.get("RENDER_SERVICE_ID", "").strip())
+
+
+def _storage_status() -> dict:
+    """{"mode": "disk" | "temporary" | "local", "ok": bool, "detail": str}. Never includes secrets."""
+    path = _db_path()
+    if not _on_render():
+        return {"mode": "local", "ok": True, "detail": "Accounts are stored on this computer."}
+    if not _env("GINK_DB_PATH"):
+        return {"mode": "temporary", "ok": False,
+                "detail": "GINK_DB_PATH isn't set, so accounts are erased on every restart or publish. "
+                          "Add a disk in Render and set GINK_DB_PATH=/var/data/gink.db."}
+    folder = path.parent
+    mounted = False
+    probe = folder
+    while True:                                    # the folder itself, or any folder above it, is the disk
+        if os.path.ismount(str(probe)) and str(probe) != "/":
+            mounted = True
+            break
+        if probe.parent == probe:
+            break
+        probe = probe.parent
+    if not mounted:
+        return {"mode": "temporary", "ok": False,
+                "detail": f"No disk is mounted at {folder}, so accounts are erased on every restart or publish. "
+                          "In Render: gink-server -> Disks -> add one at /var/data (paid plan needed)."}
+    if not os.access(str(folder), os.W_OK):
+        return {"mode": "disk", "ok": False, "detail": f"The disk at {folder} can't be written to."}
+    return {"mode": "disk", "ok": True, "detail": "Accounts are stored on the disk and survive restarts."}
+
+
+def _check_storage_at_startup() -> None:
+    """Log where accounts live; on Render, a missing disk is also a problem on the owner dashboard
+    (and an alert email when GINK_ALERT_EMAIL is set). Also turns on SQLite's write-ahead log, which
+    keeps the database safe if the server stops in the middle of a write."""
+    status = _storage_status()
+    print(f"[Gink] Storage: {status['mode']} -- {status['detail']}", flush=True)
+    if not status["ok"]:
+        try:
+            _note_problem("Storage", 0, "", status["detail"])
+        except Exception:
+            pass
+    try:
+        with _db_lock:
+            con = _db()
+            try:
+                con.execute("PRAGMA journal_mode=WAL")
+            finally:
+                con.close()
+    except Exception as e:
+        print(f"[Gink] Storage: couldn't open the database ({type(e).__name__})", flush=True)
+
+
 def _db():
     path = _db_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(str(path))
+    con = sqlite3.connect(str(path), timeout=10)  # waits for another write instead of failing at once
     con.execute(
         "CREATE TABLE IF NOT EXISTS users ("
         " email TEXT PRIMARY KEY, name TEXT DEFAULT '', pw_hash TEXT DEFAULT '',"
@@ -3194,6 +3256,42 @@ def admin_grant_pro(request: Request, data: dict = Body(...)):
 
 
 
+# ---- Owner only: download a copy of the whole database (accounts, chats sync, payments...).
+#   GET /admin/backup  header x-admin-key: <GINK_ADMIN_KEY>  -> gink-backup-<date>.db
+# Uses SQLite's own backup, so the copy is consistent even while people are using Gink.
+# tools/backup_db.py calls it. Keep the file somewhere private: it holds everyone's accounts.
+@app.get("/admin/backup")
+def admin_backup(request: Request):
+    _require_owner(request)
+    import tempfile
+    from fastapi.responses import FileResponse
+    from starlette.background import BackgroundTask
+    fd, tmp = tempfile.mkstemp(prefix="gink-backup-", suffix=".db")
+    os.close(fd)
+    try:
+        with _db_lock:
+            src = _db()
+            try:
+                dst = sqlite3.connect(tmp)
+                try:
+                    src.backup(dst)
+                finally:
+                    dst.close()
+            finally:
+                src.close()
+    except Exception:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+        raise HTTPException(status_code=500, detail="Couldn't make the backup. Check the server log.")
+    name = time.strftime("gink-backup-%Y-%m-%d.db", time.gmtime())
+    print(f"[Gink] ADMIN: database backup downloaded ({os.path.getsize(tmp)} bytes)", flush=True)
+    return FileResponse(tmp, media_type="application/octet-stream", filename=name,
+                        background=BackgroundTask(lambda: os.path.exists(tmp) and os.remove(tmp)))
+
+
+
 # ---- Gink on the web: reading attached documents (PDF, Word, text, code...) with the
 # desktop app's own reader (services/attachments.py). Photos stay in the browser.
 @app.post("/attachments/read")
@@ -3315,6 +3413,7 @@ def admin_stats(request: Request):
               "alerts_email": bool(_env("GINK_ALERT_EMAIL")),
               "ai_fallbacks": _health["ai_fallbacks"], "live_ok": _health["live_ok"], "live_failed": _health["live_failed"],
               "problems": list(_health["problems"]), "version": (_release_cache.get("data") or {}).get("version") or ""}
+    _st = _storage_status()
     return {"generated": now, "users": users, "health": health, "now": _right_now(),
             "today": {**(total([today]) if today in per_day else {k: 0 for k in keys}),
                       "active_users": per_day.get(today, {}).get("active_users", 0)},
@@ -3327,7 +3426,7 @@ def admin_stats(request: Request):
                        "pro_search_daily": int(os.environ.get("GINK_PRO_SEARCH_DAILY", "100"))},
             "services": {"groq": bool(_env("GROQ_API_KEY")), "anthropic": bool(_env("ANTHROPIC_API_KEY")),
                          "gemini": bool(_env("GEMINI_API_KEY")), "email": bool(_email_status()), "email_service": _email_status(),
-                         "storage": "disk" if _env("GINK_DB_PATH").startswith("/var/data") else "temporary",
+                         "storage": _st["mode"], "storage_ok": _st["ok"], "storage_detail": _st["detail"],
                          "sms": bool(_sms_provider()), "sms_provider": _sms_provider(),
                          "sms_month": _sms_sent_this_month(), "sms_limit": _sms_limit()}}
 
