@@ -1730,3 +1730,16 @@ New services/live_info.py (all free, no API keys):
   fails on any x86_64 slice newer than --max or a file with no x86_64 slice. Verified on numpy's real macOS
   wheel (10.9). Runs after thinning, before packaging.
 - Not in release.yml yet: add it once a run passes (workflow_call is ready).
+
+## 0.1.94: housekeeping -- requirements.txt in step with pyproject, crisp tiny icons
+- requirements.txt kept (it's how `python -m ginkassistant` gets its packages; Briefcase reads only
+  pyproject), but it had drifted: Apple Silicon Macs lacked the numba 0.62.1/llvmlite 0.45.1 pins and the
+  cryptography>=49 floor; fastapi/anyio/shazamio minimums differed. pyproject raised to the stricter
+  ones (fastapi>=0.162.0, anyio>=4.15.1, shazamio>=0.9.0 -- all resolved for Catalina in 0.1.93).
+  tests/test_requirements_match.py compares both for macOS Intel/arm64, Windows, Linux x Python 3.11-3.13
+  (dev-only extras allowed: briefcase, pytest, toga-dummy). It flags 48 differences on the 0.1.87 files.
+- Icons <= 32 px: make_icons.small_art()/small_rounded() draw a bold six-spoke snowflake at 8x (round tips,
+  side branches from 24 px, hexagon hub) -- iOS 20/29, Linux 16/32, .ico 16/24/32, .icns 16pt@2x.
+  Pillow quirk: ICO sizes missing from append_images are thumbnailed from the LAST appended image (no
+  upscaling), so 48/64/128 collapsed to 32 px -- every ICO size is now given explicitly. All other icon
+  files are byte-identical after regenerating. Gink Genie's icons are unchanged.

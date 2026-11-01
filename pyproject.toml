@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # Must be a valid package name (letters, digits, "-", "_", "."; no spaces).
 # Briefcase 0.4.6+ reads this name, so "gink ai assistant" could break builds.
 name = "ginkassistant"
-version = "0.1.93"
+version = "0.1.94"
 description = "Your AI assistant for work, study and everyday life"
 readme = "README.md"
 requires-python = ">=3.11"            # 3.10 reached end of life (Oct 2026); 32-bit Android stops at 3.11
@@ -22,7 +22,7 @@ license = "MIT"          # Briefcase 0.3.15 reads this one (it can't read the [p
 # "Gink Ai Assistant" will become an error). Users see formal_name ("Gink") below.
 project_name = "ginkassistant"
 bundle = "com.amgib"
-version = "0.1.93"
+version = "0.1.94"
 url = "https://github.com/amgib00/ginkassistant"
 author = "Amgib00"
 author_email = "kargboi131ik667957@gmail.com"
@@ -77,7 +77,7 @@ requires = [
     "std-nslog",            # app logging on macOS (Mac-only builds -- never add to the universal list)
     # the built-in server (services/backend_server.py; started on desktop only)
     "pydantic==2.13.4",
-    "fastapi>=0.115.0",
+    "fastapi>=0.162.0",
     "uvicorn",
     "python-multipart",     # form posts (payments, Apple sign-in)
     "PyJWT",
@@ -92,8 +92,8 @@ requires = [
     "pygame",               # playing speech audio
     "vosk",                 # offline "Hey Gink" wake word
     "sounddevice",          # song recognition recording
-    "shazamio>=0.8.1",      # song recognition. Older ones wrongly pull in pytest and pin anyio < 4 (vulnerable)
-    "anyio>=4.14.2",        # security fixes (PYSEC-2026-4024/4025)
+    "shazamio>=0.9.0",      # song recognition. Older ones wrongly pull in pytest and pin anyio < 4 (vulnerable)
+    "anyio>=4.15.1",        # security fixes (PYSEC-2026-4024/4025)
     "numpy>=2.2.2,<2.3",     # shazamio 0.8+ needs 2.2+; 2.3 drops Python 3.10 (Catalina builds); works with numba 0.62.1
     "librosa",              # offline song fingerprinting (services/shazam_engine.py)
     "scipy",
@@ -119,7 +119,7 @@ console = false
 requires = [
     "toga-winforms",
     "pydantic==2.13.4",
-    "fastapi>=0.115.0",
+    "fastapi>=0.162.0",
     "uvicorn",
     "python-multipart",
     "PyJWT",
@@ -131,8 +131,8 @@ requires = [
     "pyttsx3",              # offline fallback voice (Windows SAPI)
     "vosk",
     "sounddevice",
-    "shazamio>=0.8.1",
-    "anyio>=4.14.2",
+    "shazamio>=0.9.0",
+    "anyio>=4.15.1",
     "numpy>=2.2.2,<2.3",     # shazamio 0.8+ needs 2.2+; 2.3 drops Python 3.10 (Catalina builds); works with numba 0.62.1
     "librosa",
     "scipy",
@@ -149,7 +149,7 @@ requires = [
 requires = [
     "toga-gtk",
     "pydantic==2.13.4",
-    "fastapi>=0.115.0",
+    "fastapi>=0.162.0",
     "uvicorn",
     "python-multipart",
     "PyJWT",
@@ -161,8 +161,8 @@ requires = [
     "pyttsx3",              # offline fallback voice (espeak)
     "vosk",
     "sounddevice",
-    "shazamio>=0.8.1",
-    "anyio>=4.14.2",
+    "shazamio>=0.9.0",
+    "anyio>=4.15.1",
     "numpy>=2.2.2,<2.3",     # shazamio 0.8+ needs 2.2+; 2.3 drops Python 3.10 (Catalina builds); works with numba 0.62.1
     "librosa",
     "scipy",

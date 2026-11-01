@@ -320,6 +320,7 @@ tests/test_play_music.py
 tests/test_prompts.py
 tests/test_pull_requests.py
 tests/test_release_tooling.py
+tests/test_requirements_match.py
 tests/test_screens_and_server.py
 tests/test_security_lockdown_style.py
 tests/test_server_storage.py
@@ -328,6 +329,7 @@ tests/test_settings_and_account.py
 tests/test_settings_sync.py
 tests/test_shared_links.py
 tests/test_signin_name_and_history.py
+tests/test_small_icons.py
 tests/test_song_server.py
 tests/test_sync_attach_memory_briefing.py
 tests/test_temporary_chat.py

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.94 (November 2026)
+
+- Sharper small icons: at 32 pixels and under (Finder lists, the Windows taskbar, iPhone
+  Settings) Gink's snowflake is now drawn bolder and simpler instead of blurring into a green smudge
+- Running Gink from source (`pip install -r requirements.txt`) now installs exactly what the built
+  apps use on every computer, including Apple Silicon Macs
+
 ## 0.1.93 (November 2026)
 
 - For older Intel Macs: Gink for macOS 10.15 Catalina can now be built on GitHub (Actions >

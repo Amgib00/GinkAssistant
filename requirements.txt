@@ -34,7 +34,8 @@ uvicorn
 python-multipart
 PyJWT
 cryptography<49; sys_platform == "darwin" and platform_machine == "x86_64"     # 49+ has no Intel-Mac builds
-cryptography; sys_platform != "darwin" or platform_machine != "x86_64"         # Sign in with Apple (ES256)
+cryptography>=49; sys_platform == "darwin" and platform_machine == "arm64"     # the same as pyproject's Mac list
+cryptography; sys_platform != "darwin"                                         # Sign in with Apple (ES256)
 
 # --- voice, wake word, music ---
 edge-tts
@@ -49,8 +50,8 @@ anyio>=4.15.1
 numpy>=2.2.2,<2.3           # shazamio needs 2.2+; kept below 2.3 until numba is checked with it
 librosa
 scipy
-numba==0.62.1; sys_platform == "darwin" and platform_machine == "x86_64"     # Intel Mac: newest with a ready-made build
-llvmlite==0.45.1; sys_platform == "darwin" and platform_machine == "x86_64"
+numba==0.62.1; sys_platform == "darwin"       # pyproject pins it for every Mac (newest with an Intel Mac build)
+llvmlite==0.45.1; sys_platform == "darwin"
 
 # --- other desktop features ---
 duckduckgo-search
