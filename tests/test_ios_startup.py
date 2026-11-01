@@ -37,6 +37,8 @@ SCRIPT = textwrap.dedent(f"""
     for mod in pkgutil.walk_packages(ginkassistant.__path__, "ginkassistant."):
         if mod.name.endswith("backend_server"):
             continue
+        if mod.name.endswith("android_fgs"):          # needs Chaquopy's real Java classes (tests/test_android_background.py)
+            continue
         try:
             importlib.import_module(mod.name)
         except Exception as e:

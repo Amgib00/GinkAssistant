@@ -25,7 +25,7 @@ PLAN_LABELS = {"pro_1m": "Pro \u00b7 1 month", "pro_3m": "Pro \u00b7 3 months", 
 STATUS_LABELS = {"success": "Paid", "pending": "Pending", "failed": "Not completed"}
 BOOL_KEYS = {"read_aloud", "notify_reminders", "briefing_enabled", "briefing_speak", "use_memory",
              "web_search", "video_suggestions", "single_keys", "wake_enabled", "wake_followup", "wake_front",
-             "briefing_projects", "use_location", "agent_confirm"}
+             "wake_background", "briefing_projects", "use_location", "agent_confirm"}
 CHOICES = {"effort": {"low", "medium", "high", "extra", "max"}, "theme": {"system", "light", "dark"}, "chat_font": {"sans", "serif", "mono"},
            "motion": {"system", "reduced"}, "voice_speed": {"slow", "normal", "fast"},
            "reply_language": set(languages.BY_CODE), "send_key": {"enter", "mod"},
@@ -110,7 +110,8 @@ class SettingsController:
         v = {k: p.get(k) for k in ("theme", "chat_font", "motion", "voice_speed", "read_aloud", "reply_language",
                                    "notify_reminders", "briefing_enabled", "briefing_time", "briefing_speak",
                                    "use_memory", "web_search", "video_suggestions", "speech_lang", "send_key",
-                                   "single_keys", "wake_enabled", "wake_followup", "wake_front", "briefing_projects")}
+                                   "single_keys", "wake_enabled", "wake_followup", "wake_front", "wake_background",
+                                   "briefing_projects")}
         v.update(voice=self.selected_voice["value"], model=self.brain.preferred_model,
                  city=prefs.city(self.app), server_url=server_config.saved_url(self.app) or "",
                  launch_at_login=bool(launch_at_login.is_supported() and launch_at_login.is_enabled()))
@@ -138,6 +139,7 @@ class SettingsController:
                 "plan": getattr(self, "_plan", "free"), "speech_langs": [list(x) for x in SPEECH_LANGS],
                 "wake_status": self.wake_status_fn() if self.wake_status_fn else "Off",
                 "wake_supported": self.wake_supported,
+                "wake_android": self.wake_android,
                 "photo": (self.app.profile.get().get("photo", "") if getattr(self.app, "profile", None) else ""),
                 "work_options": WORK_OPTIONS,
                 "language_label": languages.label(prefs.load(self.app).get("reply_language", "auto")),
@@ -327,6 +329,7 @@ class SettingsController:
     on_wake_change = None              # main screen: start / stop listening for "Hey Gink"
     wake_status_fn = None
     wake_supported = True
+    wake_android = False               # Android: on-device wording + "Keep listening in the background"
 
     async def _a_set_photo(self, data_url):
         import base64, re as _re

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.90 (November 2026)
+
+- Android: "Hey Gink" can keep listening when Gink isn't on screen. Switch on Settings > Voice >
+  "Keep listening in the background" (off by default). Android shows a notification and its
+  microphone indicator while it listens, and it uses more battery. Gink answers out loud
+- Android: the Hey Gink description now says honestly that it uses the phone's speech recognizer
+  (on the phone with the offline language pack, otherwise the phone's online speech service)
+
 ## 0.1.89 (November 2026)
 
 - "Hey Gink" status, on computers and Android: a small chip beside the + button always shows

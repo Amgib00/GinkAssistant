@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # Must be a valid package name (letters, digits, "-", "_", "."; no spaces).
 # Briefcase 0.4.6+ reads this name, so "gink ai assistant" could break builds.
 name = "ginkassistant"
-version = "0.1.89"
+version = "0.1.90"
 description = "Your AI assistant for work, study and everyday life"
 readme = "README.md"
 requires-python = ">=3.11"            # 3.10 reached end of life (Oct 2026); 32-bit Android stops at 3.11
@@ -22,7 +22,7 @@ license = "MIT"          # Briefcase 0.3.15 reads this one (it can't read the [p
 # "Gink Ai Assistant" will become an error). Users see formal_name ("Gink") below.
 project_name = "ginkassistant"
 bundle = "com.amgib"
-version = "0.1.89"
+version = "0.1.90"
 url = "https://github.com/amgib00/ginkassistant"
 author = "Amgib00"
 author_email = "kargboi131ik667957@gmail.com"
@@ -251,6 +251,15 @@ android_manifest_extra_content = """
         <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
     </queries>
 """
+# "Hey Gink" in the background (Settings > Voice, off by default): a foreground service of type
+# "microphone" -- services/android_fgs.py, a Chaquopy static proxy (see build_gradle_extra_content).
+android_manifest_application_extra_content = """
+        <service
+            android:name="ginkassistant.services.android_fgs.HeyGinkService"
+            android:exported="false"
+            android:foregroundServiceType="microphone"
+            android:stopWithTask="true" />
+"""
 splash_background_color = "#151D23"     # the icon's dark colour; also the adaptive-icon background
 # Only what Gink's Android code uses. pydantic v1 is pure Python (v2 needs
 # pydantic-core, which has no real Android build); groq accepts pydantic>=1.9.
@@ -271,6 +280,7 @@ build_gradle_dependencies = [
 ]
 build_gradle_extra_content = """
 chaquopy.defaultConfig.staticProxy("toga_android.widgets.internal.webview")
+chaquopy.defaultConfig.staticProxy("ginkassistant.services.android_fgs")
 """
 
 [tool.briefcase.app.ginkassistant.android.permission]     # Briefcase reads "permission" (singular); "permissions" was ignored
@@ -278,6 +288,9 @@ chaquopy.defaultConfig.staticProxy("toga_android.widgets.internal.webview")
 "android.permission.RECORD_AUDIO" = "Required for voice commands."
 "android.permission.MODIFY_AUDIO_SETTINGS" = "Required for playback control."
 "com.android.alarm.permission.SET_ALARM" = "Lets Gink set wake-up alarms and timers in your Clock app."
+"android.permission.FOREGROUND_SERVICE" = "Lets Gink keep listening for \u201cHey Gink\u201d in the background, when you switch it on."
+"android.permission.FOREGROUND_SERVICE_MICROPHONE" = "Android 14+: the microphone kind of background listening."
+"android.permission.POST_NOTIFICATIONS" = "Shows the notification while Gink listens in the background."
 
 
 # --- iOS --------------------------------------------------------------------

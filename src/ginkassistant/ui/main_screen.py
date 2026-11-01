@@ -1424,7 +1424,8 @@ def build_main_screen(app: toga.App, email: str):
     from ..services import wake_word
     from ..services.platform_utils import is_android as _is_android, is_mobile as _is_mobile
     from ..services import wake_status as _wake_status
-    wake = {"listener": None, "status": "Off", "busy": False, "downloading": False, "progress": None}
+    wake = {"listener": None, "status": "Off", "busy": False, "downloading": False, "progress": None,
+            "background": None}           # Android: {"on": bool, "error": str} while background listening is wanted
     _loop = asyncio.get_event_loop()
 
     def wake_state() -> dict:
@@ -1432,7 +1433,8 @@ def build_main_screen(app: toga.App, email: str):
         return _wake_status.describe(
             enabled=bool(prefs.load(app).get("wake_enabled")), supported=not _is_mobile() or _is_android(),
             listener=wake["listener"], downloading=wake["downloading"], progress=wake["progress"],
-            busy=wake["busy"], status=wake["status"], device="phone" if _is_android() else "computer")
+            busy=wake["busy"], status=wake["status"], device="phone" if _is_android() else "computer",
+            background=wake["background"])
 
     def wake_status() -> str:
         """The longer line in Settings > Voice."""
@@ -1479,9 +1481,31 @@ def build_main_screen(app: toga.App, email: str):
     def on_wake_detected():                     # runs on the listener's thread
         _loop.call_soon_threadsafe(lambda: asyncio.ensure_future(wake_turn()))
 
+    def sync_background():
+        """Android: the "Hey Gink" foreground service (services/android_fgs.py) runs only while Hey Gink
+        is on AND "Keep listening in the background" is on. Started here, while Gink is on screen
+        (Android 12+ won't start it from the background)."""
+        if not _is_android():
+            return
+        p = prefs.load(app)
+        want = bool(p.get("wake_enabled") and p.get("wake_background"))
+        try:
+            from ..services import android_fgs
+        except Exception as exc:                   # a build without the service: listen while open only
+            wake["background"] = {"on": False, "error": f"not in this build ({exc.__class__.__name__})"} if want else None
+            return
+        if want:
+            ok = android_fgs.start()
+            wake["background"] = {"on": ok, "error": "" if ok else android_fgs.last_error()}
+        else:
+            if android_fgs.is_running():
+                android_fgs.stop()
+            wake["background"] = None
+
     async def configure_wake():
         """Start / stop listening to match Settings (downloads the offline model once)."""
         lst = wake["listener"]
+        sync_background()
         if not prefs.load(app).get("wake_enabled") or (_is_mobile() and not _is_android()):
             if lst is not None:
                 lst.stop()
@@ -1612,6 +1636,7 @@ def build_main_screen(app: toga.App, email: str):
     settings.on_wake_change = configure_wake_and_chip
     settings.wake_status_fn = wake_status
     settings.wake_supported = not _is_mobile() or _is_android()
+    settings.wake_android = _is_android()
     app.wake = wake
 
     running = {"task": None}
@@ -1829,6 +1854,12 @@ def build_main_screen(app: toga.App, email: str):
         audio_engine.stop_listening()
         if getattr(app, "wake", None) and app.wake.get("listener") is not None:
             app.wake["listener"].stop()
+        if _is_android():                      # no background listening for a signed-out Gink
+            try:
+                from ..services import android_fgs
+                android_fgs.stop()
+            except Exception:
+                pass
         app._main_screen_token = None          # stops this screen's composer loop
         sync_service.stop()
         app.session_token = None

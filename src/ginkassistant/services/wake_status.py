@@ -34,9 +34,10 @@ def _running(listener) -> bool:
 
 def describe(*, enabled: bool, supported: bool, listener=None, downloading: bool = False,
              progress: Optional[float] = None, busy: bool = False, status: str = "",
-             device: str = "computer") -> dict:
+             device: str = "computer", background: Optional[dict] = None) -> dict:
     """-> {"state", "label", "detail"}: label is the short chip text, detail the full sentence
-    (tooltip, screen readers, Settings > Voice)."""
+    (tooltip, screen readers, Settings > Voice). background (Android): None when background listening
+    is off, else {"on": bool, "error": str} (services/android_fgs.py)."""
     if not supported or not enabled:
         return {"state": "off", "label": "", "detail": "Hey Gink is off" if supported
                 else "Hey Gink isn\u2019t available on this device yet"}
@@ -66,5 +67,11 @@ def describe(*, enabled: bool, supported: bool, listener=None, downloading: bool
     online = getattr(listener, "prefer_offline", True) is False
     where = ("This phone has no offline speech pack, so it uses the phone\u2019s online speech service."
              if online else f"Nothing leaves this {device} until you say it.")
-    return {"state": "ready", "label": "Hey Gink",
-            "detail": f"Listening for \u201cHey Gink\u201d \u2014 say it any time. {where}"}
+    if background and background.get("on"):
+        when = " \u2014 also when Gink isn\u2019t on screen."
+    elif background:
+        why = background.get("error") or "Android didn\u2019t allow it"
+        when = f" while Gink is on screen. Background listening couldn\u2019t start: {why}."
+    else:
+        when = " \u2014 say it any time."
+    return {"state": "ready", "label": "Hey Gink", "detail": f"Listening for \u201cHey Gink\u201d{when} {where}"}

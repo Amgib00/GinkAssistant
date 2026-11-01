@@ -1672,3 +1672,20 @@ New services/live_info.py (all free, no API keys):
 - main_screen: pushed from composer_loop every 4th tick (~0.6 s) only when changed, plus at once when a wake
   turn starts/ends (a turn can be shorter than the poll). download_model(on_progress) feeds "Getting ready N%".
 - Also: 0.1.88 forgot to copy CHANGELOG.md to src/ginkassistant/resources (test_whats_new); fixed here.
+
+## 0.1.90: Hey Gink in the background on Android (foreground service)
+- services/android_fgs.HeyGinkService = Chaquopy static proxy of android.app.Service (build_gradle_extra_content
+  staticProxy("ginkassistant.services.android_fgs"); Java name ginkassistant.services.android_fgs.HeyGinkService),
+  declared via android_manifest_application_extra_content (needs a recent Briefcase: CI installs the latest;
+  an old one ignores the key -> startForegroundService returns null -> reported, no crash).
+- foregroundServiceType="microphone" + FOREGROUND_SERVICE(_MICROPHONE) + POST_NOTIFICATIONS; stopWithTask="true".
+- The service only holds the notification (START_NOT_STICKY); listening is still AndroidWakeListener on the app's
+  loop. Started from main_screen.sync_background() inside configure_wake (Gink on screen: Android 12+ forbids
+  starting from background), stopped on setting off / Hey Gink off / sign-out.
+- onStartCommand/onDestroy catch everything: an exception there would crash the process.
+- Pref wake_background: default False, device-only (not in prefs.SYNCED). Android Settings swaps "Bring Gink to
+  the front" for it (info.wake_android) and no longer claims on-device-only listening.
+- android_fgs imports java/android at module level (the static proxy generator needs top-level imports), so
+  the Android/iOS import-everything startup tests skip it; tests/test_android_background.py fakes Chaquopy.
+- UNVERIFIED on a phone: SpeechRecognizer runs in the speech app's process; whether it keeps hearing with Gink
+  backgrounded (TECNO BF6, Android 12) decides if an in-process recognizer is needed next.
