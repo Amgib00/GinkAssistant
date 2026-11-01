@@ -5177,7 +5177,7 @@ _GENIE_TABLES = (
     "CREATE TABLE IF NOT EXISTS genie_chat (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id TEXT NOT NULL, role TEXT NOT NULL, "
     "text TEXT NOT NULL, extra TEXT NOT NULL DEFAULT '{}', created REAL NOT NULL)")
 GENIE_MEMORY = 6                        # recent exchanges Genie keeps in mind for a new request
-GENIE_CHECKPOINTS = 5                   # "Undo these changes": the project as it was before each recent request
+GENIE_CHECKPOINTS = 20                  # version history + "Undo these changes": the project before each recent request
 _GENIE_TABLES = _GENIE_TABLES + (
     "CREATE TABLE IF NOT EXISTS genie_snapshots (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id TEXT NOT NULL, "
     "label TEXT NOT NULL, files TEXT NOT NULL, created REAL NOT NULL)",)
@@ -5606,8 +5606,10 @@ def genie_undo(pid: str, request: Request, data: dict = Body(...)):
     row = _genie_db(lambda con: con.execute("SELECT label, files FROM genie_snapshots WHERE id=? AND project_id=?",
                                             (cid, pid)).fetchone())
     if not row:
-        raise HTTPException(status_code=404, detail="That change is too old to undo (Genie keeps the last 5).")
-    files, now = _json.loads(row[1]), time.time()
+        raise HTTPException(status_code=404, detail=f"That version is too old (Genie keeps the last {GENIE_CHECKPOINTS}).")
+    files = _json.loads(row[1])
+    _genie_checkpoint(pid, f"Before going back to: {row[0]}")    # going back can always be undone too
+    now = time.time()
 
     def restore(con):
         con.execute("DELETE FROM genie_files WHERE project_id=?", (pid,))
@@ -5618,6 +5620,33 @@ def genie_undo(pid: str, request: Request, data: dict = Body(...)):
                     (pid, f"Undid the changes from: \u201c{row[0]}\u201d. The project is back as it was before that request.", now))
     _genie_db(restore)
     return {"ok": True, "files": _genie_summary(pid)}
+
+
+@app.get("/genie/projects/{pid}/versions")
+def genie_versions(pid: str, request: Request):
+    """Version history: the project as it was before each recent request (newest first)."""
+    email = _email_from_auth(request)
+    _genie_project(email, pid)
+    rows = _genie_db(lambda con: con.execute("SELECT id, label, created, files FROM genie_snapshots WHERE project_id=? "
+                                             "ORDER BY id DESC", (pid,)).fetchall())
+    return {"keep": GENIE_CHECKPOINTS,
+            "versions": [{"id": i, "label": l, "created": c, "files": len(_json.loads(f))} for i, l, c, f in rows]}
+
+
+@app.get("/genie/projects/{pid}/versions/{vid}")
+def genie_version_compare(pid: str, vid: int, request: Request):
+    """What changed from that version to now: files added, removed and changed since then."""
+    email = _email_from_auth(request)
+    _genie_project(email, pid)
+    row = _genie_db(lambda con: con.execute("SELECT label, files FROM genie_snapshots WHERE id=? AND project_id=?",
+                                            (vid, pid)).fetchone())
+    if not row:
+        raise HTTPException(status_code=404, detail="That version isn't kept any more.")
+    then, now = _json.loads(row[1]), _genie_files(pid)
+    return {"label": row[0],
+            "added": sorted(p for p in now if p not in then),               # appeared since that version
+            "removed": sorted(p for p in then if p not in now),             # gone since that version
+            "changed": sorted(p for p in now if p in then and now[p] != then[p])}
 
 
 @app.get("/genie/projects/{pid}/chat")

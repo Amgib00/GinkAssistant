@@ -159,3 +159,27 @@ def test_preview_errors_reach_genie(tmp_path, monkeypatch):
     assert "gink_preview_error" not in c.get(url + "app.js").text                    # only HTML pages
     genie = open(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "genie.html"), encoding="utf-8").read()
     assert "e.source !== f.contentWindow" in genie and 'id="perr-fix"' in genie and "clearPerr();" in genie
+
+
+def test_version_history_compare_and_restore_is_undoable(tmp_path, monkeypatch):
+    monkeypatch.setenv("GINK_DB_PATH", str(tmp_path / "vh.db"))
+    from fastapi.testclient import TestClient
+    from ginkassistant.services import backend_server as b
+    c = TestClient(b.app)
+    h = {"Authorization": "Bearer " + b._token_response("ib@example.com", "I")["token"]}
+    pid = c.post("/genie/projects", headers=h, json={"name": "P"}).json()["project"]["id"]
+    write = lambda text: c.put(f"/genie/projects/{pid}/file", headers=h, json={"path": "index.html", "content": text})
+    write("v1"); v1 = b._genie_checkpoint(pid, "make it v2")
+    write("v2"); c.put(f"/genie/projects/{pid}/file", headers=h, json={"path": "new.css", "content": "x"})
+    vs = c.get(f"/genie/projects/{pid}/versions", headers=h).json()
+    assert vs["keep"] == b.GENIE_CHECKPOINTS == 20 and vs["versions"][0]["label"] == "make it v2"
+    d = c.get(f"/genie/projects/{pid}/versions/{v1}", headers=h).json()
+    assert d["changed"] == ["index.html"] and d["added"] == ["new.css"] and d["removed"] == []
+    assert c.post(f"/genie/projects/{pid}/undo", headers=h, json={"checkpoint": v1}).status_code == 200
+    assert c.get(f"/genie/projects/{pid}/file", headers=h, params={"path": "index.html"}).json()["content"] == "v1"
+    saved = c.get(f"/genie/projects/{pid}/versions", headers=h).json()["versions"][0]
+    assert saved["label"] == "Before going back to: make it v2"                     # going back is undoable
+    c.post(f"/genie/projects/{pid}/undo", headers=h, json={"checkpoint": saved["id"]})
+    assert c.get(f"/genie/projects/{pid}/file", headers=h, params={"path": "index.html"}).json()["content"] == "v2"
+    other = {"Authorization": "Bearer " + b._token_response("x@example.com", "X")["token"]}
+    assert c.get(f"/genie/projects/{pid}/versions", headers=other).status_code in (403, 404)     # only the owner

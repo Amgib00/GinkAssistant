@@ -251,6 +251,7 @@
   <div class="grow"></div>
   <button class="ghost hb dm" id="preview" hidden>Preview</button>
   <button class="ghost hb dm" id="download" hidden>Download ZIP</button>
+  <button class="ghost hb ic" id="history" hidden title="Version history" aria-label="Version history"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg></button>
   <button class="ghost hb ic" id="share" hidden title="Share" aria-label="Share"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></button>
   <button class="ghost hb ic" id="github" hidden title="GitHub" aria-label="GitHub"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.08 0 4.41-2.69 5.39-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg></button>
   <button class="ghost hb dm" id="rename" hidden>Rename</button>
@@ -345,6 +346,15 @@
     </div>
   </section>
 </main>
+
+<dialog id="histdlg" style="width:min(680px, 94vw)">
+  <h2>Version history</h2>
+  <p class="note" id="hist-note">The project as it was before each recent request. Going back can always be undone.</p>
+  <ul id="hist-list" style="list-style:none;margin:10px 0 0;padding:0;max-height:52vh;overflow:auto"></ul>
+  <div id="hist-diff" class="note" hidden style="margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px"></div>
+  <p class="result" id="hist-result" aria-live="polite"></p>
+  <div class="row"><div class="grow"></div><button class="ghost" id="hist-close">Close</button></div>
+</dialog>
 
 <dialog id="sharedlg">
   <h2>Share this project</h2>
@@ -471,14 +481,14 @@
   function showStart() {
     document.body.classList.add("m-start"); setTimeout(renderSide, 0);
     S.project = null; $("start").hidden = false; $("work").hidden = true;
-    ["preview", "download", "del", "github", "rename", "duplicate", "share"].forEach(function (id) { $(id).hidden = true; });
+    ["preview", "download", "del", "github", "rename", "duplicate", "share", "history"].forEach(function (id) { $(id).hidden = true; });
   }
   function openProject(id) {
     return api("/genie/projects/" + encodeURIComponent(id)).then(function (j) {
       S.project = j.project; S.files = j.files || []; S.path = ""; S.saved = ""; document.body.classList.remove("m-start");
       renderSide(); dview("chat");
       $("start").hidden = true; $("work").hidden = false;
-      ["preview", "download", "del", "github", "rename", "duplicate", "share"].forEach(function (x) { $(x).hidden = false; });
+      ["preview", "download", "del", "github", "rename", "duplicate", "share", "history"].forEach(function (x) { $(x).hidden = false; });
       $("msgs").innerHTML = ""; (S.log[id] || []).forEach(function (m) { draw(m); }); renderTree(); clearEditor();
       api("/genie/projects/" + encodeURIComponent(id) + "/chat").then(function (c) {      // the saved conversation
         if (!S.project || S.project.id !== id || !c.messages.length) return;
@@ -737,7 +747,8 @@
     loadProjects(pid, true);
   }
   function undo(checkpoint, button) {
-    if (S.busy || !confirm("Undo these changes? The project goes back to how it was before this request. Later changes are undone too.")) return;
+    if (S.busy || !confirm("Undo these changes? The project goes back to how it was before this request. Later changes are undone too " +
+                           "\u2014 you can get them back from Version history.")) return;
     if (dirty() && !confirm("You have unsaved changes in " + S.path + ". They will be lost. Continue?")) return;
     button.disabled = true;
     api("/genie/projects/" + encodeURIComponent(S.project.id) + "/undo", { body: { checkpoint: checkpoint } }).then(function (j) {
@@ -1135,6 +1146,50 @@
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "f" && S.project && !$("work").hidden) { e.preventDefault(); searchProject(); }
   });
   // ---- share the project's website (and take the link back)
+  // ---- version history: the project before each recent request; compare with now, or go back (always undoable)
+  function ago(t) { var s = Math.max(0, Date.now() / 1000 - t); return s < 60 ? "just now" : s < 3600 ? Math.floor(s / 60) + " min ago" :
+                    s < 86400 ? Math.floor(s / 3600) + " h ago" : new Date(t * 1000).toLocaleDateString(); }
+  function openHistory() {
+    $("hist-list").innerHTML = ""; $("hist-diff").hidden = true; $("hist-result").textContent = "Loading\u2026"; $("histdlg").showModal();
+    var pid = S.project.id;
+    api("/genie/projects/" + encodeURIComponent(pid) + "/versions").then(function (j) {
+      $("hist-result").textContent = j.versions.length ? "" : "No versions yet: Genie saves one before each request.";
+      $("hist-note").textContent = "The project as it was before each recent request (the last " + j.keep + "). Going back can always be undone.";
+      j.versions.forEach(function (v) {
+        var li = el("li"); li.style.cssText = "display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid var(--line)";
+        var txt = el("div"); txt.style.cssText = "flex:1;min-width:0";
+        var back = /^Before going back to: /.test(v.label);
+        var t = el("div", "", back ? "\u21a9 Saved before going back to: \u201c" + v.label.replace(/^Before going back to: /, "") + "\u201d"
+                                    : "Before: \u201c" + v.label + "\u201d");
+        t.style.cssText = "font-weight:600;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.35"; t.title = v.label;
+        var sub = el("div", "note", ago(v.created) + " \u00b7 " + v.files + (v.files === 1 ? " file" : " files"));
+        txt.appendChild(t); txt.appendChild(sub); li.appendChild(txt);
+        var cmp = el("button", "ghost", "Compare"), go = el("button", "", "Restore");
+        cmp.onclick = function () {
+          api("/genie/projects/" + encodeURIComponent(pid) + "/versions/" + v.id).then(function (d) {
+            var box = $("hist-diff"); box.hidden = false; box.innerHTML = "";
+            box.appendChild(el("strong", "", "Since \u201c" + d.label + "\u201d:"));
+            var any = false;
+            [["changed", "Changed"], ["added", "Added"], ["removed", "Removed"]].forEach(function (k) {
+              if (!d[k[0]].length) return; any = true;
+              box.appendChild(el("div", "", k[1] + ": " + d[k[0]].join(", ")));
+            });
+            if (!any) box.appendChild(el("div", "", "Nothing has changed since then."));
+          }).catch(function (e) { $("hist-result").textContent = e.message || String(e); });
+        };
+        go.onclick = function () {
+          if (S.busy || !confirm("Go back to the version before \u201c" + v.label + "\u201d? Today's version is saved first, so you can come back to it.")) return;
+          go.disabled = true;
+          api("/genie/projects/" + encodeURIComponent(pid) + "/undo", { body: { checkpoint: v.id } }).then(function () {
+            $("histdlg").close(); return openProject(pid);
+          }).catch(function (e) { go.disabled = false; $("hist-result").textContent = e.message || String(e); });
+        };
+        li.appendChild(cmp); li.appendChild(go); $("hist-list").appendChild(li);
+      });
+    }).catch(function (e) { $("hist-result").textContent = e.message || String(e); });
+  }
+  $("history").onclick = function () { if (S.project) openHistory(); };
+  $("hist-close").onclick = function () { $("histdlg").close(); };
   $("share").onclick = function () { $("share-link").value = S.project.preview_url; $("share-result").textContent = ""; $("sharedlg").showModal(); };
   $("share-close").onclick = function () { $("sharedlg").close(); };
   $("share-open").onclick = function () { openOutside($("share-link").value); };
@@ -1165,7 +1220,7 @@
     e.stopPropagation(); var m = $("more-menu");
     if (!m.hidden) { m.hidden = true; return; }
     m.innerHTML = "";
-    [["preview", "Preview"], ["share", "Share"], ["github", "GitHub"], ["download", "Download ZIP"], ["rename", "Rename project"],
+    [["preview", "Preview"], ["history", "Version history"], ["share", "Share"], ["github", "GitHub"], ["download", "Download ZIP"], ["rename", "Rename project"],
      ["duplicate", "Duplicate"], ["new", "New project"], ["del", "Delete project"]].forEach(function (a) {
       var src = $(a[0]); if (!src || src.hidden) return;
       var b = el("button", a[0] === "del" ? "danger" : "", a[1]); b.setAttribute("role", "menuitem");

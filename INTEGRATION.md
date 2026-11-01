@@ -1622,3 +1622,9 @@ New services/live_info.py (all free, no API keys):
 - genie.html: accepts only e.source === #pframe.contentWindow; .perr bar (count, list, Ask Genie to fix,
   Dismiss); clearPerr on reload; the fix request lists every error and switches to the Genie chat.
   Never automatic (no fix loops). Browser-tested with a broken page.
+
+## 0.1.84: Genie version history
+- GENIE_CHECKPOINTS 5 -> 20. GET /genie/projects/{pid}/versions (newest first) and /versions/{vid}
+  (added/removed/changed vs now). /undo first saves 'Before going back to: ...' (restores are undoable).
+- genie.html: #history (clock icon; also in More), #histdlg (Before: "request", time, files; Compare,
+  Restore); Undo's confirm mentions Version history. Browser-tested.

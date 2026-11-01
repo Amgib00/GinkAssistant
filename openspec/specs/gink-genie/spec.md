@@ -214,3 +214,10 @@ Pages in the preview SHALL report their errors (script errors, unhandled promise
 #### Scenario: A script calls a missing function
 - **WHEN** the preview's page calls a function that doesn't exist
 - **THEN** the bar shows the error with its line, and "Ask Genie to fix" sends it to Genie
+
+### Requirement: Version history
+Genie SHALL keep the project as it was before each of the last 20 requests, list them in Version history, compare any of them with the current project (files added, removed and changed), and restore one; restoring SHALL first save the current project as a version, so going back can always be undone. Only the project's owner can see its versions.
+
+#### Scenario: Going back and changing your mind
+- **WHEN** the person restores the version before their last request, then restores the version saved before going back
+- **THEN** the project is exactly as it was before the first restore

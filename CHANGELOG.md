@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.84 (November 2026)
+
+- Gink Genie: Version history keeps the last 20 versions of your project, compares any of them with
+  now and goes back to one; going back (and Undo) can always be undone
+
 ## 0.1.83 (November 2026)
 
 - Gink Genie sees when your website breaks: errors in the Preview appear in a bar, and "Ask Genie to fix"
