@@ -1680,6 +1680,10 @@ class WebChatFeed:
         """'listening' | 'thinking' | 'speaking' | 'off' (ui/wake_ui.py)."""
         await self._js(f"wakeGlow({json.dumps(state)})")
 
+    async def wake_chip(self, state: str, label: str = "", detail: str = ""):
+        """The "Hey Gink" status chip in the composer (ui/wake_ui.py, services/wake_status.py)."""
+        await self._js(f"wakeChip({json.dumps(state)}, {json.dumps(label or '')}, {json.dumps(detail or '')})")
+
     async def wake_caption(self, text: str):
         await self._js(f"wakeCaption({json.dumps(text or '')})")
 

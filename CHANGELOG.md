@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.89 (November 2026)
+
+- "Hey Gink" status, on computers and Android: a small chip beside the + button always shows
+  whether Gink is listening for its name -- green when it's waiting, grey while Gink uses the mic,
+  and red with the reason when it can't listen (click it for Voice settings)
+- Fixed: on Android, Settings said "Off" when "Hey Gink" had stopped because the microphone
+  permission was off. It now says why
+
 ## 0.1.88 (November 2026)
 
 - Accounts are kept: the online server now stores accounts, synced chats and payments on a disk

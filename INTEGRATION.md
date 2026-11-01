@@ -1660,3 +1660,15 @@ New services/live_info.py (all free, no API keys):
 - GET /admin/backup (_require_owner) = sqlite3 backup API into a temp file, streamed, deleted afterwards;
   tools/backup_db.py downloads it. gink-backup-*.db is git-ignored and outside MANIFEST.txt.
 - A disk means one instance and a few seconds offline per publish (Render limitation).
+
+## 0.1.89: "Hey Gink" status chip (computers + Android)
+- services/wake_status.describe(): one pure function for the composer chip AND Settings > Voice (states off,
+  starting, ready, paused, active, retrying, problem). Listener-agnostic: running/paused may be attributes
+  (AndroidWakeListener) or properties (WakeWordListener); prefer_offline=False -> honest "online speech" text.
+- Bug it exposed: AndroidWakeListener sets running=False + error (mic permission) -> old wake_status() fell
+  through to wake["status"] == "Off". Now "problem" with the reason.
+- ui/wake_ui.wakeChip() creates the chip lazily inside #composer .crow after the + menu (survives
+  layoutComposer moving the textarea). Click -> ginkEmit('wake_chip') -> open_settings(panel="voice").
+- main_screen: pushed from composer_loop every 4th tick (~0.6 s) only when changed, plus at once when a wake
+  turn starts/ends (a turn can be shorter than the poll). download_model(on_progress) feeds "Getting ready N%".
+- Also: 0.1.88 forgot to copy CHANGELOG.md to src/ginkassistant/resources (test_whats_new); fixed here.

@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.89 (November 2026)
+
+- "Hey Gink" status, on computers and Android: a small chip beside the + button always shows
+  whether Gink is listening for its name -- green when it's waiting, grey while Gink uses the mic,
+  and red with the reason when it can't listen (click it for Voice settings)
+- Fixed: on Android, Settings said "Off" when "Hey Gink" had stopped because the microphone
+  permission was off. It now says why
+
+## 0.1.88 (November 2026)
+
+- Accounts are kept: the online server now stores accounts, synced chats and payments on a disk
+  that survives restarts and new versions (Render Starter plan). Before, every update erased them
+- /health and the owner dashboard show where accounts are stored, and warn (and email the owner)
+  if the disk is missing
+- For the owner: tools/backup_db.py downloads a copy of the whole database
+
 ## 0.1.87 (November 2026)
 
 - Fixed: on computers, Google sign-in said it "isn't set up" and sign-up codes never arrived. The

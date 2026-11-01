@@ -112,6 +112,8 @@ def test_full_wake_turn(tmp_path, monkeypatch):
     glow = [s.split("(")[1].split(")")[0] for s in js if s.startswith("wakeGlow(")]
     assert glow[0] == '"listening"' and '"thinking"' in glow and '"speaking"' in glow and glow[-1] == '"off"'
     assert any(s.startswith("wakeCaption(") and "12 x 7" in s for s in js)
+    chips = [s.split("(")[1].split(",")[0] for s in js if s.startswith("wakeChip(")]
+    assert '"active"' in chips and '"ready"' in chips                     # the composer chip followed it
     assert any("84" in t for t in said) and any("12,000" in t or "12000" in t for t in said)   # answered both, out loud
     assert any(s.startswith("addUserMessage(") and "12 x 7" in s for s in js)                    # and shown in the chat
     assert state["listener_running"] and state["listener_paused_after"] is False                 # listening for "Hey Gink" again

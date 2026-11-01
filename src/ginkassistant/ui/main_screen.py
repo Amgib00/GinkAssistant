@@ -1128,6 +1128,8 @@ def build_main_screen(app: toga.App, email: str):
             branch_to_new_chat(int(value))
         elif kind == "read_aloud" and value:
             await voice_bridge.speak(value, voice_key=selected_voice["value"])
+        elif kind == "wake_chip":                      # the "Hey Gink" chip: its settings
+            open_settings(panel="voice")
         elif kind == "new_chat":
             on_select_session(None)
         elif kind == "temporary":
@@ -1421,23 +1423,40 @@ def build_main_screen(app: toga.App, email: str):
     # -- "Hey Gink" wake word (services/wake_word.py + ui/wake_ui.py) ---------
     from ..services import wake_word
     from ..services.platform_utils import is_android as _is_android, is_mobile as _is_mobile
-    wake = {"listener": None, "status": "Off", "busy": False, "downloading": False}
+    from ..services import wake_status as _wake_status
+    wake = {"listener": None, "status": "Off", "busy": False, "downloading": False, "progress": None}
     _loop = asyncio.get_event_loop()
 
+    def wake_state() -> dict:
+        """What the composer's "Hey Gink" chip shows (services/wake_status.py)."""
+        return _wake_status.describe(
+            enabled=bool(prefs.load(app).get("wake_enabled")), supported=not _is_mobile() or _is_android(),
+            listener=wake["listener"], downloading=wake["downloading"], progress=wake["progress"],
+            busy=wake["busy"], status=wake["status"], device="phone" if _is_android() else "computer")
+
     def wake_status() -> str:
+        """The longer line in Settings > Voice."""
         if _is_mobile() and not _is_android():
             return "Not available on iPhone yet"
         if not prefs.load(app).get("wake_enabled"):
             return "Off"
         lst = wake["listener"]
-        if lst is not None and lst.running and not wake["downloading"]:
-            if lst.error:
-                return f"Microphone problem: {lst.error}"
+        st = wake_state()
+        if st["state"] in ("ready", "paused") and lst is not None:
             heard = getattr(lst.engine, "last_heard", "")
             extra = f" \u00b7 woke {lst.detections}\u00d7" if lst.detections else ""
             extra += f" \u00b7 last heard \u201c{heard}\u201d" if heard else ""
             return f"Listening for \u201cHey Gink\u201d \u00b7 {lst.engine.name}{extra}"
-        return wake["status"]
+        return st["detail"].replace(" \u2014 click to open Voice settings", "")
+
+    _chip_shown = {"value": None}
+
+    async def push_wake_chip(force: bool = False):
+        st = wake_state()
+        key = (st["state"], st["label"], st["detail"])
+        if force or key != _chip_shown["value"]:
+            _chip_shown["value"] = key
+            await web_chat.wake_chip(st["state"], st["label"], st["detail"])
 
     def pause_wake():
         if wake["listener"] is not None:
@@ -1480,16 +1499,19 @@ def build_main_screen(app: toga.App, email: str):
             return
         engine, reason = await _loop.run_in_executor(None, wake_word.best_engine, data_dir(app))
         if engine is None and "isn't downloaded" in reason and not wake["downloading"]:
-            wake.update(downloading=True, status=f"Downloading the offline voice model ({wake_word.MODEL_MB} MB, once)\u2026")
+            wake.update(downloading=True, progress=None,
+                        status=f"Downloading the offline voice model ({wake_word.MODEL_MB} MB, once)\u2026")
             await settings.push()
+            await push_wake_chip()
             try:
-                await wake_word.download_model(data_dir(app))
+                await wake_word.download_model(data_dir(app), on_progress=lambda f: wake.update(progress=f))
             except Exception as exc:
-                wake.update(downloading=False,
+                wake.update(downloading=False, progress=None,
                             status=f"Couldn't download the voice model ({exc.__class__.__name__}) \u2014 check your connection and switch it on again")
                 await settings.push()
+                await push_wake_chip()
                 return
-            wake["downloading"] = False
+            wake.update(downloading=False, progress=None, status="Off")
             engine, reason = await _loop.run_in_executor(None, wake_word.best_engine, data_dir(app))
         if engine is None:
             wake["status"] = "Can\u2019t listen: " + reason
@@ -1553,6 +1575,7 @@ def build_main_screen(app: toga.App, email: str):
             resume_wake()
             return
         wake["busy"] = True
+        await push_wake_chip()                        # at once: the chip says Gink heard its name
         p = prefs.load(app)
         try:
             if p.get("wake_front", True):
@@ -1580,8 +1603,13 @@ def build_main_screen(app: toga.App, email: str):
             await web_chat.wake_glow("off")
             wake["busy"] = False
             resume_wake()
+            await push_wake_chip()
 
-    settings.on_wake_change = configure_wake
+    async def configure_wake_and_chip():
+        await configure_wake()
+        await push_wake_chip()
+
+    settings.on_wake_change = configure_wake_and_chip
     settings.wake_status_fn = wake_status
     settings.wake_supported = not _is_mobile() or _is_android()
     app.wake = wake
@@ -1624,11 +1652,12 @@ def build_main_screen(app: toga.App, email: str):
         await settings.apply_appearance()
         await settings.push_page_prefs()            # keyboard prefs + voice list (ui/voice_ui.py)
         if prefs.load(app).get("wake_enabled"):
-            asyncio.create_task(configure_wake())
+            asyncio.create_task(configure_wake_and_chip())
         await push_models()
         refresh_home()
         push_user()
         refresh_sidebar()
+        ticks = 0
         while getattr(app, "_main_screen_token", None) is screen_token:
             for event in await web_chat.poll():
                 if event.get("type") == "stop":
@@ -1637,6 +1666,12 @@ def build_main_screen(app: toga.App, email: str):
                 task = asyncio.create_task(safe_handle(event))
                 if event.get("type") == "send":
                     running["task"] = task
+            ticks += 1
+            if ticks % 4 == 0:                  # ~0.6 s: the "Hey Gink" chip follows the listener
+                try:
+                    await push_wake_chip()
+                except Exception:
+                    pass
             await asyncio.sleep(0.15)
 
     asyncio.create_task(composer_loop())
