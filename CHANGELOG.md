@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.79 (October 2026)
+
+- When something breaks, you see it: the server records every crash and error, the owner dashboard
+  shows a red "new problems" badge (also in the tab's title) and can send computer notifications,
+  and with GINK_ALERT_EMAIL set the server emails you (at most once every 15 minutes)
+
 ## 0.1.78 (October 2026)
 
 - The owner dashboard fits on one screen: the key figures in one row and the charts side by side,

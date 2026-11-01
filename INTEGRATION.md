@@ -1577,3 +1577,12 @@ New services/live_info.py (all free, no API keys):
   donut (s3, glow), health minis + problems (s4) / usage bars (s4), 14-day combo (s5), feedback ring (s3).
   Tile height = clamp(165px, (100vh - 305px)/2, 340px): fits 1440x789, 1280x720, 1366x657, 1920x960
   exactly (checked). Payments, costs, email test, limits in <dialog id=tools>. Phones stack (390 px).
+
+## 0.1.79: the owner sees when something breaks
+- _security_headers records crashes ('Server error 500 · on /path — Type: message') and non-AI 5xx;
+  problems get ids (_health seq); _alert_owner(): GINK_ALERT_EMAIL, threading.Timer, bundles everything
+  since the last email, at most every ALERT_EVERY (15 min). Health has 'errors' + 'alerts_email'.
+- admin.html: red pulsing badge ('N new problems', localStorage gink_admin_seen; first visit/server
+  restart count only later ones), '(N)' in the tab title, rows of new problems in red, 'Alert me'
+  notifications (also hidden tab: checks every 60 s when on), badge click = seen + flash the health tile;
+  health minis: AI refusals, Errors, Model switches, Live data. Browser-tested with a crashing page.

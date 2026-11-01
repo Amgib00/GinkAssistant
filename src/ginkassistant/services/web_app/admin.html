@@ -100,7 +100,7 @@
   .kpis > .kpi:nth-child(4n+1) .big { color: #5EEAD4; text-shadow: 0 0 18px rgba(94, 234, 212, .45); }
   .kpis > .kpi:nth-child(4n+2) .big { color: #86EFAC; text-shadow: 0 0 18px rgba(134, 239, 172, .45); }
   .kpis > .kpi:nth-child(4n+3) .big { color: #7DD3FC; text-shadow: 0 0 18px rgba(125, 211, 252, .45); }
-  .minis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+  .minis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
   .mini { background: #0B1A27; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; min-width: 0; }
   .mini .label { color: var(--muted); font-size: 12px; } .mini .big { font-size: 22px; font-weight: 750; }
   .mini.bad { border-color: #7A4A1E; } .mini.bad .big { color: #FDBA74; text-shadow: 0 0 16px rgba(253, 186, 116, .45); }
@@ -129,6 +129,13 @@
     .kpi:nth-child(odd) { border-left: 0; } .kpi:nth-child(n+3) { border-top: 1px solid var(--line); }
     .tools-grid { grid-template-columns: minmax(0, 1fr); }
   }
+  .badge { background: #EF4444 !important; color: #FFFFFF !important; border-radius: 999px !important; padding: 4px 12px !important;
+           min-height: 32px !important; font-weight: 700; box-shadow: 0 0 16px rgba(239, 68, 68, .55); animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { box-shadow: 0 0 4px rgba(239, 68, 68, .2); } }
+  .tile.flash { animation: flash 1.2s ease-out 2; }
+  @keyframes flash { 30% { border-color: #EF4444; box-shadow: 0 0 26px rgba(239, 68, 68, .5); } }
+  #problems tr.new td { color: #FCA5A5; }
+  @media (prefers-reduced-motion: reduce) { .badge, .tile.flash { animation: none; } }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -146,6 +153,8 @@
     <div class="services" id="services"></div>
     <span class="spacer"></span>
     <span class="stale" id="stale" hidden></span>
+    <button class="badge" id="badge" hidden title="New problems: click to see them"></button>
+    <label class="auto" title="Computer notifications when something breaks (also when this tab is in the background)"><input type="checkbox" id="notify"> Alert me</label>
     <label class="auto"><input type="checkbox" id="auto"> Auto-refresh</label>
     <button class="quiet" id="refresh" title="Refresh now (R)">Refresh</button>
     <button class="quiet" id="tools-btn" aria-haspopup="dialog" title="Payments, costs, email and limits">Tools</button>
@@ -240,7 +249,7 @@
       if (r.status === 403 || r.status === 401) return r.json().then(function (j) { var e = new Error(j.detail || "Owner only."); e.auth = true; throw e; });
       if (!r.ok) throw new Error("The server had a problem (" + r.status + ").");
       return r.json();
-    }).then(function (j) { data = j; loadedAt = Date.now(); $("stale").hidden = true; show(true); render(); tick(); })
+    }).then(function (j) { data = j; loadedAt = Date.now(); $("stale").hidden = true; show(true); render(); tick(); checkNew(); })
       .catch(function (e) {
         if (e.auth || !data) {                                     // a wrong key (or the first load): back to the key screen
           key = ""; try { sessionStorage.removeItem("gink_admin_key"); } catch (x) {} show(false); $("login-err").textContent = e.message;
@@ -248,6 +257,27 @@
           $("stale").hidden = false; $("stale").textContent = "Couldn\u2019t refresh \u2014 retrying";
         }
       }).then(function () { busy = false; $("dash").classList.remove("loading"); });
+  }
+  // ---- alerts: a badge and the tab title for new problems; computer notifications when "Alert me" is on
+  var notifyOn = false; try { notifyOn = localStorage.getItem("gink_admin_notify") === "on"; } catch (e) {}
+  function seenId() { try { return Number(localStorage.getItem("gink_admin_seen") || "-1"); } catch (e) { return -1; } }
+  function setSeen(n) { try { localStorage.setItem("gink_admin_seen", String(n)); } catch (e) {} }
+  var notified = 0;
+  function checkNew() {
+    var probs = ((data.health || {}).problems || []), top = probs.reduce(function (m, p) { return Math.max(m, p.id || 0); }, 0);
+    if (seenId() < 0 || seenId() > top) setSeen(top);       // first visit (or the server restarted): only later problems count
+    var fresh = probs.filter(function (p) { return (p.id || 0) > seenId(); });
+    $("badge").hidden = !fresh.length;
+    $("badge").textContent = fresh.length + (fresh.length === 1 ? " new problem" : " new problems");
+    document.title = (fresh.length ? "(" + fresh.length + ") " : "") + "Gink owner dashboard";
+    document.querySelectorAll("#problems tr").forEach(function (tr) { tr.classList.toggle("new", Number(tr.dataset.id) > seenId()); });
+    var toTell = fresh.filter(function (p) { return p.id > notified; });
+    if (notifyOn && toTell.length && window.Notification && Notification.permission === "granted" && (document.hidden || !document.hasFocus())) {
+      var p = toTell[0];
+      try { new Notification("Gink: " + p.kind + (p.status ? " (" + p.status + ")" : "") + (toTell.length > 1 ? " +" + (toTell.length - 1) + " more" : ""),
+                             { body: p.reason, tag: "gink-problems" }); } catch (e) {}
+    }
+    notified = Math.max(notified, top);
   }
   function ago(sec) { return sec < 5 ? "just now" : sec < 60 ? sec + " s ago" : Math.floor(sec / 60) + " min ago"; }
   function tick() { if (loadedAt) $("when").textContent = "Updated " + ago(Math.round((Date.now() - loadedAt) / 1000)); }
@@ -319,6 +349,7 @@
     var hh = $("health"); hh.innerHTML = "";
     mini(hh, "AI refusals", fmt(h.ai_refused), h.ai_refused > 0);
     var hk = hh.lastChild; if (h.ai_refused) hk.classList.add("bad");
+    mini(hh, "Errors", fmt(h.errors || 0), (h.errors || 0) > 0);
     mini(hh, "Model switches", fmt(h.ai_fallbacks));
     mini(hh, "Live data", fmt(h.live_ok) + (h.live_failed ? " / " + fmt(h.live_failed) + "\u00a0failed" : ""));
     var pb = $("problems"); pb.innerHTML = ""; $("noproblems").hidden = (h.problems || []).length > 0;
@@ -326,7 +357,7 @@
       var tr = el("tr");
       [new Date(x.at * 1000).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}), x.kind + (x.status ? " (" + x.status + ")" : ""), x.reason].forEach(function (v) {
         tr.appendChild(el("td", "", v)); });
-      tr.title = x.model || ""; pb.appendChild(tr);
+      tr.title = x.model || ""; tr.dataset.id = x.id || 0; pb.appendChild(tr);
     });
     // ---- usage today: gradient bars
     $("usage-note").textContent = fmt(l.messages) + " messages in 7 days";
@@ -410,6 +441,21 @@
   };
   $("refresh").onclick = load;
   $("tools-btn").onclick = function () { $("tools").showModal(); };
+  $("badge").onclick = function () {
+    var probs = ((data || {}).health || {}).problems || [], top = probs.reduce(function (m, p) { return Math.max(m, p.id || 0); }, 0);
+    var tile = $("health").closest(".tile"); tile.classList.remove("flash"); void tile.offsetWidth; tile.classList.add("flash");
+    tile.scrollIntoView({ block: "nearest" }); setSeen(top); checkNew();
+  };
+  $("notify").checked = notifyOn;
+  $("notify").onchange = function () {
+    var box = this;
+    notifyOn = box.checked; try { localStorage.setItem("gink_admin_notify", notifyOn ? "on" : "off"); } catch (e) {}
+    if (notifyOn && window.Notification && Notification.permission !== "granted") {
+      Notification.requestPermission().then(function (r) { if (r !== "granted") { box.checked = notifyOn = false;
+        try { localStorage.setItem("gink_admin_notify", "off"); } catch (e) {}
+        alert("Notifications are blocked for this site: allow them in your browser's site settings, then turn \u201cAlert me\u201d on again."); } });
+    }
+  };
   $("tools-close").onclick = function () { $("tools").close(); };
   $("test-form").onsubmit = function (e) {
     e.preventDefault(); var out = $("test-result"); out.textContent = "Sending\u2026";
@@ -431,7 +477,13 @@
     if ((e.key === "r" || e.key === "R") && !e.metaKey && !e.ctrlKey && key && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) load();
   });
   if (key) load(); else show(false);
-  timer = setInterval(function () { if (auto && key && document.visibilityState === "visible") load(); }, 30000);
+  var beat = 0;
+  timer = setInterval(function () {
+    beat++;
+    if (!key) return;
+    if (auto && document.visibilityState === "visible") load();
+    else if (notifyOn && beat % 2 === 0) load();               // hidden tab + alerts: every minute
+  }, 30000);
   setInterval(tick, 1000);
 })();
 </script>

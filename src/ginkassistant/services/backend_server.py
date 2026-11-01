@@ -101,8 +101,19 @@ async def _security_headers(request, call_next):
     token = _current_request.set(request)
     try:
         response = await call_next(request)
+    except Exception as exc:                       # a crash anywhere: the owner sees it (dashboard + alert email)
+        try:
+            _note_problem("Server error", 500, "", f"on {request.url.path} \u2014 {type(exc).__name__}: {exc}")
+        except Exception:
+            pass
+        raise
     finally:
         _current_request.reset(token)
+    if response.status_code >= 500 and not request.url.path.startswith(("/ai/", "/v1/")):   # AI errors: noted with their reason
+        try:
+            _note_problem("Server error", response.status_code, "", f"on {request.url.path}")
+        except Exception:
+            pass
     if request.headers.get("x-forwarded-proto", request.url.scheme) == "https":
         response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
@@ -1998,7 +2009,9 @@ def _count_search(email: str, plan: str, turn: str = ""):
 
 # ================================================================ Server health (owner dashboard)
 # In memory since the server started: never anyone's messages, only counts and the AI provider's own reasons.
-_health = {"started": time.time(), "ai_refused": 0, "ai_fallbacks": 0, "live_ok": 0, "live_failed": 0, "problems": []}
+_health = {"started": time.time(), "ai_refused": 0, "ai_fallbacks": 0, "live_ok": 0, "live_failed": 0, "problems": [],
+           "seq": 0, "errors": 0, "alerted_at": 0.0, "alert_timer": None}
+ALERT_EVERY = 15 * 60                              # at most one alert email per 15 minutes (bundled)
 
 
 _activity = []                                    # (time, anonymous person id, model) for the last hour, newest last
@@ -2033,9 +2046,43 @@ def _note_problem(kind: str, status: int, model: str, reason) -> None:
         raw = (_json.loads(raw).get("error") or {}).get("message") or raw
     except Exception:
         pass
-    _health["problems"].insert(0, {"at": time.time(), "kind": kind, "status": int(status or 0), "model": str(model or ""),
-                                   "reason": " ".join(str(raw).split())[:160]})
+    _health["seq"] += 1
+    if kind == "Server error":
+        _health["errors"] += 1
+    _health["problems"].insert(0, {"id": _health["seq"], "at": time.time(), "kind": kind, "status": int(status or 0),
+                                   "model": str(model or ""), "reason": " ".join(str(raw).split())[:160]})
     del _health["problems"][8:]
+    _alert_owner()
+
+
+def _alert_owner() -> None:
+    """Email GINK_ALERT_EMAIL about new problems (when email is set up): bundled, at most every 15 minutes."""
+    to = _env("GINK_ALERT_EMAIL")
+    if not to or _health.get("alert_timer"):
+        return
+    wait = max(0.0, _health["alerted_at"] + ALERT_EVERY - time.time())
+
+    def send():
+        _health["alert_timer"] = None
+        since = _health["alerted_at"]
+        new = [p for p in _health["problems"] if p["at"] > since]
+        if not new:
+            return
+        _health["alerted_at"] = time.time()
+        lines = [time.strftime("%H:%M", time.gmtime(p["at"])) + " UTC \u00b7 " + p["kind"] + (f" ({p['status']})" if p["status"] else "") +
+                 " \u00b7 " + p["reason"] for p in reversed(new)]
+        base = (_env("GINK_PUBLIC_URL") or "").rstrip("/")
+        text = (f"{len(new)} problem{'s' if len(new) != 1 else ''} on your Gink server:\n\n" + "\n".join(lines) +
+                (f"\n\nOwner dashboard: {base}/admin" if base else "") + "\n\n(At most one of these emails every 15 minutes.)")
+        try:
+            _send_email(to, f"Gink: {len(new)} problem{'s' if len(new) != 1 else ''} on your server", text)
+        except Exception as exc:
+            print(f"[gink] alert email failed: {type(exc).__name__}", flush=True)
+
+    timer = threading.Timer(wait, send)
+    timer.daemon = True
+    _health["alert_timer"] = timer
+    timer.start()
 
 
 # ================================================================ Real-time information in answers
@@ -3152,7 +3199,8 @@ def admin_stats(request: Request):
             con.close()
     keys = ("messages", "calls", "images", "voice_chars", "claude", "searches")
     total = lambda ds: {k: sum(per_day[d][k] for d in ds) for k in keys}
-    health = {"uptime_s": int(now - _health["started"]), "ai_refused": _health["ai_refused"],
+    health = {"uptime_s": int(now - _health["started"]), "ai_refused": _health["ai_refused"], "errors": _health["errors"],
+              "alerts_email": bool(_env("GINK_ALERT_EMAIL")),
               "ai_fallbacks": _health["ai_fallbacks"], "live_ok": _health["live_ok"], "live_failed": _health["live_failed"],
               "problems": list(_health["problems"]), "version": (_release_cache.get("data") or {}).get("version") or ""}
     return {"generated": now, "users": users, "health": health, "now": _right_now(),

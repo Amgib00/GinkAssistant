@@ -136,3 +136,10 @@ The owner dashboard SHALL refresh every 30 seconds while visible (and at once wh
 #### Scenario: The server restarts while the dashboard is open
 - **WHEN** a refresh fails because the server isn't answering
 - **THEN** the figures stay with "Couldn't refresh — retrying" and the owner stays signed in
+
+### Requirement: The owner sees when something breaks
+The server SHALL record every crash and error response (page and error, outside the AI routes, which keep the provider's reason) as a numbered problem; the owner dashboard SHALL show new problems with a badge and in the tab's title, offer computer notifications that also work in a background tab, and the server SHALL email GINK_ALERT_EMAIL, when set and email is configured, at most once every 15 minutes with everything since the last email.
+
+#### Scenario: A crash while the owner works in another app
+- **WHEN** a page on the server crashes and "Alert me" is on
+- **THEN** a notification names the page and the error, and the dashboard shows "1 new problem"

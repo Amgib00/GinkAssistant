@@ -58,6 +58,8 @@ services:
         generateValue: true
       - key: GINK_ADMIN_KEY        # owner tools (tools/grant_pro.py); Render makes a random one
         generateValue: true
+      - key: GINK_ALERT_EMAIL      # your email: alerts when something breaks (needs email set up; at most 1 per 15 min)
+        sync: false
       # --- for real users: keep the database on the disk above ---
       # - key: GINK_DB_PATH
       #   value: /var/data/gink.db

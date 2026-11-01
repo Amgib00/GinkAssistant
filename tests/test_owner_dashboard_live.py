@@ -67,3 +67,31 @@ def test_one_screen_layout():
     dialog = page[page.index('<dialog id="tools"'):page.index("</dialog>")]
     for moved in ('id="revenue"', 'id="rates"', 'id="test-form"', 'id="limits"'):      # settings-type sections live in Tools
         assert moved in dialog, moved
+
+
+def test_crashes_are_recorded_and_alerts_are_bundled(tmp_path, monkeypatch):
+    import time as _t
+    monkeypatch.setenv("GINK_DB_PATH", str(tmp_path / "a.db"))
+    from fastapi.testclient import TestClient
+    from ginkassistant.services import backend_server as b
+    b._health.update(problems=[], errors=0, alerted_at=0.0, alert_timer=None)
+    sent = []
+    monkeypatch.setattr(b, "_send_email", lambda to, subject, text, html="": sent.append((to, subject, text)) or "")
+    if not any(getattr(r, "path", "") == "/test-crash-alert" for r in b.app.routes):
+        @b.app.get("/test-crash-alert")
+        def _crash():
+            return {}["missing"]
+    c = TestClient(b.app, raise_server_exceptions=False)
+    monkeypatch.delenv("GINK_ALERT_EMAIL", raising=False)
+    assert c.get("/test-crash-alert").status_code == 500
+    p = b._health["problems"][0]
+    assert p["kind"] == "Server error" and "on /test-crash-alert" in p["reason"] and "KeyError" in p["reason"] and b._health["errors"] == 1
+    assert b._health["alert_timer"] is None and sent == []                 # no alert address: no email
+    monkeypatch.setenv("GINK_ALERT_EMAIL", "owner@example.com")
+    monkeypatch.setattr(b, "ALERT_EVERY", 0.3)
+    b._health["alerted_at"] = _t.time()                                     # just alerted: the next ones wait and bundle
+    c.get("/test-crash-alert"); c.get("/test-crash-alert")
+    _t.sleep(0.8)
+    assert len(sent) == 1 and sent[0][0] == "owner@example.com" and sent[0][1] == "Gink: 2 problems on your server"
+    assert sent[0][2].count("KeyError") == 2
+    b._health.update(problems=[], errors=0, alerted_at=0.0, alert_timer=None)
