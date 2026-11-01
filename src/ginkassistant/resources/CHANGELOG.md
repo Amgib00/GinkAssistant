@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.78 (October 2026)
+
+- The owner dashboard fits on one screen: the key figures in one row and the charts side by side,
+  with payments, costs, email and limits in a Tools window, so there's no long list to scroll
+
 ## 0.1.77 (October 2026)
 
 - The owner dashboard has a new look ("Glow"): glowing figures on deep navy, a donut of the models in

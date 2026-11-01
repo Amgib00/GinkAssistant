@@ -52,6 +52,18 @@ def test_glow_design():
     """The owner chose design D ("Glow"): navy, glowing figures, donut, area chart, gradient bars, combo chart, ring."""
     page = open(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "admin.html"), encoding="utf-8").read()
     for part in ("--bg: #0A1520", 'el("div", "donut")', 'class="area"', 'id="usagebars"', 'id="ring"', "url(#skybar)",
-                 'stroke="#FB923C" stroke-width="3"', 'if (h.ai_refused) hh.lastChild.classList.add("bad");'):
+                 'stroke="#FB923C" stroke-width="3"', 'mini(hh, "AI refusals", fmt(h.ai_refused), h.ai_refused > 0);'):
         assert part in page, part
     assert "fonts.googleapis" not in page        # the page's security rules only allow its own files: system fonts
+
+
+
+def test_one_screen_layout():
+    """The owner didn't want a long list to scroll: figures in one row, tiles side by side, settings in Tools."""
+    page = open(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "admin.html"), encoding="utf-8").read()
+    for part in ('class="bento"', 'id="kpis"', "grid-template-columns: repeat(8, minmax(0, 1fr))", 'class="tile s5"', 'class="tile s3 glowcard"',
+                 "height: clamp(165px, calc((100vh - 305px) / 2), 340px)", '<dialog id="tools"', '$("tools").showModal()'):
+        assert part in page, part
+    dialog = page[page.index('<dialog id="tools"'):page.index("</dialog>")]
+    for moved in ('id="revenue"', 'id="rates"', 'id="test-form"', 'id="limits"'):      # settings-type sections live in Tools
+        assert moved in dialog, moved

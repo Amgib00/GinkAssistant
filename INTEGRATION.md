@@ -1570,3 +1570,10 @@ New services/live_info.py (all free, no API keys):
   (AI refusals neutral, amber .bad when any), requests area chart (tooltips per minute), models donut +
   legend (Gink names, %), 'Usage today' gradient bars, 14-day combo (messages bars + AI calls line),
   feedback ring gauge. System fonts (CSP default-src 'self'). Checked in a browser with real activity.
+
+## 0.1.78: owner dashboard on one screen (no long list)
+- Owner's recording: a 1100 px column of stacked sections. Now full width (1680 max): header with the
+  services, one line of warnings, .kpis (8 figures in one row), bento rows: requests area (s5), models
+  donut (s3, glow), health minis + problems (s4) / usage bars (s4), 14-day combo (s5), feedback ring (s3).
+  Tile height = clamp(165px, (100vh - 305px)/2, 340px): fits 1440x789, 1280x720, 1366x657, 1920x960
+  exactly (checked). Payments, costs, email test, limits in <dialog id=tools>. Phones stack (390 px).

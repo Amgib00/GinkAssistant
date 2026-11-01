@@ -73,6 +73,62 @@
   #login { max-width: 420px; margin: 12vh auto; }
   #login form { display: flex; gap: 8px; } #login input { flex: 1; }
   .err { color: #C42B1C; min-height: 22px; }
+  /* one screen (owner's request): full width, figures in one row, charts side by side */
+  .wrap { max-width: 1680px !important; padding: 14px 20px 20px !important; }
+  header { margin-bottom: 8px !important; gap: 10px !important; }
+  header h1 { font-size: 20px !important; }
+  #warnings { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  #warnings:empty { display: none; }
+  .warn { margin: 0 !important; padding: 5px 12px !important; border-radius: 999px !important; font-size: 13px !important; }
+  .bento { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; min-width: 0;
+          display: flex; flex-direction: column; box-shadow: 0 0 22px rgba(45, 212, 191, .06) inset; }
+  /* the two rows of tiles share the screen's height left after the header and figures: fits any laptop */
+  .bento > .tile:not(.kpis) { height: clamp(165px, calc((100vh - 305px) / 2), 340px); overflow: hidden; }
+  .s5 { grid-column: span 5; } .s4 { grid-column: span 4; } .s3 { grid-column: span 3; }
+  .th { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .th .legend { margin: 0; }
+  .grow { flex: 1; min-height: 0; }
+  #area svg { width: 100%; height: 100%; display: block; }
+  #chart { width: 100%; height: 100%; min-height: 0; display: block; }     /* scales evenly: labels never squashed */
+  .kpis { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); padding: 0; }
+  .kpi { padding: 10px 14px; border-left: 1px solid var(--line); min-width: 0; }
+  .kpi:first-child { border-left: 0; }
+  .kpi .label { color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi .big { font-size: 26px; font-weight: 750; line-height: 1.15; }
+  .kpi .sub { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpis > .kpi:nth-child(4n+1) .big { color: #5EEAD4; text-shadow: 0 0 18px rgba(94, 234, 212, .45); }
+  .kpis > .kpi:nth-child(4n+2) .big { color: #86EFAC; text-shadow: 0 0 18px rgba(134, 239, 172, .45); }
+  .kpis > .kpi:nth-child(4n+3) .big { color: #7DD3FC; text-shadow: 0 0 18px rgba(125, 211, 252, .45); }
+  .minis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+  .mini { background: #0B1A27; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; min-width: 0; }
+  .mini .label { color: var(--muted); font-size: 12px; } .mini .big { font-size: 22px; font-weight: 750; }
+  .mini.bad { border-color: #7A4A1E; } .mini.bad .big { color: #FDBA74; text-shadow: 0 0 16px rgba(253, 186, 116, .45); }
+  .tscroll { flex: 1; min-height: 0; overflow: auto; }
+  table.compact td { padding: 5px 6px; font-size: 13px; }
+  table.compact td:first-child { white-space: nowrap; }
+  .donut svg { width: 120px; height: 120px; }
+  .donut { margin: 0 !important; height: 100%; }
+  .ubar { margin: 7px 0 !important; grid-template-columns: 120px minmax(0, 1fr) 64px !important; font-size: 13px !important; }
+  .ring { gap: 12px !important; } .ring p { margin: 0; font-size: 14px; }
+  dialog#tools { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 16px; width: min(1040px, 94vw);
+                 max-height: 88vh; padding: 16px 18px; }
+  dialog#tools::backdrop { background: rgba(0, 0, 0, .6); }
+  .tools-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 6px; }
+  @media (max-width: 1180px) {
+    .bento { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .s5, .s4, .s3 { grid-column: span 3; }
+    .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .kpi:nth-child(5) { border-left: 0; } .kpi:nth-child(n+5) { border-top: 1px solid var(--line); }
+  }
+  @media (max-width: 700px) {
+    .bento { grid-template-columns: minmax(0, 1fr); }
+    .s5, .s4, .s3 { grid-column: auto; }
+    .bento > .tile:not(.kpis) { height: auto; }
+    .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kpi:nth-child(odd) { border-left: 0; } .kpi:nth-child(n+3) { border-top: 1px solid var(--line); }
+    .tools-grid { grid-template-columns: minmax(0, 1fr); }
+  }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -86,71 +142,80 @@
 
 <div id="dash" class="wrap" hidden>
   <header>
-    <h1>Gink owner dashboard</h1><span class="when" id="when"></span><span class="spacer"></span>
+    <h1>Gink owner dashboard</h1><span class="when" id="when"></span>
+    <div class="services" id="services"></div>
+    <span class="spacer"></span>
     <span class="stale" id="stale" hidden></span>
     <label class="auto"><input type="checkbox" id="auto"> Auto-refresh</label>
-    <button class="quiet" id="refresh" title="Refresh now (R)">Refresh</button><button class="quiet" id="lock">Lock</button>
+    <button class="quiet" id="refresh" title="Refresh now (R)">Refresh</button>
+    <button class="quiet" id="tools-btn" aria-haspopup="dialog" title="Payments, costs, email and limits">Tools</button>
+    <button class="quiet" id="lock">Lock</button>
   </header>
   <div id="warnings"></div>
-  <div class="services" id="services"></div>
 
-  <h2>Right now</h2>
-  <div class="grid" id="rightnow"></div>
+  <!-- one screen: a row of figures, then two rows of charts side by side (no long list to scroll) -->
+  <main class="bento">
+    <section class="tile kpis" id="kpis" aria-label="Key figures"></section>
+    <section class="tile s5" aria-label="Requests per minute">
+      <div class="th"><strong>Requests per minute</strong><span class="note">last hour</span></div>
+      <div id="area" class="grow"></div>
+    </section>
+    <section class="tile s3 glowcard" aria-label="Models in use">
+      <div class="th"><strong>Models in use</strong><span class="note" id="models-note"></span></div>
+      <div id="donut" class="grow"></div>
+    </section>
+    <section class="tile s4" aria-label="Server health">
+      <div class="th"><strong>Server health</strong><span class="note" id="uptime"></span></div>
+      <div class="minis" id="health"></div>
+      <div class="tscroll"><table class="compact"><tbody id="problems"></tbody></table><p class="note" id="noproblems" hidden>No problems since the last start &#10003;</p></div>
+    </section>
+    <section class="tile s4" aria-label="Usage today">
+      <div class="th"><strong>Usage today</strong><span class="note" id="usage-note"></span></div>
+      <div id="usagebars" class="grow"></div>
+    </section>
+    <section class="tile s5" aria-label="Last 14 days">
+      <div class="th"><strong>Last 14 days</strong>
+        <div class="legend"><span><i style="background:var(--c1)"></i>Messages</span><span><i style="background:var(--c2);height:3px;vertical-align:3px"></i>AI calls</span></div></div>
+      <svg id="chart" class="grow" viewBox="0 0 640 220" role="img" aria-label="Daily usage over the last 14 days"></svg>
+    </section>
+    <section class="tile s3" aria-label="Feedback, last 7 days">
+      <div class="th"><strong>Feedback</strong><span class="note">last 7 days</span></div>
+      <div class="ring"><svg id="ring" width="92" height="92" viewBox="0 0 42 42" role="img" aria-label="Helpful answers"></svg><p id="fb"></p></div>
+      <div class="tscroll"><table class="compact"><tbody id="reasons"></tbody></table></div>
+    </section>
+  </main>
+</div>
 
-  <h2>Server health <span class="note">(since the server last started)</span></h2>
-  <div class="grid" id="health"></div>
-  <div class="card" id="problems-card" style="margin-top:12px" hidden>
-    <div class="label">Latest problems</div>
-    <table><thead><tr><th>When</th><th>What</th><th>Model</th><th>Reason</th></tr></thead><tbody id="problems"></tbody></table>
-  </div>
-
-  <h2>People</h2>
-  <div class="grid" id="people"></div>
-
-  <h2>Usage today <span class="note">(last 7 days in small print)</span></h2>
-  <div class="grid" id="usage"></div>
-  <div class="card" style="margin-top:12px"><strong>Usage today</strong><div id="usagebars"></div></div>
-
-  <div class="two" style="margin-top:12px">
-    <div class="card">
-      <strong>Last 14 days</strong>
-      <div class="legend"><span><i style="background:var(--c1)"></i>Messages</span><span><i style="background:var(--c2);height:3px;vertical-align:3px"></i>AI calls</span></div>
-      <svg id="chart" viewBox="0 0 640 220" width="100%" role="img" aria-label="Daily usage over the last 14 days"></svg>
-    </div>
-    <div class="card">
+<dialog id="tools" aria-label="Tools">
+  <div class="th"><strong style="font-size:18px">Tools</strong><button class="quiet" id="tools-close" aria-label="Close">Close</button></div>
+  <div class="tools-grid">
+    <section class="tile">
       <strong>Payments received, last 30 days</strong>
       <table><thead><tr><th>Currency</th><th class="num">Amount</th><th class="num">Payments</th></tr></thead><tbody id="revenue"></tbody></table>
       <p class="note" id="norevenue" hidden>No payments yet.</p>
-    </div>
-  </div>
-
-  <div class="two" style="margin-top:12px">
-    <div class="card">
+    </section>
+    <section class="tile">
       <strong>Estimated costs</strong>
       <p class="note">Enter your real prices from your Groq, Anthropic and Google bills (in US dollars). They're saved in this browser only.</p>
       <table class="rates"><tbody id="rates"></tbody></table>
       <p id="costs" style="font-weight:650;margin:10px 0 0"></p>
-    </div>
-    <div class="card">
-      <strong>Feedback, last 7 days</strong>
-      <div class="ring"><svg id="ring" width="120" height="120" viewBox="0 0 42 42" role="img" aria-label="Helpful answers"></svg><p id="fb"></p></div>
-      <table><thead><tr><th>Top reasons for thumbs down</th><th class="num">Times</th></tr></thead><tbody id="reasons"></tbody></table>
-    </div>
+    </section>
+    <section class="tile">
+      <strong>Email and phone codes</strong>
+      <p class="note" id="email-service"></p>
+      <p class="note" id="sms-service"></p>
+      <form id="test-form" style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="test-to" type="email" required placeholder="Your email address" aria-label="Send a test email to" style="flex:1;min-width:200px">
+        <button>Send a test email</button>
+      </form>
+      <p id="test-result" style="margin:10px 0 0;font-weight:600"></p>
+    </section>
+    <section class="tile">
+      <strong>Limits on this server</strong>
+      <p class="note" id="limits"></p>
+    </section>
   </div>
-  <h2>Email</h2>
-  <div class="card">
-    <p class="note" id="email-service"></p>
-    <p class="note" id="sms-service"></p>
-    <form id="test-form" style="display:flex;gap:8px;flex-wrap:wrap">
-      <input id="test-to" type="email" required placeholder="Your email address" aria-label="Send a test email to" style="flex:1;min-width:220px">
-      <button>Send a test email</button>
-    </form>
-    <p id="test-result" style="margin:10px 0 0;font-weight:600"></p>
-  </div>
-
-  <h2>Limits on this server</h2>
-  <p class="note" id="limits"></p>
-</div>
+</dialog>
 
 <script>
 (function () {
@@ -192,101 +257,110 @@
     var n = (now || 0) - (before || 0); if (!n) return "same as yesterday";
     return '<span class="' + (n > 0 ? "up" : "down") + '">' + (n > 0 ? "\u25b2 " : "\u25bc ") + fmt(Math.abs(n)) + "</span> vs yesterday";
   }
+  function kpi(host, label, big, sub, subHtml) {
+    var c = el("div", "kpi"); c.appendChild(el("div", "label", label)); c.appendChild(el("div", "big", big));
+    var sb = el("div", "sub"); if (subHtml) sb.innerHTML = subHtml; else sb.textContent = sub || ""; c.appendChild(sb); host.appendChild(c);
+  }
+  function mini(host, label, big, bad) {
+    var c = el("div", "mini" + (bad ? " bad" : "")); c.appendChild(el("div", "label", label)); c.appendChild(el("div", "big", big)); host.appendChild(c);
+  }
   function render() {
-    var d = data, s = d.services;
+    var d = data, s = d.services, rn = d.now || {}, h = d.health || {}, u = d.users, t = d.today, l = d.last7;
+    var yd = (d.daily || [])[(d.daily || []).length - 2] || {};
     tick();
-    var rn = d.now || {}, rh = $("rightnow"); rh.innerHTML = "";
-    card(rh, "Online now", fmt(rn.online_5min), "people in the last 5 minutes");
-    card(rh, "Requests", fmt(rn.requests_1h), "in the last hour");
+    // ---- warnings (one compact line) and the services in the header
+    var w = $("warnings"); w.innerHTML = "";
+    if (s.storage !== "disk") w.appendChild(el("div", "warn", "Temporary storage: data is erased on every update \u2014 upgrade Render to Starter + disk"));
+    if (!s.email) w.appendChild(el("div", "warn", "Email isn\u2019t set up: add BREVO_API_KEY and EMAIL_FROM in Render"));
+    var sv = $("services"); sv.innerHTML = "";
+    [["groq", "Groq AI"], ["anthropic", "Claude"], ["gemini", "Images + voices"], ["email", "Email"], ["sms", "Phone codes"]].forEach(function (p) {
+      var pill = el("span", "pill " + (s[p[0]] ? "on" : "off"), p[1]); pill.title = p[1] + (s[p[0]] ? ": set up" : ": not set up"); sv.appendChild(pill);
+    });
+    // ---- one row of figures
+    var k = $("kpis"); k.innerHTML = "";
+    kpi(k, "Online now", fmt(rn.online_5min), "last 5 minutes");
+    kpi(k, "Requests", fmt(rn.requests_1h), "last hour");
+    kpi(k, "Messages today", fmt(t.messages), "", delta(t.messages, yd.messages));
+    kpi(k, "AI calls today", fmt(t.calls), "", delta(t.calls, yd.calls));
+    kpi(k, "Users", fmt(u.total), "+" + fmt(u.new_7d) + " this week");
+    kpi(k, "Gink Pro", fmt(u.pro_active), u.total ? Math.round(100 * u.pro_active / u.total) + "% of users" : "active");
+    kpi(k, "Active today", fmt(t.active_users), "people who chatted");
+    kpi(k, "Running for", dur(h.uptime_s || 0), h.version ? "release " + h.version : "since the last start");
+    // ---- requests per minute: a teal area chart
     var pm = rn.per_minute || [], peak = Math.max.apply(null, pm.concat([1]));
     var pts = pm.map(function (n, i) { return (i * 600 / 59).toFixed(1) + "," + (116 - 108 * n / peak).toFixed(1); }).join(" ");
     var svg = '<svg class="area" viewBox="0 0 600 120" preserveAspectRatio="none" role="img" aria-label="Requests per minute, last hour">' +
       '<defs><linearGradient id="tealfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2DD4BF" stop-opacity=".45"/>' +
       '<stop offset="1" stop-color="#2DD4BF" stop-opacity="0"/></linearGradient></defs>' +
-      '<polygon points="0,120 ' + pts + ' 600,120" fill="url(#tealfill)"/><polyline points="' + pts + '" fill="none" stroke="#2DD4BF" stroke-width="3" stroke-linejoin="round"/>';
+      '<polygon points="0,120 ' + pts + ' 600,120" fill="url(#tealfill)"/><polyline points="' + pts + '" fill="none" stroke="#2DD4BF" stroke-width="3" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>';
     pm.forEach(function (n, i) { svg += '<rect x="' + (i * 10) + '" y="0" width="10" height="120" fill="transparent"><title>' + (59 - i) + " min ago: " + n + "</title></rect>"; });
-    rh.lastChild.insertAdjacentHTML("beforeend", svg + "</svg>"); rh.lastChild.classList.add("wide");
-    card(rh, "Models in use", fmt((rn.models || []).reduce(function (a, m) { return a + m.requests; }, 0)), "requests since the server started");
-    var ml = el("ul", "mlist");
+    $("area").innerHTML = svg + "</svg>";
+    // ---- models in use: a donut with its legend
     var GINK = {"openai/gpt-oss-120b": "Gink Crystal", "openai/gpt-oss-20b": "Gink Flake", "qwen/qwen3.8-27b": "Gink Prism"};
     var COLORS = ["#2DD4BF", "#38BDF8", "#4ADE80", "#FB923C", "#A78BFA"], mods = rn.models || [];
     var mtotal = mods.reduce(function (a, m) { return a + m.requests; }, 0), acc = 0;
-    var ring = '<svg width="150" height="150" viewBox="0 0 42 42" role="img" aria-label="Share of requests by model">' +
+    $("models-note").textContent = fmt(mtotal) + " since the start";
+    var ring = '<svg viewBox="0 0 42 42" role="img" aria-label="Share of requests by model">' +
       '<circle cx="21" cy="21" r="15.9" fill="none" stroke="#183448" stroke-width="6"/>';
     mods.forEach(function (m, i) { var pct = mtotal ? 100 * m.requests / mtotal : 0;
       ring += '<circle cx="21" cy="21" r="15.9" fill="none" stroke="' + COLORS[i % 5] + '" stroke-width="6" stroke-dasharray="' + pct.toFixed(2) + " " +
               (100 - pct).toFixed(2) + '" stroke-dashoffset="' + (25 - acc).toFixed(2) + '"><title>' + (GINK[m.model] || m.model) + ": " + m.requests + "</title></circle>";
       acc += pct; });
+    var dn = $("donut"); dn.innerHTML = "";
     var box = el("div", "donut"); box.insertAdjacentHTML("beforeend", ring + "</svg>");
+    var ml = el("ul", "mlist");
     mods.forEach(function (m, i) { var li = el("li"), nm = el("span", "", GINK[m.model] || m.model); nm.title = m.model;
       nm.insertAdjacentHTML("afterbegin", '<i style="display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px;background:' + COLORS[i % 5] + '"></i>');
-      li.appendChild(nm); li.appendChild(el("span", "", fmt(m.requests) + (mtotal ? " \u00b7 " + Math.round(100 * m.requests / mtotal) + "%" : ""))); ml.appendChild(li); });
-    ml.style.minWidth = "180px"; box.appendChild(ml);
-    rh.lastChild.appendChild(box); rh.lastChild.classList.add("wide", "glowcard");
-    var h = d.health || {}, hh = $("health"); hh.innerHTML = "";
-    card(hh, "Running for", dur(h.uptime_s || 0), h.version ? "latest release " + h.version : "");
-    card(hh, "AI refusals", fmt(h.ai_refused), h.ai_refused ? "see the latest problems below" : "none \u2713");
-    if (h.ai_refused) hh.lastChild.classList.add("bad");
-    card(hh, "Model switches", fmt(h.ai_fallbacks), "another model answered when one was at its limit");
-    card(hh, "Live data", fmt(h.live_ok), (h.live_failed ? fmt(h.live_failed) + " failed" : "no failures") + " \u00b7 weather, currency\u2026");
-    var pb = $("problems"); pb.innerHTML = ""; $("problems-card").hidden = !(h.problems || []).length;
+      li.appendChild(nm); li.appendChild(el("span", "", (mtotal ? Math.round(100 * m.requests / mtotal) + "%" : ""))); ml.appendChild(li); });
+    if (!mods.length) ml.appendChild(el("li", "note", "No requests yet"));
+    ml.style.minWidth = "120px"; box.appendChild(ml); dn.appendChild(box);
+    // ---- server health: three small figures and the latest problems
+    $("uptime").textContent = "since the last start";
+    var hh = $("health"); hh.innerHTML = "";
+    mini(hh, "AI refusals", fmt(h.ai_refused), h.ai_refused > 0);
+    var hk = hh.lastChild; if (h.ai_refused) hk.classList.add("bad");
+    mini(hh, "Model switches", fmt(h.ai_fallbacks));
+    mini(hh, "Live data", fmt(h.live_ok) + (h.live_failed ? " / " + fmt(h.live_failed) + "\u00a0failed" : ""));
+    var pb = $("problems"); pb.innerHTML = ""; $("noproblems").hidden = (h.problems || []).length > 0;
     (h.problems || []).forEach(function (x) {
       var tr = el("tr");
-      [new Date(x.at * 1000).toLocaleTimeString(), x.kind + (x.status ? " (" + x.status + ")" : ""), x.model || "\u2014", x.reason].forEach(function (v) {
+      [new Date(x.at * 1000).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}), x.kind + (x.status ? " (" + x.status + ")" : ""), x.reason].forEach(function (v) {
         tr.appendChild(el("td", "", v)); });
-      pb.appendChild(tr);
+      tr.title = x.model || ""; pb.appendChild(tr);
     });
-    var w = $("warnings"); w.innerHTML = "";
-    if (s.storage !== "disk") w.appendChild(el("div", "warn", "Data is stored temporarily (Render free plan): accounts, keys and payments are erased on every update. Upgrade to Starter + disk."));
-    if (!s.email) w.appendChild(el("div", "warn", "Email isn't set up: sign-up codes only appear in Render's logs. Add BREVO_API_KEY and EMAIL_FROM in Render (free plan: Gmail SMTP is blocked)."));
-    $("email-service").textContent = s.email_service === "brevo" ? "Emails are sent with Brevo." :
-      s.email_service === "gmail" ? "Emails are sent with Gmail (SMTP). On Render\u2019s free plan this is blocked \u2014 use Brevo instead." :
-      "No email service is set up yet.";
-    $("sms-service").textContent = s.sms
-      ? "Phone codes: " + (s.sms_provider === "twilio" ? "Twilio" : "Africa\u2019s Talking") + " \u00b7 " + s.sms_month + " of " + s.sms_limit +
-        " SMS this month" + (s.sms_month >= s.sms_limit ? " \u2014 PAUSED until next month (raise GINK_SMS_MONTHLY_LIMIT in Render)" : "")
-      : "Phone codes: not set up (add AT_USERNAME + AT_API_KEY, or TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + TWILIO_FROM, in Render).";
-    var sv = $("services"); sv.innerHTML = "";
-    [["groq", "Groq AI"], ["anthropic", "Claude"], ["gemini", "Images + voices"], ["email", "Email codes"], ["sms", "Phone codes"]].forEach(function (p) {
-      sv.appendChild(el("span", "pill " + (s[p[0]] ? "on" : "off"), p[1] + (s[p[0]] ? "" : ": not set")));
-    });
-    var u = d.users, pp = $("people"); pp.innerHTML = "";
-    card(pp, "Users", fmt(u.total), "+" + fmt(u.new_7d) + " this week, +" + fmt(u.new_today) + " today");
-    card(pp, "Gink Pro (active)", fmt(u.pro_active), u.total ? Math.round(100 * u.pro_active / u.total) + "% of users" : "");
-    card(pp, "API keys", fmt(u.api_keys_active), "active");
-    card(pp, "Active today", fmt(d.today.active_users), "people who chatted");
-    var t = d.today, l = d.last7, us = $("usage"); us.innerHTML = "";
-    var yd = (d.daily || [])[(d.daily || []).length - 2] || {};
-    card(us, "Messages", fmt(t.messages), fmt(l.messages) + " in 7 days");
-    us.lastChild.appendChild(el("div", "sub")).innerHTML = delta(t.messages, yd.messages);
-    card(us, "AI calls", fmt(t.calls), fmt(l.calls) + " in 7 days");
-    us.lastChild.appendChild(el("div", "sub")).innerHTML = delta(t.calls, yd.calls);
-    card(us, "Claude", fmt(t.claude), fmt(l.claude) + " in 7 days");
-    card(us, "Web searches", fmt(t.searches), fmt(l.searches) + " in 7 days");
-    card(us, "Images", fmt(t.images), fmt(l.images) + " in 7 days");
-    card(us, "Voice characters", fmt(t.voice_chars), fmt(l.voice_chars) + " in 7 days");
-    chart(d.daily);
-    var rv = $("revenue"); rv.innerHTML = "";
-    $("norevenue").hidden = d.revenue_30d.length > 0;
-    d.revenue_30d.forEach(function (r) {
-      var tr = el("tr"); tr.appendChild(el("td", "", r.currency)); tr.appendChild(el("td", "num", fmt(r.amount)));
-      tr.appendChild(el("td", "num", fmt(r.payments))); rv.appendChild(tr);
-    });
+    // ---- usage today: gradient bars
+    $("usage-note").textContent = fmt(l.messages) + " messages in 7 days";
     var ub = $("usagebars"); ub.innerHTML = "";
     var items = [["Messages", t.messages], ["AI calls", t.calls], ["Web searches", t.searches], ["Claude", t.claude], ["Images", t.images],
-                 ["Voice (characters)", t.voice_chars]], umax = Math.max(1, Math.max.apply(null, items.map(function (x) { return x[1] || 0; })));
+                 ["Voice (chars)", t.voice_chars]], umax = Math.max(1, Math.max.apply(null, items.map(function (x) { return x[1] || 0; })));
     items.forEach(function (x) { var row = el("div", "ubar"); row.appendChild(el("span", "", x[0]));
       var tr = el("div", "track"), fl = el("div", "fill"); fl.style.width = Math.max(x[1] ? 3 : 0, Math.round(100 * (x[1] || 0) / umax)) + "%";
       tr.appendChild(fl); row.appendChild(tr); row.appendChild(el("strong", "", fmt(x[1]))); ub.appendChild(row); });
+    // ---- 14 days, feedback
+    chart(d.daily);
     var f = d.feedback_7d, total = f.up + f.down, share = total ? Math.round(100 * f.up / total) : 0;
     $("ring").innerHTML = '<circle cx="21" cy="21" r="15.9" fill="none" stroke="#183448" stroke-width="4.5"/>' +
       (total ? '<circle cx="21" cy="21" r="15.9" fill="none" stroke="#4ADE80" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="' + share + " " +
                (100 - share) + '" stroke-dashoffset="25"/>' : "") +
       '<text x="21" y="23.2" text-anchor="middle" style="fill:#86EFAC;font-size:7px;font-weight:700">' + (total ? share + "%" : "\u2014") + "</text>";
     $("ring").setAttribute("aria-label", total ? share + "% of rated answers were helpful" : "No feedback yet");
-    $("fb").textContent = total ? ("\uD83D\uDC4D " + fmt(f.up) + "   \uD83D\uDC4E " + fmt(f.down) + "   (" + Math.round(100 * f.up / total) + "% positive)") : "No feedback yet.";
+    $("fb").textContent = total ? (fmt(f.up) + " helpful \u00b7 " + fmt(f.down) + " not helpful") : "No feedback yet.";
     var rs = $("reasons"); rs.innerHTML = "";
     f.top_reasons.forEach(function (r) { var tr = el("tr"); tr.appendChild(el("td", "", r.reason)); tr.appendChild(el("td", "num", fmt(r.count))); rs.appendChild(tr); });
+    // ---- the Tools window: payments, costs, email, limits
+    $("email-service").textContent = s.email_service === "brevo" ? "Emails are sent with Brevo." :
+      s.email_service === "gmail" ? "Emails are sent with Gmail (SMTP). On Render\u2019s free plan this is blocked \u2014 use Brevo instead." :
+      "No email service is set up yet: add BREVO_API_KEY and EMAIL_FROM in Render (free plan: Gmail SMTP is blocked).";
+    $("sms-service").textContent = s.sms
+      ? "Phone codes: " + (s.sms_provider === "twilio" ? "Twilio" : "Africa\u2019s Talking") + " \u00b7 " + s.sms_month + " of " + s.sms_limit +
+        " SMS this month" + (s.sms_month >= s.sms_limit ? " \u2014 PAUSED until next month (raise GINK_SMS_MONTHLY_LIMIT in Render)" : "")
+      : "Phone codes: not set up (add AT_USERNAME + AT_API_KEY, or TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + TWILIO_FROM, in Render).";
+    var rv = $("revenue"); rv.innerHTML = "";
+    $("norevenue").hidden = d.revenue_30d.length > 0;
+    d.revenue_30d.forEach(function (r) {
+      var tr = el("tr"); tr.appendChild(el("td", "", r.currency)); tr.appendChild(el("td", "num", fmt(r.amount)));
+      tr.appendChild(el("td", "num", fmt(r.payments))); rv.appendChild(tr);
+    });
     var lm = d.limits;
     $("limits").textContent = "Free: " + lm.free_daily + " messages and " + lm.free_search_daily + " web searches a day. Pro: " + lm.pro_daily +
       " messages, " + lm.pro_claude_daily + " Claude messages and " + lm.pro_search_daily + " web searches a day. Change these in Render (Environment).";
@@ -335,6 +409,8 @@
     load();
   };
   $("refresh").onclick = load;
+  $("tools-btn").onclick = function () { $("tools").showModal(); };
+  $("tools-close").onclick = function () { $("tools").close(); };
   $("test-form").onsubmit = function (e) {
     e.preventDefault(); var out = $("test-result"); out.textContent = "Sending\u2026";
     fetch("/admin/test-email", { method: "POST", headers: { "x-admin-key": key, "Content-Type": "application/json" },
