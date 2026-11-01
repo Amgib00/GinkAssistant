@@ -139,6 +139,9 @@ openspec/changes/add-persistent-storage/tasks.md
 openspec/changes/add-phone-signin/proposal.md
 openspec/changes/add-phone-signin/specs/phone-signin/spec.md
 openspec/changes/add-phone-signin/tasks.md
+openspec/changes/add-phone-song-recognition/proposal.md
+openspec/changes/add-phone-song-recognition/specs/song-recognition/spec.md
+openspec/changes/add-phone-song-recognition/tasks.md
 openspec/changes/add-plan-tiers/proposal.md
 openspec/changes/add-plan-tiers/specs/plan-tiers/spec.md
 openspec/changes/add-plan-tiers/tasks.md
@@ -320,6 +323,7 @@ tests/test_settings_and_account.py
 tests/test_settings_sync.py
 tests/test_shared_links.py
 tests/test_signin_name_and_history.py
+tests/test_song_server.py
 tests/test_sync_attach_memory_briefing.py
 tests/test_temporary_chat.py
 tests/test_two_step.py

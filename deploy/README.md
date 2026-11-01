@@ -212,6 +212,13 @@ are deleted; payment records are kept for accounting with the email replaced by
 an anonymous id; existing sign-in tokens stop working immediately. App stores
 require in-app account deletion.
 
+## Song recognition on phones ("Identify a song")
+
+The Android app records about 8 seconds and sends it to `POST /media/song`; the server asks Shazam
+(the `shazamio` package, already in `deploy/requirements-server.txt`) and deletes the recording at once.
+Nothing to set up. Optional: `GINK_SONG_DAILY` (default 40) is how many songs one account can
+recognise per day. Computers with shazamio installed ask Shazam directly instead.
+
 ## Images (Media Studio and "create an image of...")
 
 Images are made by your server with Google's Nano Banana models -- the app

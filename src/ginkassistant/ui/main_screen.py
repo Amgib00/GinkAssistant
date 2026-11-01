@@ -858,16 +858,23 @@ def build_main_screen(app: toga.App, email: str):
             await web_chat.set_dictating(False)
 
     async def identify_song():
+        from ..services.song_recognition import SongProblem
         set_voice_status("Listening for a song\u2026")
+        problem = ""
         try:
+            await take_mic()                    # "Hey Gink" lets go of the microphone first
             song = await identify_ambient_song()
+        except SongProblem as exc:
+            song, problem = None, str(exc)
         except Exception:
             song = None
+        finally:
+            resume_wake()
         if song:
             await on_song_detected(song)
             set_voice_status("")
         else:
-            set_voice_status("Couldn't recognise a song \u2014 try closer to the music")
+            set_voice_status(problem or "Couldn't recognise a song \u2014 try closer to the music")
 
     MODEL_LABELS = {
         "llama-3.3-70b-versatile": ("Llama 3.3 70B", "Smart"),
@@ -1273,6 +1280,8 @@ def build_main_screen(app: toga.App, email: str):
     files_dir = str(data_dir(app) / "files")
     from ..services.image_service import ImageService
     images = ImageService(files_dir, lambda: app.state.base_url, lambda: getattr(app, "session_token", None))
+    from ..services import song_recognition as _songs      # phones recognise songs through the server
+    _songs.server["fn"] = lambda: (app.state.base_url, getattr(app, "session_token", None))
     app.image_service = images
     app.task_runner.files_dir = files_dir
 

@@ -2694,6 +2694,80 @@ def _extract_image(resp: dict):
     return found if found else (None, None)
 
 
+# ---- Song recognition for phones (and computers without shazamio): the app records ~8 seconds and
+# sends it here as a .wav; this server asks Shazam (shazamio) and forgets the recording at once.
+# A daily allowance per account (GINK_SONG_DAILY, default 40) keeps one account from hammering Shazam.
+SONG_MAX_BYTES = 3_000_000            # ~90 s of 16 kHz mono; the apps send ~8 s (256 KB)
+
+
+def _song_limit() -> int:
+    try:
+        return max(1, int(_env("GINK_SONG_DAILY") or 40))
+    except ValueError:
+        return 40
+
+
+def _count_song(email: str, day: str, delta: int) -> int:
+    """Adds delta to today's songs and returns the count BEFORE it."""
+    with _db_lock:
+        con = _usage_db()
+        try:
+            cols = {r[1] for r in con.execute("PRAGMA table_info(ai_usage)").fetchall()}
+            if "songs" not in cols:
+                con.execute("ALTER TABLE ai_usage ADD COLUMN songs INTEGER NOT NULL DEFAULT 0")
+            row = con.execute("SELECT songs FROM ai_usage WHERE email=? AND day=?", (email, day)).fetchone()
+            used = (row[0] if row else 0) or 0
+            if delta > 0:
+                con.execute("INSERT INTO ai_usage (email, day, messages, calls, songs) VALUES (?, ?, 0, 0, ?)"
+                            " ON CONFLICT(email, day) DO UPDATE SET songs = songs + ?", (email, day, delta, delta))
+            elif delta < 0:
+                con.execute("UPDATE ai_usage SET songs = MAX(songs + ?, 0) WHERE email=? AND day=?", (delta, email, day))
+            con.commit()
+            return used
+        finally:
+            con.close()
+
+
+@app.post("/media/song")
+async def media_song(request: Request):
+    email = _email_from_auth(request)
+    try:
+        from shazamio import Shazam
+    except ImportError:
+        raise HTTPException(status_code=503, detail="Song recognition isn\u2019t set up on this server yet.")
+    try:
+        data = await request.json()
+        audio = base64.b64decode(str(data.get("audio_b64") or ""), validate=True)
+    except Exception:
+        raise HTTPException(status_code=400, detail="That recording couldn\u2019t be read.")
+    if not (1000 <= len(audio) <= SONG_MAX_BYTES) or audio[:4] != b"RIFF" or audio[8:12] != b"WAVE":
+        raise HTTPException(status_code=422, detail="Send a short .wav recording (up to about a minute).")
+    day, limit = _today(), _song_limit()
+    if _count_song(email, day, 0) >= limit:
+        raise HTTPException(status_code=429, detail=f"You\u2019ve recognised today\u2019s {limit} songs. More tomorrow.")
+    _count_song(email, day, 1)                    # counted before the slow call, refunded if Shazam fails
+    import tempfile
+    fd, tmp = tempfile.mkstemp(suffix=".wav")
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(audio)
+        try:
+            result = await asyncio.wait_for(Shazam().recognize(tmp), timeout=40)
+        except Exception:
+            _count_song(email, day, -1)
+            raise HTTPException(status_code=502, detail="The song service didn\u2019t answer. Please try again.")
+    finally:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+    track = (result or {}).get("track") if isinstance(result, dict) else None
+    if not track:
+        return {"match": False}
+    return {"match": True, "title": str(track.get("title") or ""), "artist": str(track.get("subtitle") or ""),
+            "url": track.get("url") or None}
+
+
 @app.post("/media/image")
 async def media_image(request: Request):
     email = _email_from_auth(request)

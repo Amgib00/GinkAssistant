@@ -25,6 +25,7 @@ The chat itself doesn't go through this client at all -- GroqBrain
 LLMWorker. This client is purely for login.
 """
 
+import base64
 from dataclasses import dataclass
 
 import httpx
@@ -353,6 +354,11 @@ class ApiClient:
             msg = err.get("message") or data.get("detail") or "The image couldn't be created."
             raise ApiError(msg if isinstance(msg, str) else "The image couldn't be created.")
         return data
+
+    async def identify_song(self, token: str, wav: bytes) -> dict:
+        """POST /media/song: a short .wav recording -> {"match", "title", "artist", "url"}."""
+        return await self._authed("POST", "/media/song", token, timeout=60,
+                                  json={"audio_b64": base64.b64encode(wav).decode("ascii"), "format": "wav"})
 
     async def ai_usage(self, token: str) -> dict:
         return await self._authed("GET", "/ai/usage", token)

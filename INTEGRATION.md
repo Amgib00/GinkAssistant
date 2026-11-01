@@ -1689,3 +1689,17 @@ New services/live_info.py (all free, no API keys):
   the Android/iOS import-everything startup tests skip it; tests/test_android_background.py fakes Chaquopy.
 - UNVERIFIED on a phone: SpeechRecognizer runs in the speech app's process; whether it keeps hearing with Gink
   backgrounded (TECNO BF6, Android 12) decides if an in-process recognizer is needed next.
+
+## 0.1.91: "Identify a song" on Android (through the server)
+- Media Studio images already went through the server on every platform (POST /media/image); only video is
+  paused (Veo retired). The "mock on mobile" note in older lists was stale.
+- Android recording: android_voice.record_wav -> _record_blocking on an executor thread: AudioRecord(MIC, 16 kHz,
+  mono, PCM16), one jarray(jbyte)(total) filled with read(buf, off, <=8192), bytes(arr) via the buffer protocol
+  (fallback: per-item & 0xFF). Always stop()+release().
+- POST /media/song: auth; base64 .wav only (RIFF/WAVE, 1 KB..3 MB); ai_usage.songs column (added lazily like
+  images); counted before Shazam, refunded on failure; HTTPException(detail) so ApiClient shows the message.
+  Recording written to a temp file and removed in finally. shazamio 0.9 + shazamio-core 2.0 (manylinux_2_28).
+  Checked in the sandbox: shazamio fingerprints a 16 kHz mono WAV and only stops at the network to Shazam.
+- song_recognition.identify_ambient_song: _record (Android AudioRecord / desktop sounddevice) -> shazamio here
+  if installed, else server (server["fn"] set by main_screen) -> local fingerprint DB. SongProblem = a reason
+  for the person; main_screen.identify_song shows it, and take_mic()/resume_wake() around it.

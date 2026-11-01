@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.91 (November 2026)
+
+- Android: "Identify a song" works. Gink records about 8 seconds and your Gink server asks Shazam;
+  the recording is deleted straight away
+- "Identify a song" pauses "Hey Gink" while it listens, and says why when it can't (microphone
+  permission off, not signed in, today's limit reached) instead of "Couldn't recognise a song"
+
 ## 0.1.90 (November 2026)
 
 - Android: "Hey Gink" can keep listening when Gink isn't on screen. Switch on Settings > Voice >

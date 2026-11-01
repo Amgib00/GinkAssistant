@@ -93,32 +93,79 @@ async def _identify_with_local_engine() -> Optional[dict]:
         return None
 
 
-async def identify_ambient_song() -> Optional[dict]:
-    """Returns {"title", "artist", "url"} on a confident match, else None.
-    Tries the real Shazam API (shazamio) first, then the local
-    fingerprint database (shazam_engine.py) if that's unavailable or
-    finds nothing."""
-    if not HAS_SHAZAMIO or not HAS_SOUNDDEVICE:
-        return await _identify_with_local_engine()
+class SongProblem(Exception):
+    """A reason worth telling the person (no microphone permission, daily limit, not signed in...)."""
 
-    loop = asyncio.get_event_loop()
+
+# Phones (and desktops without shazamio) ask YOUR Gink server, which runs shazamio (POST /media/song).
+# main_screen sets server["fn"] = lambda: (base_url, session_token).
+server = {"fn": None}
+
+
+async def _record() -> Optional[str]:
+    """A short recording -> .wav path (the caller deletes it), or None when this device can't record."""
+    from .platform_utils import is_android
+    if is_android():
+        from .android_voice import VoiceProblem, record_wav
+        try:
+            return await record_wav(SAMPLE_SECONDS, 16000)
+        except VoiceProblem as exc:
+            raise SongProblem(str(exc)) from exc
+    if not HAS_SOUNDDEVICE:
+        return None
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_file:
-        tmp_path = tmp_file.name
-
+        path = tmp_file.name
     try:
-        await loop.run_in_executor(None, _record_sample_blocking, tmp_path, SAMPLE_SECONDS)
-        shazam = Shazam()
-        result = await shazam.recognize(tmp_path)
-        track = result.get("track")
-        if not track:
-            return await _identify_with_local_engine()
-        return {
-            "title": track.get("title", "Unknown title"),
-            "artist": track.get("subtitle", "Unknown artist"),
-            "url": track.get("url"),
-        }
+        await asyncio.get_event_loop().run_in_executor(None, _record_sample_blocking, path, SAMPLE_SECONDS)
     except Exception:
+        os.remove(path)
+        return None
+    return path
+
+
+async def _recognise_here(path: str) -> Optional[dict]:
+    result = await Shazam().recognize(path)
+    track = result.get("track")
+    if not track:
+        return None
+    return {"title": track.get("title", "Unknown title"), "artist": track.get("subtitle", "Unknown artist"),
+            "url": track.get("url")}
+
+
+async def _recognise_on_server(path: str) -> Optional[dict]:
+    fn = server.get("fn")
+    base, token = fn() if fn else ("", "")
+    if not (base and token):
+        raise SongProblem("Sign in to recognise songs on this device.")
+    from .api_client import ApiClient, ApiError
+    with open(path, "rb") as f:
+        audio = f.read()
+    try:
+        found = await ApiClient(base).identify_song(token, audio)
+    except ApiError as exc:
+        raise SongProblem(str(exc)) from exc
+    if not found.get("match"):
+        return None
+    return {"title": found.get("title") or "Unknown title", "artist": found.get("artist") or "Unknown artist",
+            "url": found.get("url")}
+
+
+async def identify_ambient_song() -> Optional[dict]:
+    """Returns {"title", "artist", "url"} on a confident match, else None (raises SongProblem when
+    there's a reason to tell the person). Records a short sample, then: shazamio on this device if it's
+    installed (desktops), otherwise YOUR Gink server (phones); then the local fingerprint database."""
+    path = await _record()
+    if path is None:
         return await _identify_with_local_engine()
+    try:
+        if HAS_SHAZAMIO:
+            try:
+                song = await _recognise_here(path)
+            except Exception:
+                song = None
+        else:
+            song = await _recognise_on_server(path)
+        return song or await _identify_with_local_engine()
     finally:
-        if os.path.exists(tmp_path):
-            os.remove(tmp_path)
+        if os.path.exists(path):
+            os.remove(path)

@@ -171,6 +171,75 @@ async def listen(language: str = "", on_amplitude=None, on_partial=None) -> str:
     return await _Session(language, on_partial=on_partial, on_level=on_amplitude).run()
 
 
+# ---------------------------------------------------------------- recording (song recognition)
+def _write_wav(path: str, pcm: bytes, rate: int) -> None:
+    import wave
+    with wave.open(path, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(rate)
+        wf.writeframes(pcm)
+
+
+def _java_bytes(arr, n: int) -> bytes:
+    try:
+        return bytes(arr)[:n]                          # Chaquopy: primitive arrays support the buffer protocol
+    except Exception:
+        return bytes((int(b) & 0xFF) for b in arr[:n])
+
+
+def _record_blocking(path: str, seconds: float, rate: int) -> None:
+    """Record mono 16-bit PCM with android.media.AudioRecord (any thread) into a .wav file."""
+    jclass, _, jarray = _java()
+    from java import jbyte
+    AR = jclass("android.media.AudioRecord")
+    AF = jclass("android.media.AudioFormat")
+    source = jclass("android.media.MediaRecorder$AudioSource").MIC
+    min_buf = AR.getMinBufferSize(rate, AF.CHANNEL_IN_MONO, AF.ENCODING_PCM_16BIT)
+    if min_buf <= 0:
+        raise VoiceProblem("this phone can\u2019t record audio")
+    rec = AR(source, rate, AF.CHANNEL_IN_MONO, AF.ENCODING_PCM_16BIT, max(int(min_buf), rate))
+    if rec.getState() != AR.STATE_INITIALIZED:
+        rec.release()
+        raise VoiceProblem("the microphone is busy \u2014 close other apps using it and try again")
+    total = int(seconds * rate) * 2
+    buf = jarray(jbyte)(total)
+    got = 0
+    rec.startRecording()
+    try:
+        while got < total:
+            n = rec.read(buf, got, min(8192, total - got))
+            if n is None or n < 0:
+                raise VoiceProblem("the recording stopped (audio error)")
+            if n == 0:
+                time.sleep(0.01)
+            got += n
+    finally:
+        try:
+            rec.stop()
+        except Exception:
+            pass
+        rec.release()
+    _write_wav(path, _java_bytes(buf, got), rate)
+
+
+async def record_wav(seconds: float = 8, rate: int = 16000) -> str:
+    """A short recording for song recognition -> path of a .wav file (the caller deletes it)."""
+    if not await ensure_mic_permission():
+        raise VoiceProblem("Gink needs the microphone \u2014 allow it in Settings > Apps > Gink > Permissions", code=9)
+    fd, path = tempfile.mkstemp(suffix=".wav")
+    os.close(fd)
+    try:
+        await asyncio.get_running_loop().run_in_executor(None, _record_blocking, path, seconds, rate)
+    except Exception:
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+        raise
+    return path
+
+
 # ---------------------------------------------------------------- speaking
 _player = {"media": None, "tts": None, "tts_ready": None}
 
