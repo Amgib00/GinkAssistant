@@ -132,7 +132,8 @@ class SettingsController:
             sync_status = "Synced just now" if mins < 1 else f"Last synced {mins} min ago"
         else:
             sync_status = "Waiting to sync\u2026"
-        info = {"name": self.display_name, "email": self.email, "voices": list(voice_bridge.VOICES),
+        from ..services.api_client import account_label
+        info = {"name": self.display_name, "email": account_label(self.email), "voices": list(voice_bridge.VOICES),
                 "models": self.models_fn(), "version": getattr(self.app, "version", None) or "0.1.0",
                 "server": self.app.state.base_url, "default_server": server_config.platform_default(),
                 "launch_supported": launch_at_login.is_supported(), "sync_status": sync_status,

@@ -180,6 +180,7 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
   .dots span { width: 7px; height: 7px; margin: 0 3px; border-radius: 50%; background: #fff; animation: dot 1s infinite; }
   .dots span:nth-child(2) { animation-delay: 0.15s; } .dots span:nth-child(3) { animation-delay: 0.3s; }
   @keyframes dot { 0%,80%,100% { opacity: 0.3; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
+  [hidden] { display: none !important; }
   .btn.ghost {
     color: var(--text-main); background: var(--soft); font-weight: 500;
     box-shadow: 6px 6px 14px var(--soft-dark), -6px -6px 14px var(--soft-light);
@@ -259,6 +260,7 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
       <div class="divider"><span>or continue with</span></div>
       <div class="socials">__SOCIALS__</div>
       <div class="alt"><a class="link" data-go="otp">Email me a sign-in code instead</a></div>
+      <button class="btn ghost" id="b-phone-open" data-go="phone" style="margin-top:14px" hidden>Continue with phone</button>
       <div class="foot">Don't have an account?<button class="plus" data-go="signup" title="Create account">+</button></div>
     </div>
 
@@ -285,8 +287,8 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
     <!-- VERIFY CODE (sign-up or email-code login) -->
     <div class="view" id="v-verify">
       <a class="back" data-go="back">&larr;&nbsp; Back</a>
-      <h1>Check your email</h1>
-      <p class="sub">We sent a 6-digit code to <b id="v-email"></b></p>
+      <h1 id="v-title">Check your email</h1>
+      <p class="sub"><span id="v-how">We sent a 6-digit code to </span><b id="v-email"></b></p>
       <div class="codes" id="codes-verify"></div>
       <div class="msg" id="m-verify"></div>
       <button class="btn" id="b-verify" data-primary><span class="label">Verify</span><span class="dots"><span></span><span></span><span></span></span></button>
@@ -341,6 +343,28 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
       <button class="btn" id="b-otp" data-primary><span class="label">Send code</span><span class="dots"><span></span><span></span><span></span></span></button>
     </div>
 
+    <!-- PHONE NUMBER (an SMS code; sign in or sign up) -->
+    <div class="view" id="v-phone">
+      <a class="back" data-go="login">&larr;&nbsp; Back to log in</a>
+      <h1>Continue with phone</h1>
+      <p class="sub">We&rsquo;ll text you a 6-digit code. Standard SMS rates may apply.</p>
+      <div class="field"><input id="p-phone" type="tel" inputmode="tel" placeholder="+221 77 123 45 67" autocomplete="tel" aria-label="Phone number with country code"></div>
+      <div class="row-between">
+        <label class="check"><input type="checkbox" id="p-remember" checked><span class="box"></span>Remember me</label>
+      </div>
+      <div class="msg" id="m-phone"></div>
+      <button class="btn" id="b-phone" data-primary><span class="label">Send code</span><span class="dots"><span></span><span></span><span></span></span></button>
+    </div>
+
+    <!-- NEW PHONE ACCOUNT: A NAME -->
+    <div class="view" id="v-name">
+      <h1>Welcome to Gink</h1>
+      <p class="sub">What should Gink call you?</p>
+      <div class="field"><input id="n-name" type="text" placeholder="Your name" autocomplete="name"></div>
+      <div class="msg" id="m-name"></div>
+      <button class="btn" id="b-name" data-primary><span class="label">Create account</span><span class="dots"><span></span><span></span><span></span></span></button>
+    </div>
+
     <!-- WAITING FOR BROWSER SIGN-IN -->
     <div class="view" id="v-oauth">
       <div class="wait">
@@ -387,6 +411,10 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
     $('v-' + view).classList.add('active'); current = view;
     document.querySelectorAll('.msg').forEach(function (m) { m.textContent = ''; m.className = 'msg'; });
     if (data.email) { ['v-email', 'r-email'].forEach(function (id) { $(id).textContent = data.email; }); }
+    if (view === 'verify') {
+      $('v-title').textContent = data.phone ? 'Check your messages' : 'Check your email';
+      $('v-how').textContent = data.phone ? 'We texted a 6-digit code to ' : 'We sent a 6-digit code to ';
+    }
     if (data.title) $('oauth-title').textContent = data.title;
     if (data.info) info(data.info);
     if (view === 'verify' || view === 'reset') { buildCodes(view === 'verify' ? 'codes-verify' : 'codes-reset'); startResend(); }
@@ -426,6 +454,8 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
     });
   }
   function setServer(url) { $('srv').value = url || ''; }
+  function setPhoneEnabled(on) { $('b-phone-open').hidden = !on; }
+  function phoneOk(p) { var d = p.replace(/\D/g, ''); return /^(\+|00)/.test(p.trim()) && d.length >= 8 && d.length <= 17; }
 
   // 6 code boxes: auto-advance, backspace, paste a whole code
   function buildCodes(id) {
@@ -510,6 +540,13 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
     } else if (current === 'otp') {
       e = $('o-email').value.trim(); if (!emailOk(e)) return error('Enter a valid email address.');
       busy(true); ginkEmit('otp_send', {email: e, remember: $('o-remember').checked});
+    } else if (current === 'phone') {
+      var ph = $('p-phone').value.trim();
+      if (!phoneOk(ph)) return error('Enter your number with its country code, like +221 77 123 45 67.');
+      busy(true); ginkEmit('phone_send', {phone: ph, remember: $('p-remember').checked});
+    } else if (current === 'name') {
+      var nm = $('n-name').value.trim(); if (!nm) return error('Tell us your name.');
+      busy(true); ginkEmit('phone_name', {name: nm});
     } else if (current === 'server') {
       busy(true); ginkEmit('server_save', {url: $('srv').value.trim()});
     }
@@ -676,6 +713,17 @@ class LoginController:
             if kind == "ready":
                 await self.call("setServer", server_config.saved_url(self.app) or "")
                 await self.call("setProviders", await self.api.providers())
+                await self.call("setPhoneEnabled", await self.api.phone_signin_enabled())
+            elif kind == "phone_send":                                  # sign in / up with an SMS code
+                await self.api.phone_signin_send(v["phone"])
+                self.pending.update(email=v["phone"], mode="phone", remember=bool(v.get("remember", True)), code="")
+                await self.call("busy", False)
+                await self.call("show", "verify", {"email": v["phone"], "phone": True})
+            elif kind == "phone_name" and self.pending.get("mode") == "phone" and self.pending.get("code"):
+                session = await self.api.phone_signin_verify(self.pending["email"], self.pending["code"], v["name"])
+                if session is None:
+                    raise ApiError("Something was missing \u2014 please try again.")
+                self.finish(session, self.pending["remember"])
             elif kind == "login":
                 session = await self.api.login(v["email"], v["password"])
                 self.finish(session, bool(v.get("remember", True)))
@@ -691,13 +739,22 @@ class LoginController:
                 await self.call("busy", False)
                 await self.call("show", "verify", {"email": v["email"]})
             elif kind == "verify":
-                if self.pending["mode"] == "signup":
+                if self.pending["mode"] == "phone":
+                    session = await self.api.phone_signin_verify(self.pending["email"], v["code"])
+                    if session is None:                                # a new number: the right code, now a name
+                        self.pending["code"] = v["code"]
+                        await self.call("busy", False)
+                        await self.call("show", "name")
+                        return
+                elif self.pending["mode"] == "signup":
                     session = await self.api.verify_register(self.pending["email"], v["code"])
                 else:
                     session = await self.api.verify_otp(self.pending["email"], v["code"])
                 self.finish(session, self.pending["remember"])
             elif kind == "resend":
-                if self.pending["mode"] == "signup":
+                if self.pending["mode"] == "phone":
+                    await self.api.phone_signin_send(self.pending["email"])
+                elif self.pending["mode"] == "signup":
                     await self.api.register(self.pending.get("name", ""), self.pending["email"],
                                             self.pending.get("password", ""))
                 else:

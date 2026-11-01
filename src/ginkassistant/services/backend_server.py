@@ -5200,7 +5200,21 @@ def _phone_db(fn):
             con.close()
 
 
-def _sms_provider() -> str:
+# Where Africa's Talking delivers SMS (its own list, help.africastalking.com, May 2025): Kenya, Uganda,
+# Tanzania, Rwanda, Malawi, Zambia, Nigeria, Cote d'Ivoire, Ethiopia, Ghana, South Africa -- NOT Senegal
+# or Sierra Leone. GINK_AT_COUNTRIES (calling codes, comma-separated) replaces the list if it grows.
+AT_COUNTRIES = ("254", "256", "255", "250", "265", "260", "234", "225", "251", "233", "27")
+
+
+def _at_countries() -> tuple:
+    custom = [c.strip().lstrip("+") for c in (_env("GINK_AT_COUNTRIES") or "").split(",") if c.strip()]
+    return tuple(custom) or AT_COUNTRIES
+
+
+def _sms_provider(to: str = "") -> str:
+    """Which provider texts this number ("" = none can). With both set up, Africa's Talking takes the
+    countries it covers and Twilio the rest; GINK_SMS_PROVIDER forces one. Without a number: whichever
+    exists (for "is phone sign-in on?")."""
     has_at = bool(_env("AT_USERNAME") and _env("AT_API_KEY"))
     has_tw = bool(_env("TWILIO_ACCOUNT_SID") and _env("TWILIO_AUTH_TOKEN") and _env("TWILIO_FROM"))
     chosen = (_env("GINK_SMS_PROVIDER") or "").lower()
@@ -5208,7 +5222,14 @@ def _sms_provider() -> str:
         return "twilio"
     if chosen in ("africastalking", "africas_talking", "at") and has_at:
         return "africastalking"
-    return "africastalking" if has_at else "twilio" if has_tw else ""
+    if not to:
+        return "africastalking" if has_at else "twilio" if has_tw else ""
+    at_covers = to.lstrip("+").startswith(_at_countries())
+    if has_at and at_covers:
+        return "africastalking"
+    if has_tw:
+        return "twilio"
+    return ""                                              # only Africa's Talking, and it doesn't reach there
 
 
 def _sms_limit() -> int:
@@ -5239,7 +5260,7 @@ def _normalize_phone(raw: str) -> str:
 def _send_sms(to: str, text: str) -> str:
     """Send one SMS. Returns "" when sent, otherwise the reason."""
     import httpx
-    provider = _sms_provider()
+    provider = _sms_provider(to)
     try:
         if provider == "africastalking":
             user = _env("AT_USERNAME")
@@ -5274,6 +5295,9 @@ def _text_code(purpose: str, phone: str, email: str = ""):
     """Throttle, check the monthly cap, make a code and send it."""
     if not _sms_provider():
         raise HTTPException(status_code=503, detail="Phone codes aren't set up on this server yet. Use your email instead.")
+    if not _sms_provider(phone):
+        raise HTTPException(status_code=422, detail="Gink can't text codes to numbers in this country yet. "
+                                                    "Use your email instead.")
     _throttle_code("phone", phone)
     if _sms_sent_this_month() >= _sms_limit():
         raise HTTPException(status_code=503, detail="Phone codes are paused for the rest of this month. "

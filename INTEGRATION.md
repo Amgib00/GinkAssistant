@@ -1743,3 +1743,15 @@ New services/live_info.py (all free, no API keys):
   Pillow quirk: ICO sizes missing from append_images are thumbnailed from the LAST appended image (no
   upscaling), so 48/64/128 collapsed to 32 px -- every ICO size is now given explicitly. All other icon
   files are byte-identical after regenerating. Gink Genie's icons are unchanged.
+
+## 0.1.95: phone sign-in in the apps + SMS routing by country
+- The server (/auth/phone/*) and the web page had phone sign-in; the apps' login_screen.py didn't. Added: login
+  view button (hidden until /auth/phone/status says enabled), v-phone (number, remember), v-verify reused with
+  "Check your messages" text, v-name for a new number (server answers {need_name} after a right code that it
+  doesn't consume). ApiClient.phone_signin_enabled/_send/_verify (Session, None = need a name; TwoFactorRequired
+  as usual). api_client.account_label(): "<digits>@phone.gink.invalid" -> "+<digits>" in Settings.
+- Africa's Talking's own list (help.africastalking.com, May 2025) has no Senegal or Sierra Leone. _sms_provider(to):
+  GINK_SMS_PROVIDER forces; else AT for its calling codes (AT_COUNTRIES / GINK_AT_COUNTRIES), Twilio otherwise;
+  "" -> 422 "use your email" BEFORE throttling or sending (nothing charged). No number -> any provider (status).
+- test_phone_signin.py's Senegal/UK/US numbers now need GINK_AT_COUNTRIES in its fixture; routing in
+  test_sms_routing.py; the app flow against a real uvicorn server in test_phone_signin_app.py; page checked in Chromium.

@@ -212,6 +212,30 @@ are deleted; payment records are kept for accounting with the email replaced by
 an anonymous id; existing sign-in tokens stop working immediately. App stores
 require in-app account deletion.
 
+## Phone sign-in (SMS codes)
+
+"Continue with phone" appears on the sign-in screen (apps and web) as soon as one SMS provider is set
+on Render. Every SMS costs money, so `GINK_SMS_MONTHLY_LIMIT` (default 500) stops sending for the rest
+of the month once it's reached; set it to what you're happy to spend.
+
+**Which provider reaches your users.** Africa's Talking delivers to Kenya, Uganda, Tanzania, Rwanda,
+Malawi, Zambia, Nigeria, Cote d'Ivoire, Ethiopia, Ghana and South Africa (its own list,
+help.africastalking.com) -- **not Senegal or Sierra Leone**. Twilio reaches those. Set up both and
+Gink picks per number: Africa's Talking where it covers, Twilio everywhere else. With only Africa's
+Talking, numbers it can't reach are told to use email instead (nothing is sent or charged). If
+Africa's Talking adds countries, list them all in `GINK_AT_COUNTRIES` (calling codes, e.g. `221,254`).
+`GINK_SMS_PROVIDER=twilio` (or `africastalking`) sends everything through one.
+
+- **Africa's Talking:** account.africastalking.com -> create an app -> Settings -> API key.
+  `AT_USERNAME` = the app's username, `AT_API_KEY`, optional `AT_SENDER_ID` (a sender name they approve).
+  To try it free first: `AT_USERNAME=sandbox` with the sandbox's API key -- messages go to their
+  simulator, not real phones.
+- **Twilio:** console.twilio.com -> Account SID, Auth Token, and a phone number that can send SMS ->
+  `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` (like +15550001111). Check its price for
+  your users' countries first: international SMS to West Africa costs far more than local SMS.
+
+Check it: the owner dashboard shows the provider and this month's count; sign in with your own number.
+
 ## Song recognition on phones ("Identify a song")
 
 The Android app records about 8 seconds and sends it to `POST /media/song`; the server asks Shazam

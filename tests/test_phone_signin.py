@@ -20,6 +20,7 @@ def srv(tmp_path, monkeypatch):
         monkeypatch.delenv(k, raising=False)
     monkeypatch.setenv("GINK_DB_PATH", str(tmp_path / "p.db"))
     monkeypatch.setenv("AT_USERNAME", "gink"); monkeypatch.setenv("AT_API_KEY", "at-key")
+    monkeypatch.setenv("GINK_AT_COUNTRIES", "221,232,233,234,254,44,1")   # numbers these tests use (routing: test_sms_routing.py)
     monkeypatch.setattr(httpx, "post", fake_post)
     from fastapi.testclient import TestClient
     from ginkassistant.services import backend_server as b

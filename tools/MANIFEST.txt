@@ -316,6 +316,7 @@ tests/test_owner_dashboard.py
 tests/test_owner_dashboard_live.py
 tests/test_page_events.py
 tests/test_phone_signin.py
+tests/test_phone_signin_app.py
 tests/test_play_music.py
 tests/test_prompts.py
 tests/test_pull_requests.py
@@ -330,6 +331,7 @@ tests/test_settings_sync.py
 tests/test_shared_links.py
 tests/test_signin_name_and_history.py
 tests/test_small_icons.py
+tests/test_sms_routing.py
 tests/test_song_server.py
 tests/test_sync_attach_memory_briefing.py
 tests/test_temporary_chat.py

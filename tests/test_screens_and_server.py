@@ -183,7 +183,8 @@ def test_login_page_signup_verify_login_reset(tmp_path, monkeypatch):
         async def nojs(script): calls.append(("js", (script,)))
         c.js = nojs
         await c.handle({"type": "ready"})
-        assert calls[-1][0] == "setProviders" and "google" in calls[-1][1][0]
+        prov = [a for f, a in calls if f == "setProviders"][-1]
+        assert "google" in prov[0] and calls[-1][0] == "setPhoneEnabled"          # then whether SMS sign-in is on
         await c.handle({"type": "signup", "value": {"name": "Ibrahim", "email": "ib@x.co", "password": "gink2026!"}})
         assert ("show", ("verify", {"email": "ib@x.co"})) in calls
         await c.handle({"type": "verify", "value": {"code": "000000"}})

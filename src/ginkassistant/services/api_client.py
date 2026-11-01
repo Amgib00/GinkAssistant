@@ -72,6 +72,16 @@ def unreachable(exc: Exception) -> "ApiError":
     return ApiError(f"{msg} (Details: {detail})")
 
 
+PHONE_DOMAIN = "@phone.gink.invalid"          # the server's key for accounts made with a phone number
+
+
+def account_label(email: str) -> str:
+    """What to show for an account: the phone number for a phone-only account, else the email."""
+    if (email or "").endswith(PHONE_DOMAIN):
+        return "+" + email[: -len(PHONE_DOMAIN)]
+    return email or ""
+
+
 def device_headers() -> dict:
     """Tell the server which app this is, so Settings > Account can list "Gink for Mac" etc."""
     from .platform_utils import is_android, is_ios
@@ -130,6 +140,28 @@ class ApiClient:
         if "token" not in data:
             raise ApiError("The server didn't return a session.")
         return Session(token=data["token"], email=data.get("email", email), name=data.get("name", ""))
+
+    # -- sign in with a phone number (an SMS code; server: /auth/phone/*) -------
+    async def phone_signin_enabled(self) -> bool:
+        """Does this server send SMS codes? (False when it can't be reached.)"""
+        try:
+            async with httpx.AsyncClient(headers=device_headers(), timeout=min(self.timeout, 20)) as client:
+                resp = await client.get(f"{self.base_url}/auth/phone/status")
+            return resp.status_code == 200 and bool(self._json(resp).get("enabled"))
+        except Exception:
+            return False
+
+    async def phone_signin_send(self, phone: str) -> None:
+        await self._post("/auth/phone/send", {"phone": phone}, "Couldn't send the code. Please try again.")
+
+    async def phone_signin_verify(self, phone: str, code: str, name: str = ""):
+        """-> Session, or None when the code is right but this number is new (then ask for a name and
+        call again with it). Raises TwoFactorRequired when two-step verification is on."""
+        data = await self._post("/auth/phone/verify", {"phone": phone, "code": code, "name": name},
+                                "That code didn't work. Please try again.")
+        if data.get("need_name"):
+            return None
+        return self._session(data, data.get("email", ""))
 
     async def login(self, email: str, password: str) -> Session:
         data = await self._post("/auth/login", {"email": email, "password": password}, "Couldn't log in.")

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.95 (November 2026)
+
+- "Continue with phone" in the apps too: sign in or create an account with your phone number and a
+  code by SMS (the web page already had it). Phone-only accounts show their number in Settings
+- Phone codes go through a provider that reaches your country: Africa's Talking where it delivers,
+  Twilio everywhere else (including Senegal and Sierra Leone). If none can, Gink says to use email
+
 ## 0.1.94 (November 2026)
 
 - Sharper small icons: at 32 pixels and under (Finder lists, the Windows taskbar, iPhone
