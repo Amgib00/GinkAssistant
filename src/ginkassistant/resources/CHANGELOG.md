@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.85 (November 2026)
+
+- For developers on macOS 10.15: tools/check_project.py explains that Mac apps for this macOS are
+  built from a Python 3.11 environment (Briefcase 0.3.15 can't build with Python 3.12)
+
 ## 0.1.84 (November 2026)
 
 - Gink Genie: Version history keeps the last 20 versions of your project, compares any of them with

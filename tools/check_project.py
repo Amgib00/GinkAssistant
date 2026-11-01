@@ -111,6 +111,16 @@ def check_briefcase(out):
             f"(macOS {old_mac}). 0.3.15 is the newest whose apps open on 10.15 and that builds into build/.")
         out(f"      fix: {fix}   then:  python -m briefcase create macOS")
         problems += 1
+    elif old_mac and tuple(sys.version_info)[:2] >= (3, 12):
+        # Briefcase 0.3.15 (the last whose Mac apps open on 10.15) only has app stubs for Python 3.8-3.11:
+        # "No such file or directory: 'Gink.app/Contents/MacOS/Stub-3.12'" on Python 3.12+.
+        out(f"  ! This environment is Python {tuple(sys.version_info)[0]}.{tuple(sys.version_info)[1]}, but Briefcase 0.3.15 (the last "
+            f"whose Mac apps open on macOS {old_mac}) builds Mac apps only with Python 3.8-3.11.")
+        out("      fix: keep this environment for running Gink and the tests, and build the app from a Python 3.11 one:")
+        out("           /Library/Frameworks/Python.framework/Versions/3.11/bin/python3.11 -m venv ~/.venvs/gink-build311")
+        out('           ~/.venvs/gink-build311/bin/python -m pip install "briefcase==0.3.15"')
+        out("           ~/.venvs/gink-build311/bin/python -m briefcase create macOS   (then build / run)")
+        problems += 1
     else:
         out(f"  \u2713 Briefcase {env_v} in this environment (builds into build/"
             + (f"; apps open on this Mac, macOS {old_mac})" if old_mac else ")"))

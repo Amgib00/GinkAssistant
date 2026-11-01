@@ -136,6 +136,7 @@ def test_catalina_needs_briefcase_0315(monkeypatch):
     assert cp.check_briefcase(lines.append) == 1
     assert "won't open on this Mac" in lines[0] and "0.3.15" in lines[0] and 'briefcase==0.3.15' in lines[1]
     _fake_env(monkeypatch, cp, "0.3.15", os.path.join(os.path.dirname(sys.executable), "briefcase"), "0.3.15")
+    monkeypatch.setattr(cp.sys, "version_info", (3, 11, 9, "final", 0))   # 0.3.15 builds Mac apps with Python <= 3.11
     lines = []
     assert cp.check_briefcase(lines.append) == 0 and "apps open on this Mac" in lines[0]
     _fake_env(monkeypatch, cp, "0.3.12", os.path.join(os.path.dirname(sys.executable), "briefcase"), "0.3.12")
@@ -168,3 +169,16 @@ def test_real_name_ignores_listing_order(tmp_path, monkeypatch):
         cp.check(str(proj), fix=False, out=lines.append, briefcase_check=False)
         stray = [l for l in lines if "leftover build folder" in l]
         assert len(stray) == 1 and "./macOS/" in stray[0]
+
+
+
+def test_catalina_on_python_312_points_to_a_311_build_environment(monkeypatch):
+    """Briefcase 0.3.15's Mac template has app stubs only for Python 3.8-3.11 (Stub-3.12 missing)."""
+    import check_project as cp
+    monkeypatch.setattr(cp, "_old_mac", lambda: "10.15.7")
+    _fake_env(monkeypatch, cp, "0.3.15", os.path.join(os.path.dirname(sys.executable), "briefcase"), "0.3.15")
+    monkeypatch.setattr(cp.sys, "version_info", (3, 12, 9, "final", 0))
+    lines = []
+    assert cp.check_briefcase(lines.append) == 1
+    text = "\n".join(lines)
+    assert "builds Mac apps only with Python 3.8-3.11" in text and "gink-build311" in text

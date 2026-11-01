@@ -1628,3 +1628,9 @@ New services/live_info.py (all free, no API keys):
   (added/removed/changed vs now). /undo first saves 'Before going back to: ...' (restores are undoable).
 - genie.html: #history (clock icon; also in More), #histdlg (Before: "request", time, files; Compare,
   Restore); Undo's confirm mentions Version history. Browser-tested.
+
+## 0.1.85: Catalina builds need Python <= 3.11
+- Owner's 'briefcase create macOS' in gink312: 'Stub-3.12' missing -- the v0.3.15 macOS template only has
+  Stub-3.8..3.11 (checked), and newer Briefcase makes apps that need macOS 11. Two environments: gink312
+  (run Gink, tests, PyCharm) + gink-build311 (Python 3.11.9 installer, briefcase==0.3.15) for local apps.
+  check_project.check_briefcase says so on old macOS + Python >= 3.12.
