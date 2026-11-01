@@ -66,13 +66,15 @@ def save_url(app, url: str) -> str:
 ONLINE_SERVER = "https://gink-server.onrender.com"
 
 
+LOCAL_SERVER = "http://127.0.0.1:8000"       # the computer apps' built-in server (Settings -> Advanced -> Login server)
+
+
 def platform_default() -> str:
-    """Phones/tablets -> the online server. Desktop -> its own built-in server on this computer
-    (switch it in Settings -> Advanced -> Login server to share accounts and chats online)."""
-    from .platform_utils import is_mobile
-    if is_mobile():
-        return ONLINE_SERVER
-    return "http://127.0.0.1:8000"
+    """Every platform uses the online server: one account, synced chats, and the server's Google sign-in
+    and email. Computers used their own built-in server by default, which has none of the online
+    server's settings ("Google sign-in isn't set up yet", sign-up codes never emailed) and its own
+    accounts. The built-in one is still there for offline work: Settings -> Advanced -> Login server."""
+    return ONLINE_SERVER
 
 
 def resolve_base_url(app) -> str:

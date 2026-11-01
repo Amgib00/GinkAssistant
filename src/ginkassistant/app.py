@@ -41,7 +41,7 @@ from dotenv import load_dotenv
 from .services.actions import DeviceActions, ReminderScheduler, TaskAgent, TaskStore, ToolRunner
 from .services.memory import MemoryStore
 from .services.paths import data_dir
-from .services.server_config import resolve_base_url
+from .services.server_config import is_local, resolve_base_url
 from .services.platform_utils import is_desktop
 from .ui.login_screen import build_login_screen, load_saved_session
 from .ui.main_screen import build_main_screen
@@ -150,7 +150,7 @@ class GinkAssistantApp(toga.App):
         self.state = AppState(base_url=resolve_base_url(self))
         data_dir(self)  # ensure the writable data directory exists up front
 
-        if is_desktop():
+        if is_desktop() and is_local(self.state.base_url):   # only when chosen (Settings -> Advanced -> Login server)
             _start_backend_if_needed(self)
 
         self._setup_task_system()

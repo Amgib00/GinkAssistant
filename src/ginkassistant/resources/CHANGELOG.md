@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.87 (November 2026)
+
+- Fixed: on computers, Google sign-in said it "isn't set up" and sign-up codes never arrived. The
+  computer apps used their own built-in server, without the online server's settings and accounts.
+  Every platform now uses the online server (one account everywhere); the built-in one is still in
+  Settings > Advanced > Login server, and only runs when chosen
+
 ## 0.1.86 (November 2026)
 
 - Fixed: when a sign-up or sign-in code couldn't be emailed, Gink said it was sent and nothing came.

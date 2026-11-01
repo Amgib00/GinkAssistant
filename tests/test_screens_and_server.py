@@ -300,13 +300,16 @@ def test_social_sign_in_survives_a_slow_browser(tmp_path, monkeypatch):
     assert errors == [] and done == ["slow@example.com"] and len(polls) >= 2
 
 
-def test_phones_default_to_the_online_server(monkeypatch):
-    """A real phone can't reach a server on the Mac (10.0.2.2 only works in the emulator)."""
+def test_every_platform_defaults_to_the_online_server(monkeypatch):
+    """Phones can't reach a server on the Mac; computers used their own built-in server, which had none of
+    the online server's settings (no Google sign-in, codes never emailed) and separate accounts."""
     from ginkassistant.services import server_config as sc, platform_utils as pu
-    monkeypatch.setattr(pu, "is_mobile", lambda: True)
-    assert sc.platform_default() == sc.ONLINE_SERVER and sc.ONLINE_SERVER.startswith("https://")
-    monkeypatch.setattr(pu, "is_mobile", lambda: False)
-    assert sc.platform_default() == "http://127.0.0.1:8000"
+    for mobile in (True, False):
+        monkeypatch.setattr(pu, "is_mobile", lambda m=mobile: m)
+        assert sc.platform_default() == sc.ONLINE_SERVER and sc.ONLINE_SERVER.startswith("https://")
+    assert sc.is_local(sc.LOCAL_SERVER)                         # still available in Settings -> Advanced
+    app_py = open(os.path.join(os.path.dirname(__file__), "..", "src", "ginkassistant", "app.py"), encoding="utf-8").read()
+    assert "if is_desktop() and is_local(self.state.base_url):" in app_py   # the built-in server only starts when chosen
 
 
 def test_online_servers_get_time_to_wake_up():

@@ -1642,3 +1642,9 @@ New services/live_info.py (all free, no API keys):
   _note_problem('Email not sent', reason, recipient's domain only). /auth/forgot stays neutral (no
   account probing) but notes the problem. Codes go to the log ONLY when no email service is set up.
 - _note_problem marks the request (state.gink_problem_noted): no duplicate generic 'Server error'.
+
+## 0.1.87: computers use the online server by default
+- Owner's Mac build: 'Google sign-in isn't set up yet' + no sign-up emails: server_config.platform_default()
+  returned http://127.0.0.1:8000 on desktop (the in-app server: no Render env, separate accounts, no sync).
+  Now ONLINE_SERVER everywhere; LOCAL_SERVER kept for Settings > Advanced > Login server; app.py starts
+  the built-in server only when the chosen address is local. Saved choices (server.json) still win.
