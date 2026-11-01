@@ -19,6 +19,7 @@ pygame
 pygments
 pypdf
 pytest
+defusedxml           # news feeds: the hardened XML reader
 PyYAML               # tests read the GitHub workflow files (pull requests, releases)
 python-dotenv
 python-multipart

@@ -140,3 +140,22 @@ def test_preview_may_only_be_framed_by_gink(tmp_path, monkeypatch):
     url = c.get(f"/genie/projects/{pid}", headers=h).json()["project"]["preview_url"].replace("http://testserver", "")
     csp = c.get(url).headers["content-security-policy"]
     assert "frame-ancestors 'self'" in csp and "sandbox allow-scripts" in csp
+
+
+def test_preview_errors_reach_genie(tmp_path, monkeypatch):
+    """The preview reports its errors to Genie (only when framed); Genie listens only to its own preview frame."""
+    monkeypatch.setenv("GINK_DB_PATH", str(tmp_path / "pe.db"))
+    from fastapi.testclient import TestClient
+    from ginkassistant.services import backend_server as b
+    c = TestClient(b.app)
+    h = {"Authorization": "Bearer " + b._token_response("ib@example.com", "I")["token"]}
+    pid = c.post("/genie/projects", headers=h, json={"name": "P"}).json()["project"]["id"]
+    c.put(f"/genie/projects/{pid}/file", headers=h, json={"path": "index.html", "content": "<html><head><title>x</title></head><body><script>go()</script></body></html>"})
+    c.put(f"/genie/projects/{pid}/file", headers=h, json={"path": "app.js", "content": "console.log(1)"})
+    url = c.get(f"/genie/projects/{pid}", headers=h).json()["project"]["preview_url"].replace("http://testserver", "")
+    html = c.get(url).text
+    assert html.index("gink_preview_error") < html.index("<script>go()")           # reports before the page's own scripts run
+    assert "if (window.parent === window) return;" in html                          # opened directly: does nothing
+    assert "gink_preview_error" not in c.get(url + "app.js").text                    # only HTML pages
+    genie = open(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "genie.html"), encoding="utf-8").read()
+    assert "e.source !== f.contentWindow" in genie and 'id="perr-fix"' in genie and "clearPerr();" in genie

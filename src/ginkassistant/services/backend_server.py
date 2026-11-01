@@ -5891,9 +5891,38 @@ def genie_preview(key: str, request: Request, path: str = ""):
            f"script-src {origin} 'unsafe-inline'; style-src {origin} 'unsafe-inline'; img-src {origin} data: blob: https:; "
            f"connect-src {origin}; form-action 'none'; base-uri 'none'; frame-ancestors 'self'")   # only Gink may frame it
     ext = os.path.splitext(want)[1].lower()
+    if ext in (".html", ".htm"):
+        content = _with_error_reporter(content)        # inside Genie, the page's errors reach Genie ("Ask Genie to fix")
     return Response(content, media_type=MIME.get(ext, "text/plain") + "; charset=utf-8",
                     headers={"Content-Security-Policy": csp, "X-Content-Type-Options": "nosniff",
                              "Referrer-Policy": "no-referrer", "Cache-Control": "no-store"})
+
+
+# The preview's error reporter: only when the page is framed (inside Genie); at most 20 reports per load.
+# The frame is sandboxed (an empty origin), so postMessage is its only way out -- Genie checks the sender.
+GENIE_ERROR_REPORTER = """<script>(function () {
+  if (window.parent === window) return;
+  var sent = 0;
+  function send(kind, message, where) {
+    if (sent >= 20) return; sent++;
+    try { parent.postMessage({ gink_preview_error: { kind: kind, message: String(message || "").slice(0, 300),
+          where: String(where || "").slice(0, 160), page: location.pathname.split("/").slice(4).join("/") || "index.html" } }, "*"); } catch (e) {}
+  }
+  window.addEventListener("error", function (e) {
+    var t = e.target;
+    if (t && t !== window && (t.src || t.href)) { send("Missing file", (t.tagName || "").toLowerCase() + " couldn't load", (t.src || t.href).split("/").pop()); return; }
+    var file = (e.filename || "").split(/[?#]/)[0].split("/").pop();          // without the preview's reload marker
+    send("Error", e.message, file ? file + (e.lineno ? ":" + e.lineno : "") : (e.lineno ? "line " + e.lineno : ""));
+  }, true);
+  window.addEventListener("unhandledrejection", function (e) { var r = e.reason; send("Unhandled promise", r && (r.message || r)); });
+  var ce = console.error;
+  console.error = function () { send("console.error", Array.prototype.map.call(arguments, String).join(" ")); return ce.apply(console, arguments); };
+})();</script>"""
+
+
+def _with_error_reporter(html: str) -> str:
+    m = re.search(r"<head[^>]*>", html, re.I)
+    return html[:m.end()] + GENIE_ERROR_REPORTER + html[m.end():] if m else GENIE_ERROR_REPORTER + html
 
 
 # ================================================================ Gink Genie -> GitHub ("Connect GitHub", "Push to GitHub")

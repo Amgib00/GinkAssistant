@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.83 (November 2026)
+
+- Gink Genie sees when your website breaks: errors in the Preview appear in a bar, and "Ask Genie to fix"
+  sends them to Genie to fix the code
+
+## 0.1.82 (November 2026)
+
+- "Hey Gink" works in the web app (and so on iPhone, in Safari), with an honest note that browsers
+  listen through their own speech service
+- "Hey Gink" on computers keeps working when one microphone library is missing: it switches to another
+- Your profile (name, what Gink calls you, work, photo) is the same on the web as in the apps
+- Security: the song database and news feeds can no longer be used to attack Gink
+- Gink now needs Python 3.11 or newer (3.10 reached its end of life)
+
 ## 0.1.81 (November 2026)
 
 - When Gink searches the web, the spinner says "Searching the web..." (automatic searches included)

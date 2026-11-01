@@ -16,6 +16,16 @@ NEWS_SOURCES = [
 ]
 
 
+
+def _parse_xml(data: bytes):
+    """News feeds come from the internet: use the hardened reader (defusedxml: no entity expansion
+    attacks) when it's installed, else the standard one (recent Python's expat limits expansion too)."""
+    try:
+        from defusedxml.ElementTree import fromstring
+    except ImportError:
+        fromstring = ET.fromstring
+    return fromstring(data)
+
 async def fetch_world_news() -> Tuple[str, List[dict]]:
     """Returns (summary_text, headlines). Raises RuntimeError if every
     source fails, same as the original emitting error_occurred."""
@@ -29,7 +39,7 @@ async def fetch_world_news() -> Tuple[str, List[dict]]:
             try:
                 resp = await client.get(feed_url)
                 resp.raise_for_status()
-                root = ET.fromstring(resp.content)
+                root = _parse_xml(resp.content)
                 for item in root.findall(".//item")[:3]:
                     title_el = item.find("title")
                     link_el = item.find("link")

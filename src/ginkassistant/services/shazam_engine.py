@@ -43,6 +43,18 @@ except (ImportError, OSError):      # OSError: sounddevice without the PortAudio
 logger = logging.getLogger("ShazamEngine")
 
 
+
+class _PlainDataUnpickler(pickle.Unpickler):
+    """Loads the fingerprint database as plain data only (lists, dicts, numbers, text). A pickle file can
+    otherwise run any code when loaded; the database is Gink's own file, but a tampered one mustn't."""
+    _ALLOWED = {("collections", "defaultdict"), ("builtins", "list"), ("builtins", "dict"), ("builtins", "set"),
+                ("builtins", "tuple"), ("builtins", "int"), ("builtins", "float"), ("builtins", "str"), ("builtins", "bytes")}
+
+    def find_class(self, module, name):
+        if (module, name) in self._ALLOWED:
+            return super().find_class(module, name)
+        raise pickle.UnpicklingError(f"not plain data: {module}.{name}")
+
 class ShazamUnavailable(Exception):
     pass
 
@@ -69,10 +81,10 @@ class ShazamEngine:
         if os.path.exists(self.db_path):
             try:
                 with open(self.db_path, "rb") as f:
-                    data = pickle.load(f)
+                    data = _PlainDataUnpickler(f).load()     # plain data only: a tampered file can't run code
                     self.fingerprints = data.get("db", defaultdict(list))
                     self.song_metadata = data.get("song_info", {})
-            except (pickle.UnpicklingError, EOFError) as e:
+            except (pickle.UnpicklingError, EOFError, AttributeError, ValueError) as e:
                 logger.error(f"Failed to load Shazam database: {e}. Starting fresh.")
 
     def save_database(self):
@@ -108,7 +120,7 @@ class ShazamEngine:
     def add_song(self, samples, title: str, artist: str = "") -> int:
         """Learn a song (mono samples at SAMPLE_RATE) so identify() can recognise it offline.
         Returns how many fingerprints were stored; call save_database() to keep them."""
-        track_id = hashlib.sha1(f"{title}|{artist}".encode("utf-8")).hexdigest()[:16]
+        track_id = hashlib.sha1(f"{title}|{artist}".encode("utf-8"), usedforsecurity=False).hexdigest()[:16]   # an id, not security
         hashes = self._generate_fingerprints(samples)
         for h, offset in hashes:
             self.fingerprints[h].append((track_id, offset))
@@ -157,6 +169,6 @@ class ShazamEngine:
                     t_delta = t2 - t1
                     if 0 < t_delta <= 200:
                         h_str = f"{f1}|{f2}|{t_delta}"
-                        h = hashlib.sha1(h_str.encode("utf-8")).hexdigest()[:20]
+                        h = hashlib.sha1(h_str.encode("utf-8"), usedforsecurity=False).hexdigest()[:20]
                         hashes.append((h, t1))
         return hashes

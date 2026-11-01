@@ -282,11 +282,13 @@ SETTINGS_JS = r"""
           {apps: true, type: 'button', label: 'Natural voice', desc: 'Check that the human-sounding voice works. If it doesn\u2019t, Gink uses a standard voice and this tells you why.', action: 'test_voice', text: 'Test'}]},
         {title: 'Hey Gink', rows: [
           {type: 'toggle', key: 'wake_enabled', label: 'Listen for \u201cHey Gink\u201d', disabled: info.wake_supported === false,
-           desc: 'Say \u201cHey Gink\u201d to ask something hands-free. Listening for it happens entirely on this computer \u2014 nothing is sent anywhere until you say it.' +
+           desc: (info.wake_web
+                  ? 'Say \u201cHey Gink\u201d to ask something hands-free while this tab is open. In the browser, listening uses the browser\u2019s speech service: Chrome sends what it hears to Google, Safari to Apple. The Gink apps listen entirely on your device instead.'
+                  : 'Say \u201cHey Gink\u201d to ask something hands-free. Listening for it happens entirely on this device \u2014 nothing is sent anywhere until you say it.') +
                  (info.wake_supported === false ? ' (Not available on this device yet.)' : '')},
           {type: 'info', label: 'Status', value: info.wake_status || 'Off'},
           {type: 'toggle', key: 'wake_followup', label: 'Keep listening for a follow-up', desc: 'After answering, Gink listens a few more seconds so you can carry on without saying \u201cHey Gink\u201d again.'},
-          {type: 'toggle', key: 'wake_front', label: 'Bring Gink to the front', desc: 'Show the Gink window when you wake it.'}]},
+          {apps: true, type: 'toggle', key: 'wake_front', label: 'Bring Gink to the front', desc: 'Show the Gink window when you wake it.'}]},
         {title: 'Privacy', rows: [{type: 'note', text: 'To understand you, your speech is sent to Google\u2019s speech service and turned into text. Voice conversations are saved like any chat, and you can delete them at any time.'}]}]},
       {id: 'keyboard', group: 'Settings', title: 'Keyboard', sections: [
         {title: 'Typing', rows: [

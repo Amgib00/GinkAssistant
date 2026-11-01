@@ -207,3 +207,10 @@ When an answer changed a web page's files (HTML, CSS or JavaScript) in a project
 #### Scenario: Building a bakery page
 - **WHEN** the person asks for a bakery landing page from the start screen
 - **THEN** the Preview tab opens showing the page once Genie has answered
+
+### Requirement: Preview errors reach Genie
+Pages in the preview SHALL report their errors (script errors, unhandled promises, console errors, files that fail to load) to Genie when shown inside Genie, at most 20 per load; Genie SHALL accept these reports only from its own preview frame, show them in a bar, and send them to Genie as a fix request only when the person presses "Ask Genie to fix".
+
+#### Scenario: A script calls a missing function
+- **WHEN** the preview's page calls a function that doesn't exist
+- **THEN** the bar shows the error with its line, and "Ask Genie to fix" sends it to Genie

@@ -1,6 +1,6 @@
 # Gink server: sign-in, AI, sync, payments, images, voices -- and Gink on the web at /app.
 # Build from the PROJECT ROOT:  docker build -f deploy/Dockerfile -t gink-server .
-FROM python:3.11-slim
+FROM python:3.12-slim
 WORKDIR /srv
 COPY deploy/requirements-server.txt .
 RUN pip install --no-cache-dir -r requirements-server.txt

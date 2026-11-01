@@ -1604,3 +1604,21 @@ New services/live_info.py (all free, no API keys):
   web_chat.set_spin_label. Web: bridge chat() -> setSpinLabel(aid). Tests run the real GroqBrain.ask.
   Status piece only for Gink's own clients (not gink_live_ API keys): developers' code often reads
   choices[0] of every piece (an older test did exactly that and failed).
+
+## 0.1.82: Hey Gink on the web, mic fallback, web profile sync, security, Python 3.11+
+- wake_word._AnyMic: PyAudio, then sounddevice (ships PortAudio on mac/win); clear error for the status.
+- bridge.js: Hey Gink via (webkit)SpeechRecognition continuous while visible; WAKE_RE; startVoice();
+  stops during voice conversations, restarts after; 'not-allowed' -> blocked status. Settings: honest
+  web text (Chrome -> Google, Safari -> Apple); wake_front apps-only. iPhone app still has none (web works).
+- bridge.js profile: takeProfile/profileEdit/profileNote; pushes 'profile' kind on sync (newest wins);
+  sidebar name + photo; AI told the name/work. E2E-tested app -> web -> app.
+- Bandit: shazam SHA1 marked usedforsecurity=False; pickle DB loaded with _PlainDataUnpickler (plain data
+  only); news XML via defusedxml (now a requirement); Genie /health only http(s). Bandit -ll clean.
+- Python: requires >=3.11 (32-bit Android stops at 3.11); tests 3.11+3.13; server image 3.12; CLI >=3.11.
+
+## 0.1.83: preview errors reach Genie
+- Preview HTML gets GENIE_ERROR_REPORTER after <head> (only acts when framed; error (capture: missing
+  files), unhandledrejection, console.error; max 20/load; file:line without the ?t= marker) -> postMessage.
+- genie.html: accepts only e.source === #pframe.contentWindow; .perr bar (count, list, Ask Genie to fix,
+  Dismiss); clearPerr on reload; the fix request lists every error and switches to the Genie chat.
+  Never automatic (no fix loops). Browser-tested with a broken page.

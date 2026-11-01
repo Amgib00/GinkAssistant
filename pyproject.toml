@@ -6,10 +6,10 @@ build-backend = "setuptools.build_meta"
 # Must be a valid package name (letters, digits, "-", "_", "."; no spaces).
 # Briefcase 0.4.6+ reads this name, so "gink ai assistant" could break builds.
 name = "ginkassistant"
-version = "0.1.81"
+version = "0.1.83"
 description = "Your AI assistant for work, study and everyday life"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"            # 3.10 reached end of life (Oct 2026); 32-bit Android stops at 3.11
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [
@@ -22,7 +22,7 @@ license = "MIT"          # Briefcase 0.3.15 reads this one (it can't read the [p
 # "Gink Ai Assistant" will become an error). Users see formal_name ("Gink") below.
 project_name = "ginkassistant"
 bundle = "com.amgib"
-version = "0.1.81"
+version = "0.1.83"
 url = "https://github.com/amgib00/ginkassistant"
 author = "Amgib00"
 author_email = "kargboi131ik667957@gmail.com"
@@ -54,6 +54,7 @@ requires = [
     "groq",             # the AI client (talks to Groq or to your Gink server)
     "httpx",            # every network call
     "markdown",         # chat formatting (services/markdown_render.py)
+    "defusedxml",       # news feeds: the hardened XML reader (pure Python, every platform)
     "openpyxl",         # Excel files Gink makes
     "packaging",        # version checks (services/skills.py)
     "pillow",           # images, photos, icons (has iPhone builds for Python 3.13+)

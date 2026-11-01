@@ -184,6 +184,62 @@ class _PyAudioMic:
             self._pa = None
 
 
+class _SoundDeviceMic:
+    """The same microphone through sounddevice, which ships its own PortAudio on macOS and Windows:
+    Hey Gink keeps working when PyAudio isn't installed (it has no ready-made Mac builds) or fails to open."""
+    name = "sounddevice"
+
+    def __call__(self, frame: int):
+        import sounddevice as sd
+        stream = sd.RawInputStream(samplerate=RATE, channels=1, dtype="int16", blocksize=frame)
+        stream.start()
+
+        class S:
+            def read(self):
+                data, _overflowed = stream.read(frame)
+                return bytes(data)
+
+            def close(self):
+                try:
+                    stream.stop()
+                finally:
+                    stream.close()
+        return S()
+
+    def terminate(self):
+        pass
+
+
+class _AnyMic:
+    """PyAudio first (what the builds verify), sounddevice if PyAudio is missing or can't open the microphone.
+    Remembers which one worked; the error of the last try is kept for the status line."""
+
+    def __init__(self, pyaudio_mic=None, sounddevice_mic=None):
+        self._mics = [pyaudio_mic or _PyAudioMic(), sounddevice_mic or _SoundDeviceMic()]
+        self.using = ""
+
+    def __call__(self, frame: int):
+        errors = []
+        for mic in list(self._mics):
+            try:
+                stream = mic(frame)
+            except Exception as exc:                 # ImportError (not installed) or a device error
+                errors.append(f"{type(mic).__name__.strip('_')}: {type(exc).__name__}: {exc}")
+                continue
+            if mic is not self._mics[0]:             # this one works: try it first from now on
+                self._mics.remove(mic); self._mics.insert(0, mic)
+            self.using = type(mic).__name__.strip("_")
+            return stream
+        raise RuntimeError("no microphone could be opened (" + "; ".join(errors)[:300] + ")")
+
+    def terminate(self):
+        for mic in self._mics:
+            try:
+                mic.terminate()
+            except Exception:
+                pass
+
+
 class WakeWordListener:
     """Background thread: mic -> engine -> on_wake().
 
@@ -195,7 +251,7 @@ class WakeWordListener:
     def __init__(self, engine, on_wake: Callable[[], None], open_stream=None, cooldown: float = 2.0):
         self.engine, self.on_wake = engine, on_wake
         self._own_mic = open_stream is None
-        self.open_stream = open_stream or _PyAudioMic()
+        self.open_stream = open_stream or _AnyMic()       # PyAudio, or sounddevice when PyAudio can't
         self.cooldown = cooldown
         self._run = threading.Event()
         self._paused = threading.Event()

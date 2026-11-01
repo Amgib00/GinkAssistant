@@ -351,7 +351,7 @@
            (voice ? " You're in a live voice conversation: reply in one to three short, natural spoken sentences, " +
                     "with no lists, headings, code, links or emojis." : "") +
            (W.prefs.instructions ? "\n\nThe person's own instructions for you (follow them unless they're unsafe): " +
-                                  String(W.prefs.instructions).slice(0, 2000) : "") + memoryNote() +
+                                  String(W.prefs.instructions).slice(0, 2000) : "") + profileNote() + memoryNote() +
            (voice ? "" : " " + "When you genuinely need the person's preferences or details before you can help well (planning a trip, recommending something, a workout plan...), you may ask 1 to 3 short questions as tappable choices: write one short sentence, then a fenced code block with the language ask containing JSON like {\"questions\": [{\"q\": \"Your question?\", \"options\": [\"Choice 1\", \"Choice 2\", \"Choice 3\"]}]} (2 to 4 short options each). The person can also type their own answer. Don't use it for simple questions, facts, or when they already said what they want.");
   }
   // questions that need the internet search the web on their own, whatever model is picked
@@ -567,6 +567,38 @@
     rec.onerror = function () { rec = null; setDictating(false); };
     rec.start();
   }
+  // ---- "Hey Gink" in the browser: the browser's speech recognition listens while this tab is visible
+  // (Chrome sends what it hears to Google, Safari to Apple: Settings says so). On "Hey Gink", voice mode opens.
+  var WK = { rec: null, status: "", blocked: false };
+  var WAKE_RE = /\b(hey|hi|ok|okay)[ ,]+(gink|ginks|king|jink|jinx|ginkgo|ging)\b/i;
+  function wakeStatus(text) { if (WK.status !== text) { WK.status = text; pushSettings(); } }
+  function wakeWanted() { return !!(W.prefs.wake_enabled && Rec && W.token && !V.on && !WK.blocked && document.visibilityState === "visible"); }
+  function wakeStart() {
+    if (WK.rec) return;
+    if (!wakeWanted()) {
+      if (!W.prefs.wake_enabled) wakeStatus("Off");
+      else if (!Rec) wakeStatus("Not available in this browser (try Chrome, Edge or Safari)");
+      else if (!WK.blocked && !V.on) wakeStatus("Paused while this tab is in the background");
+      return;
+    }
+    var r = new Rec(); r.lang = navigator.language || "en-US"; r.continuous = true; r.interimResults = true;
+    r.onresult = function (e) {
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        if (WAKE_RE.test(e.results[i][0].transcript)) { wakeStop(); if (typeof startVoice === "function") startVoice(); return; }
+      }
+    };
+    r.onerror = function (e) {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        WK.blocked = true; wakeStatus("Microphone blocked: allow the microphone for this site in your browser, then switch this on again");
+      }
+    };
+    r.onend = function () { WK.rec = null; setTimeout(wakeStart, 400); };     // browsers stop after a while: carry on
+    try { r.start(); WK.rec = r; wakeStatus("Listening for \u201cHey Gink\u201d in this browser tab"); }
+    catch (err) { wakeStatus("Couldn\u2019t start listening (" + (err && err.message || err) + ")"); }
+  }
+  function wakeStop() { var r = WK.rec; WK.rec = null; if (r) { r.onend = null; try { r.abort(); } catch (e) {} } }
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") wakeStart(); else wakeStop(); });
+
   // ---- voice conversations in the browser: listen -> think -> speak -> listen again
   var V = { on: false, muted: false, rec: null, heard: "" };
   function voiceList() { return window.GINK_VOICES || []; }
@@ -611,6 +643,34 @@
   // ---------------------------------------------------------------- sync with the desktop app
   // ---- memories (synced from the apps: "remember that ...")
   W.memories = load("gink_memories", null);
+  // ---- the profile (name, what Gink calls you, work, photo): the same one as in the apps, synced both ways
+  W.profile = load("gink_profile", null) || { updated: 0, payload: {}, dirty: false };
+  var PROFILE_KEYS = ["full_name", "nickname", "work"];
+  function applyProfile() {
+    var p = W.profile.payload || {};
+    PROFILE_KEYS.forEach(function (k) { if (typeof p[k] === "string") W.prefs[k] = p[k]; });
+    var shown = p.full_name || p.nickname || W.name || W.email || "Gink user";
+    setUser(shown, p.photo || "", (p.nickname || shown).split(/[\s@]/)[0]);
+  }
+  function takeProfile(docs) {
+    (docs || []).forEach(function (d) {
+      if (d.id !== "me" || d.deleted || !(d.updated > W.profile.updated)) return;      // newest copy wins
+      W.profile = { updated: d.updated, payload: d.payload || {}, dirty: false };
+      save("gink_profile", W.profile); applyProfile(); pushSettings();
+    });
+  }
+  function profileEdit(key, value) {
+    W.profile.payload = Object.assign({}, W.profile.payload, (function (o) { o[key] = String(value || "").replace(/\s+/g, " ").trim().slice(0, 120); return o; })({}));
+    W.profile.updated = Date.now() / 1000; W.profile.dirty = true;
+    save("gink_profile", W.profile); applyProfile();
+    if (typeof sync === "function") sync();                       // send it to the other devices now
+  }
+  function profileNote() {
+    var p = W.profile.payload || {}, bits = [];
+    if (p.nickname || p.full_name) bits.push("Call the person " + (p.nickname || p.full_name) + ".");
+    if (p.work) bits.push("Their work: " + p.work + " (pick examples that fit).");
+    return bits.length ? "\n\n" + bits.join(" ") : "";
+  }
   function takeMemories(docs) {
     var m = W.memories || {};
     (docs || []).forEach(function (d) { if (d.deleted) delete m[d.id]; else m[d.id] = { text: (d.payload || {}).text || "", created: (d.payload || {}).created || 0 }; });
@@ -618,7 +678,7 @@
   }
   if (W.memories === null && W.token) {                     // first time: every memory, once (later: only changes)
     api("/sync", { since: 0, push: {} }).then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) { if (j) takeMemories((j.changes || {}).memories); }).catch(function () {});
+      .then(function (j) { if (j) { takeMemories((j.changes || {}).memories); takeProfile((j.changes || {}).profile); } }).catch(function () {});
   }
   var MEM_STOP = ("a an and are as at be but by can could did do does for from had has have how i if in into is it its me my no not of on or " +
     "our so than that the their them then there these they this to was we were what when where which who why will with would you your yes " +
@@ -649,9 +709,12 @@
       return { id: s.id, updated: s.updated, deleted: !!s.deleted,
                payload: { messages: s.deleted ? [] : s.messages, title: s.title || "", pinned: !!s.pinned, archived: !!s.archived } };
     }).filter(Boolean);
-    api("/sync", { since: W.since, push: { chats: push } }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+    var pushProfile = W.profile.dirty ? [{ id: "me", updated: W.profile.updated, deleted: false, payload: W.profile.payload }] : [];
+    api("/sync", { since: W.since, push: { chats: push, profile: pushProfile } }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
       if (!j) return;
       push.forEach(function (d) { delete W.dirty[d.id]; });
+      if (pushProfile.length && W.profile.updated === pushProfile[0].updated) { W.profile.dirty = false; save("gink_profile", W.profile); }
+      takeProfile((j.changes || {}).profile);
       var changedCurrent = false;
       takeMemories((j.changes || {}).memories);
       ((j.changes || {}).chats || []).forEach(function (d) {
@@ -671,7 +734,9 @@
   // ---------------------------------------------------------------- settings (web subset)
   function pushSettings(lists, extra) {
     setSettingsState({ values: Object.assign({}, W.prefs, { model: W.model }),
-                       info: Object.assign({ name: W.name, email: W.email, version: "web", plan: W.plan || "free", voices: [], models: W.models, web: true }, extra || {}),
+                       info: Object.assign({ name: W.name, email: W.email, version: "web", plan: W.plan || "free", voices: [], models: W.models, web: true,
+                                             wake_supported: !!(window.SpeechRecognition || window.webkitSpeechRecognition), wake_web: true,
+                                             wake_status: (typeof WK !== "undefined" && WK && WK.status) || "Off" }, extra || {}),
                        lists: Object.assign({ prompts: myPrompts() }, lists || {}) });
   }
   // the prompt library ("/" menu), kept in this browser
@@ -870,9 +935,11 @@
     setting: function (v) {
       if (!v || !v.key) return;
       W.prefs[v.key] = v.value; save("gink_prefs", W.prefs);
+      if (PROFILE_KEYS.indexOf(v.key) >= 0) profileEdit(v.key, v.value);      // follows you to the apps too
       if (SYNCED_PREFS.indexOf(v.key) >= 0) queuePrefs(v.key, v.value);         // follows you to every device
       if (/^(theme|chat_font|motion)$/.test(v.key)) applyAppearance();
       if (v.key === "model") HANDLERS.model(v.value);
+      if (v.key === "wake_enabled") { WK.blocked = false; if (v.value) wakeStart(); else { wakeStop(); wakeStatus("Off"); } }
       pushSettings();
     },
     settings_action: function (v) {
@@ -1014,10 +1081,11 @@
     },
     remove_attachment: function (i) { W.atts.splice(Number(i), 1); showAtts(); },
     voice_start: function (v) {
+      wakeStop();                                                   // the conversation takes the microphone
       if (v && v.voice) { W.prefs.voice = v.voice; save("gink_prefs", W.prefs); }
       V.on = true; V.muted = false; vListen();
     },
-    voice_end: vStop,
+    voice_end: function () { vStop(); setTimeout(wakeStart, 800); },   // then listen for "Hey Gink" again
     voice_mute: function (v) {
       V.muted = !!(v && v.muted);
       if (V.muted) { if (V.rec) { try { V.rec.abort(); } catch (e) {} } stopSpeaking(); voiceUiState("muted"); }
@@ -1041,6 +1109,8 @@
     setVoiceConfig({ voices: voiceList(), voice: W.prefs.voice || "Female (Jenny)", intro_seen: !!W.prefs.voice_intro_seen });
     var first = (W.name || W.email || "Gink").split(/[\s@]/)[0];
     setUser(W.name || W.email || "Gink user", "", first);
+    if (W.profile.updated) applyProfile();                         // the synced profile: name and photo
+    setTimeout(wakeStart, 1500);                                   // "Hey Gink", if it's switched on for this browser
     applyAppearance();
     api("/ai/usage").then(function (r) { return r.ok ? r.json() : null; }).then(function (u) { if (u) W.plan = u.plan; }).catch(function () {});
     api("/ai/openai/v1/models").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {

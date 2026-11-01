@@ -105,8 +105,10 @@ class GinkGenie(toga.App):
             self.web.set_content(self.home, status_page("Can't reach Gink", "Check your internet connection, then press Retry (or Reload).", True))
 
     def _reachable(self) -> bool:
+        if not str(self.server).startswith(("https://", "http://")):     # only web addresses (never file: and the like)
+            return False
         try:
-            with urllib.request.urlopen(self.server + "/health", timeout=75) as r:
+            with urllib.request.urlopen(self.server + "/health", timeout=75) as r:  # nosec B310 - scheme checked above
                 return r.status == 200
         except Exception:
             return False

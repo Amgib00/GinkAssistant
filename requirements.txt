@@ -12,6 +12,7 @@ fpdf2
 groq
 httpx
 markdown
+defusedxml
 openpyxl
 packaging
 pillow
@@ -45,7 +46,7 @@ vosk
 sounddevice
 shazamio>=0.9.0             # older versions pull in pytest and pin a vulnerable anyio
 anyio>=4.15.1
-numpy>=2.2.2,<2.3           # shazamio 0.8 needs 2.2+; 2.3 drops Python 3.10
+numpy>=2.2.2,<2.3           # shazamio needs 2.2+; kept below 2.3 until numba is checked with it
 librosa
 scipy
 numba==0.62.1; sys_platform == "darwin" and platform_machine == "x86_64"     # Intel Mac: newest with a ready-made build
