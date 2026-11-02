@@ -64,3 +64,17 @@ def test_release_check_step(tmp_path):
     (tmp_path / "pyproject.toml").write_text('[project]\nversion = "1.2.2"\n')
     code, log, _ = run("")
     assert code == 1 and "already released" in log
+
+
+def test_releases_are_test_builds_unless_for_users():
+    """Not every push reaches users: a release is a GitHub pre-release (test build) unless for_users=true.
+    The apps' update offer (/app/version) and the website use releases/latest, which skips pre-releases."""
+    wf = yaml.safe_load(open(os.path.join(ROOT, ".github", "workflows", "release.yml")))
+    inp = wf[True]["workflow_dispatch"]["inputs"]["for_users"]
+    assert inp["type"] == "boolean" and inp["default"] is False
+    run = next(s["run"] for s in wf["jobs"]["publish"]["steps"] if s.get("name") == "Publish the release")
+    test_build, for_users = run.split('if [ "$FOR_USERS" = "true" ]; then', 1)[1].split("else", 1)
+    assert "--latest" in test_build and "--prerelease" not in test_build
+    assert "--prerelease --latest=false" in for_users
+    src = open(os.path.join(ROOT, "src", "ginkassistant", "services", "backend_server.py"), encoding="utf-8").read()
+    assert "/releases/latest" in src                                    # GitHub leaves pre-releases out of "latest"

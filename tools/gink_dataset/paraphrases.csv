@@ -3,7 +3,7 @@ fr,Combien font 1000 leones en shillings kényans ?,Pouvez-vous me dire combien 
 fr,Combien font 1000 leones en shillings kényans ?,"1000 leones, ça donne combien en shillings kényans ?",openai/gpt-oss-120b,yes
 fr,Combien font 1000 leones en shillings kényans ?,Je voudrais savoir la conversion de 1000 leones en shillings kényans.,openai/gpt-oss-120b,yes
 fr,Combien font 1000 leones en shillings kényans ?,C’est quoi le montant en shillings kényans pour 1000 leones ?,openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on March 24,"Hey, just a reminder that my mother's birthday is on March 24.",openai/gpt-oss-120b,yes
+en,Remember that my mother's birthday is on March 24,"Hey, just a reminder that my mother's birthday is on March 24.",openai/gpt-oss-120b,no
 en,Remember that my mother's birthday is on March 24,Please note: my mom's birthday falls on March 24.,openai/gpt-oss-120b,yes
 en,Remember that my mother's birthday is on March 24,Can you remember that my mother's birthday is March 24?,openai/gpt-oss-120b,yes
 en,Remember that my mother's birthday is on March 24,"Don't forget, Mom's birthday is on March 24.",openai/gpt-oss-120b,yes
@@ -49,7 +49,7 @@ en,Can you wake me at 7:15 am?,"Wake me at 7:15 am, thanks.",openai/gpt-oss-120b
 en,Can you wake me at 7:15 am?,"Set a 7:15 am alarm, please.",openai/gpt-oss-120b,yes
 fr,Retiens que l'anniversaire de ma mère est le 5 juillet,Note que l'anniversaire de ma mère c’est le 5 juillet.,openai/gpt-oss-120b,yes
 fr,Retiens que l'anniversaire de ma mère est le 5 juillet,"Peux‑tu garder en mémoire que le 5 juillet, c’est l’anniversaire de ma mère ?",openai/gpt-oss-120b,yes
-fr,Retiens que l'anniversaire de ma mère est le 5 juillet,"Rappelle‑moi que ma mère fête son anniversaire le 5 juillet, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de ma mère est le 5 juillet,"Rappelle‑moi que ma mère fête son anniversaire le 5 juillet, s'il te plaît.",openai/gpt-oss-120b,no
 fr,Retiens que l'anniversaire de ma mère est le 5 juillet,"N'oublie pas : 5 juillet, c’est l’anniversaire de ma mère.",openai/gpt-oss-120b,yes
 en,What's 18% of 5000?,"Hey, can you tell me what 18% of 5000 is?",openai/gpt-oss-120b,yes
 en,What's 18% of 5000?,Please calculate 18% of 5000 for me.,openai/gpt-oss-120b,yes
@@ -58,10 +58,10 @@ fr,"Fais-moi un Markdown de ma liste de courses : riz, tomates, huile de palme, 
 fr,"Fais-moi un Markdown de ma liste de courses : riz, tomates, huile de palme, lait","Fais un fichier Markdown pour ma liste de courses : riz, tomates, huile de palme, lait.",openai/gpt-oss-120b,yes
 fr,"Fais-moi un Markdown de ma liste de courses : riz, tomates, huile de palme, lait","S’il te plaît, crée un Markdown contenant : riz, tomates, huile de palme, lait.",openai/gpt-oss-120b,yes
 fr,"Fais-moi un Markdown de ma liste de courses : riz, tomates, huile de palme, lait","Markdown de ma liste de courses : riz, tomates, huile de palme, lait, merci.",openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on June 19,"Hey, just a reminder: my best friend's birthday is on June 19.",openai/gpt-oss-120b,yes
+en,Remember that my best friend's birthday is on June 19,"Hey, just a reminder: my best friend's birthday is on June 19.",openai/gpt-oss-120b,no
 en,Remember that my best friend's birthday is on June 19,Please note that my best friend's birthday falls on June 19.,openai/gpt-oss-120b,yes
 en,Remember that my best friend's birthday is on June 19,Can you remember my best friend's birthday? It's June 19.,openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on June 19,Reminder: June 19 is my best friend's birthday.,openai/gpt-oss-120b,yes
+en,Remember that my best friend's birthday is on June 19,Reminder: June 19 is my best friend's birthday.,openai/gpt-oss-120b,no
 en,Next song,,openai/gpt-oss-120b,no
 en,Remind me to revise for the exam tomorrow at 12 pm,"Hey, could you set a reminder for me to revise for the exam tomorrow at 12 pm?",openai/gpt-oss-120b,yes
 en,Remind me to revise for the exam tomorrow at 12 pm,Remind me to study for the exam tomorrow at 12 pm.,openai/gpt-oss-120b,yes
@@ -102,10 +102,10 @@ en,"Make a Markdown of my shopping list: onions, fish, palm oil, sugar","Can you
 fr,Mets un minuteur de 25 minutes pour le riz,"Hey, peux‑tu mettre un minuteur de 25 minutes pour le riz ?",openai/gpt-oss-120b,yes
 fr,Mets un minuteur de 25 minutes pour le riz,"Mets un minuteur de 25 minutes pour le riz, s'il te plaît.",openai/gpt-oss-120b,yes
 fr,Mets un minuteur de 25 minutes pour le riz,Active un minuteur de 25 minutes afin de cuire le riz.,openai/gpt-oss-120b,yes
-en,Remember that my sister's birthday is on February 26,"Hey, just a reminder: my sister's birthday is on February 26.",openai/gpt-oss-120b,yes
+en,Remember that my sister's birthday is on February 26,"Hey, just a reminder: my sister's birthday is on February 26.",openai/gpt-oss-120b,no
 en,Remember that my sister's birthday is on February 26,Please note my sister’s birthday falls on February 26.,openai/gpt-oss-120b,yes
 en,Remember that my sister's birthday is on February 26,"Don't forget, my sister was born on February 26.",openai/gpt-oss-120b,yes
-en,Remember that my sister's birthday is on February 26,Reminder: sister's birthday – February 26.,openai/gpt-oss-120b,yes
+en,Remember that my sister's birthday is on February 26,Reminder: sister's birthday – February 26.,openai/gpt-oss-120b,no
 en,Remind me to buy bread on Wednesday at 6 pm,"Hey, could you remind me to buy bread on Wednesday at 6 pm?",openai/gpt-oss-120b,yes
 en,Remind me to buy bread on Wednesday at 6 pm,Please set a reminder: buy bread on Wednesday at 6 pm.,openai/gpt-oss-120b,yes
 en,Remind me to buy bread on Wednesday at 6 pm,Don't forget to get bread Wednesday at 6 pm.,openai/gpt-oss-120b,yes
@@ -132,10 +132,10 @@ fr,Retiens que l'anniversaire de mon meilleur ami est le 27 septembre,"Note que 
 fr,Retiens que l'anniversaire de mon meilleur ami est le 27 septembre,"S'il te plaît, retiens que mon meilleur ami fête son anniversaire le 27 septembre.",openai/gpt-oss-120b,yes
 fr,Retiens que l'anniversaire de mon meilleur ami est le 27 septembre,"Hey, n'oublie pas : 27 septembre, c'est l'anniversaire de mon meilleur pote.",openai/gpt-oss-120b,yes
 fr,Retiens que l'anniversaire de mon meilleur ami est le 27 septembre,"Merci de garder en mémoire que le 27 septembre, c’est l’anniversaire de mon meilleur ami.",openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on October 23,"Hey, just a reminder that my mom's birthday is on October 23.",openai/gpt-oss-120b,yes
+en,Remember that my mother's birthday is on October 23,"Hey, just a reminder that my mom's birthday is on October 23.",openai/gpt-oss-120b,no
 en,Remember that my mother's birthday is on October 23,Please note: my mother's birthday falls on October 23.,openai/gpt-oss-120b,yes
 en,Remember that my mother's birthday is on October 23,"Don't forget, my mom's birthday is October 23.",openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on October 23,Reminder – my mother's birthday is on October 23.,openai/gpt-oss-120b,yes
+en,Remember that my mother's birthday is on October 23,Reminder – my mother's birthday is on October 23.,openai/gpt-oss-120b,no
 fr,Retiens que l'anniversaire de ma mère est le 7 septembre,"Note que l'anniversaire de ma mère, c’est le 7 septembre.",openai/gpt-oss-120b,yes
 fr,Retiens que l'anniversaire de ma mère est le 7 septembre,"Merci de retenir que le 7 septembre, c’est l’anniversaire de ma maman.",openai/gpt-oss-120b,yes
 fr,Retiens que l'anniversaire de ma mère est le 7 septembre,N'oublie pas : ma mère fête son anniversaire le 7 septembre.,openai/gpt-oss-120b,yes
@@ -147,7 +147,7 @@ en,Convert 100000 CFA francs to cedis,"Hey, could you convert 100000 CFA francs 
 en,Convert 100000 CFA francs to cedis,Please convert 100000 CFA francs to cedis.,openai/gpt-oss-120b,yes
 en,Convert 100000 CFA francs to cedis,"Convert 100000 CFA francs to cedis, thanks!",openai/gpt-oss-120b,yes
 en,Convert 100000 CFA francs to cedis,I need the conversion of 100000 CFA francs to cedis.,openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on November 27,"Hey, just a reminder: my best friend's birthday is on November 27.",openai/gpt-oss-120b,yes
+en,Remember that my best friend's birthday is on November 27,"Hey, just a reminder: my best friend's birthday is on November 27.",openai/gpt-oss-120b,no
 en,Remember that my best friend's birthday is on November 27,Please note that my best friend's birthday falls on November 27.,openai/gpt-oss-120b,yes
 en,Remember that my best friend's birthday is on November 27,"Don't forget, my best friend's birthday is November 27.",openai/gpt-oss-120b,yes
 en,Remember that my best friend's birthday is on November 27,Quick heads‑up: my best friend's birthday is on November 27.,openai/gpt-oss-120b,yes
@@ -186,12 +186,12 @@ fr,Mets le volume à 80,Règle le volume à 80,openai/gpt-oss-120b,yes
 fr,Mets le volume à 80,Peux-tu mettre le volume à 80 s'il te plaît ?,openai/gpt-oss-120b,yes
 fr,Mets le volume à 80,"Volume à 80, merci",openai/gpt-oss-120b,yes
 fr,Mets le volume à 80,"Hey, mets le volume à 80",openai/gpt-oss-120b,yes
-en,Remember that my sister's birthday is on January 5,"Hey, just a reminder: my sister's birthday is on January 5.",openai/gpt-oss-120b,yes
+en,Remember that my sister's birthday is on January 5,"Hey, just a reminder: my sister's birthday is on January 5.",openai/gpt-oss-120b,no
 en,Remember that my sister's birthday is on January 5,Please note that my sister's birthday falls on January 5.,openai/gpt-oss-120b,yes
 en,Remember that my sister's birthday is on January 5,"Don't forget, my sister's birthday is on January 5.",openai/gpt-oss-120b,yes
 en,Remember that my sister's birthday is on January 5,"My sister’s birthday is on January 5, remember that.",openai/gpt-oss-120b,yes
 en,Remember that my best friend's birthday is on June 17,"Hey, could you please note that my best friend's birthday is on June 17?",openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on June 17,Reminder: my best friend's birthday is June 17.,openai/gpt-oss-120b,yes
+en,Remember that my best friend's birthday is on June 17,Reminder: my best friend's birthday is June 17.,openai/gpt-oss-120b,no
 en,Remember that my best friend's birthday is on June 17,Just a heads‑up—my best friend's birthday falls on June 17.,openai/gpt-oss-120b,yes
 en,Remember that my best friend's birthday is on June 17,Save the date: June 17 is my best friend's birthday.,openai/gpt-oss-120b,yes
 en,Remind me to pick up the kids on Saturday at 8:30 am,"Hey, can you remind me to pick up the kids on Saturday at 8:30 am?",openai/gpt-oss-120b,yes
@@ -234,7 +234,7 @@ en,Remind me to book the car service on Thursday at 4 pm,Please set a reminder f
 en,Remind me to book the car service on Thursday at 4 pm,Could you ping me on Thursday at 4 pm about booking the car service?,openai/gpt-oss-120b,yes
 en,Remember that my mother's birthday is on October 1,"Hey, can you make a note that my mom's birthday is October 1?",openai/gpt-oss-120b,yes
 en,Remember that my mother's birthday is on October 1,Please remember my mother's birthday: October 1.,openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on October 1,Just a reminder—my mother's birthday is October 1.,openai/gpt-oss-120b,yes
+en,Remember that my mother's birthday is on October 1,Just a reminder—my mother's birthday is October 1.,openai/gpt-oss-120b,no
 en,Remember that my mother's birthday is on October 1,"Don't forget, my mom's birthday is October 1.",openai/gpt-oss-120b,yes
 fr,Combien font 250 francs CFA en livres sterling ?,"Salut, tu sais combien 250 francs CFA ça donne en livres sterling ?",openai/gpt-oss-120b,yes
 fr,Combien font 250 francs CFA en livres sterling ?,"Bonjour, pourriez-vous me dire la conversion de 250 francs CFA en livres sterling, s'il vous plaît ?",openai/gpt-oss-120b,yes
@@ -250,3 +250,1020 @@ en,Set the volume to 80,Please set the volume to 80.,openai/gpt-oss-120b,yes
 en,Set the volume to 80,"Hey, can you crank the volume up to 80?",openai/gpt-oss-120b,yes
 en,Set the volume to 80,Set volume: 80.,openai/gpt-oss-120b,yes
 en,Set the volume to 80,"Could you adjust the volume level to 80, thanks?",openai/gpt-oss-120b,yes
+fr,Baisse le son,"Réduis le son, merci.",openai/gpt-oss-120b,yes
+fr,Baisse le son,Met le volume plus bas.,openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Nairobi aujourd'hui ?,Peux-tu me dire la météo à Nairobi aujourd'hui ?,openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Nairobi aujourd'hui ?,Il fait quel temps à Nairobi aujourd'hui ?,openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Nairobi aujourd'hui ?,"Quel temps fait-il à Nairobi aujourd'hui, s'il te plaît ?",openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Nairobi aujourd'hui ?,Dis‑moi la météo pour Nairobi aujourd'hui.,openai/gpt-oss-120b,yes
+en,"Hey, hit pause on the music for me.","Could you pause the music, please?",openai/gpt-oss-120b,yes
+en,"Hey, hit pause on the music for me.","Hey, pause the music for me.",openai/gpt-oss-120b,yes
+en,"Hey, hit pause on the music for me.","Pause the music, thanks!",openai/gpt-oss-120b,yes
+en,"Hey, hit pause on the music for me.",Would you mind hitting pause on the music?,openai/gpt-oss-120b,yes
+en,Remind me to pick up the kids at 5 pm today,Can you set a reminder for me to pick up the kids at 5 pm today?,openai/gpt-oss-120b,yes
+en,Remind me to pick up the kids at 5 pm today,"Hey, please remind me to pick up the kids at 5 pm today.",openai/gpt-oss-120b,yes
+en,Remind me to pick up the kids at 5 pm today,Need a reminder: pick up the kids at 5 pm today.,openai/gpt-oss-120b,yes
+en,"Timer: 15 minutes, laundry.","Hey, could you start a timer for laundry? 15 minutes, please.",openai/gpt-oss-120b,yes
+en,Start a 30 minutes timer for the rice,"Start a 30 minutes timer for the rice, please.",openai/gpt-oss-120b,yes
+en,Start a 30 minutes timer for the rice,Timer for rice: 30 minutes.,openai/gpt-oss-120b,yes
+fr,"Merci de retenir que le 7 septembre, c’est l’anniversaire de ma maman.","Notez s'il vous plaît que le 7 septembre, c’est l’anniversaire de ma maman.",openai/gpt-oss-120b,yes
+fr,"Merci de retenir que le 7 septembre, c’est l’anniversaire de ma maman.","Le 7 septembre, c’est l’anniversaire de ma maman, pensez-y.",openai/gpt-oss-120b,yes
+en,Remind me to buy bread tomorrow at 7:30 am,"Hey, can you set a reminder for me to buy bread tomorrow at 7:30 am?",openai/gpt-oss-120b,yes
+en,Remind me to buy bread tomorrow at 7:30 am,Please remind me to get bread tomorrow at 7:30 am.,openai/gpt-oss-120b,yes
+en,Remind me to buy bread tomorrow at 7:30 am,Remind me to buy bread tomorrow 7:30 am.,openai/gpt-oss-120b,yes
+en,Remind me to buy bread tomorrow at 7:30 am,"I need a reminder: buy bread tomorrow at 7:30 am, thanks.",openai/gpt-oss-120b,yes
+en,What's 18% of 250000?,"Hey, can you tell me what 18% of 250000 is?",openai/gpt-oss-120b,yes
+en,What's 18% of 250000?,Please calculate 18% of 250000 for me.,openai/gpt-oss-120b,yes
+en,What's 18% of 250000?,"I need the result of 18% of 250000, thanks.",openai/gpt-oss-120b,yes
+en,"Hey, just a reminder that my mom's birthday is on October 23.",Reminder: my mom's birthday is on October 23.,openai/gpt-oss-120b,yes
+en,"Hey, just a reminder that my mom's birthday is on October 23.","Hey, could you note that my mom's birthday is October 23?",openai/gpt-oss-120b,yes
+en,"Hey, just a reminder that my mom's birthday is on October 23.",Just a heads‑up—my mom celebrates her birthday on October 23.,openai/gpt-oss-120b,yes
+en,"Hey, go back a song.",Could you please go back to the previous song?,openai/gpt-oss-120b,yes
+en,"Hey, go back a song.","Hey, backtrack one song for me.",openai/gpt-oss-120b,yes
+en,"Hey, go back a song.","Can you rewind a track, please?",openai/gpt-oss-120b,yes
+en,"Hey, go back a song.","Yo, go back a song.",openai/gpt-oss-120b,yes
+en,Can you wake me at 9:45 am? for the prayer,"Hey, could you set an alarm for 9:45 am? I need it for the prayer.",openai/gpt-oss-120b,yes
+en,Can you wake me at 9:45 am? for the prayer,Please wake me up at 9:45 am for the prayer.,openai/gpt-oss-120b,yes
+en,Can you wake me at 9:45 am? for the prayer,"Wake me at 9:45 am, please—got a prayer then.",openai/gpt-oss-120b,yes
+en,Can you wake me at 9:45 am? for the prayer,"Set a 9:45 am alarm for the prayer, thanks.",openai/gpt-oss-120b,yes
+fr,Chanson précédente,Peux-tu me remettre la chanson précédente ?,openai/gpt-oss-120b,yes
+fr,Chanson précédente,"Reprends la piste d'avant, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,Chanson précédente,J'aimerais écouter la chanson précédente.,openai/gpt-oss-120b,yes
+fr,Chanson précédente,Retourne à la dernière chanson.,openai/gpt-oss-120b,yes
+en,"Don't forget, my sister was born on February 26.","Hey, remember my sister's birthday is February 26.",openai/gpt-oss-120b,yes
+en,"Don't forget, my sister was born on February 26.",Please note: my sister was born on February 26.,openai/gpt-oss-120b,yes
+en,"Don't forget, my sister was born on February 26.",Don't forget—my sister's birth date is February 26.,openai/gpt-oss-120b,yes
+en,"Don't forget, my sister was born on February 26.","Add to my reminders: sister's birthday, February 26.",openai/gpt-oss-120b,yes
+en,"Hey, can you make a note that my mom's birthday is October 1?","Hey, could you please add a reminder that my mom's birthday is October 1?",openai/gpt-oss-120b,yes
+en,"Hey, can you make a note that my mom's birthday is October 1?",Note: Mom's birthday October 1.,openai/gpt-oss-120b,yes
+en,"Hey, can you make a note that my mom's birthday is October 1?",Can you put down that my mom's birthday is October 1?,openai/gpt-oss-120b,yes
+en,"Hey, can you make a note that my mom's birthday is October 1?","Reminder – my mom's birthday is October 1, thanks!",openai/gpt-oss-120b,yes
+en,Volume down.,Please turn the volume down.,openai/gpt-oss-120b,yes
+en,Volume down.,"Hey, lower the volume.",openai/gpt-oss-120b,yes
+en,Volume down.,Can you decrease the volume?,openai/gpt-oss-120b,yes
+en,Volume down.,"Volume down, thanks.",openai/gpt-oss-120b,yes
+en,Please set a 1 hour 30 minutes timer for the laundry.,"Set a timer for 1 hour 30 minutes for the laundry, please.",openai/gpt-oss-120b,yes
+en,What's the forecast for Bamako today?,"Hey, can you tell me the weather forecast for Bamako today?",openai/gpt-oss-120b,yes
+en,What's the forecast for Bamako today?,What's the weather like in Bamako today?,openai/gpt-oss-120b,yes
+en,What is 965 times 15?,"Hey, can you tell me what 965 times 15 is?",openai/gpt-oss-120b,yes
+en,What is 965 times 15?,Please calculate 965 × 15.,openai/gpt-oss-120b,yes
+en,What is 965 times 15?,What's 965 multiplied by 15?,openai/gpt-oss-120b,yes
+en,What is 965 times 15?,965 times 15 = ?,openai/gpt-oss-120b,yes
+en,Start a 20 minutes timer for the rice,"Hey, could you set a 20 minutes timer for the rice?",openai/gpt-oss-120b,yes
+en,Start a 20 minutes timer for the rice,"Start a 20 minutes timer for the rice, please.",openai/gpt-oss-120b,yes
+en,Start a 20 minutes timer for the rice,Timer for the rice: 20 minutes.,openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: milk, tomatoes, sugar, eggs","Could you please create a Markdown list of my shopping items: milk, tomatoes, sugar, eggs?",openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: milk, tomatoes, sugar, eggs","Hey, can you put my shopping list—milk, tomatoes, sugar, eggs—into Markdown format?",openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: milk, tomatoes, sugar, eggs","Please format my shopping list (milk, tomatoes, sugar, eggs) as Markdown.",openai/gpt-oss-120b,yes
+en,Stop the music right now.,Please stop the music immediately.,openai/gpt-oss-120b,yes
+en,Stop the music right now.,"Hey, can you turn off the music right now?",openai/gpt-oss-120b,yes
+en,Stop the music right now.,"Stop the music now, thanks.",openai/gpt-oss-120b,yes
+en,Stop the music right now.,Could you stop the music ASAP?,openai/gpt-oss-120b,yes
+en,Set an alarm for 6:45 am for the work,Could you please set a 6:45 am alarm for the work?,openai/gpt-oss-120b,yes
+en,Set an alarm for 6:45 am for the work,"Hey, alarm at 6:45 am for the work, thanks.",openai/gpt-oss-120b,yes
+en,Set an alarm for 6:45 am for the work,Alarm 6:45 am for the work.,openai/gpt-oss-120b,yes
+en,"Mute the sound, thanks.",Could you please mute the sound? Thanks.,openai/gpt-oss-120b,yes
+en,"Mute the sound, thanks.","Hey, turn off the audio, please. Thanks.",openai/gpt-oss-120b,yes
+en,"Mute the sound, thanks.",Please mute it. Thanks.,openai/gpt-oss-120b,yes
+en,Reminder: June 19 is my best friend's birthday.,"Hey, can you set a reminder for June 19? It's my best friend's birthday.",openai/gpt-oss-120b,yes
+en,Reminder: June 19 is my best friend's birthday.,Please remind me on June 19 that it's my best friend's birthday.,openai/gpt-oss-120b,yes
+en,Set the volume to 70,Please set the volume to 70.,openai/gpt-oss-120b,yes
+en,Set the volume to 70,"Hey, can you set the volume to 70?",openai/gpt-oss-120b,yes
+en,Set the volume to 70,Volume 70.,openai/gpt-oss-120b,yes
+en,Set the volume to 70,Set volume at 70.,openai/gpt-oss-120b,yes
+en,Could you please pause the music?,"Hey, can you pause the music for me?",openai/gpt-oss-120b,yes
+en,Could you please pause the music?,Please pause the music.,openai/gpt-oss-120b,yes
+en,Could you please pause the music?,"Could you pause the music, thanks?",openai/gpt-oss-120b,yes
+en,Could you please pause the music?,"Pause the music, please.",openai/gpt-oss-120b,yes
+en,Wake me up at 6:30 am,Please set an alarm for 6:30 am.,openai/gpt-oss-120b,yes
+en,Wake me up at 6:30 am,"Hey, could you make sure I’m up by 6:30 am?",openai/gpt-oss-120b,yes
+en,Wake me up at 6:30 am,"Alarm for 6:30 am, thanks.",openai/gpt-oss-120b,yes
+en,Set an alarm for 5 am for the work,Please set an alarm for 5 am for the work.,openai/gpt-oss-120b,yes
+en,Set an alarm for 5 am for the work,"Hey, can you schedule a 5 am alarm for the work?",openai/gpt-oss-120b,yes
+en,Set an alarm for 5 am for the work,"Set a 5 am alarm for work, thanks.",openai/gpt-oss-120b,yes
+en,Set an alarm for 5 am for the work,"Alarm at 5 am for the work, please.",openai/gpt-oss-120b,yes
+fr,"Mets la musique, merci.","Peux-tu mettre la musique, s'il te plaît ?",openai/gpt-oss-120b,yes
+fr,"Mets la musique, merci.","Hey, lance la musique, merci.",openai/gpt-oss-120b,yes
+fr,"Mets la musique, merci.","Active la musique, s’il vous plaît.",openai/gpt-oss-120b,yes
+en,Wake me up at 8:45 am for the gym,"Hey, set an alarm for 8:45 am so I can hit the gym.",openai/gpt-oss-120b,yes
+en,Wake me up at 8:45 am for the gym,Please wake me up at 8:45 am for the gym.,openai/gpt-oss-120b,yes
+en,Wake me up at 8:45 am for the gym,Can you alarm me for 8:45 am? Need to go to the gym.,openai/gpt-oss-120b,yes
+en,Wake me up at 8:45 am for the gym,"Alarm at 8:45 am, gym time.",openai/gpt-oss-120b,yes
+fr,Programme un réveil à 6h15.,Peux-tu mettre mon alarme pour 6h15 ?,openai/gpt-oss-120b,yes
+fr,Programme un réveil à 6h15.,"Mets-moi un réveil à 6h15, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,Programme un réveil à 6h15.,Réveille-moi à 6h15.,openai/gpt-oss-120b,yes
+fr,Rappelle-moi de réserver la révision de la voiture aujourd'hui à 9h,N'oublie pas de me dire de réserver la révision de la voiture à 9h aujourd'hui.,openai/gpt-oss-120b,yes
+en,"Hey, what's it like outside in Thiès right now?","Hey, can you tell me the current weather in Thiès?",openai/gpt-oss-120b,yes
+en,"Hey, what's it like outside in Thiès right now?",What's the weather like right now in Thiès?,openai/gpt-oss-120b,yes
+en,"Hey, what's it like outside in Thiès right now?",Could you let me know how it's outside in Thiès at this moment?,openai/gpt-oss-120b,yes
+en,"Hey, what's it like outside in Thiès right now?",What's the outside condition in Thiès right now?,openai/gpt-oss-120b,yes
+fr,Calcule 672 fois 42,Pouvez-vous me dire le résultat de 672 × 42 ?,openai/gpt-oss-120b,yes
+fr,Calcule 672 fois 42,Calcule 672 fois 42 s'il te plaît.,openai/gpt-oss-120b,yes
+fr,Calcule 672 fois 42,J’ai besoin du produit de 672 et 42.,openai/gpt-oss-120b,yes
+en,Remind me to send the report to Awa in 30 minutes,"Hey, can you remind me to send the report to Awa in 30 minutes?",openai/gpt-oss-120b,yes
+en,Remind me to send the report to Awa in 30 minutes,Reminder: send the report to Awa in 30 minutes.,openai/gpt-oss-120b,yes
+en,Remind me to send the report to Awa in 30 minutes,Please set a reminder for me to send the report to Awa in 30 minutes.,openai/gpt-oss-120b,yes
+en,Remind me to send the report to Awa in 30 minutes,"In 30 minutes, remind me to send the report to Awa.",openai/gpt-oss-120b,yes
+en,Can you set an alarm for 9:30 am?,"Hey, could you set an alarm for 9:30 am?",openai/gpt-oss-120b,yes
+en,Can you set an alarm for 9:30 am?,Please set an alarm for 9:30 am.,openai/gpt-oss-120b,yes
+en,Can you set an alarm for 9:30 am?,Set alarm 9:30 am.,openai/gpt-oss-120b,yes
+en,Can you set an alarm for 9:30 am?,"Can you schedule an alarm at 9:30 am, thanks?",openai/gpt-oss-120b,yes
+fr,Convertis 100 cedis en dollars,Peux‑tu convertir 100 cedis en dollars ?,openai/gpt-oss-120b,yes
+fr,Convertis 100 cedis en dollars,"Convertis 100 cedis en dollars, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,Convertis 100 cedis en dollars,"Hey, fais la conversion de 100 cedis en dollars.",openai/gpt-oss-120b,yes
+fr,Convertis 100 cedis en dollars,Merci de transformer 100 cedis en dollars.,openai/gpt-oss-120b,yes
+en,Remind me to book the car service in 20 minutes,"Hey, remind me to book the car service in 20 minutes.",openai/gpt-oss-120b,yes
+en,Remind me to book the car service in 20 minutes,"Could you set a reminder for me to book the car service in 20 minutes, please?",openai/gpt-oss-120b,yes
+en,Remind me to book the car service in 20 minutes,"In 20 minutes, I need a reminder to book the car service.",openai/gpt-oss-120b,yes
+en,"My sister’s birthday is on January 5, remember that.","Hey, can you note that my sister’s birthday is on January 5?",openai/gpt-oss-120b,yes
+en,"My sister’s birthday is on January 5, remember that.",Please remember: my sister’s birthday is January 5.,openai/gpt-oss-120b,yes
+en,"My sister’s birthday is on January 5, remember that.",Mark my sister’s birthday for January 5 in my calendar.,openai/gpt-oss-120b,yes
+fr,Mets une alarme à 9h30,Peux-tu programmer une alarme pour 9h30 ?,openai/gpt-oss-120b,yes
+fr,Mets une alarme à 9h30,"Alarme 9h30, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,Mets une alarme à 9h30,"Je veux une alarme à 9h30, merci.",openai/gpt-oss-120b,yes
+en,"Hey, can you tell me what 526 times 24 is?","Hey, could you let me know what 526 times 24 equals?",openai/gpt-oss-120b,yes
+en,"Hey, can you tell me what 526 times 24 is?",Can you tell me the result of 526 × 24?,openai/gpt-oss-120b,yes
+en,"Hey, can you tell me what 526 times 24 is?",What's 526 multiplied by 24?,openai/gpt-oss-120b,yes
+en,"Hey, can you tell me what 526 times 24 is?","Hey, what's 526 times 24?",openai/gpt-oss-120b,yes
+en,"Yo, put on some tunes.","Hey, can you play some music?",openai/gpt-oss-120b,yes
+en,"Yo, put on some tunes.",Please start playing some songs.,openai/gpt-oss-120b,yes
+en,"Yo, put on some tunes.","Play some tracks, thanks.",openai/gpt-oss-120b,yes
+en,"Make a PDF of my shopping list: palm oil, tomatoes, sugar, milk","Hey, could you please create a PDF of my shopping list? It includes palm oil, tomatoes, sugar, and milk.",openai/gpt-oss-120b,yes
+en,"Make a PDF of my shopping list: palm oil, tomatoes, sugar, milk","Can you turn my grocery list—palm oil, tomatoes, sugar, milk—into a PDF?",openai/gpt-oss-120b,yes
+en,"Make a PDF of my shopping list: palm oil, tomatoes, sugar, milk","Please generate a PDF for the items: palm oil, tomatoes, sugar, milk.",openai/gpt-oss-120b,yes
+en,Can you change the volume level to 30?,"Hey, could you set the volume to 30?",openai/gpt-oss-120b,yes
+en,Can you change the volume level to 30?,Please change the volume level to 30.,openai/gpt-oss-120b,yes
+en,Can you change the volume level to 30?,"Adjust the volume to 30, thanks.",openai/gpt-oss-120b,yes
+en,Can you change the volume level to 30?,Set volume at 30.,openai/gpt-oss-120b,yes
+fr,Convertis 1000 leones en dollars,"Hey, peux-tu transformer 1000 leones en dollars ?",openai/gpt-oss-120b,yes
+fr,Convertis 1000 leones en dollars,"Bonjour, pourriez-vous convertir 1000 leones en dollars, s'il vous plaît ?",openai/gpt-oss-120b,yes
+fr,Convertis 1000 leones en dollars,"Salut, j'ai besoin que tu changes 1000 leones en dollars.",openai/gpt-oss-120b,yes
+en,alarm at 05:45 for the work,Set an alarm for 05:45 for work.,openai/gpt-oss-120b,yes
+en,alarm at 05:45 for the work,"Hey, could you please schedule an alarm at 05:45 for the work?",openai/gpt-oss-120b,yes
+en,alarm at 05:45 for the work,Alarm 05:45 – work.,openai/gpt-oss-120b,yes
+en,alarm at 05:45 for the work,"I need an alarm at 05:45 for the work, thanks.",openai/gpt-oss-120b,yes
+fr,Mets une alarme à 6h15 pour le sport,Peux‑tu programmer une alarme à 6h15 pour le sport ?,openai/gpt-oss-120b,yes
+fr,Mets une alarme à 6h15 pour le sport,"Alarme 6h15 sport, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,Mets une alarme à 6h15 pour le sport,"Hey, active une alarme à 6h15 pour le sport.",openai/gpt-oss-120b,yes
+en,Backtrack one song for me.,Could you please backtrack one song for me?,openai/gpt-oss-120b,yes
+en,Backtrack one song for me.,"Hey, can you rewind a track?",openai/gpt-oss-120b,yes
+en,Backtrack one song for me.,"Backtrack one song, please.",openai/gpt-oss-120b,yes
+en,Backtrack one song for me.,"I need the previous song, thanks.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de ma sœur est le 23 mars,"Note que l'anniversaire de ma sœur, c’est le 23 mars.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de ma sœur est le 23 mars,"Rappelez‑vous, l’anniversaire de ma sœur est le 23 mars.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de ma sœur est le 23 mars,"N'oublie pas, ma sœur fête son anniversaire le 23 mars.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de ma sœur est le 23 mars,"S'il te plaît, retiens que le 23 mars, c’est l’anniversaire de ma sœur.",openai/gpt-oss-120b,yes
+en,Remind me to book the car service in 45 minutes,"Hey, can you set a reminder for me to book the car service in 45 minutes?",openai/gpt-oss-120b,yes
+en,Remind me to book the car service in 45 minutes,Please remind me to book the car service in 45 minutes.,openai/gpt-oss-120b,yes
+en,Remind me to book the car service in 45 minutes,"Remind me to book the car service in 45 minutes, thanks.",openai/gpt-oss-120b,yes
+en,Remind me to book the car service in 45 minutes,"In 45 minutes, remind me to book the car service.",openai/gpt-oss-120b,yes
+en,Please set the volume to 80.,"Set the volume to 80, please.",openai/gpt-oss-120b,yes
+en,Please set the volume to 80.,Could you crank the volume up to 80?,openai/gpt-oss-120b,yes
+en,Please set the volume to 80.,"Hey, change the volume level to 80.",openai/gpt-oss-120b,yes
+en,Please set the volume to 80.,Please adjust the volume to 80.,openai/gpt-oss-120b,yes
+en,Please convert 100000 CFA francs to cedis.,Could you convert 100000 CFA francs to cedis for me?,openai/gpt-oss-120b,yes
+en,Please convert 100000 CFA francs to cedis.,"Hey, what's 100000 CFA francs in cedis?",openai/gpt-oss-120b,yes
+en,Please convert 100000 CFA francs to cedis.,"Convert 100000 CFA francs to cedis, please.",openai/gpt-oss-120b,yes
+fr,Pouvez-vous me dire combien font 1000 leones en shillings kényans ?,"Salut, tu sais combien font 1000 leones en shillings kényans ?",openai/gpt-oss-120b,yes
+fr,Pouvez-vous me dire combien font 1000 leones en shillings kényans ?,"Bonjour, pourriez-vous me dire la conversion de 1000 leones en shillings kényans, s'il vous plaît ?",openai/gpt-oss-120b,yes
+fr,Pouvez-vous me dire combien font 1000 leones en shillings kényans ?,"Hey, c’est quoi le taux pour 1000 leones en shillings kényans ?",openai/gpt-oss-120b,yes
+fr,Pouvez-vous me dire combien font 1000 leones en shillings kényans ?,"Excusez‑moi, pourriez‑vous me dire combien équivalent 1000 leones en shillings kényans ?",openai/gpt-oss-120b,yes
+en,"Hey, could you play some music for me?","Hey, can you put on some music for me?",openai/gpt-oss-120b,yes
+en,"Hey, could you play some music for me?","Would you mind playing some music, please?",openai/gpt-oss-120b,yes
+en,"Hey, could you play some music for me?","Play some music, thanks!",openai/gpt-oss-120b,yes
+en,"Hey, could you play some music for me?",Could you start some tunes for me?,openai/gpt-oss-120b,yes
+en,Please calculate 18% of 5000 for me.,"Hey, could you work out 18% of 5000 for me?",openai/gpt-oss-120b,yes
+en,Please calculate 18% of 5000 for me.,Please calculate 18% of 5000.,openai/gpt-oss-120b,yes
+en,Please calculate 18% of 5000 for me.,Can you tell me what 18% of 5000 is?,openai/gpt-oss-120b,yes
+en,Please calculate 18% of 5000 for me.,"I need the 18% of 5000, please.",openai/gpt-oss-120b,yes
+en,Convert 250 CFA francs to Kenyan shillings,"Hey, could you convert 250 CFA francs to Kenyan shillings for me?",openai/gpt-oss-120b,yes
+en,Convert 250 CFA francs to Kenyan shillings,Please convert 250 CFA francs to Kenyan shillings.,openai/gpt-oss-120b,yes
+en,Convert 250 CFA francs to Kenyan shillings,"I need the conversion of 250 CFA francs into Kenyan shillings, thanks.",openai/gpt-oss-120b,yes
+fr,Peux‑tu lancer Spotify ?,"Salut, tu pourrais ouvrir Spotify s'il te plaît ?",openai/gpt-oss-120b,yes
+fr,Peux‑tu lancer Spotify ?,Pourrais‑tu mettre Spotify en marche ?,openai/gpt-oss-120b,yes
+en,Set a timer for 5 minutes for the tea,"Hey, can you set a timer for 5 minutes for the tea?",openai/gpt-oss-120b,yes
+en,Set a timer for 5 minutes for the tea,"Timer 5 minutes for tea, thanks.",openai/gpt-oss-120b,yes
+en,Remember: my sister's birthday is January 9.,"Hey, can you note that my sister's birthday is on January 9?",openai/gpt-oss-120b,yes
+en,Remember: my sister's birthday is January 9.,Please remember: my sister’s birthday is January 9.,openai/gpt-oss-120b,yes
+en,Remember: my sister's birthday is January 9.,"Don't forget, my sister's birthday is January 9.",openai/gpt-oss-120b,yes
+en,Adjust the volume to 20.,"Hey, could you set the volume to 20?",openai/gpt-oss-120b,yes
+en,Adjust the volume to 20.,Please change the volume level to 20.,openai/gpt-oss-120b,yes
+en,Adjust the volume to 20.,"Volume 20, please.",openai/gpt-oss-120b,yes
+en,"Play some music, please.","Could you play some music, please?",openai/gpt-oss-120b,yes
+en,"Play some music, please.",Play some music.,openai/gpt-oss-120b,yes
+en,"Play some music, please.","Hey, I'd love some music. Can you start it?",openai/gpt-oss-120b,yes
+en,"Play some music, please.",Please put on some music.,openai/gpt-oss-120b,yes
+en,Set an alarm for 6:30 am for the gym,"Hey, can you set an alarm for 6:30 am for the gym?",openai/gpt-oss-120b,yes
+en,Set an alarm for 6:30 am for the gym,Please set an alarm at 6:30 am for the gym.,openai/gpt-oss-120b,yes
+en,Set an alarm for 6:30 am for the gym,Alarm 6:30 am – gym.,openai/gpt-oss-120b,yes
+en,Set an alarm for 6:30 am for the gym,"Could you schedule a 6:30 am alarm for the gym, thanks?",openai/gpt-oss-120b,yes
+en,Set a timer for 3 minutes,"Hey, could you set a timer for 3 minutes?",openai/gpt-oss-120b,yes
+en,Set a timer for 3 minutes,"Timer 3 minutes, please.",openai/gpt-oss-120b,yes
+en,Set a timer for 3 minutes,Can you start a timer for 3 minutes?,openai/gpt-oss-120b,yes
+en,"Markdown my grocery list: palm oil, rice, fish, eggs.","Hey, could you markdown my grocery list? It includes palm oil, rice, fish, and eggs.",openai/gpt-oss-120b,yes
+en,"Markdown my grocery list: palm oil, rice, fish, eggs.","Please format my grocery list in markdown: palm oil, rice, fish, eggs.",openai/gpt-oss-120b,yes
+en,"Markdown my grocery list: palm oil, rice, fish, eggs.","Can you turn this into markdown? – palm oil, rice, fish, eggs.",openai/gpt-oss-120b,yes
+en,"Markdown my grocery list: palm oil, rice, fish, eggs.","Markdown my list: palm oil, rice, fish, eggs, thanks.",openai/gpt-oss-120b,yes
+fr,"Hey, c’est quoi la météo à Paris demain ?","Salut, quelle sera la météo à Paris demain ?",openai/gpt-oss-120b,yes
+fr,"Hey, c’est quoi la météo à Paris demain ?","Bonjour, pouvez-vous me dire la météo prévue à Paris pour demain ?",openai/gpt-oss-120b,yes
+fr,"Hey, c’est quoi la météo à Paris demain ?","Yo, il fait quel temps à Paris demain ?",openai/gpt-oss-120b,yes
+en,"Turn off the sound, please.",Could you please turn off the sound?,openai/gpt-oss-120b,yes
+en,"Turn off the sound, please.","Hey, turn the sound off, thanks.",openai/gpt-oss-120b,yes
+en,"Turn off the sound, please.",Please mute the audio.,openai/gpt-oss-120b,yes
+fr,Lance Mail,Merci de mettre Mail en route.,openai/gpt-oss-120b,yes
+en,Can you wake me at 9 am? for the gym,"Hey, could you set an alarm for 9 am? I need to get to the gym.",openai/gpt-oss-120b,yes
+en,Can you wake me at 9 am? for the gym,Please wake me up at 9 am for the gym.,openai/gpt-oss-120b,yes
+en,Can you wake me at 9 am? for the gym,"Wake me up at 9 am, I have a gym session.",openai/gpt-oss-120b,yes
+en,Can you wake me at 9 am? for the gym,Set a 9 am alarm so I can hit the gym.,openai/gpt-oss-120b,yes
+fr,"Fais-moi un PDF de ma liste de courses : pain, œufs, tomates, riz","Peux-tu me créer un PDF de ma liste de courses : pain, œufs, tomates, riz ?",openai/gpt-oss-120b,yes
+fr,"Fais-moi un PDF de ma liste de courses : pain, œufs, tomates, riz","Fais un PDF avec ma liste de courses : pain, œufs, tomates, riz.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un PDF de ma liste de courses : pain, œufs, tomates, riz","S’il te plaît, génère un PDF contenant : pain, œufs, tomates, riz.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un PDF de ma liste de courses : pain, œufs, tomates, riz","PDF de ma liste de courses (pain, œufs, tomates, riz) ?",openai/gpt-oss-120b,yes
+en,Can you wake me at 6:30 am? for the prayer,"Hey, could you set an alarm for 6:30 am? I need it for the prayer.",openai/gpt-oss-120b,yes
+en,Can you wake me at 6:30 am? for the prayer,Please wake me up at 6:30 am for the prayer.,openai/gpt-oss-120b,yes
+en,Can you wake me at 6:30 am? for the prayer,"Wake me at 6:30 am, thanks – I have a prayer.",openai/gpt-oss-120b,yes
+en,Can you wake me at 6:30 am? for the prayer,"Set a 6:30 am alarm for my prayer, please.",openai/gpt-oss-120b,yes
+en,Turn it up,"Could you turn it up, please?",openai/gpt-oss-120b,yes
+en,Turn it up,"Hey, crank it up a bit!",openai/gpt-oss-120b,yes
+en,Turn it up,Please increase the volume.,openai/gpt-oss-120b,yes
+en,What's the forecast for Thiès today?,"Hey, can you tell me the weather forecast for Thiès today?",openai/gpt-oss-120b,yes
+en,What's the forecast for Thiès today?,Please provide the forecast for Thiès today.,openai/gpt-oss-120b,yes
+en,What's the forecast for Thiès today?,What's the weather like in Thiès today?,openai/gpt-oss-120b,yes
+en,Weather Kumasi tomorrow,"Hey, can you tell me the weather in Kumasi tomorrow?",openai/gpt-oss-120b,yes
+en,Weather Kumasi tomorrow,Please check the forecast for Kumasi tomorrow.,openai/gpt-oss-120b,yes
+en,Weather Kumasi tomorrow,What's the weather like in Kumasi tomorrow?,openai/gpt-oss-120b,yes
+en,Can you remember my best friend's birthday? It's June 19.,"Hey, could you save my best friend's birthday? It's June 19.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de mon meilleur ami est le 3 février,"Note que l'anniversaire de mon meilleur ami, c'est le 3 février.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de mon meilleur ami est le 3 février,"Rappelez‑moi, s'il vous plaît, que le 3 février c’est l’anniversaire de mon meilleur ami.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de mon meilleur ami est le 3 février,"Hey, n'oublie pas que mon meilleur ami fête son anniv le 3 février.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de mon meilleur ami est le 3 février,"Merci de garder en mémoire que le 3 février, c’est l’anniversaire de mon meilleur ami.",openai/gpt-oss-120b,yes
+en,Remind me to send the report to Awa at 5 pm today,"Hey, can you remind me to send the report to Awa at 5 pm today?",openai/gpt-oss-120b,yes
+en,Remind me to send the report to Awa at 5 pm today,Please set a reminder: send the report to Awa at 5 pm today.,openai/gpt-oss-120b,yes
+en,Remind me to send the report to Awa at 5 pm today,"Remind me to email the report to Awa at 5 pm today, thanks.",openai/gpt-oss-120b,yes
+en,Remind me to send the report to Awa at 5 pm today,Don't forget: send Awa the report at 5 pm today.,openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de mon meilleur ami est le 9 mars,"Note bien que l'anniversaire de mon meilleur ami, c’est le 9 mars.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de mon meilleur ami est le 9 mars,Retenez s’il vous plaît : mon meilleur ami fête son anniversaire le 9 mars.,openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de mon meilleur ami est le 9 mars,"Merci de garder en mémoire que le 9 mars, c’est l’anniversaire de mon meilleur ami.",openai/gpt-oss-120b,yes
+fr,"Hey, mets le volume plus fort.","Salut, augmente le volume, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,"Hey, mets le volume plus fort.","Hey, mets le son plus fort.",openai/gpt-oss-120b,yes
+fr,"Hey, mets le volume plus fort.",Pouvez-vous augmenter le volume ?,openai/gpt-oss-120b,yes
+fr,"Hey, mets le volume plus fort.","Yo, booste le volume.",openai/gpt-oss-120b,yes
+fr,Combien font 5 % de 250000 ?,Quel est le résultat de 5 % de 250000 ?,openai/gpt-oss-120b,yes
+fr,Combien font 5 % de 250000 ?,"5 % de 250000, ça fait combien ?",openai/gpt-oss-120b,yes
+fr,Combien font 5 % de 250000 ?,Pouvez-vous me dire combien représente 5 % de 250000 ?,openai/gpt-oss-120b,yes
+fr,Combien font 5 % de 250000 ?,5 % de 250000 = ?,openai/gpt-oss-120b,yes
+en,Can you make it quieter?,"Hey, could you turn the volume down a bit?",openai/gpt-oss-120b,yes
+en,Can you make it quieter?,Please make it quieter.,openai/gpt-oss-120b,yes
+en,Can you make it quieter?,"Can you lower the sound, thanks?",openai/gpt-oss-120b,yes
+en,Can you make it quieter?,"Make it quieter, please.",openai/gpt-oss-120b,yes
+fr,"Dis-moi vite, 20 % de 15000, c’est quoi ?","Hey, rapidement : 20 % de 15000, c’est combien ?",openai/gpt-oss-120b,yes
+fr,"Dis-moi vite, 20 % de 15000, c’est quoi ?","Pourriez‑vous me dire, s’il vous plaît, quel est le résultat de 20 % de 15000 ?",openai/gpt-oss-120b,yes
+fr,"Dis-moi vite, 20 % de 15000, c’est quoi ?","Dis-moi vite, c’est quoi 20 % de 15000 ?",openai/gpt-oss-120b,yes
+fr,"Dis-moi vite, 20 % de 15000, c’est quoi ?","20 % de 15000, ça donne quoi ? Merci.",openai/gpt-oss-120b,yes
+en,Wake me up at 9 am,Please set an alarm for 9 am.,openai/gpt-oss-120b,yes
+fr,"Hey, 20% de 15000 ça fait combien ?","Salut, tu sais combien fait 20 % de 15000 ?",openai/gpt-oss-120b,yes
+fr,"Hey, 20% de 15000 ça fait combien ?","Bonjour, pourriez-vous me dire quel est le résultat de 20 % de 15000, s’il vous plaît ?",openai/gpt-oss-120b,yes
+fr,"Hey, 20% de 15000 ça fait combien ?","Hey, 20% de 15000 ça donne quoi ?",openai/gpt-oss-120b,yes
+fr,"Hey, 20% de 15000 ça fait combien ?","Dis, 20 % de 15000, ça fait combien ?",openai/gpt-oss-120b,yes
+en,What's 15% of 250000?,"Hey, can you tell me what 15% of 250000 is?",openai/gpt-oss-120b,yes
+en,What's 15% of 250000?,Please calculate 15% of 250000 for me.,openai/gpt-oss-120b,yes
+en,What's 15% of 250000?,Do the math: 15% of 250000.,openai/gpt-oss-120b,yes
+en,Please calculate 20% of 15000 for me.,"Can you compute 20% of 15000 for me, please?",openai/gpt-oss-120b,yes
+en,Please calculate 20% of 15000 for me.,"Hey, quick math: what's 20% of 15000?",openai/gpt-oss-120b,yes
+en,Please calculate 20% of 15000 for me.,Would you mind figuring out 20% of 15000?,openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 3 minutes pour le riz,Peux‑tu mettre un minuteur de 3 minutes pour le riz ?,openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 3 minutes pour le riz,"Hey, lance un minuteur de 3 minutes pour le riz.",openai/gpt-oss-120b,yes
+en,Please rewind to the previous track.,"Hey, could you rewind to the previous track?",openai/gpt-oss-120b,yes
+en,Please rewind to the previous track.,Please go back to the last song.,openai/gpt-oss-120b,yes
+en,Please rewind to the previous track.,"Rewind to the previous track, thanks.",openai/gpt-oss-120b,yes
+en,Please rewind to the previous track.,Can you jump back one track?,openai/gpt-oss-120b,yes
+fr,Pouvez-vous couper le son ?,"Hey, tu peux couper le son s'il te plaît ?",openai/gpt-oss-120b,yes
+fr,Pouvez-vous couper le son ?,"Pouvez‑vous mettre le volume à zéro, s'il vous plaît ?",openai/gpt-oss-120b,yes
+fr,Pouvez-vous couper le son ?,"Coupe le son, merci.",openai/gpt-oss-120b,yes
+fr,Pouvez-vous couper le son ?,Serait‑il possible de couper le son maintenant ?,openai/gpt-oss-120b,yes
+en,Can you wake me at 6 am? for the gym,Please set an alarm for 6 am so I can get ready for the gym.,openai/gpt-oss-120b,yes
+en,Can you wake me at 6 am? for the gym,Wake me up at 6 am – need to hit the gym.,openai/gpt-oss-120b,yes
+en,Can you wake me at 6 am? for the gym,Could you schedule a 6 am wake‑up call? It's for the gym.,openai/gpt-oss-120b,yes
+en,Can you wake me at 6 am? for the gym,"Hey, I need an alarm at 6 am for the gym, thanks.",openai/gpt-oss-120b,yes
+en,"Hey, could you set the volume to 30?","Hey, can you set the volume to 30?",openai/gpt-oss-120b,yes
+en,"Hey, could you set the volume to 30?",Please set the volume to 30.,openai/gpt-oss-120b,yes
+en,"Hey, could you set the volume to 30?","Set volume to 30, thanks.",openai/gpt-oss-120b,yes
+en,"Hey, could you set the volume to 30?","Volume 30, please.",openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 45 minutes pour la lessive,Peux‑tu mettre un minuteur de 45 minutes pour la lessive ?,openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 45 minutes pour la lessive,"Hey, règle un minuteur de 45 minutes pour la lessive.",openai/gpt-oss-120b,yes
+fr,Chanson suivante,Quelle est la prochaine chanson ?,openai/gpt-oss-120b,yes
+fr,Chanson suivante,"Mets la prochaine piste, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,Chanson suivante,"Joue la suivante, merci.",openai/gpt-oss-120b,yes
+fr,Chanson suivante,Passe à la track suivante.,openai/gpt-oss-120b,yes
+en,"Hey, can you tell me what 18% of 5000 is?","Hey, could you calculate 18% of 5000 for me?",openai/gpt-oss-120b,yes
+en,"Hey, can you tell me what 18% of 5000 is?",What’s 18% of 5000?,openai/gpt-oss-120b,yes
+en,"Hey, can you tell me what 18% of 5000 is?",Please tell me the result of 18% × 5000.,openai/gpt-oss-120b,yes
+en,"Hey, can you tell me what 18% of 5000 is?",Can you let me know what 18% of 5000 equals?,openai/gpt-oss-120b,yes
+fr,Rappelle-moi de arroser les plantes dans 45 minutes,Rappelle‑moi d'arroser les plantes dans 45 minutes.,openai/gpt-oss-120b,yes
+fr,Rappelle-moi de arroser les plantes dans 45 minutes,"Hey, n'oublie pas de me rappeler d'arroser les plantes dans 45 minutes, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,Rappelle-moi de arroser les plantes dans 45 minutes,"Rappel : arroser les plantes, 45 minutes à partir de maintenant.",openai/gpt-oss-120b,yes
+fr,"Hey, coupe le son!","Hey, coupe le son s'il te plaît !",openai/gpt-oss-120b,yes
+fr,"Hey, coupe le son!","Salut, baisse le volume, merci.",openai/gpt-oss-120b,yes
+fr,"Hey, coupe le son!","Coucou, mets le son en mute.",openai/gpt-oss-120b,yes
+fr,"Hey, coupe le son!","Yo, désactive le son maintenant.",openai/gpt-oss-120b,yes
+en,Please note: my mom's birthday falls on March 24.,"Hey, just a heads‑up—my mom's birthday is on March 24.",openai/gpt-oss-120b,yes
+en,Please note: my mom's birthday falls on March 24.,Could you please note that my mom's birthday falls on March 24?,openai/gpt-oss-120b,yes
+en,Please note: my mom's birthday falls on March 24.,Reminder: Mom's birthday is March 24.,openai/gpt-oss-120b,yes
+en,Please note: my mom's birthday falls on March 24.,"FYI, my mom's birthday is March 24.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de mon frère est le 21 décembre,"Note bien que l'anniversaire de mon frère, c'est le 21 décembre.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de mon frère est le 21 décembre,"S'il te plaît, retiens que le 21 décembre, c'est l'anniversaire de mon frère.",openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Conakry demain ?,"Salut, tu peux me dire le temps qu'il fera à Conakry demain ?",openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Conakry demain ?,"Bonjour, pourriez-vous me préciser les prévisions météo pour Conakry demain, s'il vous plaît ?",openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Conakry demain ?,"Hey, c’est quoi la météo prévue à Conakry pour demain ?",openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Conakry demain ?,Je voudrais savoir quel sera le temps à Conakry demain.,openai/gpt-oss-120b,yes
+en,"Hey, can you set the volume to 50?","Hey, could you set the volume to 50?",openai/gpt-oss-120b,yes
+en,"Hey, can you set the volume to 50?",Please set the volume at 50.,openai/gpt-oss-120b,yes
+en,"Hey, can you set the volume to 50?","Set volume to 50, thanks.",openai/gpt-oss-120b,yes
+en,"Hey, can you set the volume to 50?","Volume 50, please.",openai/gpt-oss-120b,yes
+en,Remind me to study for the exam tomorrow at 12 pm.,"Hey, can you set a reminder for me to study for the exam tomorrow at 12 pm?",openai/gpt-oss-120b,yes
+en,Remind me to study for the exam tomorrow at 12 pm.,Please remind me to study for the exam tomorrow at 12 pm.,openai/gpt-oss-120b,yes
+en,Remind me to study for the exam tomorrow at 12 pm.,Reminder: study for the exam tomorrow at 12 pm.,openai/gpt-oss-120b,yes
+fr,"Hey, 25% de 15000, c’est quoi ?","Salut, tu peux me dire ce que ça fait 25 % de 15000 ?",openai/gpt-oss-120b,yes
+fr,"Hey, 25% de 15000, c’est quoi ?","Bonjour, pourriez-vous me calculer 25 % de 15000, s'il vous plaît ?",openai/gpt-oss-120b,yes
+fr,"Hey, 25% de 15000, c’est quoi ?","Dis-moi rapidement, 25 % de 15000, ça donne combien ?",openai/gpt-oss-120b,yes
+en,"Markdown my shopping list: tomatoes, bread, eggs, sugar.","Hey, could you markdown my shopping list? It's tomatoes, bread, eggs, and sugar.",openai/gpt-oss-120b,yes
+en,"Markdown my shopping list: tomatoes, bread, eggs, sugar.","Please markdown the following items for my shopping list: tomatoes, bread, eggs, sugar.",openai/gpt-oss-120b,yes
+en,"Markdown my shopping list: tomatoes, bread, eggs, sugar.","Markdown my list: tomatoes, bread, eggs, sugar.",openai/gpt-oss-120b,yes
+en,"Markdown my shopping list: tomatoes, bread, eggs, sugar.","Can you turn my shopping list—tomatoes, bread, eggs, sugar—into markdown format?",openai/gpt-oss-120b,yes
+en,"Volume 20, please.","Set volume to 20, please.",openai/gpt-oss-120b,yes
+en,"Volume 20, please.",Could you make the volume 20?,openai/gpt-oss-120b,yes
+en,"Volume 20, please.",Volume 20.,openai/gpt-oss-120b,yes
+en,"Volume 20, please.","Hey, turn the volume up to 20.",openai/gpt-oss-120b,yes
+fr,Lance Safari,Lance Safari s'il te plaît.,openai/gpt-oss-120b,yes
+fr,Lance Safari,Peux‑tu ouvrir Safari ?,openai/gpt-oss-120b,yes
+fr,Lance Safari,Merci de lancer Safari maintenant.,openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de mon meilleur ami est le 8 novembre,"Note que l'anniversaire de mon meilleur ami, c’est le 8 novembre.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de mon meilleur ami est le 8 novembre,"S'il te plaît, retiens que le 8 novembre, c’est l'anniversaire de mon meilleur ami.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de mon meilleur ami est le 8 novembre,"N'oublie pas, le 8 novembre, c’est l'anniv' de mon meilleur pote.",openai/gpt-oss-120b,yes
+en,Open Calculator,"Open Calculator, please.",openai/gpt-oss-120b,yes
+en,Open Calculator,Launch Calculator.,openai/gpt-oss-120b,yes
+en,Open Calculator,Can you get the Calculator up?,openai/gpt-oss-120b,yes
+en,What is 248 times 44?,"Hey, can you tell me what 248 times 44 equals?",openai/gpt-oss-120b,yes
+en,What is 248 times 44?,Please calculate 248×44 for me.,openai/gpt-oss-120b,yes
+en,What is 248 times 44?,What's 248 multiplied by 44?,openai/gpt-oss-120b,yes
+en,What is 248 times 44?,248 * 44 = ?,openai/gpt-oss-120b,yes
+en,Can you open Safari?,"Hey, could you please open Safari for me?",openai/gpt-oss-120b,yes
+en,Can you open Safari?,"Open Safari, please.",openai/gpt-oss-120b,yes
+en,Can you open Safari?,Can you launch Safari?,openai/gpt-oss-120b,yes
+en,Can you open Safari?,"Safari, please.",openai/gpt-oss-120b,yes
+fr,"Lance la musique, s’il te plaît.","Peux‑tu lancer la musique, s’il te plaît ?",openai/gpt-oss-120b,yes
+fr,"Lance la musique, s’il te plaît.","Hey, mets la musique, s’il te plaît.",openai/gpt-oss-120b,yes
+fr,"Lance la musique, s’il te plaît.",Merci de mettre la musique en route.,openai/gpt-oss-120b,yes
+fr,"Hey, mets la musique en pause.","Salut, pourrais-tu mettre la musique en pause s'il te plaît ?",openai/gpt-oss-120b,yes
+fr,"Hey, mets la musique en pause.","Hey, pause la musique.",openai/gpt-oss-120b,yes
+fr,"Hey, mets la musique en pause.","Mettre la musique en pause, merci.",openai/gpt-oss-120b,yes
+fr,"Hey, mets la musique en pause.","Pouvez-vous mettre la musique en pause, s'il vous plaît ?",openai/gpt-oss-120b,yes
+en,Can you wake me at 9:30 am? for the work,"Hey, could you set an alarm for 9:30 am? I need to be up for work.",openai/gpt-oss-120b,yes
+en,Can you wake me at 9:30 am? for the work,Please wake me at 9:30 am for work.,openai/gpt-oss-120b,yes
+en,Can you wake me at 9:30 am? for the work,"Wake me up at 9:30 am, thanks – I have to go to work.",openai/gpt-oss-120b,yes
+en,Can you wake me at 9:30 am? for the work,"9:30 am alarm, please. I’ve got work.",openai/gpt-oss-120b,yes
+fr,Je voudrais savoir la conversion de 1000 leones en shillings kényans.,"Salut, peux-tu me dire combien font 1000 leones en shillings kényans ?",openai/gpt-oss-120b,yes
+fr,Je voudrais savoir la conversion de 1000 leones en shillings kényans.,"Bonjour, j'aimerais connaître la conversion de 1000 leones en shillings kényans, s'il vous plaît.",openai/gpt-oss-120b,yes
+fr,Je voudrais savoir la conversion de 1000 leones en shillings kényans.,"Hey, c'est quoi la valeur de 1000 leones en shillings kényans ?",openai/gpt-oss-120b,yes
+fr,Je voudrais savoir la conversion de 1000 leones en shillings kényans.,"Bonjour, pourriez-vous me préciser la conversion de 1000 leones en shillings kényans ?",openai/gpt-oss-120b,yes
+en,How much is 1000 CFA francs in pounds?,"Hey, can you tell me how much 1000 CFA francs is in pounds?",openai/gpt-oss-120b,yes
+en,How much is 1000 CFA francs in pounds?,Please let me know the conversion rate for 1000 CFA francs to pounds.,openai/gpt-oss-120b,yes
+en,How much is 1000 CFA francs in pounds?,Could you convert 1000 CFA francs into pounds for me?,openai/gpt-oss-120b,yes
+fr,Calcule 579 fois 48,Peux-tu calculer 579 × 48 s'il te plaît ?,openai/gpt-oss-120b,yes
+fr,Calcule 579 fois 48,"Hey, fais le calcul de 579 multiplié par 48.",openai/gpt-oss-120b,yes
+fr,Calcule 579 fois 48,Merci de me donner le résultat de 579 fois 48.,openai/gpt-oss-120b,yes
+en,What's 5% of 80000?,"Hey, can you tell me what 5% of 80000 is?",openai/gpt-oss-120b,yes
+en,What's 5% of 80000?,Please calculate 5% of 80000 for me.,openai/gpt-oss-120b,yes
+en,What's 5% of 80000?,"5% of 80000, please?",openai/gpt-oss-120b,yes
+en,How much is 10000 dollars in naira?,"Hey, can you tell me the conversion for 10000 dollars to naira?",openai/gpt-oss-120b,yes
+en,How much is 10000 dollars in naira?,Please let me know how much 10000 dollars equals in naira.,openai/gpt-oss-120b,yes
+en,How much is 10000 dollars in naira?,What's the current rate for 10000 dollars in naira?,openai/gpt-oss-120b,yes
+en,How much is 10000 dollars in naira?,"10000 dollars to naira, what's the amount?",openai/gpt-oss-120b,yes
+fr,Alarme à 5h15 s'il te plaît pour le travail,"Peux-tu mettre une alarme à 5h15 pour le travail, s'il te plaît ?",openai/gpt-oss-120b,yes
+fr,Alarme à 5h15 s'il te plaît pour le travail,Merci de programmer une alarme à 5h15 pour le travail.,openai/gpt-oss-120b,yes
+fr,Alarme à 5h15 s'il te plaît pour le travail,"Mets une alarme à 5h15 s'il te plaît, c’est pour le travail.",openai/gpt-oss-120b,yes
+en,Timer 1 hour for the tea,Set a timer for 1 hour for the tea.,openai/gpt-oss-120b,yes
+en,Timer 1 hour for the tea,"Hey, could you start a 1‑hour timer for my tea, please?",openai/gpt-oss-120b,yes
+en,Timer 1 hour for the tea,Timer 1 hour tea.,openai/gpt-oss-120b,yes
+fr,"Salut, tu peux me dire combien font 25 % de 15000 ?","Salut, tu sais me dire quel est 25 % de 15000 ?",openai/gpt-oss-120b,yes
+fr,"Salut, tu peux me dire combien font 25 % de 15000 ?","Hey, pourrais‑tu me dire combien font 25 % de 15000 , s'il te plaît ?",openai/gpt-oss-120b,yes
+fr,"Salut, tu peux me dire combien font 25 % de 15000 ?","Dis‑moi vite, c’est quoi 25 % de 15000  ?",openai/gpt-oss-120b,yes
+fr,"Salut, tu peux me dire combien font 25 % de 15000 ?","Bonjour, pourriez‑vous m’indiquer le résultat de 25 % de 15000 ?",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: rice, bread, sugar, milk","Hey, could you create a Word document for my shopping list? It should include rice, bread, sugar, and milk.",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: rice, bread, sugar, milk","Please make a Word file with my grocery list: rice, bread, sugar, milk.",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: rice, bread, sugar, milk","Make a Word doc of my shopping list—rice, bread, sugar, milk.",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: rice, bread, sugar, milk","Can you open Word and add a list of rice, bread, sugar, and milk for me?",openai/gpt-oss-120b,yes
+en,"Make a PDF of my shopping list: fish, palm oil, tomatoes, eggs","Hey, could you create a PDF of my shopping list? It includes fish, palm oil, tomatoes, and eggs.",openai/gpt-oss-120b,yes
+en,"Make a PDF of my shopping list: fish, palm oil, tomatoes, eggs","Please make a PDF that lists fish, palm oil, tomatoes, and eggs for me.",openai/gpt-oss-120b,yes
+en,"Make a PDF of my shopping list: fish, palm oil, tomatoes, eggs","PDF my shopping list: fish, palm oil, tomatoes, eggs.",openai/gpt-oss-120b,yes
+en,"Make a PDF of my shopping list: fish, palm oil, tomatoes, eggs","I need a PDF of my grocery list—fish, palm oil, tomatoes, eggs—thanks.",openai/gpt-oss-120b,yes
+fr,Rappelle-moi de réserver la révision de la voiture dans 45 minutes,"N'oublie pas, il faut que je réserve la révision de la voiture dans 45 minutes.",openai/gpt-oss-120b,yes
+fr,Rappelle-moi de réserver la révision de la voiture dans 45 minutes,"Hey, rappelle-moi de réserver la révision de la voiture dans 45 minutes, s'il te plaît.",openai/gpt-oss-120b,yes
+en,Please mute the sound.,"Hey, could you mute the sound for me?",openai/gpt-oss-120b,yes
+en,Please mute the sound.,Please turn the volume off.,openai/gpt-oss-120b,yes
+en,Please mute the sound.,"Mute the audio, please.",openai/gpt-oss-120b,yes
+en,Please mute the sound.,Can you silence the sound?,openai/gpt-oss-120b,yes
+en,Volume 30.,Set the volume to 30.,openai/gpt-oss-120b,yes
+en,Volume 30.,Could you make the volume 30?,openai/gpt-oss-120b,yes
+en,Volume 30.,Turn the volume up to 30.,openai/gpt-oss-120b,yes
+en,alarm at 09:45 for the gym,Set an alarm for 09:45 for the gym.,openai/gpt-oss-120b,yes
+en,alarm at 09:45 for the gym,Could you please schedule a 09:45 alarm for the gym?,openai/gpt-oss-120b,yes
+en,alarm at 09:45 for the gym,"Hey, alarm at 09:45 – gym time!",openai/gpt-oss-120b,yes
+en,alarm at 09:45 for the gym,I need an alarm at 09:45 for the gym.,openai/gpt-oss-120b,yes
+en,Can you open Chrome?,"Hey, could you please open Chrome for me?",openai/gpt-oss-120b,yes
+en,Can you open Chrome?,"Open Chrome, please.",openai/gpt-oss-120b,yes
+en,Can you open Chrome?,Can you launch Chrome?,openai/gpt-oss-120b,yes
+en,Can you open Chrome?,"Yo, open Chrome.",openai/gpt-oss-120b,yes
+en,"Hey, could you remind me to buy bread on Wednesday at 6 pm?",Please remind me to buy bread on Wednesday at 6 pm.,openai/gpt-oss-120b,yes
+en,"Hey, could you remind me to buy bread on Wednesday at 6 pm?","Hey, can you set a reminder for buying bread this Wednesday at 6 pm?",openai/gpt-oss-120b,yes
+en,"Hey, could you remind me to buy bread on Wednesday at 6 pm?","Remind me to get bread on Wednesday at 6 pm, thanks!",openai/gpt-oss-120b,yes
+en,"Hey, could you remind me to buy bread on Wednesday at 6 pm?",I need a reminder: buy bread Wednesday 6 pm.,openai/gpt-oss-120b,yes
+en,alarm at 05:30 for the work,Set an alarm for 05:30 for work.,openai/gpt-oss-120b,yes
+en,alarm at 05:30 for the work,Could you please schedule an alarm at 05:30 for the work?,openai/gpt-oss-120b,yes
+en,alarm at 05:30 for the work,Alarm at 05:30 work.,openai/gpt-oss-120b,yes
+en,alarm at 05:30 for the work,"Hey, remind me with an alarm at 05:30 for the work.",openai/gpt-oss-120b,yes
+en,Set volume to 30 please.,"Could you set the volume to 30, please?",openai/gpt-oss-120b,yes
+en,Set volume to 30 please.,Set volume 30 please.,openai/gpt-oss-120b,yes
+en,Set volume to 30 please.,"Hey, change the volume to 30, thanks!",openai/gpt-oss-120b,yes
+en,Set volume to 30 please.,Please adjust the volume level to 30.,openai/gpt-oss-120b,yes
+en,"Please make a Markdown version of my shopping list – tomatoes, bread, eggs, sugar.","Hey, could you turn my shopping list—tomatoes, bread, eggs, sugar—into a Markdown file, please?",openai/gpt-oss-120b,yes
+en,"Please make a Markdown version of my shopping list – tomatoes, bread, eggs, sugar.","Make a Markdown version of my shopping list: tomatoes, bread, eggs, sugar.",openai/gpt-oss-120b,yes
+en,"Please make a Markdown version of my shopping list – tomatoes, bread, eggs, sugar.","Please convert my list of items (tomatoes, bread, eggs, sugar) into Markdown format.",openai/gpt-oss-120b,yes
+en,"Please make a Markdown version of my shopping list – tomatoes, bread, eggs, sugar.","I need a Markdown version of my shopping list—tomatoes, bread, eggs, sugar. Thanks!",openai/gpt-oss-120b,yes
+en,"Please make a Markdown format shopping list for me: palm oil, rice, fish, eggs.","Hey, could you create a Markdown shopping list with these items: palm oil, rice, fish, eggs?",openai/gpt-oss-120b,yes
+en,"Please make a Markdown format shopping list for me: palm oil, rice, fish, eggs.","Please generate a shopping list in Markdown format for palm oil, rice, fish, and eggs.",openai/gpt-oss-120b,yes
+en,"Please make a Markdown format shopping list for me: palm oil, rice, fish, eggs.","Make a Markdown list of my grocery items: palm oil, rice, fish, eggs, please.",openai/gpt-oss-120b,yes
+en,"Please make a Markdown format shopping list for me: palm oil, rice, fish, eggs.","I need a Markdown‑styled shopping list that includes palm oil, rice, fish, and eggs.",openai/gpt-oss-120b,yes
+en,"Hey, can you set the volume to 20?","Hey, could you set the volume to 20?",openai/gpt-oss-120b,yes
+en,"Hey, can you set the volume to 20?",Please set the volume at 20.,openai/gpt-oss-120b,yes
+en,"Hey, can you set the volume to 20?","Set volume to 20, thanks.",openai/gpt-oss-120b,yes
+en,"Hey, can you set the volume to 20?","Volume 20, please.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un PDF de ma liste de courses : pain, oignons, sucre, tomates","Pouvez-vous me créer un PDF avec ma liste de courses : pain, oignons, sucre, tomates ?",openai/gpt-oss-120b,yes
+fr,"Fais-moi un PDF de ma liste de courses : pain, oignons, sucre, tomates","Fais un PDF de ma liste de courses : pain, oignons, sucre, tomates.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un PDF de ma liste de courses : pain, oignons, sucre, tomates","Hey, fais-moi un PDF de la liste de courses : pain, oignons, sucre, tomates, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un PDF de ma liste de courses : pain, oignons, sucre, tomates","Merci de générer un PDF contenant ma liste de courses : pain, oignons, sucre, tomates.",openai/gpt-oss-120b,yes
+en,What's 18% of 80000?,"Hey, can you tell me what 18% of 80000 is?",openai/gpt-oss-120b,yes
+en,What's 18% of 80000?,"Could you calculate 18% of 80000 for me, please?",openai/gpt-oss-120b,yes
+en,What's 18% of 80000?,Need the result of 18% of 80000.,openai/gpt-oss-120b,yes
+en,Reminder: pick up the kids Saturday 8:30 am.,"Hey, can you set a reminder for me? I need to pick up the kids Saturday at 8:30 am.",openai/gpt-oss-120b,yes
+en,Reminder: pick up the kids Saturday 8:30 am.,Please add a reminder: pick up the kids Saturday 8:30 am.,openai/gpt-oss-120b,yes
+en,Reminder: pick up the kids Saturday 8:30 am.,Don't forget to pick up the kids Saturday 8:30 am.,openai/gpt-oss-120b,yes
+en,Convert 10000 Kenyan shillings to pounds,"Hey, can you convert 10000 Kenyan shillings to pounds for me?",openai/gpt-oss-120b,yes
+en,Convert 10000 Kenyan shillings to pounds,Please convert 10000 Kenyan shillings to pounds.,openai/gpt-oss-120b,yes
+en,Convert 10000 Kenyan shillings to pounds,Could you tell me what 10000 Kenyan shillings is in pounds?,openai/gpt-oss-120b,yes
+en,Convert 10000 Kenyan shillings to pounds,I need the conversion: 10000 Kenyan shillings to pounds.,openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word contenant : tomates, sucre, poisson, huile de palme.","Peux-tu me créer un document Word avec les mots suivants : tomates, sucre, poisson, huile de palme ?",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word contenant : tomates, sucre, poisson, huile de palme.","Fais-moi un fichier Word contenant : tomates, sucre, poisson, huile de palme.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word contenant : tomates, sucre, poisson, huile de palme.","J’ai besoin d’un Word qui liste tomates, sucre, poisson, huile de palme, tu peux le faire ?",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word contenant : tomates, sucre, poisson, huile de palme.","S’il te plaît, prépare un document Word incluant tomates, sucre, poisson, huile de palme.",openai/gpt-oss-120b,yes
+fr,Ouvre Chrome,"Lance Chrome, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,Ouvre Chrome,Peux-tu ouvrir Chrome ?,openai/gpt-oss-120b,yes
+en,Weather Nairobi today,"Hey, can you tell me the weather in Nairobi today?",openai/gpt-oss-120b,yes
+en,Weather Nairobi today,"Need the Nairobi weather for today, thanks.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : œufs, poisson, oignons, riz","Peux‑tu créer un document Word avec ma liste de courses : œufs, poisson, oignons, riz ?",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : œufs, poisson, oignons, riz","Fais-moi un Word contenant œufs, poisson, oignons et riz, s’il te plaît.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : œufs, poisson, oignons, riz","Word de ma liste de courses : œufs, poisson, oignons, riz.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : œufs, poisson, oignons, riz","Hey, mets œufs, poisson, oignons, riz dans un fichier Word, merci.",openai/gpt-oss-120b,yes
+en,"Hey, could you lower the volume for me?","Hey, can you turn the volume down for me?",openai/gpt-oss-120b,yes
+en,"Hey, could you lower the volume for me?",Could you please lower the volume?,openai/gpt-oss-120b,yes
+en,"Hey, could you lower the volume for me?","Hey, lower the volume, please.",openai/gpt-oss-120b,yes
+en,"Hey, could you lower the volume for me?",Can you drop the volume a bit?,openai/gpt-oss-120b,yes
+en,Weather Dakar tomorrow,Can you tell me the weather in Dakar for tomorrow?,openai/gpt-oss-120b,yes
+en,Weather Dakar tomorrow,What's the forecast for Dakar tomorrow?,openai/gpt-oss-120b,yes
+en,Weather Dakar tomorrow,"Hey, what's the weather like in Dakar tomorrow?",openai/gpt-oss-120b,yes
+en,"Volume 50, please.","Can you set the volume to 50, please?",openai/gpt-oss-120b,yes
+en,"Volume 50, please.","Hey, turn the volume up to 50.",openai/gpt-oss-120b,yes
+en,"Volume 50, please.",Please change the volume to 50.,openai/gpt-oss-120b,yes
+fr,Lance Chrome,Merci de démarrer Chrome.,openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Abidjan aujourd'hui ?,,openai/gpt-oss-120b,no
+fr,Calcule 650 fois 55,"Calcule 650 × 55, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,Calcule 650 fois 55,Pouvez-vous faire le calcul 650 fois 55 ?,openai/gpt-oss-120b,yes
+fr,Calcule 650 fois 55,"Hey, calcule 650 fois 55 pour moi.",openai/gpt-oss-120b,yes
+fr,Calcule 650 fois 55,Merci de calculer 650 fois 55.,openai/gpt-oss-120b,yes
+en,Launch Spotify,"Hey, could you open Spotify for me?",openai/gpt-oss-120b,yes
+en,Launch Spotify,Please launch Spotify.,openai/gpt-oss-120b,yes
+en,Launch Spotify,"Start Spotify, thanks!",openai/gpt-oss-120b,yes
+en,Launch Spotify,Open Spotify now.,openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : tomates, oignons, lait, poisson","Peux-tu me créer un document Word avec ma liste de courses : tomates, oignons, lait, poisson ?",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : tomates, oignons, lait, poisson","S’il te plaît, prépare un fichier Word contenant : tomates, oignons, lait, poisson.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : tomates, oignons, lait, poisson","Word de ma liste de courses, s’il te plaît : tomates, oignons, lait, poisson.",openai/gpt-oss-120b,yes
+en,Start a 10 minutes timer,Set a timer for 10 minutes.,openai/gpt-oss-120b,yes
+en,Start a 10 minutes timer,"Hey, can you start a 10 minutes timer?",openai/gpt-oss-120b,yes
+en,Start a 10 minutes timer,Please begin a 10 minutes timer.,openai/gpt-oss-120b,yes
+en,Start a 10 minutes timer,"Start a 10 minutes timer, thanks.",openai/gpt-oss-120b,yes
+en,Timer 5 minutes for the rice,Set a timer for 5 minutes for the rice.,openai/gpt-oss-120b,yes
+en,Timer 5 minutes for the rice,Timer 5 minutes – rice.,openai/gpt-oss-120b,yes
+en,Timer 2 minutes for the tea,"Hey, can you start a timer for 2 minutes for the tea?",openai/gpt-oss-120b,yes
+en,Can you open Spotify?,"Hey, could you please open Spotify for me?",openai/gpt-oss-120b,yes
+en,Can you open Spotify?,Open Spotify.,openai/gpt-oss-120b,yes
+en,Can you open Spotify?,Can you launch Spotify?,openai/gpt-oss-120b,yes
+en,Can you open Spotify?,Would you mind opening Spotify?,openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: onions, sugar, milk, palm oil","Hey, could you create a Markdown list for my shopping items: onions, sugar, milk, palm oil?",openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: onions, sugar, milk, palm oil","Please make a Markdown of my shopping list: onions, sugar, milk, palm oil.",openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: onions, sugar, milk, palm oil","Can you put these into a Markdown list—onions, sugar, milk, palm oil?",openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: onions, sugar, milk, palm oil","I need a Markdown format for my grocery list: onions, sugar, milk, palm oil.",openai/gpt-oss-120b,yes
+fr,Ouvre Calculator,"Ouvre Calculator, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,Ouvre Calculator,Peux-tu lancer Calculator ?,openai/gpt-oss-120b,yes
+fr,Mets le volume à 50,Peux-tu mettre le volume à 50 ?,openai/gpt-oss-120b,yes
+fr,Mets le volume à 50,"Volume 50, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,Mets le volume à 50,Mets le son à 50.,openai/gpt-oss-120b,yes
+fr,Mets le volume à 50,"Hey, règle le volume à 50.",openai/gpt-oss-120b,yes
+en,"Make a PDF of my shopping list: tomatoes, milk, eggs, bread","Hey, could you please create a PDF of my shopping list? It includes tomatoes, milk, eggs, and bread.",openai/gpt-oss-120b,yes
+en,"Make a PDF of my shopping list: tomatoes, milk, eggs, bread","Can you turn my grocery list—tomatoes, milk, eggs, bread—into a PDF for me?",openai/gpt-oss-120b,yes
+en,"Make a PDF of my shopping list: tomatoes, milk, eggs, bread","PDF my shopping list (tomatoes, milk, eggs, bread), thanks.",openai/gpt-oss-120b,yes
+en,"Hey, can you tell me what's 5% of 5000?","Hey, could you calculate 5% of 5000 for me?",openai/gpt-oss-120b,yes
+en,"Hey, can you tell me what's 5% of 5000?",What's 5% of 5000?,openai/gpt-oss-120b,yes
+en,"Hey, can you tell me what's 5% of 5000?","Can you tell me the 5 percent of 5000, please?",openai/gpt-oss-120b,yes
+en,"Hey, can you tell me what's 5% of 5000?",Please give me the result of 5% of 5000.,openai/gpt-oss-120b,yes
+en,Could you please calculate 526 multiplied by 24 for me?,"Hey, can you work out 526 * 24 for me?",openai/gpt-oss-120b,yes
+en,Could you please calculate 526 multiplied by 24 for me?,Please calculate 526 multiplied by 24.,openai/gpt-oss-120b,yes
+en,Could you please calculate 526 multiplied by 24 for me?,Could you tell me the result of 526 times 24?,openai/gpt-oss-120b,yes
+en,Could you please calculate 526 multiplied by 24 for me?,"I need the product of 526 and 24, thanks.",openai/gpt-oss-120b,yes
+fr,Rappelle-moi de acheter du pain aujourd'hui à 10h,Rappelle‑moi d'acheter du pain aujourd'hui à 10h.,openai/gpt-oss-120b,yes
+fr,Rappelle-moi de acheter du pain aujourd'hui à 10h,"N'oublie pas, il faut que j'achète du pain à 10h aujourd'hui.",openai/gpt-oss-120b,yes
+en,Do the math: 445 times 17.,"Hey, could you calculate 445 × 17 for me?",openai/gpt-oss-120b,yes
+en,Do the math: 445 times 17.,Please do the math: 445 times 17.,openai/gpt-oss-120b,yes
+en,Do the math: 445 times 17.,What's 445 multiplied by 17?,openai/gpt-oss-120b,yes
+en,Do the math: 445 times 17.,Can you quickly work out 445 * 17?,openai/gpt-oss-120b,yes
+en,What's the weather in Accra right now?,"Hey, can you tell me the current weather in Accra?",openai/gpt-oss-120b,yes
+en,What's the weather in Accra right now?,Could you please check the weather in Accra right now?,openai/gpt-oss-120b,yes
+en,What's the weather in Accra right now?,What's the weather like in Accra at the moment?,openai/gpt-oss-120b,yes
+en,What's the weather in Accra right now?,Accra weather right now?,openai/gpt-oss-120b,yes
+en,What's 10% of 80000?,"Hey, can you tell me what 10% of 80000 is?",openai/gpt-oss-120b,yes
+en,What's 10% of 80000?,Please calculate 10 percent of 80000 for me.,openai/gpt-oss-120b,yes
+en,What's 10% of 80000?,"Yo, need the 10% figure of 80000 ASAP.",openai/gpt-oss-120b,yes
+fr,Calcule 825 fois 3,Peux-tu calculer 825 fois 3 ?,openai/gpt-oss-120b,yes
+fr,Calcule 825 fois 3,Calcul 825×3 s'il te plaît.,openai/gpt-oss-120b,yes
+fr,Calcule 825 fois 3,Fais le calcul 825*3.,openai/gpt-oss-120b,yes
+en,Remember that my brother's birthday is on February 9,Please note: my brother’s birthday falls on February 9.,openai/gpt-oss-120b,yes
+en,Remember that my brother's birthday is on February 9,My brother's birthday? It's February 9.,openai/gpt-oss-120b,yes
+en,Remember that my brother's birthday is on February 9,"Don’t forget, brother's birthday = February 9.",openai/gpt-oss-120b,yes
+en,Just a reminder—my mother's birthday is October 1.,"Hey, just a heads‑up: my mom's birthday is on October 1.",openai/gpt-oss-120b,yes
+en,Just a reminder—my mother's birthday is October 1.,Reminder: my mother's birthday is October 1.,openai/gpt-oss-120b,yes
+en,Just a reminder—my mother's birthday is October 1.,Just wanted to let you know my mom's birthday falls on October 1.,openai/gpt-oss-120b,yes
+en,Just a reminder—my mother's birthday is October 1.,Quick note—my mother’s birthday is October 1.,openai/gpt-oss-120b,yes
+en,"Hey, can you convert 5000 euros to pounds for me?","Hey, could you tell me what 5000 euros is in pounds?",openai/gpt-oss-120b,yes
+en,"Hey, can you convert 5000 euros to pounds for me?","Can you convert 5000 euros to pounds, please?",openai/gpt-oss-120b,yes
+en,"Hey, can you convert 5000 euros to pounds for me?",Convert 5000 euros to pounds for me.,openai/gpt-oss-120b,yes
+en,What's 10% of 1200?,"Hey, can you tell me what 10% of 1200 is?",openai/gpt-oss-120b,yes
+en,What's 10% of 1200?,Please calculate 10% of 1200.,openai/gpt-oss-120b,yes
+en,What's 10% of 1200?,What's the 10 percent of 1200?,openai/gpt-oss-120b,yes
+en,What's 10% of 1200?,"10% of 1200, please?",openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: sugar, bread, rice, milk","Hey, can you create a Markdown list for my shopping items: sugar, bread, rice, milk?",openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: sugar, bread, rice, milk","Please make a Markdown document of my grocery list: sugar, bread, rice, milk.",openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: sugar, bread, rice, milk","Could you put sugar, bread, rice, and milk into a Markdown list for me?",openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: sugar, bread, rice, milk","Make a Markdown shopping list with these items: sugar, bread, rice, milk.",openai/gpt-oss-120b,yes
+en,Remind me to water the plants at 12 pm today,"Hey, can you set a reminder for me to water the plants at 12 pm today?",openai/gpt-oss-120b,yes
+en,Remind me to water the plants at 12 pm today,Please remind me to water the plants at 12 pm today.,openai/gpt-oss-120b,yes
+en,Remind me to water the plants at 12 pm today,Remind me: water the plants at 12 pm today.,openai/gpt-oss-120b,yes
+en,Remind me to water the plants at 12 pm today,Don't forget to water the plants at 12 pm today.,openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 20 minutes pour le riz,Peux-tu mettre un minuteur de 20 minutes pour le riz ?,openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 20 minutes pour le riz,"Minuteur 20 minutes, riz, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 20 minutes pour le riz,Mets un timer de 20 minutes pour le riz.,openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 20 minutes pour le riz,"Hey, lance un minuteur de 20 minutes pour le riz.",openai/gpt-oss-120b,yes
+fr,"Mets la musique en pause, merci.","Pouvez-vous mettre la musique en pause, s'il vous plaît ?",openai/gpt-oss-120b,yes
+fr,"Mets la musique en pause, merci.","Hey, pause la musique, stp.",openai/gpt-oss-120b,yes
+fr,"Mets la musique en pause, merci.","Pause la musique, merci.",openai/gpt-oss-120b,yes
+en,Remember that my brother's birthday is on September 25,Please note that my brother's birthday falls on September 25.,openai/gpt-oss-120b,yes
+en,Remember that my brother's birthday is on September 25,Can you remember that my brother's birthday is September 25?,openai/gpt-oss-120b,yes
+en,Remember that my brother's birthday is on September 25,"My brother's birthday is September 25, don't forget it.",openai/gpt-oss-120b,yes
+fr,"Augmente le volume, merci.","Pouvez-vous augmenter le volume, s'il vous plaît ?",openai/gpt-oss-120b,yes
+fr,"Augmente le volume, merci.","Monte le son, merci.",openai/gpt-oss-120b,yes
+fr,"Augmente le volume, merci.",Merci d'augmenter le volume.,openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Lagos demain ?,Quel temps fera-t-il à Lagos demain ?,openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Lagos demain ?,Sais-tu quel temps il fera à Lagos demain ?,openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Lagos demain ?,Peux‑tu me dire la météo à Lagos pour demain ?,openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Lagos demain ?,"Dis‑moi, il fait quel temps à Lagos demain ?",openai/gpt-oss-120b,yes
+en,I need the amount of CFA francs you get for 1000 Kenyan shillings.,"Hey, could you tell me how many CFA francs I’d get for 1000 Kenyan shillings?",openai/gpt-oss-120b,yes
+en,I need the amount of CFA francs you get for 1000 Kenyan shillings.,What’s the conversion to CFA francs for 1000 Kenyan shillings?,openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 3 minutes pour la lessive,Peux-tu mettre un minuteur de 3 minutes pour la lessive ?,openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 3 minutes pour la lessive,"Hey, lance un timer de 3 minutes pour la lessive.",openai/gpt-oss-120b,yes
+fr,"Hey, n'oublie pas de me réveiller à 6h pour la prière.","Salut, rappelle‑moi de me réveiller à 6h pour la prière, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,"Hey, n'oublie pas de me réveiller à 6h pour la prière.",N'oublie pas de me réveiller à 6h pour la prière.,openai/gpt-oss-120b,yes
+fr,"Hey, n'oublie pas de me réveiller à 6h pour la prière.","Hey, pense à me réveiller à 6h pour la prière, merci.",openai/gpt-oss-120b,yes
+fr,"Hey, n'oublie pas de me réveiller à 6h pour la prière.",Peux‑tu me réveiller à 6h pour la prière ?,openai/gpt-oss-120b,yes
+en,Start a 30 minutes timer for the tea,"Start a 30 minutes timer for the tea, please.",openai/gpt-oss-120b,yes
+en,Start a 30 minutes timer for the tea,Timer for the tea: 30 minutes.,openai/gpt-oss-120b,yes
+en,Set a timer for 25 minutes for the rice,"Hey, could you set a timer for 25 minutes for the rice?",openai/gpt-oss-120b,yes
+en,Set a timer for 25 minutes for the rice,"Timer 25 minutes, rice.",openai/gpt-oss-120b,yes
+en,Remind me to send the report to Awa at 6 pm today,Please remind me to send the report to Awa at 6 pm today.,openai/gpt-oss-120b,yes
+en,Remind me to send the report to Awa at 6 pm today,Remind me: send the report to Awa at 6 pm today.,openai/gpt-oss-120b,yes
+en,Remind me to send the report to Awa at 6 pm today,"Hey, can you ping me to send the report to Awa at 6 pm today?",openai/gpt-oss-120b,yes
+en,Remind me to send the report to Awa at 6 pm today,Don't let me forget to send the report to Awa at 6 pm today.,openai/gpt-oss-120b,yes
+en,"Hey, just a heads up—my sister's birthday is on January 9.","Hey, just letting you know my sister's birthday is on January 9.",openai/gpt-oss-120b,yes
+en,"Hey, just a heads up—my sister's birthday is on January 9.",Quick heads‑up: my sister celebrates her birthday on January 9.,openai/gpt-oss-120b,yes
+en,"Hey, just a heads up—my sister's birthday is on January 9.",Just a reminder—my sister's birthday falls on January 9.,openai/gpt-oss-120b,yes
+en,"Hey, just a heads up—my sister's birthday is on January 9.","FYI, my sister's birthday is January 9.",openai/gpt-oss-120b,yes
+en,Remind me to call mum tomorrow at 2:30 pm,"Hey, can you set a reminder for me to call mum tomorrow at 2:30 pm?",openai/gpt-oss-120b,yes
+en,Remind me to call mum tomorrow at 2:30 pm,Please remind me to call mum tomorrow at 2:30 pm.,openai/gpt-oss-120b,yes
+en,Remind me to call mum tomorrow at 2:30 pm,Remind me: call mum tomorrow 2:30 pm.,openai/gpt-oss-120b,yes
+en,Remind me to call mum tomorrow at 2:30 pm,"I need a reminder to call mum tomorrow at 2:30 pm, thanks.",openai/gpt-oss-120b,yes
+fr,Note que l'anniversaire de ma mère c’est le 5 juillet.,"N'oublie pas, ma mère fête son anniversaire le 5 juillet.",openai/gpt-oss-120b,yes
+fr,Note que l'anniversaire de ma mère c’est le 5 juillet.,"S'il te plaît, rappelle-moi que l'anniversaire de ma mère est le 5 juillet.",openai/gpt-oss-120b,yes
+fr,Note que l'anniversaire de ma mère c’est le 5 juillet.,"Juste pour info, l'anniversaire de ma mère c’est le 5 juillet.",openai/gpt-oss-120b,yes
+fr,Pouvez-vous me dire quel temps il fera à Paris demain ?,Quel sera le temps à Paris demain ?,openai/gpt-oss-120b,yes
+fr,Pouvez-vous me dire quel temps il fera à Paris demain ?,"Salut, tu sais quel temps il fera à Paris demain ?",openai/gpt-oss-120b,yes
+fr,Pouvez-vous me dire quel temps il fera à Paris demain ?,"Pouvez-vous m'indiquer les prévisions météo pour Paris demain, s'il vous plaît ?",openai/gpt-oss-120b,yes
+fr,Pouvez-vous me dire quel temps il fera à Paris demain ?,"Hey, j'aimerais connaître la météo à Paris demain.",openai/gpt-oss-120b,yes
+en,alarm at 08:30,Set an alarm for 08:30.,openai/gpt-oss-120b,yes
+en,alarm at 08:30,Alarm 08:30.,openai/gpt-oss-120b,yes
+en,alarm at 08:30,I need an alarm at 08:30 tomorrow.,openai/gpt-oss-120b,yes
+fr,Peux-tu programmer une alarme à 8h ?,Peux-tu régler une alarme pour 8h ?,openai/gpt-oss-120b,yes
+fr,Peux-tu programmer une alarme à 8h ?,"Bonjour, pourrais‑je avoir une alarme à 8h, s’il vous plaît ?",openai/gpt-oss-120b,yes
+fr,Peux-tu programmer une alarme à 8h ?,"Mets une alarme à 8h, ok ?",openai/gpt-oss-120b,yes
+fr,Peux-tu programmer une alarme à 8h ?,"Hey, n'oublie pas de mettre une alarme à 8h demain matin.",openai/gpt-oss-120b,yes
+fr,Convertis 100000 leones en shillings kényans,"Salut, pourrais-tu convertir 100000 leones en shillings kényans ?",openai/gpt-oss-120b,yes
+fr,Convertis 100000 leones en shillings kényans,"Bonjour, merci de transformer 100000 leones en shillings kényans.",openai/gpt-oss-120b,yes
+fr,Convertis 100000 leones en shillings kényans,"Hey, convertis 100000 leones en shillings kényans s'il te plaît.",openai/gpt-oss-120b,yes
+fr,Convertis 100000 leones en shillings kényans,Veuillez s'il vous plaît convertir 100000 leones en shillings kényans.,openai/gpt-oss-120b,yes
+en,"Hey, could you mute the sound for me?","Hey, can you mute the sound for me?",openai/gpt-oss-120b,yes
+en,"Hey, could you mute the sound for me?",Could you please mute the audio?,openai/gpt-oss-120b,yes
+en,"Hey, could you mute the sound for me?","Mute the sound, please.",openai/gpt-oss-120b,yes
+en,"Hey, could you mute the sound for me?","Hey, turn off the volume for me.",openai/gpt-oss-120b,yes
+en,"Hey, just a reminder that my mother's birthday is on March 24.",Could you note that my mom's birthday falls on March 24?,openai/gpt-oss-120b,yes
+en,"Hey, just a reminder that my mother's birthday is on March 24.",Reminder: mom's birthday is March 24.,openai/gpt-oss-120b,yes
+fr,Calcule 58 fois 49,"Pouvez-vous calculer 58 × 49, s'il vous plaît ?",openai/gpt-oss-120b,yes
+fr,Calcule 58 fois 49,"Hey, fais le calcul 58 fois 49.",openai/gpt-oss-120b,yes
+fr,Calcule 58 fois 49,Merci de me dire le résultat de 58 fois 49.,openai/gpt-oss-120b,yes
+fr,"PDF de la liste : lait, poisson, huile de palme, sucre, s’il te plaît.","Peux-tu m’envoyer le PDF de la liste : lait, poisson, huile de palme, sucre, s’il te plaît ?",openai/gpt-oss-120b,yes
+fr,"PDF de la liste : lait, poisson, huile de palme, sucre, s’il te plaît.","PDF de la liste : lait, poisson, huile de palme, sucre, merci.",openai/gpt-oss-120b,yes
+fr,"PDF de la liste : lait, poisson, huile de palme, sucre, s’il te plaît.","Hey, envoie-moi le PDF avec le lait, le poisson, l’huile de palme et le sucre, stp.",openai/gpt-oss-120b,yes
+fr,"PDF de la liste : lait, poisson, huile de palme, sucre, s’il te plaît.","J’aurais besoin du PDF contenant la liste suivante : lait, poisson, huile de palme, sucre, s’il vous plaît.",openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: tomatoes, onions, eggs, sugar","Could you create a Markdown list of my shopping items: tomatoes, onions, eggs, sugar?",openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: tomatoes, onions, eggs, sugar","Please make a Markdown version of my grocery list: tomatoes, onions, eggs, sugar.",openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: tomatoes, onions, eggs, sugar","Hey, turn my shopping list—tomatoes, onions, eggs, sugar—into Markdown, thanks!",openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: tomatoes, onions, eggs, sugar","Make a Markdown list for these: tomatoes, onions, eggs, sugar.",openai/gpt-oss-120b,yes
+fr,Calcule 149 fois 51,Peux‑tu calculer 149 × 51 s’il te plaît ?,openai/gpt-oss-120b,yes
+fr,Calcule 149 fois 51,"Hey, fais le calcul de 149 multiplié par 51",openai/gpt-oss-120b,yes
+fr,Calcule 149 fois 51,Merci de me dire le résultat de 149 x 51,openai/gpt-oss-120b,yes
+en,Weather Nairobi tomorrow,"Hey, can you tell me the Weather Nairobi tomorrow?",openai/gpt-oss-120b,yes
+en,Weather Nairobi tomorrow,Please check the Weather Nairobi tomorrow for me.,openai/gpt-oss-120b,yes
+en,Weather Nairobi tomorrow,What’s the Weather Nairobi tomorrow?,openai/gpt-oss-120b,yes
+en,Weather Nairobi tomorrow,"Need the Weather Nairobi tomorrow, thanks.",openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 20 minutes pour la lessive,Peux-tu mettre un minuteur de 20 minutes pour la lessive ?,openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 20 minutes pour la lessive,"Hey, lance un minuteur de 20 minutes pour la lessive.",openai/gpt-oss-120b,yes
+en,Remind me to send the report to Awa on Saturday at 9 am,"Hey, could you set a reminder for me to send the report to Awa this Saturday at 9 am?",openai/gpt-oss-120b,yes
+en,Remind me to send the report to Awa on Saturday at 9 am,Reminder: send the report to Awa on Saturday at 9 am.,openai/gpt-oss-120b,yes
+en,Remind me to send the report to Awa on Saturday at 9 am,Please remind me on Saturday at 9 am to send the report to Awa.,openai/gpt-oss-120b,yes
+fr,"Note que l'anniversaire de ma mère, c’est le 7 septembre.","Peux-tu noter que l'anniversaire de ma mère, c’est le 7 septembre ?",openai/gpt-oss-120b,yes
+fr,"Note que l'anniversaire de ma mère, c’est le 7 septembre.","Note s'il te plaît : l'anniversaire de ma mère, le 7 septembre.",openai/gpt-oss-120b,yes
+fr,"Note que l'anniversaire de ma mère, c’est le 7 septembre.",Rappelle-moi que ma mère fête son anniversaire le 7 septembre.,openai/gpt-oss-120b,yes
+fr,"Note que l'anniversaire de ma mère, c’est le 7 septembre.","7 septembre, c’est l'anniversaire de ma mère, n'oublie pas.",openai/gpt-oss-120b,yes
+en,Remember that my mother's birthday is on June 14,Please note that my mother's birthday falls on June 14.,openai/gpt-oss-120b,yes
+en,Remember that my mother's birthday is on June 14,Can you remember my mother's birthday is June 14?,openai/gpt-oss-120b,yes
+fr,Peux‑tu me réveiller à 6h15 ?,Merci de me réveiller à 6h15.,openai/gpt-oss-120b,yes
+fr,Peux‑tu me réveiller à 6h15 ?,"Hey, réveille‑moi à 6h15 s'il te plaît.",openai/gpt-oss-120b,yes
+fr,Peux‑tu me réveiller à 6h15 ?,"Je voudrais être réveillé(e) à 6h15, peux‑tu le faire ?",openai/gpt-oss-120b,yes
+fr,Convertis 250 leones en dollars,"Salut, peux-tu convertir 250 leones en dollars ?",openai/gpt-oss-120b,yes
+fr,Convertis 250 leones en dollars,"Bonjour, pourriez-vous s'il vous plaît convertir 250 leones en dollars ?",openai/gpt-oss-120b,yes
+fr,Convertis 250 leones en dollars,"Hey, transforme 250 leones en dollars pour moi.",openai/gpt-oss-120b,yes
+fr,Convertis 250 leones en dollars,"Convertis 250 leones en dollars, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,Ouvre Calendar,Peux-tu lancer Calendar ?,openai/gpt-oss-120b,yes
+en,Set volume to 50.,Can you set the volume to 50?,openai/gpt-oss-120b,yes
+en,Set volume to 50.,"Volume 50, please.",openai/gpt-oss-120b,yes
+en,Set volume to 50.,"Hey, set volume to 50.",openai/gpt-oss-120b,yes
+en,Set a timer for 5 minutes for the laundry,"Hey, could you please set a timer for 5 minutes for the laundry?",openai/gpt-oss-120b,yes
+en,Set a timer for 5 minutes for the laundry,Timer 5 minutes laundry.,openai/gpt-oss-120b,yes
+en,Start a 5 minutes timer for the rice,"Hey, could you set a 5 minutes timer for the rice?",openai/gpt-oss-120b,yes
+en,Start a 5 minutes timer for the rice,"Timer for the rice, 5 minutes, please.",openai/gpt-oss-120b,yes
+fr,Combien font 100000 leones en nairas ?,"Salut, tu sais combien font 100000 leones en nairas ?",openai/gpt-oss-120b,yes
+fr,Combien font 100000 leones en nairas ?,"Bonjour, pourriez‑vous me dire la conversion de 100000 leones en nairas, s’il vous plaît ?",openai/gpt-oss-120b,yes
+fr,Combien font 100000 leones en nairas ?,"Hey, c’est quoi le taux pour 100000 leones en nairas ?",openai/gpt-oss-120b,yes
+fr,Combien font 100000 leones en nairas ?,Pouvez‑vous me dire rapidement le montant en nairas pour 100000 leones ?,openai/gpt-oss-120b,yes
+en,Open Notes,Please open Notes.,openai/gpt-oss-120b,yes
+en,Open Notes,"Open Notes, thanks.",openai/gpt-oss-120b,yes
+en,Open Notes,Can you launch the Notes app?,openai/gpt-oss-120b,yes
+en,Can you tell me the weather in Bamako today?,"Hey, could you let me know the weather in Bamako today?",openai/gpt-oss-120b,yes
+en,Can you tell me the weather in Bamako today?,What's the weather like in Bamako today?,openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: onions, palm oil, bread, fish","Hey, could you create a Word document for my shopping list? It should include onions, palm oil, bread, and fish.",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: onions, palm oil, bread, fish","Please make a Word file with my grocery list: onions, palm oil, bread, fish.",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: onions, palm oil, bread, fish","Can you put onions, palm oil, bread, fish into a Word doc for my shopping list?",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: onions, palm oil, bread, fish","Make a Word doc of my shopping list: onions, palm oil, bread, fish.",openai/gpt-oss-120b,yes
+fr,Calcule 819 fois 59,Peux-tu calculer 819 × 59 s'il te plaît ?,openai/gpt-oss-120b,yes
+fr,Calcule 819 fois 59,"Hey, fais le calcul 819*59 rapidement.",openai/gpt-oss-120b,yes
+fr,Calcule 819 fois 59,Merci de me donner le résultat de 819 multiplié par 59.,openai/gpt-oss-120b,yes
+en,"Hey, just a reminder: my best friend's birthday is on June 19.",Quick note: my best friend's birthday falls on June 19.,openai/gpt-oss-120b,yes
+en,"Hey, just a reminder: my best friend's birthday is on June 19.",Can you remind me that my best friend's birthday is June 19?,openai/gpt-oss-120b,yes
+en,"Hey, just a reminder: my best friend's birthday is on June 19.","Don't forget, my best friend's birthday is June 19.",openai/gpt-oss-120b,yes
+en,Convert 20 euros to naira,"Hey, can you convert 20 euros to naira for me?",openai/gpt-oss-120b,yes
+en,Convert 20 euros to naira,Please convert 20 euros to naira.,openai/gpt-oss-120b,yes
+en,Convert 20 euros to naira,"Convert 20 euros to naira, thanks.",openai/gpt-oss-120b,yes
+en,Convert 20 euros to naira,I need the conversion of 20 euros into naira.,openai/gpt-oss-120b,yes
+fr,Convertis 100 dollars en francs CFA,"Salut, tu peux convertir 100 dollars en francs CFA ?",openai/gpt-oss-120b,yes
+fr,Convertis 100 dollars en francs CFA,"Bonjour, pourriez-vous s'il vous plaît convertir 100 dollars en francs CFA ?",openai/gpt-oss-120b,yes
+fr,Convertis 100 dollars en francs CFA,"Hey, fais la conversion de 100 dollars en francs CFA rapidement.",openai/gpt-oss-120b,yes
+en,alarm at 06:45 for the gym,Set an alarm for 06:45 for the gym.,openai/gpt-oss-120b,yes
+en,alarm at 06:45 for the gym,Could you please schedule an alarm at 06:45 for the gym?,openai/gpt-oss-120b,yes
+en,alarm at 06:45 for the gym,"Hey, alarm 06:45 gym.",openai/gpt-oss-120b,yes
+en,alarm at 06:45 for the gym,I need an alarm at 06:45 for the gym.,openai/gpt-oss-120b,yes
+en,What is 635 times 24?,"Hey, can you tell me what 635 × 24 equals?",openai/gpt-oss-120b,yes
+en,What is 635 times 24?,Please calculate 635 times 24 for me.,openai/gpt-oss-120b,yes
+en,What is 635 times 24?,What's 635 multiplied by 24?,openai/gpt-oss-120b,yes
+en,What is 635 times 24?,Got a sec? Need the product of 635 and 24.,openai/gpt-oss-120b,yes
+en,Remember that my mother's birthday is on January 19,Please note: my mom's birthday falls on January 19.,openai/gpt-oss-120b,yes
+en,Remember that my mother's birthday is on January 19,"Don't forget, my mother's birthday is January 19.",openai/gpt-oss-120b,yes
+en,Remember that my mother's birthday is on January 19,Quick heads‑up—my mom's birthday is on January 19.,openai/gpt-oss-120b,yes
+en,"Wake me at 7:15 am, thanks.",Please set an alarm for 7:15 am. Thanks!,openai/gpt-oss-120b,yes
+en,"Wake me at 7:15 am, thanks.",Wake me up at 7:15 am.,openai/gpt-oss-120b,yes
+en,"Wake me at 7:15 am, thanks.","Hey, could you make sure I’m up by 7:15 am? Thanks.",openai/gpt-oss-120b,yes
+en,"Wake me at 7:15 am, thanks.","7:15 am alarm, please.",openai/gpt-oss-120b,yes
+en,Please note my sister’s birthday falls on February 26.,"Hey, could you add that my sister's birthday is on February 26?",openai/gpt-oss-120b,yes
+en,Please note my sister’s birthday falls on February 26.,Just a reminder: my sister's birthday is February 26.,openai/gpt-oss-120b,yes
+en,Please note my sister’s birthday falls on February 26.,Can you make a note that my sister’s birthday is on February 26?,openai/gpt-oss-120b,yes
+en,Weather Paris right now,"Hey, can you tell me the weather in Paris right now?",openai/gpt-oss-120b,yes
+en,Weather Paris right now,Please check the current weather for Paris.,openai/gpt-oss-120b,yes
+en,Weather Paris right now,What's the weather like in Paris right now?,openai/gpt-oss-120b,yes
+en,"Hey, could you create a Markdown list of my shopping items: palm oil, rice, fish, eggs?","Hey assistant, can you make a Markdown list of my shopping items: palm oil, rice, fish, eggs?",openai/gpt-oss-120b,yes
+en,"Hey, could you create a Markdown list of my shopping items: palm oil, rice, fish, eggs?","Could you please generate a Markdown bullet list with these groceries—palm oil, rice, fish, eggs?",openai/gpt-oss-120b,yes
+en,"Hey, could you create a Markdown list of my shopping items: palm oil, rice, fish, eggs?","I need a Markdown list of my shopping stuff: palm oil, rice, fish, eggs. Can you do that?",openai/gpt-oss-120b,yes
+en,"Hey, could you create a Markdown list of my shopping items: palm oil, rice, fish, eggs?","Make a Markdown list of my items: palm oil, rice, fish, eggs.",openai/gpt-oss-120b,yes
+en,"Don't forget, my sister's birthday is on January 9.","Hey, just a reminder: my sister's birthday is on January 9.",openai/gpt-oss-120b,yes
+en,"Don't forget, my sister's birthday is on January 9.",Please remember that my sister's birthday falls on January 9.,openai/gpt-oss-120b,yes
+en,"Don't forget, my sister's birthday is on January 9.",Quick note: my sister's birthday is on January 9.,openai/gpt-oss-120b,yes
+en,"Alarm 9:30 am, thanks.","Set an alarm for 9:30 am, please.",openai/gpt-oss-120b,yes
+en,"Alarm 9:30 am, thanks.",Can you schedule an alarm at 9:30 am?,openai/gpt-oss-120b,yes
+en,"Alarm 9:30 am, thanks.",Please set a 9:30 am alarm.,openai/gpt-oss-120b,yes
+fr,Mets le volume à 60,"Peux-tu mettre le volume à 60, s'il te plaît ?",openai/gpt-oss-120b,yes
+fr,Mets le volume à 60,"Hey, règle le volume à 60.",openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 30 minutes pour le riz,Peux‑tu mettre un minuteur de 30 minutes pour le riz ?,openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 30 minutes pour le riz,"Minuteur 30 minutes pour le riz, s’il te plaît.",openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 30 minutes pour le riz,"Hey, lance un minuteur de 30 minutes pour le riz.",openai/gpt-oss-120b,yes
+en,Open WhatsApp,"Hey, could you open WhatsApp for me?",openai/gpt-oss-120b,yes
+en,Open WhatsApp,Please launch WhatsApp.,openai/gpt-oss-120b,yes
+en,Open WhatsApp,Can you get WhatsApp up on my screen?,openai/gpt-oss-120b,yes
+en,What's 15% of 80000?,"Hey, can you tell me what 15% of 80000 is?",openai/gpt-oss-120b,yes
+en,What's 15% of 80000?,Could you please calculate 15% of 80000 for me?,openai/gpt-oss-120b,yes
+en,What's 15% of 80000?,"Yo, what's 15% of 80000?",openai/gpt-oss-120b,yes
+en,"Can you skip back one song, please?",Could you please go back one track?,openai/gpt-oss-120b,yes
+en,"Can you skip back one song, please?","Hey, skip back one song for me, thanks!",openai/gpt-oss-120b,yes
+en,"Can you skip back one song, please?",Would you mind rewinding to the previous song?,openai/gpt-oss-120b,yes
+en,"Can you skip back one song, please?","Skip back one song, please.",openai/gpt-oss-120b,yes
+en,Remind me to revise for the exam tomorrow at 8 am,"Hey, can you set a reminder for me to study for the exam tomorrow at 8 am?",openai/gpt-oss-120b,yes
+en,Remind me to revise for the exam tomorrow at 8 am,Please remind me to revise for the exam tomorrow at 8 am.,openai/gpt-oss-120b,yes
+en,Remind me to revise for the exam tomorrow at 8 am,Reminder: revise for the exam tomorrow at 8 am.,openai/gpt-oss-120b,yes
+en,Remind me to revise for the exam tomorrow at 8 am,Can you ping me at 8 am tomorrow to review for the exam?,openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de ma mère est le 11 mai,"Souviens‑toi, l’anniversaire de ma mère c’est le 11 mai.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de ma mère est le 11 mai,"N’oublie pas, ma mère fête son anniversaire le 11 mai.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de ma mère est le 11 mai,"Retiens bien : le 11 mai, c’est l’anniversaire de ma mère.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de ma mère est le 11 mai,"Hey, note que le 11 mai, c’est l’anniversaire de ma mère.",openai/gpt-oss-120b,yes
+en,Wake me up at 5:30 am,Please set an alarm for 5:30 am.,openai/gpt-oss-120b,yes
+en,Wake me up at 5:30 am,"Hey, can you wake me up at 5:30 am?",openai/gpt-oss-120b,yes
+en,Wake me up at 5:30 am,"I need an alarm for 5:30 am, thanks.",openai/gpt-oss-120b,yes
+fr,"Coupe le son, s'il te plaît.","Peux-tu couper le son, s'il te plaît ?",openai/gpt-oss-120b,yes
+fr,"Coupe le son, s'il te plaît.","Mets le son en pause, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,"Coupe le son, s'il te plaît.","Silence, s'il te plaît.",openai/gpt-oss-120b,yes
+en,Remind me to book the car service on Wednesday at 8:30 pm,"Hey, could you remind me to book the car service on Wednesday at 8:30 pm?",openai/gpt-oss-120b,yes
+en,Remind me to book the car service on Wednesday at 8:30 pm,Remind me to schedule the car service for Wednesday at 8:30 pm.,openai/gpt-oss-120b,yes
+en,Remind me to book the car service on Wednesday at 8:30 pm,Please set a reminder: book the car service on Wednesday at 8:30 pm.,openai/gpt-oss-120b,yes
+en,Remind me to book the car service on Wednesday at 8:30 pm,Don't forget to book the car service Wednesday 8:30 pm.,openai/gpt-oss-120b,yes
+fr,Calcule 922 fois 45,Calcule 922*45 s'il te plaît.,openai/gpt-oss-120b,yes
+fr,Calcule 922 fois 45,"Hey, fais le calcul de 922 multiplié par 45.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : tomates, œufs, poisson, pain","Peux-tu créer un document Word avec ma liste de courses : tomates, œufs, poisson, pain ?",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : tomates, œufs, poisson, pain","Fais-moi un Word contenant : tomates, œufs, poisson, pain.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : tomates, œufs, poisson, pain","S’il te plaît, prépare un fichier Word listant les tomates, œufs, poisson et pain.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : tomates, œufs, poisson, pain","Hey, mets les tomates, œufs, poisson et pain dans un Word, merci.",openai/gpt-oss-120b,yes
+en,How much is 10000 CFA francs in pounds?,Can you tell me the conversion of 10000 CFA francs to pounds?,openai/gpt-oss-120b,yes
+en,How much is 10000 CFA francs in pounds?,What's the amount in pounds for 10000 CFA francs?,openai/gpt-oss-120b,yes
+en,How much is 10000 CFA francs in pounds?,"Hey, how many pounds is 10000 CFA francs?",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de ma sœur est le 10 mars,"Note que l'anniversaire de ma sœur, c'est le 10 mars.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de ma sœur est le 10 mars,"Peux‑tu retenir que le 10 mars, c'est l'anniversaire de ma sœur ?",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de ma sœur est le 10 mars,"N'oublie pas, le 10 mars, c’est l'anniversaire de ma sœur.",openai/gpt-oss-120b,yes
+en,Remember that my mother's birthday is on January 3,Please note: my mother's birthday falls on January 3.,openai/gpt-oss-120b,yes
+en,Remember that my mother's birthday is on January 3,Can you remember my mother's birthday? It's on January 3.,openai/gpt-oss-120b,yes
+en,Weather Abidjan today,"Hey, could you tell me the weather in Abidjan today?",openai/gpt-oss-120b,yes
+en,Weather Abidjan today,"Weather Abidjan today, please.",openai/gpt-oss-120b,yes
+en,Weather Abidjan today,What's the forecast for Abidjan today?,openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: bread, milk, palm oil, rice","Could you please create a Word document of my shopping list: bread, milk, palm oil, rice?",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: bread, milk, palm oil, rice","Make a Word file with my shopping list – bread, milk, palm oil, rice.",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: bread, milk, palm oil, rice","Hey, I need a Word doc for my shopping list: bread, milk, palm oil, rice. Thanks!",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: bread, milk, palm oil, rice","Word doc for shopping list: bread, milk, palm oil, rice.",openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Kumasi aujourd'hui ?,"Salut, tu sais quel temps il fait à Kumasi aujourd'hui ?",openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Kumasi aujourd'hui ?,"Bonjour, pourriez-vous me dire la météo à Kumasi pour aujourd'hui, s'il vous plaît ?",openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Kumasi aujourd'hui ?,"Hey, la météo à Kumasi aujourd'hui, c'est quoi ?",openai/gpt-oss-120b,yes
+fr,"Hey, mets le volume à 80","Salut, augmente le volume à 80 s'il te plaît.",openai/gpt-oss-120b,yes
+fr,"Hey, mets le volume à 80","Hey, mets le son à 80.",openai/gpt-oss-120b,yes
+fr,"Hey, mets le volume à 80","Bonjour, pourriez-vous régler le volume à 80 ?",openai/gpt-oss-120b,yes
+fr,"Hey, mets le volume à 80","Yo, volume à 80, merci.",openai/gpt-oss-120b,yes
+fr,Combien font 5 % de 5000 ?,"Hey, tu peux me dire combien font 5 % de 5000 ?",openai/gpt-oss-120b,yes
+fr,Combien font 5 % de 5000 ?,"Pourriez‑vous m'indiquer le résultat de 5 % de 5000, s'il vous plaît ?",openai/gpt-oss-120b,yes
+fr,Combien font 5 % de 5000 ?,"5 % de 5000, c’est quoi ?",openai/gpt-oss-120b,yes
+fr,Combien font 5 % de 5000 ?,Dis-moi juste rapidement combien ça fait 5 % de 5000.,openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : huile de palme, oignons, tomates, sucre","Peux‑tu créer un document Word avec ma liste de courses : huile de palme, oignons, tomates, sucre ?",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : huile de palme, oignons, tomates, sucre","Fais un Word avec : huile de palme, oignons, tomates, sucre, s’il te plaît.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : huile de palme, oignons, tomates, sucre","Word de ma liste de courses : huile de palme, oignons, tomates, sucre.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : huile de palme, oignons, tomates, sucre","Hey, fais-moi un fichier Word contenant huile de palme, oignons, tomates, sucre.",openai/gpt-oss-120b,yes
+en,What's the weather in Dakar right now?,"Hey, can you tell me the current weather in Dakar?",openai/gpt-oss-120b,yes
+en,What's the weather in Dakar right now?,Please check the weather in Dakar right now.,openai/gpt-oss-120b,yes
+en,What's the weather in Dakar right now?,What's the weather like in Dakar at the moment?,openai/gpt-oss-120b,yes
+en,What's the weather in Dakar right now?,Weather in Dakar right now?,openai/gpt-oss-120b,yes
+en,What's the weather in Freetown right now?,"Hey, can you tell me the current weather in Freetown?",openai/gpt-oss-120b,yes
+en,What's the weather in Freetown right now?,Could you please let me know what's the weather like in Freetown right now?,openai/gpt-oss-120b,yes
+en,What's the weather in Freetown right now?,Weather in Freetown at the moment?,openai/gpt-oss-120b,yes
+en,What's the weather in Freetown right now?,What's the weather right now in Freetown?,openai/gpt-oss-120b,yes
+en,What is 264 times 7?,"Hey, can you tell me what 264 times 7 equals?",openai/gpt-oss-120b,yes
+en,What is 264 times 7?,What’s the product of 264 and 7?,openai/gpt-oss-120b,yes
+en,What is 264 times 7?,Could you calculate 264 × 7 for me?,openai/gpt-oss-120b,yes
+en,What is 264 times 7?,264 times 7 = ?,openai/gpt-oss-120b,yes
+en,Please let me know the amount in Kenyan shillings for 5000 leones.,Could you tell me how much 5000 leones is in Kenyan shillings?,openai/gpt-oss-120b,yes
+en,Please let me know the amount in Kenyan shillings for 5000 leones.,Please provide the conversion of 5000 leones to Kenyan shillings.,openai/gpt-oss-120b,yes
+en,Please let me know the amount in Kenyan shillings for 5000 leones.,I need to know the Kenyan shillings value for 5000 leones.,openai/gpt-oss-120b,yes
+en,Please open Mail now.,"Could you open Mail right now, please?",openai/gpt-oss-120b,yes
+en,Please open Mail now.,Open Mail now.,openai/gpt-oss-120b,yes
+en,Please open Mail now.,"Hey, would you mind launching the Mail app immediately?",openai/gpt-oss-120b,yes
+en,Can you wake me at 6:45 am? for the work,"Hey, could you set an alarm for 6:45 am? I need to be up for work.",openai/gpt-oss-120b,yes
+en,Can you wake me at 6:45 am? for the work,Please wake me at 6:45 am for the work.,openai/gpt-oss-120b,yes
+en,Can you wake me at 6:45 am? for the work,"Wake me up at 6:45 am, thanks.",openai/gpt-oss-120b,yes
+en,Can you wake me at 6:45 am? for the work,Can you set a 6:45 am alarm? I have work.,openai/gpt-oss-120b,yes
+fr,"Peux‑tu mettre la musique en pause, s'il te plaît ?","Met la musique en pause, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,"Peux‑tu mettre la musique en pause, s'il te plaît ?","Hey, tu peux mettre la musique en pause ?",openai/gpt-oss-120b,yes
+fr,"Peux‑tu mettre la musique en pause, s'il te plaît ?","Je te prie de mettre la musique en pause, merci.",openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Conakry aujourd'hui ?,"Salut, tu sais quel temps il fait à Conakry aujourd'hui ?",openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Conakry aujourd'hui ?,"Bonjour, pourriez-vous m'indiquer la météo à Conakry pour aujourd'hui, s'il vous plaît ?",openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Conakry aujourd'hui ?,"Hey, météo à Conakry aujourd'hui, c’est quoi ?",openai/gpt-oss-120b,yes
+fr,Quel temps fait-il à Conakry aujourd'hui ?,Pouvez-vous me dire quel temps il fait à Conakry aujourd'hui ?,openai/gpt-oss-120b,yes
+fr,Ouvre Notes,Peux-tu lancer Notes ?,openai/gpt-oss-120b,yes
+en,Start a 15 minutes timer for the tea,"Start a 15 minutes timer for the tea, please.",openai/gpt-oss-120b,yes
+en,Start a 15 minutes timer for the tea,Timer for tea: 15 minutes.,openai/gpt-oss-120b,yes
+fr,"Peux-tu créer un document Word avec ma liste de courses : tomates, sucre, poisson, huile de palme ?","Salut, tu peux me faire un doc Word avec ma liste de courses : tomates, sucre, poisson, huile de palme ?",openai/gpt-oss-120b,yes
+fr,"Peux-tu créer un document Word avec ma liste de courses : tomates, sucre, poisson, huile de palme ?","Bonjour, pourriez-vous créer un document Word contenant les articles suivants : tomates, sucre, poisson, huile de palme ?",openai/gpt-oss-120b,yes
+fr,"Peux-tu créer un document Word avec ma liste de courses : tomates, sucre, poisson, huile de palme ?","Hey, fais un Word avec ma liste : tomates, sucre, poisson, huile de palme.",openai/gpt-oss-120b,yes
+fr,"Peux-tu créer un document Word avec ma liste de courses : tomates, sucre, poisson, huile de palme ?","S'il te plaît, prépare un fichier Word listant : tomates, sucre, poisson, huile de palme ?",openai/gpt-oss-120b,yes
+en,Set volume: 80.,Please set the volume to 80.,openai/gpt-oss-120b,yes
+en,Set volume: 80.,"Hey, could you change the volume to 80?",openai/gpt-oss-120b,yes
+en,Set volume: 80.,"Adjust the volume level to 80, thanks.",openai/gpt-oss-120b,yes
+en,"Don't forget, my mom's birthday is October 23.","Please remember, my mom's birthday is October 23.",openai/gpt-oss-120b,yes
+en,"Don't forget, my mom's birthday is October 23.","Hey, don't forget my mom's birthday—October 23.",openai/gpt-oss-120b,yes
+en,"Don't forget, my mom's birthday is October 23.",Just a reminder: my mom's birthday is October 23.,openai/gpt-oss-120b,yes
+en,"Don't forget, my mom's birthday is October 23.","Make a note, my mom's birthday is October 23.",openai/gpt-oss-120b,yes
+en,Remember that my sister's birthday is on June 7,Could you please note that my sister's birthday falls on June 7?,openai/gpt-oss-120b,yes
+en,Remember that my sister's birthday is on June 7,"My sister's birthday is June 7, remember that.",openai/gpt-oss-120b,yes
+en,Remember that my sister's birthday is on June 7,"Don't forget, sister's b‑day is June 7.",openai/gpt-oss-120b,yes
+fr,"Hey, lance la musique.","Salut, peux-tu mettre la musique en marche ?",openai/gpt-oss-120b,yes
+fr,"Hey, lance la musique.","Hey, lance la musique s’il te plaît.",openai/gpt-oss-120b,yes
+fr,"Hey, lance la musique.","Lance la musique, merci.",openai/gpt-oss-120b,yes
+fr,"Hey, lance la musique.","Yo, balance la musique !",openai/gpt-oss-120b,yes
+fr,Lance Calculator,Peux-tu lancer Calculator ?,openai/gpt-oss-120b,yes
+fr,Lance Calculator,"Hey, ouvre Calculator s'il te plaît",openai/gpt-oss-120b,yes
+en,"Hey, could you set a 20 minutes timer for the laundry?",Please set a timer for 20 minutes for the laundry.,openai/gpt-oss-120b,yes
+fr,"Salut, tu sais combien 250 francs CFA ça donne en livres sterling ?","Salut, tu peux me dire combien 250 francs CFA équivaut en livres sterling ?",openai/gpt-oss-120b,yes
+fr,"Salut, tu sais combien 250 francs CFA ça donne en livres sterling ?","Bonjour, pourriez-vous me préciser la conversion de 250 francs CFA en livres sterling, s'il vous plaît ?",openai/gpt-oss-120b,yes
+fr,"Salut, tu sais combien 250 francs CFA ça donne en livres sterling ?","Dis, je veux savoir combien 250 francs CFA ça fait en livres sterling.",openai/gpt-oss-120b,yes
+fr,Peux‑tu mettre la musique en marche ?,"Peux‑tu lancer la musique, s’il te plaît ?",openai/gpt-oss-120b,yes
+fr,Peux‑tu mettre la musique en marche ?,"Mets la musique en marche, ok ?",openai/gpt-oss-120b,yes
+fr,Peux‑tu mettre la musique en marche ?,"Salut, tu pourrais mettre la musique en marche ?",openai/gpt-oss-120b,yes
+fr,Peux‑tu mettre la musique en marche ?,"Active la musique, merci.",openai/gpt-oss-120b,yes
+en,"Don't forget, Mom's birthday is on March 24.","Hey, just a reminder: Mom's birthday is March 24.",openai/gpt-oss-120b,yes
+en,"Don't forget, Mom's birthday is on March 24.",Please note that Mom's birthday is on March 24.,openai/gpt-oss-120b,yes
+en,"Don't forget, Mom's birthday is on March 24.",Don't forget Mom's birthday—it's March 24.,openai/gpt-oss-120b,yes
+en,"Don't forget, Mom's birthday is on March 24.",Reminder: Mom's birthday is March 24.,openai/gpt-oss-120b,yes
+en,Remember that my brother's birthday is on August 2,Please note that my brother’s birthday falls on August 2.,openai/gpt-oss-120b,yes
+en,Remember that my brother's birthday is on August 2,"Don't forget, my brother's birthday is August 2.",openai/gpt-oss-120b,yes
+en,Remember that my brother's birthday is on August 2,My brother’s birthday is on August 2 – remember that.,openai/gpt-oss-120b,yes
+en,Set a timer for 45 minutes for the laundry,"Set a timer for 45 minutes for the laundry, please.",openai/gpt-oss-120b,yes
+en,What's 25% of 15000?,"Hey, can you tell me what 25% of 15000 is?",openai/gpt-oss-120b,yes
+en,What's 25% of 15000?,Please calculate 25% of 15000 for me.,openai/gpt-oss-120b,yes
+en,What's 25% of 15000?,"25% of 15000, please?",openai/gpt-oss-120b,yes
+en,Remind me to call the landlord at 11 am today,"Hey, can you set a reminder for me to call the landlord at 11 am today?",openai/gpt-oss-120b,yes
+en,Remind me to call the landlord at 11 am today,Please remind me to call the landlord at 11 am today.,openai/gpt-oss-120b,yes
+en,Remind me to call the landlord at 11 am today,I need a reminder to call the landlord at 11 am today.,openai/gpt-oss-120b,yes
+en,Set a timer for 1 hour 30 minutes for the laundry.,"Timer: 1 hour 30 minutes, laundry.",openai/gpt-oss-120b,yes
+en,Remember that my mother's birthday is on October 24,Please note that my mother's birthday falls on October 24.,openai/gpt-oss-120b,yes
+en,Remember that my mother's birthday is on October 24,"Don't forget, my mom's birthday is October 24.",openai/gpt-oss-120b,yes
+en,Remember that my brother's birthday is on September 11,Please note my brother's birthday falls on September 11.,openai/gpt-oss-120b,yes
+en,Remember that my brother's birthday is on September 11,Can you remember that my brother's birthday is September 11?,openai/gpt-oss-120b,yes
+en,Remember that my brother's birthday is on September 11,"My brother's birthday is on September 11, don't forget.",openai/gpt-oss-120b,yes
+en,Please set the volume to 50.,Can you set the volume to 50?,openai/gpt-oss-120b,yes
+en,Please set the volume to 50.,Please adjust the volume level to 50.,openai/gpt-oss-120b,yes
+en,Please set the volume to 50.,"Set volume at 50, please.",openai/gpt-oss-120b,yes
+en,Please set the volume to 50.,"Hey, bump the volume up to 50.",openai/gpt-oss-120b,yes
+en,Launch Safari,"Hey, launch Safari.",openai/gpt-oss-120b,yes
+en,Launch Safari,Could you open Safari for me?,openai/gpt-oss-120b,yes
+en,Launch Safari,"Launch Safari, please.",openai/gpt-oss-120b,yes
+en,Launch Safari,Open Safari.,openai/gpt-oss-120b,yes
+en,"I need a Markdown shopping list—onions, fish, palm oil, sugar—thanks.","Can you make a Markdown shopping list for me? I need onions, fish, palm oil, and sugar. Thanks!",openai/gpt-oss-120b,yes
+en,"I need a Markdown shopping list—onions, fish, palm oil, sugar—thanks.","Hey, I need a quick Markdown list of items: onions, fish, palm oil, sugar. Please.",openai/gpt-oss-120b,yes
+en,"I need a Markdown shopping list—onions, fish, palm oil, sugar—thanks.","Please create a Markdown formatted shopping list that includes onions, fish, palm oil, and sugar. Thank you.",openai/gpt-oss-120b,yes
+en,"I need a Markdown shopping list—onions, fish, palm oil, sugar—thanks.","I’d like a Markdown shopping list with these items: onions, fish, palm oil, sugar.",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: tomatoes, bread, milk, fish","Could you please create a Word document of my shopping list? It should include tomatoes, bread, milk, and fish.",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: tomatoes, bread, milk, fish","Make a Word file with my shopping list: tomatoes, bread, milk, fish.",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: tomatoes, bread, milk, fish","Hey, I need a Word doc for my shopping list—tomatoes, bread, milk, fish. Thanks!",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: tomatoes, bread, milk, fish","Please generate a Word document that lists tomatoes, bread, milk, and fish.",openai/gpt-oss-120b,yes
+en,Please set a reminder for me to pick up the kids on Saturday at 8:30 am. Thanks!,"Hey, could you set a reminder for me to pick up the kids this Saturday at 8:30 am? Thanks!",openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 10 minutes pour le thé,Peux-tu mettre un minuteur de 10 minutes pour le thé ?,openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 10 minutes pour le thé,"Hey, règle un timer de 10 minutes pour le thé.",openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: tomatoes, onions, bread, fish","Hey, could you create a Markdown list for my shopping items: tomatoes, onions, bread, fish?",openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: tomatoes, onions, bread, fish","Please make a Markdown of my shopping list—tomatoes, onions, bread, fish.",openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: tomatoes, onions, bread, fish","Make a Markdown file with my grocery list: tomatoes, onions, bread, fish.",openai/gpt-oss-120b,yes
+en,"Make a Markdown of my shopping list: tomatoes, onions, bread, fish","Can you format my shopping list (tomatoes, onions, bread, fish) as Markdown?",openai/gpt-oss-120b,yes
+en,"Can you put onions, fish, palm oil, and sugar into a Markdown list for me?","Hey, could you make a Markdown list that includes onions, fish, palm oil, and sugar?",openai/gpt-oss-120b,yes
+en,"Can you put onions, fish, palm oil, and sugar into a Markdown list for me?","Please put onions, fish, palm oil, and sugar into a Markdown list for me.",openai/gpt-oss-120b,yes
+en,"Can you put onions, fish, palm oil, and sugar into a Markdown list for me?","Can you format a Markdown list with these items: onions, fish, palm oil, sugar?",openai/gpt-oss-120b,yes
+en,"Can you put onions, fish, palm oil, and sugar into a Markdown list for me?","I need a Markdown list of onions, fish, palm oil, and sugar—thanks!",openai/gpt-oss-120b,yes
+fr,"1000 leones, ça donne combien en shillings kényans ?","Salut, tu sais combien 1000 leones ça fait en shillings kényans ?",openai/gpt-oss-120b,yes
+fr,"1000 leones, ça donne combien en shillings kényans ?","Bonjour, pourriez-vous me dire la conversion de 1000 leones en shillings kényans, s'il vous plaît ?",openai/gpt-oss-120b,yes
+fr,"1000 leones, ça donne combien en shillings kényans ?","Hey, 1000 leones = combien en shillings kényans ?",openai/gpt-oss-120b,yes
+fr,"1000 leones, ça donne combien en shillings kényans ?",Je voudrais savoir la valeur de 1000 leones en shillings kényans.,openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de mon frère est le 8 octobre,"Note bien, mon frère fête son anniversaire le 8 octobre.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de mon frère est le 8 octobre,"N'oublie pas : l'anniversaire de mon frère, c'est le 8 octobre.",openai/gpt-oss-120b,yes
+fr,Retiens que l'anniversaire de mon frère est le 8 octobre,"Hey, souviens-toi que l'anniversaire de mon frère tombe le 8 octobre.",openai/gpt-oss-120b,yes
+en,How much is 50 pounds in euros?,"Hey, can you tell me the conversion for 50 pounds to euros?",openai/gpt-oss-120b,yes
+en,How much is 50 pounds in euros?,Please let me know how many euros 50 pounds equals.,openai/gpt-oss-120b,yes
+en,How much is 50 pounds in euros?,"Could you give me the rate for 50 pounds in euros, thanks?",openai/gpt-oss-120b,yes
+en,Start a 3 minutes timer for the tea,"Hey, can you set a 3 minutes timer for the tea?",openai/gpt-oss-120b,yes
+en,Start a 3 minutes timer for the tea,Please start a 3 minutes timer for the tea.,openai/gpt-oss-120b,yes
+en,Start a 3 minutes timer for the tea,"Timer for the tea, 3 minutes, please.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : oignons, pain, sucre, huile de palme","Peux‑tu me créer un document Word avec ma liste de courses : oignons, pain, sucre, huile de palme ?",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : oignons, pain, sucre, huile de palme","Fais un Word contenant: oignons, pain, sucre, huile de palme, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : oignons, pain, sucre, huile de palme","Word de ma liste de courses : oignons, pain, sucre, huile de palme.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un Word de ma liste de courses : oignons, pain, sucre, huile de palme","J’ai besoin d’un fichier Word avec ces articles : oignons, pain, sucre, huile de palme.",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: eggs, milk, bread, sugar","Could you please create a Word document for my shopping list: eggs, milk, bread, sugar?",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: eggs, milk, bread, sugar","Make a Word file with my shopping list: eggs, milk, bread, sugar.",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: eggs, milk, bread, sugar","Hey, I need a Word doc listing eggs, milk, bread, sugar. Thanks!",openai/gpt-oss-120b,yes
+en,"Make a Word of my shopping list: eggs, milk, bread, sugar","Word doc, shopping list: eggs, milk, bread, sugar.",openai/gpt-oss-120b,yes
+en,"Hey, can you set a reminder for Thursday at 8 am to pick up the kids?",Please set a reminder for Thursday at 8 am to pick up the kids.,openai/gpt-oss-120b,yes
+en,"Hey, can you set a reminder for Thursday at 8 am to pick up the kids?","Hey, could you add a Thursday 8 am reminder for picking up the kids?",openai/gpt-oss-120b,yes
+fr,"Fais-moi un PDF de ma liste de courses : riz, huile de palme, oignons, tomates","Pouvez-vous me créer un PDF avec ma liste de courses : riz, huile de palme, oignons, tomates ?",openai/gpt-oss-120b,yes
+fr,"Fais-moi un PDF de ma liste de courses : riz, huile de palme, oignons, tomates","Fais un PDF de ma liste de courses : riz, huile de palme, oignons, tomates.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un PDF de ma liste de courses : riz, huile de palme, oignons, tomates","Hey, je veux un PDF contenant : riz, huile de palme, oignons, tomates. Merci.",openai/gpt-oss-120b,yes
+fr,"Fais-moi un PDF de ma liste de courses : riz, huile de palme, oignons, tomates","Merci de générer un PDF pour ma liste de courses : riz, huile de palme, oignons, tomates.",openai/gpt-oss-120b,yes
+en,Open Spotify,"Hey, could you open Spotify for me?",openai/gpt-oss-120b,yes
+en,Open Spotify,Please launch Spotify.,openai/gpt-oss-120b,yes
+en,Open Spotify,"Open Spotify, thanks.",openai/gpt-oss-120b,yes
+en,Open Spotify,Can you get Spotify up?,openai/gpt-oss-120b,yes
+en,What's the weather in Conakry right now?,"Hey, can you tell me the current weather in Conakry?",openai/gpt-oss-120b,yes
+en,What's the weather in Conakry right now?,Could you please let me know what's the weather like right now in Conakry?,openai/gpt-oss-120b,yes
+en,What's the weather in Conakry right now?,"Weather update for Conakry, please.",openai/gpt-oss-120b,yes
+en,Start a 2 minutes timer for the rice,"Hey, could you set a 2 minutes timer for the rice?",openai/gpt-oss-120b,yes
+en,Start a 2 minutes timer for the rice,Timer 2 minutes for rice.,openai/gpt-oss-120b,yes
+fr,"Bonjour, pourriez-vous me calculer 20 % de 15000, s'il vous plaît ?","Salut, tu peux me dire rapidement quel est 20 % de 15000 ?",openai/gpt-oss-120b,yes
+fr,"Bonjour, pourriez-vous me calculer 20 % de 15000, s'il vous plaît ?","Hey, j’ai besoin de savoir 20 % de 15000, merci d’avance !",openai/gpt-oss-120b,yes
+fr,"Bonjour, pourriez-vous me calculer 20 % de 15000, s'il vous plaît ?","Bonjour, merci de me fournir le résultat de 20 % de 15000.",openai/gpt-oss-120b,yes
+en,"Please make a Markdown format list for these groceries: onions, fish, palm oil, sugar.","Can you create a Markdown list of these groceries: onions, fish, palm oil, sugar?",openai/gpt-oss-120b,yes
+en,"Please make a Markdown format list for these groceries: onions, fish, palm oil, sugar.","Hey, make a Markdown‑formatted list for onions, fish, palm oil, and sugar.",openai/gpt-oss-120b,yes
+en,"Please make a Markdown format list for these groceries: onions, fish, palm oil, sugar.","Please format a list in Markdown with the items onions, fish, palm oil, sugar.",openai/gpt-oss-120b,yes
+en,"Please make a Markdown format list for these groceries: onions, fish, palm oil, sugar.","Could you put onions, fish, palm oil, and sugar into a Markdown list?",openai/gpt-oss-120b,yes
+en,"Timer 15 minutes for the tea, please.","Set a timer for 15 minutes for the tea, please.",openai/gpt-oss-120b,yes
+en,Please let me know how much 1000 Kenyan shillings equals in CFA francs.,"Hey, could you tell me what 1000 Kenyan shillings converts to in CFA francs?",openai/gpt-oss-120b,yes
+en,Please let me know how much 1000 Kenyan shillings equals in CFA francs.,Please let me know the conversion rate for 1000 Kenyan shillings to CFA francs.,openai/gpt-oss-120b,yes
+en,Please let me know how much 1000 Kenyan shillings equals in CFA francs.,What’s the amount in CFA francs for 1000 Kenyan shillings?,openai/gpt-oss-120b,yes
+en,What is 852 times 26?,"Hey, can you tell me what 852 multiplied by 26 is?",openai/gpt-oss-120b,yes
+en,What is 852 times 26?,Please calculate 852 times 26 for me.,openai/gpt-oss-120b,yes
+en,What is 852 times 26?,What’s the result of 852 × 26?,openai/gpt-oss-120b,yes
+en,What is 852 times 26?,Give me the product of 852 and 26.,openai/gpt-oss-120b,yes
+en,Remember that my best friend's birthday is on August 1,Please note that my best friend's birthday falls on August 1.,openai/gpt-oss-120b,yes
+en,Remember that my best friend's birthday is on August 1,"Don't forget, my best friend's birthday is on August 1.",openai/gpt-oss-120b,yes
+en,Don't forget to get bread Wednesday at 6 pm.,Please remember to pick up bread on Wednesday at 6 pm.,openai/gpt-oss-120b,yes
+en,Don't forget to get bread Wednesday at 6 pm.,Don't forget: get bread Wednesday 6 pm.,openai/gpt-oss-120b,yes
+en,Don't forget to get bread Wednesday at 6 pm.,"Hey, can you make sure to grab bread this Wednesday at 6 pm?",openai/gpt-oss-120b,yes
+en,Don't forget to get bread Wednesday at 6 pm.,Reminder: bread needed Wednesday at 6 pm.,openai/gpt-oss-120b,yes
+en,Start a 3 minutes timer,"Hey, could you set a 3 minutes timer for me?",openai/gpt-oss-120b,yes
+en,Start a 3 minutes timer,Please begin a timer for 3 minutes.,openai/gpt-oss-120b,yes
+en,Start a 3 minutes timer,"Timer, 3 minutes, go.",openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 15 minutes pour le thé,Peux‑tu mettre un minuteur de 15 minutes pour le thé ?,openai/gpt-oss-120b,yes
+fr,Mets un minuteur de 15 minutes pour le thé,"Hey, règle un timer de 15 minutes pour le thé.",openai/gpt-oss-120b,yes
+en,Weather Abidjan right now,"Hey, can you tell me the weather in Abidjan right now?",openai/gpt-oss-120b,yes
+en,Weather Abidjan right now,What's the current weather like in Abidjan?,openai/gpt-oss-120b,yes
+en,Weather Abidjan right now,"Could you give me the present weather conditions for Abidjan, please?",openai/gpt-oss-120b,yes
+fr,"Hey, n'oublie pas : 27 septembre, c'est l'anniversaire de mon meilleur pote.","Salut, n'oublie pas : le 27 septembre, c’est l’anniversaire de mon meilleur pote.",openai/gpt-oss-120b,yes
+fr,"Hey, n'oublie pas : 27 septembre, c'est l'anniversaire de mon meilleur pote.","N’oublie pas, le 27 septembre, c’est l’anniversaire de mon meilleur pote !",openai/gpt-oss-120b,yes
+fr,"Hey, n'oublie pas : 27 septembre, c'est l'anniversaire de mon meilleur pote.",Petit rappel : 27 septembre = anniversaire de mon meilleur pote.,openai/gpt-oss-120b,yes
+en,Convert 250 euros to naira,"Hey, can you convert 250 euros to naira for me?",openai/gpt-oss-120b,yes
+en,Convert 250 euros to naira,Please convert 250 euros to naira.,openai/gpt-oss-120b,yes
+en,Convert 250 euros to naira,What's 250 euros in naira?,openai/gpt-oss-120b,yes
+en,Convert 250 euros to naira,"Convert 250 euros to naira, thanks.",openai/gpt-oss-120b,yes
+en,Can you wake me at 8:45 am?,Please set an alarm for 8:45 am.,openai/gpt-oss-120b,yes
+en,Can you wake me at 8:45 am?,"Hey, could you wake me up at 8:45 am?",openai/gpt-oss-120b,yes
+en,Can you wake me at 8:45 am?,"Wake me at 8:45 am, thanks.",openai/gpt-oss-120b,yes
+en,Can you wake me at 8:45 am?,I need an alarm for 8:45 am.,openai/gpt-oss-120b,yes
+fr,Lance Notes,"Lance Notes, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,Lance Notes,Peux-tu lancer Notes ?,openai/gpt-oss-120b,yes
+fr,"Salut, j’ai besoin d’un fichier Word avec ma liste de courses : tomates, sucre, poisson, huile de palme.","Bonjour, pourriez-vous me créer un document Word contenant ma liste de courses : tomates, sucre, poisson, huile de palme ?",openai/gpt-oss-120b,yes
+fr,"Salut, j’ai besoin d’un fichier Word avec ma liste de courses : tomates, sucre, poisson, huile de palme.","Hey, fais-moi un fichier Word avec les articles suivants : tomates, sucre, poisson, huile de palme.",openai/gpt-oss-120b,yes
+fr,"Salut, j’ai besoin d’un fichier Word avec ma liste de courses : tomates, sucre, poisson, huile de palme.","Salut, j’ai besoin d’un fichier Word listant : tomates, sucre, poisson, huile de palme.",openai/gpt-oss-120b,yes
+fr,"Salut, j’ai besoin d’un fichier Word avec ma liste de courses : tomates, sucre, poisson, huile de palme.","S’il vous plaît, préparez un fichier Word avec ma liste de courses : tomates, sucre, poisson, huile de palme.",openai/gpt-oss-120b,yes
+en,What is 222 times 56?,Can you tell me what 222 times 56 equals?,openai/gpt-oss-120b,yes
+en,What is 222 times 56?,"Hey, what's the product of 222 and 56?",openai/gpt-oss-120b,yes
+en,What is 222 times 56?,Please calculate 222 × 56 for me.,openai/gpt-oss-120b,yes
+en,What is 222 times 56?,I need to know 222 multiplied by 56.,openai/gpt-oss-120b,yes
+en,Remind me to pick up the kids tomorrow at 4 pm,"Hey, can you set a reminder for me to pick up the kids tomorrow at 4 pm?",openai/gpt-oss-120b,yes
+en,Remind me to pick up the kids tomorrow at 4 pm,Please remind me to pick up the kids tomorrow at 4 pm.,openai/gpt-oss-120b,yes
+en,Remind me to pick up the kids tomorrow at 4 pm,Remind me: pick up the kids tomorrow at 4 pm.,openai/gpt-oss-120b,yes
+en,Remind me to pick up the kids tomorrow at 4 pm,"I need a reminder to pick up the kids tomorrow at 4 pm, thanks.",openai/gpt-oss-120b,yes
+en,Wake me up at 7:45 am for the work,Please set an alarm for 7:45 am to wake me up for work.,openai/gpt-oss-120b,yes
+en,Wake me up at 7:45 am for the work,"Hey, can you make sure I’m up by 7:45 am for work?",openai/gpt-oss-120b,yes
+en,Wake me up at 7:45 am for the work,"7:45 am alarm, need to get up for work.",openai/gpt-oss-120b,yes
+fr,"Bonjour, merci de faire le calcul suivant : 297 fois 14.","Salut, tu peux me dire ce que donne 297×14 ?",openai/gpt-oss-120b,yes
+fr,"Bonjour, merci de faire le calcul suivant : 297 fois 14.","Bonjour, pourriez-vous s’il vous plaît calculer 297 fois 14 pour moi ?",openai/gpt-oss-120b,yes
+fr,"Bonjour, merci de faire le calcul suivant : 297 fois 14.","Hey, fais le calcul 297 fois 14, merci.",openai/gpt-oss-120b,yes
+fr,"Bonjour, merci de faire le calcul suivant : 297 fois 14.","Bonjour, merci de me donner le résultat de 297 multiplié par 14.",openai/gpt-oss-120b,yes
+fr,N'oublie pas : ma mère fête son anniversaire le 7 septembre.,"N'oublie pas, ma mère a son anniversaire le 7 septembre.",openai/gpt-oss-120b,yes
+fr,N'oublie pas : ma mère fête son anniversaire le 7 septembre.,"Rappelle-moi que le 7 septembre, c'est l'anniversaire de ma mère.",openai/gpt-oss-120b,yes
+fr,N'oublie pas : ma mère fête son anniversaire le 7 septembre.,"S'il te plaît, note que ma mère fête son anniversaire le 7 septembre.",openai/gpt-oss-120b,yes
+fr,N'oublie pas : ma mère fête son anniversaire le 7 septembre.,"Hey, n'oublie pas : ma mère fête son anniversaire le 7 septembre.",openai/gpt-oss-120b,yes
+fr,"Merci de garder en mémoire que le 27 septembre, c’est l’anniversaire de mon meilleur ami.","N'oublie pas, le 27 septembre, c’est l’anniversaire de mon meilleur ami.",openai/gpt-oss-120b,yes
+fr,"Merci de garder en mémoire que le 27 septembre, c’est l’anniversaire de mon meilleur ami.",Merci de retenir que le 27 septembre c’est l’anniversaire de mon meilleur ami.,openai/gpt-oss-120b,yes
+fr,"Merci de garder en mémoire que le 27 septembre, c’est l’anniversaire de mon meilleur ami.",Pense à garder en mémoire le 27 septembre : c’est l’anniversaire de mon meilleur ami.,openai/gpt-oss-120b,yes
+en,"Hey, open my Mail app.",Could you please open the Mail app for me?,openai/gpt-oss-120b,yes
+en,"Hey, open my Mail app.","Open Mail, thanks.",openai/gpt-oss-120b,yes
+en,"Hey, open my Mail app.","Hey, launch my Mail app.",openai/gpt-oss-120b,yes
+en,"Hey, open my Mail app.","Open the Mail app, please.",openai/gpt-oss-120b,yes

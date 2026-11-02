@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.108 (November 2026)
+
+- Updates reach people only when you choose: every release is now a test build on GitHub (you can
+  download and try it), and the apps' "new version" offer and the website's download buttons keep
+  the last release made for users. Release for users with for_users=true, or promote a tested build
+
 ## 0.1.107 (November 2026)
 
 - For the owner, data for Gink's own model: translate.py teaches Gink's actions in 37 more languages

@@ -1904,3 +1904,10 @@ New services/live_info.py (all free, no API keys):
   weren't in MANIFEST -> never published (and Colab never saw them). Now publish_to_github.sh OWNER_DATA copies
   those from the owner's folder when present (and they're not "stale"); they're out of MANIFEST and out of the
   zips (languages/README.md stays). Never ship owner data in a package again (test_grow_dataset checks).
+
+## 0.1.108: test builds vs releases for users
+- Owner: users shouldn't get every push. release.yml input for_users (boolean, default false): false ->
+  `gh release create ... --prerelease --latest=false` titled "(test build)"; true -> `--latest`. Promote later:
+  `gh release edit vX.Y.Z --prerelease=false --latest --title "Gink vX.Y.Z"`. Nothing else changes: /app/version
+  (the apps' daily update offer) and the website use GitHub's releases/latest, which never returns a pre-release.
+  The owner's usual command block now makes test builds; add `-f for_users=true` to ship to users.

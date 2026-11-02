@@ -1,4 +1,8 @@
 # Publishes a GitHub Release with the Mac and Android installers.
+# TEST BUILD by default (a GitHub "pre-release"): it's on GitHub for you to try, but the apps' update
+# offer and the website's download links keep pointing to the last release made FOR USERS.
+#   Release for users straight away:  gh workflow run release.yml -R <owner>/<repo> -f version=vX.Y.Z -f for_users=true
+#   Or give a tested build to users:  gh release edit vX.Y.Z -R <owner>/<repo> --prerelease=false --latest --title "Gink vX.Y.Z"
 # Run it: GitHub -> Actions -> "Release" -> Run workflow (leave the version empty to release the version in
 # pyproject.toml), or: gh workflow run release.yml -R <owner>/<repo> [-f version=vX.Y.Z]
 # The files keep fixed names, so these links always point to the NEWEST release (the website uses them):
@@ -14,6 +18,11 @@ on:
         description: "Version like v0.1.0 -- leave empty to use the version in pyproject.toml"
         required: false
         default: ""
+      for_users:
+        description: "Offer it to users now? (no = a test build: on GitHub, but apps and the website keep the last user release)"
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: write        # create the release and its tag
@@ -86,6 +95,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.check.outputs.version }}
+          FOR_USERS: ${{ inputs.for_users }}
         run: |
           cat > notes.md <<'NOTES'
           ## Download Gink
@@ -123,5 +133,13 @@ jobs:
             echo "::error::$VERSION was released by another run while this one was building. Nothing is wrong with Gink: the release already exists."
             exit 1
           fi
-          gh release create "$VERSION" dist/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --title "Gink $VERSION" --notes-file notes.md
+          if [ "$FOR_USERS" = "true" ]; then
+            gh release create "$VERSION" dist/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "Gink $VERSION" --notes-file notes.md --latest
+            echo "Released $VERSION FOR USERS: the apps offer it within a day; the website links to it."
+          else
+            gh release create "$VERSION" dist/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "Gink $VERSION (test build)" --notes-file notes.md --prerelease --latest=false
+            echo "Released $VERSION as a TEST BUILD: users aren't offered it. To give it to users after testing:"
+            echo "  gh release edit $VERSION -R $GITHUB_REPOSITORY --prerelease=false --latest --title \"Gink $VERSION\""
+          fi
