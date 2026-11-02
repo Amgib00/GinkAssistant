@@ -153,6 +153,9 @@ openspec/changes/add-wake-status/proposal.md
 openspec/changes/add-wake-status/specs/languages-voice/spec.md
 openspec/changes/add-wake-status/tasks.md
 openspec/changes/archive/.gitkeep
+openspec/changes/update-genie-review/proposal.md
+openspec/changes/update-genie-review/specs/gink-genie/spec.md
+openspec/changes/update-genie-review/tasks.md
 openspec/config.yaml
 openspec/specs/accounts-security/spec.md
 openspec/specs/agent-mode/spec.md
@@ -300,6 +303,7 @@ tests/test_everyday_money.py
 tests/test_formatting_security.py
 tests/test_genie.py
 tests/test_genie_github.py
+tests/test_genie_review.py
 tests/test_gink_cloud.py
 tests/test_gink_dataset.py
 tests/test_gink_model_tools.py

@@ -1834,3 +1834,17 @@ New services/live_info.py (all free, no API keys):
 - Version 0.1.100: Briefcase's Android versionCode concatenates zero-padded parts, so micro >= 100 just widens it
   (0.1.99 -> 19900, 0.1.100 -> 110000: still increasing). TRAP for later: 0.2.0 -> 20000 < 110000. Before moving to
   0.2.x, check how Android computes versionCode (Play rejects a lower one).
+
+## 0.1.101: Gink Genie review
+- Gap: 0.1.96's parental controls lived in ai_chat; Genie calls Groq directly (_genie_drive). Now _genie_family_gate
+  (under 13 / controls["genie"] False / quiet hours) on genie_create and _genie_ask; _count_call(teen_limit);
+  TEEN_SAFETY as a second system message; _start_safety_check on the instruction. DEFAULT_CONTROLS gains "genie".
+- _genie_drive: an exception / non-200 from Groq used to raise 502 after files were written and before
+  _genie_remember -> changed files, no chat entry. _genie_failed(): changes -> remembered reply (+failed: True),
+  none -> 502 ("busy" for 429).
+- _genie_checkpoint: sort_keys JSON; reuse the latest snapshot if identical; prune to GENIE_CHECKPOINTS (20) and
+  GENIE_SNAPSHOT_BYTES (15 MB) newest-first, always keeping the newest. test_genie's undo test now uses changing
+  requests (text-only answers no longer push old versions out -- intended).
+- genie_create: a refused first _genie_ask with no files written deletes the new project (+chat, snapshots).
+- Checked and fine: _genie_path, preview CSP (sandbox w/o allow-same-origin, form-action none, frame-ancestors
+  self, nosniff), genie.html only ever sets innerHTML = "" (AI text goes in via textContent).

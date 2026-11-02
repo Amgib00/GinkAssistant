@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.101 (November 2026)
+
+- Gink Genie follows age and parental controls like chat: quiet hours, the daily limit and stricter
+  safety for teens; parents get a "Gink Genie" switch in Settings > Parental controls
+- Gink Genie: if the AI stops answering partway, the changes it already made are kept and it says so
+  (you can undo them) -- before, the files changed but the request disappeared from the chat
+- Gink Genie's version history takes far less space (no copy when nothing changed, a size limit per
+  project), and a project whose first request was refused no longer leaves an empty project behind
+
 ## 0.1.100 (November 2026)
 
 - When your Gink server offers Gink's own model to your account, it appears in the model picker

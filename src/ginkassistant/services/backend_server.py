@@ -3435,9 +3435,9 @@ _FAMILY_TABLES = (
     " kind TEXT, created REAL)",
 )
 DEFAULT_CONTROLS = {"quiet": False, "quiet_from": "21:30", "quiet_to": "06:30", "tz": "UTC", "daily_limit": 0,
-                    "voice": True, "images": True, "web": True, "websites": True, "apps": True}
+                    "voice": True, "images": True, "web": True, "websites": True, "apps": True, "genie": True}
 FEATURE_NAMES = {"voice": "Voice", "images": "Making images", "web": "Web search", "websites": "Making websites",
-                 "apps": "Connected apps"}
+                 "apps": "Connected apps", "genie": "Gink Genie"}
 NOTICE_TEXT = {"self_harm": "may be thinking about hurting themselves",
                "harm_from_adult": "may be in danger from someone they're talking to",
                "violence": "may be planning to hurt someone",
@@ -3823,7 +3823,7 @@ def family_controls(request: Request, data: dict = Body(...)):
         raise HTTPException(status_code=404, detail="You're not linked to that account.")
     new = _controls(teen)
     given = data.get("controls") or {}
-    for key in ("quiet", "voice", "images", "web", "websites", "apps"):
+    for key in ("quiet", "voice", "images", "web", "websites", "apps", "genie"):
         if key in given:
             new[key] = bool(given[key])
     for key in ("quiet_from", "quiet_to"):
@@ -5960,13 +5960,31 @@ _GENIE_TABLES = _GENIE_TABLES + (
     "label TEXT NOT NULL, files TEXT NOT NULL, created REAL NOT NULL)",)
 
 
+GENIE_SNAPSHOT_BYTES = 15_000_000      # version history per project, newest kept first (the Render disk is 1 GB)
+
+
 def _genie_checkpoint(pid: str, label: str) -> int:
-    files = _json.dumps(_genie_files(pid))
-    return _genie_db(lambda con: (con.execute("INSERT INTO genie_snapshots (project_id, label, files, created) VALUES (?, ?, ?, ?)",
-                                              (pid, label[:200], files, time.time())).lastrowid,
-                                  con.execute("DELETE FROM genie_snapshots WHERE project_id=? AND id NOT IN (SELECT id FROM "
-                                              "genie_snapshots WHERE project_id=? ORDER BY id DESC LIMIT ?)",
-                                              (pid, pid, GENIE_CHECKPOINTS)))[0])
+    """The project as it is now, before a request changes it. Nothing new is stored when the project
+    hasn't changed since the last snapshot (plan mode, a question, a request that changed nothing):
+    that snapshot is the same state."""
+    files = _json.dumps(_genie_files(pid), sort_keys=True)
+
+    def save(con):
+        last = con.execute("SELECT id, files FROM genie_snapshots WHERE project_id=? ORDER BY id DESC LIMIT 1", (pid,)).fetchone()
+        if last and last[1] == files:
+            return last[0]
+        new_id = con.execute("INSERT INTO genie_snapshots (project_id, label, files, created) VALUES (?, ?, ?, ?)",
+                             (pid, label[:200], files, time.time())).lastrowid
+        kept, used = [], 0
+        for sid, size in con.execute("SELECT id, length(files) FROM genie_snapshots WHERE project_id=? ORDER BY id DESC",
+                                     (pid,)).fetchall():
+            if not kept or (len(kept) < GENIE_CHECKPOINTS and used + size <= GENIE_SNAPSHOT_BYTES):
+                kept.append(sid)
+                used += size
+        con.execute(f"DELETE FROM genie_snapshots WHERE project_id=? AND id NOT IN ({','.join('?' * len(kept))})",
+                    (pid, *kept))
+        return new_id
+    return _genie_db(save)
 GENIE_SYSTEM = (
     "You are Gink Genie, an expert software engineer working inside the user's project. Use the tools to look at "
     "and change files: list_files, read_file, write_file (always the COMPLETE new content of the file), delete_file, "
@@ -6162,6 +6180,17 @@ def _genie_stopped(state: dict) -> dict:
             "rounds": state["rounds"], "checkpoint": state.get("checkpoint")}
 
 
+def _genie_failed(state: dict, why: str) -> dict:
+    """The AI stopped answering partway. With nothing changed yet: an error to retry. With changes made:
+    they're kept and the conversation says so (before, they were made but the request vanished)."""
+    if not state["changes"]:
+        raise HTTPException(status_code=502, detail=f"{why} Please try again.")
+    reply = f"{why} I stopped partway: the changes so far are kept and you can undo them. Ask me to continue."
+    _genie_remember(state, reply)
+    return {"reply": reply, "failed": True, "changes": state["changes"], "steps": state["steps"],
+            "rounds": state["rounds"], "checkpoint": state.get("checkpoint")}
+
+
 def _genie_report(state: dict):
     pid_ = state.get("progress")
     if pid_:
@@ -6267,9 +6296,10 @@ async def _genie_drive(state: dict) -> dict:
                 r = await client.post(f"{GROQ_BASE}/chat/completions", json=body,
                                       headers={"Authorization": f"Bearer {_env('GROQ_API_KEY')}"})
             except Exception:
-                raise HTTPException(status_code=502, detail="The AI service didn't answer. Please try again.")
+                return _genie_failed(state, "The AI service didn't answer.")
             if r.status_code != 200:
-                raise HTTPException(status_code=502, detail="The AI service had a problem. Please try again.")
+                return _genie_failed(state, "The AI service is busy right now." if r.status_code == 429
+                                     else "The AI service had a problem.")
             state["rounds"] += 1
             _genie_report(state)
             msg = ((r.json().get("choices") or [{}])[0].get("message")) or {}
@@ -6287,7 +6317,8 @@ async def _genie_drive(state: dict) -> dict:
             state["queue"] = list(calls)
 
 
-async def _genie_run(email: str, pid: str, instruction: str, progress: str = "", mode: str = "auto") -> dict:
+async def _genie_run(email: str, pid: str, instruction: str, progress: str = "", mode: str = "auto",
+                     teen: bool = False) -> dict:
     """The AI coding loop for one request (it pauses while the browser runs a command)."""
     files = _genie_summary(pid)
     listing = "\n".join(f"- {f['path']} ({f['size']} bytes)" for f in files) or "(empty project)"
@@ -6299,7 +6330,8 @@ async def _genie_run(email: str, pid: str, instruction: str, progress: str = "",
              "progress": re.sub(r"[^A-Za-z0-9_-]", "", str(progress or ""))[:40],
              "mode": "plan" if mode == "plan" else "auto",
              "pending": None, "model": await _current_model("openai/gpt-oss-120b"),
-             "messages": [{"role": "system", "content": GENIE_SYSTEM}] + history +
+             "messages": [{"role": "system", "content": GENIE_SYSTEM}]
+                         + ([{"role": "system", "content": TEEN_SAFETY}] if teen else []) + history +
                          [{"role": "user", "content": f"Project files:\n{listing}\n\nRequest: {instruction}"
                                    + (f"\n\n{GENIE_PLAN_NOTE}" if mode == "plan" else "")}]}
     return await _genie_drive(state)
@@ -6325,11 +6357,29 @@ async def _genie_ask(request: Request, email: str, pid: str, instruction: str, p
         raise HTTPException(status_code=422, detail="Tell Genie what to build or change.")
     if not _env("GROQ_API_KEY"):
         raise HTTPException(status_code=503, detail="Gink Genie isn't set up on this server yet.")
-    blocked = _count_call(email, request.headers.get("x-gink-turn", ""), _plan_status(email)["plan"])
+    family, controls = _genie_family_gate(email)
+    blocked = _count_call(email, request.headers.get("x-gink-turn", ""), _plan_status(email)["plan"],
+                          int(controls.get("daily_limit") or 0))
     if blocked is not None:
         detail = _json.loads(bytes(blocked.body))["error"]["message"]
         raise HTTPException(status_code=429, detail=detail)
-    return await _genie_run(email, pid, instruction, progress, mode)
+    if family and family.get("parent"):
+        _start_safety_check(email, family["parent"], instruction)
+    return await _genie_run(email, pid, instruction, progress, mode, teen=bool(family))
+
+
+def _genie_family_gate(email: str):
+    """Age and parental controls, as in chat: under 13, Genie switched off, quiet hours -> refused."""
+    family = _family_rules(email)
+    controls = (family or {}).get("controls") or {}
+    if family and family.get("blocked"):
+        raise HTTPException(status_code=403, detail=UNDER_13_MSG)
+    if controls.get("genie") is False:
+        raise HTTPException(status_code=403, detail="Gink Genie is turned off in your parental controls.")
+    until = _quiet_until(controls)
+    if until:
+        raise HTTPException(status_code=403, detail=f"It's quiet time: your parental controls turn Gink off until {until}.")
+    return family, controls
 
 
 def _genie_public(request: Request, p: dict) -> dict:
@@ -6353,6 +6403,7 @@ async def genie_create(request: Request, data: dict = Body(default={})):
     n = _genie_db(lambda con: con.execute("SELECT COUNT(*) FROM genie_projects WHERE email=?", (email,)).fetchone()[0])
     if n >= GENIE_MAX_PROJECTS:
         raise HTTPException(status_code=409, detail=f"You have {GENIE_MAX_PROJECTS} projects. Delete one to start another.")
+    _genie_family_gate(email)
     prompt = str((data or {}).get("prompt") or "").strip()
     name = " ".join(str((data or {}).get("name") or prompt[:50] or "My project").split())[:60] or "My project"
     pid, now = "gp_" + secrets.token_hex(6), time.time()
@@ -6360,7 +6411,14 @@ async def genie_create(request: Request, data: dict = Body(default={})):
                                       (pid, email, name, secrets.token_urlsafe(16), now, now)))
     out = {"project": _genie_public(request, _genie_project(email, pid))}
     if prompt:
-        out["result"] = await _genie_ask(request, email, pid, prompt)
+        try:
+            out["result"] = await _genie_ask(request, email, pid, prompt)
+        except HTTPException:
+            if not _genie_files(pid):                  # refused before anything was made: no empty project left behind
+                _genie_db(lambda con: (con.execute("DELETE FROM genie_chat WHERE project_id=?", (pid,)),
+                                       con.execute("DELETE FROM genie_snapshots WHERE project_id=?", (pid,)),
+                                       con.execute("DELETE FROM genie_projects WHERE id=?", (pid,))))
+            raise
     out["files"] = _genie_summary(pid)
     return out
 

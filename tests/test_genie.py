@@ -236,8 +236,9 @@ def test_undo_puts_the_project_back(srv):
     assert chat[-1]["text"].startswith("Undid the changes from: \u201cchange things\u201d") and chat[1]["checkpoint"] == cp1
     c.post(f"/genie/projects/{pid}/undo", headers=h, json={"checkpoint": cp1})
     assert c.get(f"/genie/projects/{pid}/all", headers=h).json()["files"] == {}             # before request 1: empty
-    for i in range(b.GENIE_CHECKPOINTS):                     # more requests than Genie keeps versions
-        SCRIPT[:] = [{"content": f"Answer {i}."}]
+    for i in range(b.GENIE_CHECKPOINTS):                     # more changing requests than Genie keeps versions
+        SCRIPT[:] = [{"content": "", "tool_calls": [call("write_file", path=f"n{i}.txt", content=str(i))]},
+                     {"content": f"Answer {i}."}]               # (requests that change nothing don't add versions)
         c.post(f"/genie/projects/{pid}/ask", headers=h, json={"instruction": f"request {i}"})
     old = c.post(f"/genie/projects/{pid}/undo", headers=h, json={"checkpoint": cp1})
     assert old.status_code == 404 and "too old" in old.json()["detail"]
