@@ -1880,3 +1880,10 @@ New services/live_info.py (all free, no API keys):
 - Owner's 2nd run: "key was refused" without being asked for a key -> GROQ_API_KEY is set in that shell (old/other
   value). Now: prints the key's source (--key / GROQ_API_KEY in this Terminal / typed) masked as "gsk_…abcd (N
   characters)", Groq's error message from the 401/403 body, and --ask-key skips the environment.
+
+## 0.1.106: User-Agent for the dataset scripts
+- Owner's 3rd run: a 56-character gsk_ key -> HTTP 403 "Forbidden" with a non-JSON body. Groq is behind
+  Cloudflare, which bans urllib's default "Python-urllib/3.x" User-Agent (error 1010); the app and server use
+  httpx (python-httpx/...) and work. paraphrase.py / evaluate.py now send USER_AGENT "GinkDataset/1.0 (+repo)".
+  provider_message() shows a non-JSON body as text (e.g. "error code: 1010"). Plan B in the 403 message: the Gink
+  server's /v1 (Developer API key), which also sidesteps any regional block.

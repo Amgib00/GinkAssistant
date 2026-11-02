@@ -44,6 +44,10 @@ def same_args(tool, want, got):
 
 
 
+# Groq (and other providers) sit behind Cloudflare, which refuses Python's default "Python-urllib/3.x"
+# with HTTP 403 ("error code: 1010") -- the owner's first runs. A plain name of our own goes through.
+USER_AGENT = "GinkDataset/1.0 (+https://github.com/Amgib00/GinkAssistant)"
+
 def ssl_context():
     """Certificates for https: Python from python.org on a Mac has none of its own until you run its
     "Install Certificates" command, which made every request fail with CERTIFICATE_VERIFY_FAILED.
@@ -68,7 +72,8 @@ def ask(base_url, key, model, messages, tools):
     if tools:
         body.update(tools=tools, tool_choice="auto")
     req = urllib.request.Request(base_url.rstrip("/") + "/chat/completions", data=json.dumps(body).encode(), method="POST",
-                                 headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}"})
+                                 headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}",
+                                          "User-Agent": USER_AGENT})
     with urllib.request.urlopen(req, timeout=120, context=ssl_context()) as r:
         return json.load(r)["choices"][0]["message"]
 

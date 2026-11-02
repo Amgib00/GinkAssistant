@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.106 (November 2026)
+
+- For the owner: paraphrase.py and evaluate.py identify themselves properly, so Groq's firewall no
+  longer refuses them (HTTP 403); if a refusal still happens, the provider's own words are shown
+
 ## 0.1.105 (November 2026)
 
 - For the owner: paraphrase.py says which key it used (only its first and last 4 characters) and

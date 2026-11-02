@@ -43,6 +43,10 @@ FR_HINTS = {"le", "la", "les", "de", "du", "des", "à", "au", "mon", "ma", "mes"
 
 
 
+# Groq (and other providers) sit behind Cloudflare, which refuses Python's default "Python-urllib/3.x"
+# with HTTP 403 ("error code: 1010") -- the owner's first runs. A plain name of our own goes through.
+USER_AGENT = "GinkDataset/1.0 (+https://github.com/Amgib00/GinkAssistant)"
+
 def ssl_context():
     """Certificates for https: Python from python.org on a Mac has none of its own until you run its
     "Install Certificates" command, which made every request fail with CERTIFICATE_VERIFY_FAILED.
@@ -72,10 +76,14 @@ def provider_message(exc) -> str:
     """The provider's own reason, from its error reply (never the key)."""
     try:
         body = exc.read().decode("utf-8", "replace")
+    except Exception:
+        body = ""
+    try:
         data = json.loads(body)
         return str((data.get("error") or {}).get("message") or data.get("detail") or body)[:200]
     except Exception:
-        return getattr(exc, "reason", "") or "no reason given"
+        text = " ".join(re.sub(r"<[^>]+>", " ", body).split())[:160]        # e.g. Cloudflare's "error code: 1010"
+        return text or getattr(exc, "reason", "") or "no reason given"
 
 
 def words(text: str) -> list:
@@ -135,7 +143,8 @@ def ask(base, key, model, text, language, n):
             "messages": [{"role": "user", "content": PROMPT.format(n=n, lang="French" if language == "fr" else "English",
                                                                    text=text)}]}
     req = urllib.request.Request(base.rstrip("/") + "/chat/completions", data=json.dumps(body).encode(), method="POST",
-                                 headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}"})
+                                 headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}",
+                                          "User-Agent": USER_AGENT})
     with urllib.request.urlopen(req, timeout=120, context=ssl_context()) as r:
         content = json.load(r)["choices"][0]["message"].get("content") or ""
     m = re.search(r"\{.*\}", content, re.S)
@@ -210,7 +219,8 @@ def main(argv=None, ask_fn=ask):
                           "(Render -> gink-server -> Environment -> GROQ_API_KEY) -- and run again with --ask-key.")
                 elif exc.code == 403:
                     print(f"  Groq said no (HTTP 403: {why}). If the key is right, Groq may be refusing this "
-                          "network or country: try once more on another connection, or ask your server to do it.")
+                          "network or country. Plan B, through your Gink server: --base-url "
+                          "https://gink-server.onrender.com/v1 --model gink-crystal --ask-key (a Gink developer key).")
                 elif exc.code == 429:
                     print("  Groq says: too many requests for now. Wait a minute and run again: it continues where it stopped.")
                 else:

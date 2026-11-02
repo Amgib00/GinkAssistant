@@ -143,3 +143,27 @@ def test_ask_key_ignores_the_terminals_key(tmp_path, monkeypatch, capsys):
     assert typed and "what you typed" in out and "9999" in out
     pp.main(["--train", str(train), "--csv", str(tmp_path / "p.csv")], ask_fn=lambda *a: [])
     assert "GROQ_API_KEY in this Terminal" in capsys.readouterr().out
+
+
+def test_requests_have_our_own_user_agent(monkeypatch):
+    """Cloudflare (in front of Groq) answers Python's default "Python-urllib/3.x" with 403 error 1010."""
+    import evaluate, io as _io, urllib.request
+    sent = []
+
+    class Resp(_io.BytesIO):
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+
+    def fake_urlopen(req, timeout=None, context=None):
+        sent.append({k.lower(): v for k, v in req.header_items()})
+        return Resp(json.dumps({"choices": [{"message": {"content": '{"variants": ["Get me up at 6:30 am"]}'}}]}).encode())
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    assert pp.ask("https://api.groq.com/openai/v1", "gsk_x", "m", "Wake me up at 6:30 am", "en", 1) == ["Get me up at 6:30 am"]
+    evaluate.ask("https://api.groq.com/openai/v1", "gsk_x", "m", [{"role": "user", "content": "hi"}], [])
+    assert all(h["user-agent"].startswith("GinkDataset/") and "urllib" not in h["user-agent"].lower() for h in sent)
+
+
+def test_cloudflare_refusal_text_is_shown():
+    import io as _io, urllib.error
+    exc = urllib.error.HTTPError("https://api.groq.com", 403, "Forbidden", {}, _io.BytesIO(b"error code: 1010"))
+    assert pp.provider_message(exc) == "error code: 1010"
