@@ -315,6 +315,7 @@ tests/test_offline_song_engine.py
 tests/test_owner_dashboard.py
 tests/test_owner_dashboard_live.py
 tests/test_page_events.py
+tests/test_parental_controls.py
 tests/test_phone_signin.py
 tests/test_phone_signin_app.py
 tests/test_play_music.py

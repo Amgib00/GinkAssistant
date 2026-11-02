@@ -20,8 +20,14 @@ Out of scope: accounts for children under 13 (not allowed), reading teens' chats
 - New spec: parental-controls. Affects accounts, Settings, the AI's instructions for teen accounts,
   Lockdown-like server enforcement.
 
-## Decision needed (owner)
+## Decisions (owner, November 2026)
 
-1. Minimum age (13 recommended) and how age is asked at sign-up.
-2. Whether safety notices to parents are included at launch (needs careful review).
-3. Legal review for the countries Gink serves (children's privacy laws differ).
+1. Minimum age 13. The birth year is asked at sign-up (email and phone), and once later for accounts
+   that don't have one (older accounts, Google/Apple/... sign-ups). It can't be changed afterwards.
+2. Safety notices to parents are included at launch: self-harm, danger from another person (an
+   adult asking for photos, secrecy, meeting; threats), plans to hurt someone. Never harm at home
+   (the parent could be the danger). One per kind per day, never the words, and the teen sees that
+   one was sent. Teens are told about notices before they accept a link.
+3. All controls at once: quiet hours, a daily message limit, voice, images, web search, websites,
+   connected apps.
+4. Still open: legal review for the countries Gink serves (children's privacy laws differ).

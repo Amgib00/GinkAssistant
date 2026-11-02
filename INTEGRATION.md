@@ -1755,3 +1755,22 @@ New services/live_info.py (all free, no API keys):
   "" -> 422 "use your email" BEFORE throttling or sending (nothing charged). No number -> any provider (status).
 - test_phone_signin.py's Senegal/UK/US numbers now need GINK_AT_COUNTRIES in its fixture; routing in
   test_sms_routing.py; the app flow against a real uvicorn server in test_phone_signin_app.py; page checked in Chromium.
+
+## 0.1.96: age and parental controls -- server (OpenSpec add-parental-controls)
+- Owner's decisions: 13+, birth year at sign-up, safety notices at launch, all controls.
+- Tables: account_age (birth YEAR only; age = this year - it), family_links (teen PK -> one parent; pending/active),
+  family_controls (JSON over DEFAULT_CONTROLS), family_notices (kind + time, never text). All removed on deletion.
+- Birth year: optional on /auth/register and new-number /auth/phone/verify (older apps still work);
+  POST /account/age once (409 afterwards: a teen can't switch the controls off). Under 13 -> 403 BEFORE anything
+  is stored; an existing under-13 account gets "Gink is for people 13 and older." on chat/images/voice/sites/apps/song.
+- _family_rules(email): None (adult / unknown age) | {"blocked"} | {"teen", "parent", "controls" (active link only)}.
+  Enforced in ai_chat (quiet hours via zoneinfo + wrap past midnight; web off -> no search incl. automatic;
+  _count_call(teen_limit) -> 429 family_limit; TEEN_SAFETY system message for EVERY teen), /media/image,
+  /voice/speak, /voice/transcribe, _site_prepare + /sites/publish, _refuse_in_lockdown ("web search"/"connected
+  apps" -> also parental controls), /media/song (under-13 only). Device-side voice (edge-tts, Android recognizer)
+  needs the app to hide voice: next version.
+- Safety notices: _start_safety_check (background task, linked teens only) -> _classify_risk (Groq
+  llama-3.1-8b-instant, JSON, temperature 0; GINK_SAFETY_MODEL) -> self_harm / harm_from_adult / violence notify
+  (one per kind per teen per 24 h, dedup per message hash); abuse_at_home and none never. Email + /family list;
+  the teen's /family shows notices_about_me. Teen unlink -> "unlinked" notice + email.
+- tests/test_parental_controls.py (14). Also: test_page_events' slow-phone wait made more patient (flaky under load).

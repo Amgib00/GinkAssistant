@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.96 (November 2026)
+
+- Gink is for people 13 and older. Signing up can now include your birth year (the sign-up screens
+  ask for it in the next version); under-13s can't create an account
+- Teens (13-17) always get stricter content safety
+- Parental controls, on the server: a parent can link a teen's account (the teen accepts first) and
+  set quiet hours, a daily message limit, and turn off voice, images, web search, websites and
+  connected apps -- on every device. Parents never see chats. If a linked teen's message shows a
+  serious risk to their safety, the parent gets a short notice (never the words). The screens to
+  use all this come in the next version
+
 ## 0.1.95 (November 2026)
 
 - "Continue with phone" in the apps too: sign in or create an account with your phone number and a

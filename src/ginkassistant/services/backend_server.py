@@ -648,6 +648,7 @@ def register(data: dict = Body(...)):
     email = _validate_email(data.get("email", "")).lower()
     name = (data.get("name") or "").strip()[:80]
     password = _validate_password(data.get("password", ""))
+    birth_year = _check_birth_year(data["birth_year"]) if data.get("birth_year") not in (None, "") else None
     existing = _get_user(email)
     if existing and existing["pw_hash"]:
         raise HTTPException(status_code=409, detail="An account with this email already exists. Log in instead.")
@@ -655,7 +656,7 @@ def register(data: dict = Body(...)):
     code = f"{secrets.randbelow(1_000_000):06d}"
     with _otp_lock:
         _pending_signups[email] = {"name": name, "pw_hash": _hash_password(password), "code": code,
-                                   "expiry": time.time() + 600, "attempts": 0}
+                                   "expiry": time.time() + 600, "attempts": 0, "birth_year": birth_year}
     if not _send_code_email(email, code, "Verify your email", f"Welcome to Gink{', ' + name if name else ''}!"):
         with _otp_lock:
             _pending_signups.pop(email, None)
@@ -670,6 +671,8 @@ def register_verify(data: dict = Body(...)):
     with _otp_lock:
         entry = _check_code(_pending_signups, email, data.get("code", ""))
     _upsert_user(email, entry["name"], entry["pw_hash"], "password")
+    if entry.get("birth_year") and not _birth_year(email):
+        _set_birth_year(email, entry["birth_year"])
     return _login_response(email, entry["name"])
 
 
@@ -1521,8 +1524,9 @@ def _usage_for(email: str) -> dict:
             "images_used": images, "images_limit": _image_limit(plan)}
 
 
-def _count_call(email: str, turn: str, plan: str):
-    """Returns an error response if over the limit, else None (and records the call)."""
+def _count_call(email: str, turn: str, plan: str, teen_limit: int = 0):
+    """Returns an error response if over the limit, else None (and records the call).
+    teen_limit: a parent's daily message limit for a linked teen (0 = none)."""
     day = _today()
     with _db_lock:
         con = _usage_db()
@@ -1536,6 +1540,9 @@ def _count_call(email: str, turn: str, plan: str):
                     new_message = False
             row = con.execute("SELECT messages FROM ai_usage WHERE email=? AND day=?", (email, day)).fetchone()
             used = row[0] if row else 0
+            if new_message and teen_limit and used >= teen_limit:
+                return _ai_error(429, f"You've used today's {teen_limit} messages, the limit in your parental controls. "
+                                      "More tomorrow.", "family_limit")
             if new_message and used >= _limit(plan):
                 if plan == "pro":
                     msg = f"You've reached today's limit of {_limit(plan)} messages. It resets at midnight (UTC)."
@@ -2388,6 +2395,18 @@ async def ai_chat(request: Request):
     turn = "" if getattr(request.state, "gink_api_email", None) else request.headers.get("x-gink-turn", "")
     # Claude (Anthropic) or Groq: decided once, here
     asked = body.pop("gink_web", None)
+    family = _family_rules(email)                   # age and parental controls (teens 13-17)
+    controls = (family or {}).get("controls") or {}
+    if family and family.get("blocked"):
+        return _ai_error(403, UNDER_13_MSG, "under_13")
+    if controls:
+        until = _quiet_until(controls)
+        if until:
+            return _ai_error(403, f"It's quiet time: your parental controls turn Gink off until {until}.", "quiet_hours")
+        if controls.get("web") is False:
+            if str(body["model"]).lower() in SEARCH_ALIASES or asked is True:
+                return _ai_error(403, "Web search is turned off in your parental controls.", "family_rule")
+            asked = False                             # and no automatic searching either
     web = str(body["model"]).lower() in SEARCH_ALIASES or asked is True
     auto, chosen_model = False, body["model"]
     developer = (request.headers.get("authorization") or "").split(" ")[-1].startswith(API_KEY_PREFIX)
@@ -2398,13 +2417,17 @@ async def ai_chat(request: Request):
         body["model"] = SEARCH_MODEL                                         # web search runs on GPT-OSS
     body["model"] = GINK_MODEL_NAMES.get(str(body["model"]).lower(), body["model"])   # "gink-frost" -> Claude Sonnet
     await _add_live_context(body)                    # today's date; live data (weather...) when asked
+    if family:
+        if family.get("parent"):                     # safety notices: the kind of risk, never the words
+            _start_safety_check(email, family["parent"], _last_user_text(body["messages"]))
+        _add_teen_safety(body)                       # stricter content safety for every teen
     _record_activity(email, body["model"])           # owner dashboard: "Right now" (anonymous, in memory)
     wants_claude = str(body["model"]).startswith("claude-")
     if wants_claude and not _env("ANTHROPIC_API_KEY"):
         wants_claude, body["model"] = False, TEXT_MODELS_BEST_FIRST[0]   # no Anthropic key here: Groq instead
     if wants_claude and plan != "pro":
         return _ai_error(403, "Claude models are part of Gink Pro.", "pro_required")
-    blocked = _count_call(email, turn, plan)
+    blocked = _count_call(email, turn, plan, int(controls.get("daily_limit") or 0))
     if blocked is not None:
         return blocked
     if wants_claude:
@@ -2588,6 +2611,12 @@ def delete_account(request: Request, data: dict = Body(...)):
             for table in ("account_preferences", "account_prompts", "shared_chats", "genie_projects", "phone_numbers", "passkeys", "security_events", "account_flags", "connections", "api_requests", "batches", "sites", "twofa", "users", "sync_docs", "ai_usage", "ai_turns", "api_keys", "claude_usage", "claude_turns",
                           "search_usage", "search_turns", "sessions", "account_security"):
                 con.execute(f"DELETE FROM {table} WHERE email=?", (email,))
+            for t in _FAMILY_TABLES:
+                con.execute(t)
+            con.execute("DELETE FROM account_age WHERE email=?", (email,))
+            con.execute("DELETE FROM family_controls WHERE teen=?", (email,))
+            con.execute("DELETE FROM family_links WHERE teen=? OR parent=?", (email, email))
+            con.execute("DELETE FROM family_notices WHERE teen=? OR parent=?", (email, email))
             con.execute("UPDATE payments SET email=? WHERE email=?", (anon, email))
             con.execute("CREATE TABLE IF NOT EXISTS deleted_accounts (email TEXT PRIMARY KEY, at REAL NOT NULL)")
             con.execute("INSERT OR REPLACE INTO deleted_accounts (email, at) VALUES (?, ?)", (email, time.time()))
@@ -2731,6 +2760,7 @@ def _count_song(email: str, day: str, delta: int) -> int:
 @app.post("/media/song")
 async def media_song(request: Request):
     email = _email_from_auth(request)
+    _family_gate(email)                              # nothing for under-13s
     try:
         from shazamio import Shazam
     except ImportError:
@@ -2771,6 +2801,9 @@ async def media_song(request: Request):
 @app.post("/media/image")
 async def media_image(request: Request):
     email = _email_from_auth(request)
+    why = _family_refusal(email, "images")
+    if why:
+        return _ai_error(403, why, "family_rule")
     if not _env("GEMINI_API_KEY"):
         return _ai_error(503, "Image creation isn't set up on this server yet.", "not_configured")
     try:
@@ -2940,6 +2973,9 @@ def _extract_audio(resp: dict):
 @app.post("/voice/speak")
 async def voice_speak(request: Request):
     email = _email_from_auth(request)
+    why = _family_refusal(email, "voice")
+    if why:
+        return _ai_error(403, why, "family_rule")
     if not _env("GEMINI_API_KEY"):
         print("[Gink server] Natural voice: GEMINI_API_KEY is not set on this server.")
         return _ai_error(503, "Natural voices aren't set up on this server yet (GEMINI_API_KEY is missing).", "not_configured")
@@ -3327,6 +3363,438 @@ def admin_grant_pro(request: Request, data: dict = Body(...)):
             con.close()
     print(f"[Gink] ADMIN: gave {email} {days} days of Gink Pro (until {time.strftime('%Y-%m-%d', time.gmtime(until))})", flush=True)
     return {"email": email, "pro_until": until, "pro_until_date": time.strftime("%Y-%m-%d", time.gmtime(until))}
+
+
+
+# =====================================================================
+# Age and parental controls (OpenSpec: add-parental-controls)
+#   Gink is for people 13 and older. The birth YEAR is asked at sign-up (or once, later, for accounts
+#   made before that or with Google/Apple...), and "age" is this year minus it.
+#   Teens (13-17) always get stricter content safety. A parent (18+) can invite a teen; once the teen
+#   accepts, the parent's controls apply on every device, enforced here: quiet hours, a daily message
+#   limit, and turning off voice, images, web search, websites and connected apps.
+#   Parents NEVER see chats. Safety notices: if a linked teen's message shows a serious risk to their
+#   safety, the parent gets a short notice -- the kind of risk, never the words. Not for harm at home
+#   (the parent could be the danger): there Gink gives the teen help resources instead. The teen is
+#   told about notices when linking, and sees in Settings when one was sent.
+#     GET/POST /account/age          GET /family
+#     POST /family/invite {teen}     POST /family/respond {accept}     POST /family/unlink {teen?}
+#     PUT  /family/controls {teen, controls}
+# =====================================================================
+MIN_AGE, ADULT_AGE = 13, 18
+UNDER_13_MSG = "Gink is for people 13 and older."
+_FAMILY_TABLES = (
+    "CREATE TABLE IF NOT EXISTS account_age (email TEXT PRIMARY KEY, birth_year INTEGER NOT NULL, set_at REAL)",
+    "CREATE TABLE IF NOT EXISTS family_links (teen TEXT PRIMARY KEY, parent TEXT NOT NULL, status TEXT NOT NULL,"
+    " created REAL, accepted REAL)",
+    "CREATE TABLE IF NOT EXISTS family_controls (teen TEXT PRIMARY KEY, controls TEXT NOT NULL)",
+    "CREATE TABLE IF NOT EXISTS family_notices (id INTEGER PRIMARY KEY AUTOINCREMENT, parent TEXT, teen TEXT,"
+    " kind TEXT, created REAL)",
+)
+DEFAULT_CONTROLS = {"quiet": False, "quiet_from": "21:30", "quiet_to": "06:30", "tz": "UTC", "daily_limit": 0,
+                    "voice": True, "images": True, "web": True, "websites": True, "apps": True}
+FEATURE_NAMES = {"voice": "Voice", "images": "Making images", "web": "Web search", "websites": "Making websites",
+                 "apps": "Connected apps"}
+NOTICE_TEXT = {"self_harm": "may be thinking about hurting themselves",
+               "harm_from_adult": "may be in danger from someone they're talking to",
+               "violence": "may be planning to hurt someone",
+               "unlinked": "unlinked their account from yours"}
+_safety_seen = {}                       # teen -> recent message hashes (one check per message)
+_safety_tasks = set()
+
+
+def _family_db(fn):
+    with _db_lock:
+        con = _db()
+        try:
+            for t in _FAMILY_TABLES:
+                con.execute(t)
+            out = fn(con)
+            con.commit()
+            return out
+        finally:
+            con.close()
+
+
+def _this_year() -> int:
+    return time.gmtime().tm_year
+
+
+def _check_birth_year(value) -> int:
+    """A believable birth year for someone 13 or older; raises otherwise (under 13: nothing is stored)."""
+    try:
+        year = int(str(value).strip())
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Enter the year you were born, like 2001.")
+    if not 1900 <= year <= _this_year():
+        raise HTTPException(status_code=422, detail="Enter the year you were born, like 2001.")
+    if _this_year() - year < MIN_AGE:
+        raise HTTPException(status_code=403, detail=UNDER_13_MSG)
+    return year
+
+
+def _birth_year(email: str):
+    row = _family_db(lambda con: con.execute("SELECT birth_year FROM account_age WHERE email=?", (email,)).fetchone())
+    return row[0] if row else None
+
+
+def _age(email: str):
+    by = _birth_year(email)
+    return _this_year() - by if by else None
+
+
+def _set_birth_year(email: str, year: int) -> None:
+    _family_db(lambda con: con.execute("INSERT OR REPLACE INTO account_age (email, birth_year, set_at) VALUES (?, ?, ?)",
+                                       (email, int(year), time.time())))
+
+
+def _controls(teen: str) -> dict:
+    row = _family_db(lambda con: con.execute("SELECT controls FROM family_controls WHERE teen=?", (teen,)).fetchone())
+    out = dict(DEFAULT_CONTROLS)
+    if row:
+        try:
+            out.update({k: v for k, v in _json.loads(row[0]).items() if k in DEFAULT_CONTROLS})
+        except Exception:
+            pass
+    return out
+
+
+def _link_of(teen: str):
+    """(parent, status) or None."""
+    return _family_db(lambda con: con.execute("SELECT parent, status FROM family_links WHERE teen=?", (teen,)).fetchone())
+
+
+def _family_rules(email: str):
+    """None for adults and accounts without a birth year; else {"teen", "parent", "controls"}
+    ({"blocked": True} under 13). Controls only while a parent link is active and the person is a teen."""
+    age = _age(email)
+    if age is None or age >= ADULT_AGE:
+        return None
+    if age < MIN_AGE:
+        return {"blocked": True}
+    link = _link_of(email)
+    if link and link[1] == "active":
+        return {"blocked": False, "teen": True, "parent": link[0], "controls": _controls(email)}
+    return {"blocked": False, "teen": True, "parent": "", "controls": None}
+
+
+def _family_refusal(email: str, feature: str = ""):
+    """The reason this account can't use `feature` now ("" = fine). Under 13: nothing at all."""
+    rules = _family_rules(email)
+    if not rules:
+        return ""
+    if rules.get("blocked"):
+        return UNDER_13_MSG
+    c = rules.get("controls")
+    if c and feature and c.get(feature) is False:
+        return f"{FEATURE_NAMES.get(feature, feature)} is turned off in your parental controls."
+    return ""
+
+
+def _family_gate(email: str, feature: str = ""):
+    """For endpoints that answer with HTTPException."""
+    why = _family_refusal(email, feature)
+    if why:
+        raise HTTPException(status_code=403, detail=why)
+
+
+def _hhmm(value: str, default: str) -> int:
+    m = re.fullmatch(r"([01]?\d|2[0-3]):([0-5]\d)", str(value or "").strip())
+    if not m:
+        m = re.fullmatch(r"(\d+):(\d+)", default)
+    return int(m.group(1)) * 60 + int(m.group(2))
+
+
+def _quiet_until(c: dict, now=None) -> str:
+    """"06:30" when it's quiet time now for these controls, else ""."""
+    if not c or not c.get("quiet"):
+        return ""
+    from datetime import datetime, timezone
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo(str(c.get("tz") or "UTC"))
+    except Exception:
+        tz = timezone.utc
+    now = now or datetime.now(tz)
+    minute = now.astimezone(tz).hour * 60 + now.astimezone(tz).minute
+    start, end = _hhmm(c.get("quiet_from"), "21:30"), _hhmm(c.get("quiet_to"), "06:30")
+    inside = (start <= minute < end) if start < end else (start != end and (minute >= start or minute < end))
+    return f"{end // 60:02d}:{end % 60:02d}" if inside else ""
+
+
+TEEN_SAFETY = (
+    "The person you're talking with is a teenager (13-17). Be warm, honest and genuinely helpful -- with "
+    "school, ideas, questions and feelings -- and keep everything age-appropriate:\n"
+    "- No sexual or sexually suggestive content, and no romantic or flirtatious role-play. You are an AI "
+    "assistant, never a girlfriend, boyfriend or human friend.\n"
+    "- No graphic violence or gore. No instructions for weapons, drugs, alcohol, vaping, gambling, dangerous "
+    "challenges or stunts, or for hiding things like these from parents.\n"
+    "- Nothing that encourages extreme dieting, fasting or weight loss.\n"
+    "- Don't help get around parental controls, age checks or school rules.\n"
+    "- If they mention self-harm, suicide, abuse, being threatened, or an adult asking them for secrets, photos "
+    "or to meet: respond with care, take it seriously, encourage them to talk to a trusted adult, and say that "
+    "if they're in danger right now they should contact local emergency services or a child helpline.\n"
+    "- Never ask for personal details like their address, school or photos."
+)
+
+
+def _add_teen_safety(body: dict) -> None:
+    body["messages"] = [{"role": "system", "content": TEEN_SAFETY}] + list(body.get("messages") or [])
+
+
+SAFETY_PROMPT = (
+    "You check one message a teenager wrote to an AI assistant, for a parental-safety feature. Answer with "
+    "JSON only: {\"category\": \"...\"}. Categories:\n"
+    "\"self_harm\": they say they want to die, kill themselves, or hurt themselves, or describe doing it.\n"
+    "\"harm_from_adult\": an adult or stranger is asking them for sexual photos or contact, pressuring them "
+    "to meet in secret, threatening or blackmailing them.\n"
+    "\"violence\": they say they plan to seriously hurt or kill someone, or bring a weapon to school.\n"
+    "\"abuse_at_home\": a parent or someone they live with is hurting or abusing them.\n"
+    "\"none\": anything else -- including schoolwork, fiction, song lyrics, news, jokes, venting without "
+    "intent, or asking about these topics in general.\n"
+    "Only choose a risk category when it is clearly about the writer's real, current situation."
+)
+
+
+async def _classify_risk(text: str) -> str:
+    import httpx
+    body = {"model": _env("GINK_SAFETY_MODEL") or "llama-3.1-8b-instant", "temperature": 0, "max_tokens": 40,
+            "response_format": {"type": "json_object"},
+            "messages": [{"role": "system", "content": SAFETY_PROMPT}, {"role": "user", "content": text[:4000]}]}
+    async with httpx.AsyncClient(timeout=20) as client:
+        r = await client.post(f"{GROQ_BASE}/chat/completions", json=body,
+                              headers={"Authorization": f"Bearer {_env('GROQ_API_KEY')}"})
+    if r.status_code != 200:
+        return "none"
+    try:
+        return str(_json.loads(r.json()["choices"][0]["message"]["content"]).get("category") or "none")
+    except Exception:
+        return "none"
+
+
+def _notify_parent(parent: str, teen: str, kind: str) -> None:
+    """Record a notice (shown in the parent's Settings) and email it. Never includes what was said."""
+    _family_db(lambda con: con.execute("INSERT INTO family_notices (parent, teen, kind, created) VALUES (?, ?, ?, ?)",
+                                       (parent, teen, kind, time.time())))
+    who = (_get_user(teen) or {}).get("name") or _account_label(teen)
+    if kind == "unlinked":
+        subject, text = f"{who} unlinked their Gink account", (
+            f"{who} unlinked their Gink account from yours, so your parental controls no longer apply.\n\n"
+            "You can invite them again from Settings > Parental controls.")
+    else:
+        subject, text = f"Gink safety notice about {who}", (
+            f"Something {who} wrote to Gink suggests they {NOTICE_TEXT.get(kind, 'may not be safe')}.\n\n"
+            "Gink doesn't share what was said -- their chats stay private. Please check in with them calmly and "
+            "listen. If you think they're in immediate danger, contact local emergency services now.\n\n"
+            "Gink can be wrong: this notice comes from an automatic check.")
+    reason = _send_email(parent, subject, text)
+    if reason:
+        print(f"[Gink] family notice ({kind}) not emailed: {reason}", flush=True)
+
+
+async def _safety_check(teen: str, parent: str, text: str) -> None:
+    try:
+        text = (text or "").strip()
+        if not text or not parent or not _env("GROQ_API_KEY"):
+            return
+        digest = hashlib.sha256(text.encode()).hexdigest()[:16]
+        seen = _safety_seen.setdefault(teen, [])
+        if digest in seen:
+            return                                     # the same message (a tool-call follow-up): checked once
+        seen.append(digest)
+        del seen[:-50]
+        kind = await _classify_risk(text)
+        if kind not in ("self_harm", "harm_from_adult", "violence"):
+            return                                     # incl. abuse_at_home: never to the parent
+        since = time.time() - 86400
+        recent = _family_db(lambda con: con.execute(
+            "SELECT 1 FROM family_notices WHERE teen=? AND kind=? AND created>?", (teen, kind, since)).fetchone())
+        if not recent:                                 # one notice per kind per day
+            _notify_parent(parent, teen, kind)
+    except Exception as exc:
+        print(f"[Gink] safety check failed: {type(exc).__name__}", flush=True)
+
+
+def _start_safety_check(teen: str, parent: str, text: str) -> None:
+    task = asyncio.get_running_loop().create_task(_safety_check(teen, parent, text))
+    _safety_tasks.add(task)
+    task.add_done_callback(_safety_tasks.discard)
+
+
+def _account_label(email: str) -> str:
+    return "+" + email[: -len(PHONE_DOMAIN)] if email.endswith(PHONE_DOMAIN) else email
+
+
+def _find_account(identifier: str) -> str:
+    s = str(identifier or "").strip()
+    if "@" in s:
+        email = s.lower()
+    else:
+        phone = _normalize_phone(s)
+        email = _account_for_phone(phone) or phone.lstrip("+") + PHONE_DOMAIN
+    if not _get_user(email):
+        raise HTTPException(status_code=404, detail="There's no Gink account with that email or number.")
+    return email
+
+
+@app.get("/account/age")
+def age_get(request: Request):
+    email = _email_from_auth(request)
+    by = _birth_year(email)
+    age = _this_year() - by if by else None
+    return {"birth_year": by, "needed": by is None, "teen": bool(age is not None and MIN_AGE <= age < ADULT_AGE),
+            "blocked": bool(age is not None and age < MIN_AGE)}
+
+
+@app.post("/account/age")
+def age_set(request: Request, data: dict = Body(...)):
+    """Once. After that it can't be changed here (so a teen can't switch off their parent's controls)."""
+    email = _email_from_auth(request)
+    if _birth_year(email):
+        raise HTTPException(status_code=409, detail="Your birth year is already set. Contact support to correct it.")
+    year = _check_birth_year(data.get("birth_year"))
+    _set_birth_year(email, year)
+    return age_get(request)
+
+
+@app.get("/family")
+def family_get(request: Request):
+    email = _email_from_auth(request)
+    age = _age(email)
+    since = time.time() - 30 * 86400
+    usage_day = _today()
+
+    def read(con):
+        link = con.execute("SELECT parent, status FROM family_links WHERE teen=?", (email,)).fetchone()
+        teens = con.execute("SELECT teen, status FROM family_links WHERE parent=? ORDER BY created", (email,)).fetchall()
+        notices = con.execute("SELECT teen, kind, created FROM family_notices WHERE parent=? AND created>?"
+                              " ORDER BY created DESC LIMIT 30", (email, since)).fetchall()
+        about_me = con.execute("SELECT kind, created FROM family_notices WHERE teen=? AND kind!='unlinked'"
+                               " AND created>? ORDER BY created DESC LIMIT 30", (email, since)).fetchall()
+        return link, teens, notices, about_me
+    link, teens, notices, about_me = _family_db(read)
+
+    def used_today(teen):
+        with _db_lock:
+            con = _usage_db()
+            try:
+                row = con.execute("SELECT messages FROM ai_usage WHERE email=? AND day=?", (teen, usage_day)).fetchone()
+            except sqlite3.Error:
+                row = None
+            finally:
+                con.close()
+        return row[0] if row else 0
+
+    def person(e):
+        return {"id": e, "label": _account_label(e), "name": (_get_user(e) or {}).get("name") or ""}
+    return {
+        "age": age, "birth_year_needed": age is None,
+        "teen": bool(age is not None and MIN_AGE <= age < ADULT_AGE), "can_be_parent": bool(age and age >= ADULT_AGE),
+        "parent": dict(person(link[0]), status=link[1]) if link else None,
+        "teens": [dict(person(t), status=s, controls=_controls(t) if s == "active" else None,
+                       messages_today=used_today(t) if s == "active" else None) for t, s in teens],
+        "notices": [{"teen": _account_label(t), "name": (_get_user(t) or {}).get("name") or "", "kind": k,
+                     "text": NOTICE_TEXT.get(k, k), "at": c} for t, k, c in notices],
+        "notices_about_me": [{"kind": k, "at": c} for k, c in about_me],
+    }
+
+
+@app.post("/family/invite")
+def family_invite(request: Request, data: dict = Body(...)):
+    parent = _email_from_auth(request)
+    age = _age(parent)
+    if age is None:
+        raise HTTPException(status_code=403, detail="Add your birth year first (Settings > Account).")
+    if age < ADULT_AGE:
+        raise HTTPException(status_code=403, detail="Only adults (18+) can link a teen's account.")
+    teen = _find_account(data.get("teen"))
+    if teen == parent:
+        raise HTTPException(status_code=422, detail="That's your own account.")
+    t_age = _age(teen)
+    if t_age is None or not MIN_AGE <= t_age < ADULT_AGE:
+        raise HTTPException(status_code=422, detail="Only accounts of teens (13-17) can be linked. "
+                                                    "They may need to add their birth year in Settings > Account first.")
+    link = _link_of(teen)
+    if link and link[0] != parent:
+        raise HTTPException(status_code=409, detail="That account is already linked to another parent.")
+    if link and link[1] == "active":
+        raise HTTPException(status_code=409, detail="You're already linked.")
+    _family_db(lambda con: con.execute("INSERT OR REPLACE INTO family_links (teen, parent, status, created, accepted)"
+                                       " VALUES (?, ?, 'pending', ?, NULL)", (teen, parent, time.time())))
+    who = (_get_user(parent) or {}).get("name") or _account_label(parent)
+    _send_email(teen, f"{who} wants to link your Gink account", (
+        f"{who} asked to link your Gink account to theirs as your parent.\n\nOpen Gink > Settings > Parental controls "
+        "to accept or decline. Nothing changes unless you accept."))
+    return {"status": "pending", "teen": _account_label(teen)}
+
+
+@app.post("/family/respond")
+def family_respond(request: Request, data: dict = Body(...)):
+    teen = _email_from_auth(request)
+    link = _link_of(teen)
+    if not link or link[1] != "pending":
+        raise HTTPException(status_code=404, detail="There's no invitation to answer.")
+    if data.get("accept") is True:
+        _family_db(lambda con: con.execute("UPDATE family_links SET status='active', accepted=? WHERE teen=?",
+                                           (time.time(), teen)))
+        return {"status": "active"}
+    _family_db(lambda con: con.execute("DELETE FROM family_links WHERE teen=?", (teen,)))
+    return {"status": "declined"}
+
+
+@app.post("/family/unlink")
+def family_unlink(request: Request, data: dict = Body(default={})):
+    me = _email_from_auth(request)
+    other = str((data or {}).get("teen") or "").strip()
+    if other:                                          # the parent unlinks a teen
+        teen = other if _link_of(other) else _find_account(other)
+        link = _link_of(teen)
+        if not link or link[0] != me:
+            raise HTTPException(status_code=404, detail="You're not linked to that account.")
+        _family_db(lambda con: con.execute("DELETE FROM family_links WHERE teen=?", (teen,)))
+        return {"status": "unlinked"}
+    link = _link_of(me)                                # the teen unlinks themselves: the parent is told
+    if not link:
+        raise HTTPException(status_code=404, detail="Your account isn't linked.")
+    _family_db(lambda con: con.execute("DELETE FROM family_links WHERE teen=?", (me,)))
+    if link[1] == "active":
+        _notify_parent(link[0], me, "unlinked")
+    return {"status": "unlinked"}
+
+
+@app.put("/family/controls")
+def family_controls(request: Request, data: dict = Body(...)):
+    parent = _email_from_auth(request)
+    teen_id = str(data.get("teen") or "").strip()
+    teen = teen_id if _link_of(teen_id) else _find_account(teen_id)
+    link = _link_of(teen)
+    if not link or link[0] != parent or link[1] != "active":
+        raise HTTPException(status_code=404, detail="You're not linked to that account.")
+    new = _controls(teen)
+    given = data.get("controls") or {}
+    for key in ("quiet", "voice", "images", "web", "websites", "apps"):
+        if key in given:
+            new[key] = bool(given[key])
+    for key in ("quiet_from", "quiet_to"):
+        if key in given:
+            if not re.fullmatch(r"([01]?\d|2[0-3]):[0-5]\d", str(given[key]).strip()):
+                raise HTTPException(status_code=422, detail="Use times like 21:30.")
+            new[key] = str(given[key]).strip().zfill(5)
+    if "tz" in given:
+        try:
+            from zoneinfo import ZoneInfo
+            ZoneInfo(str(given["tz"]))
+            new["tz"] = str(given["tz"])
+        except Exception:
+            raise HTTPException(status_code=422, detail="Unknown time zone.")
+    if "daily_limit" in given:
+        try:
+            new["daily_limit"] = max(0, min(int(given["daily_limit"]), 1000))
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=422, detail="The daily limit must be a number (0 = no limit).")
+    _family_db(lambda con: con.execute("INSERT OR REPLACE INTO family_controls (teen, controls) VALUES (?, ?)",
+                                       (teen, _json.dumps(new))))
+    return {"controls": new}
 
 
 
@@ -3810,6 +4278,9 @@ _stt_recent = {}
 @app.post("/voice/transcribe")
 async def voice_transcribe(request: Request, data: dict = Body(...)):
     email = _email_from_auth(request)
+    why = _family_refusal(email, "voice")
+    if why:
+        return _ai_error(403, why, "family_rule")
     if not _env("GROQ_API_KEY"):
         return _ai_error(503, "Speech recognition isn't set up on this server yet.", "not_configured")
     try:
@@ -3981,6 +4452,7 @@ def _site_url(request: Request, site_id: str) -> str:
 
 async def _site_prepare(request: Request):
     email = _email_from_auth(request)
+    _family_gate(email, "websites")
     if not _env("GROQ_API_KEY"):
         return email, _ai_error(503, "Websites aren't set up on this server yet.", "not_configured")
     plan = _plan_status(email)["plan"]
@@ -4012,6 +4484,7 @@ async def site_create(request: Request, data: dict = Body(...)):
 def site_publish(request: Request, data: dict = Body(...)):
     """Publish a design from the code viewer as a website (cleaned like AI-made sites; no AI call, so no daily limit)."""
     email = _email_from_auth(request)
+    _family_gate(email, "websites")
     if _sites_db(lambda con: con.execute("SELECT COUNT(*) FROM sites WHERE email=?", (email,)).fetchone()[0]) >= SITES_PER_ACCOUNT:
         raise HTTPException(status_code=409, detail=f"You have {SITES_PER_ACCOUNT} websites already. Delete one to publish another.")
     try:
@@ -4913,6 +5386,9 @@ LOCKDOWN_MSG = ("Lockdown mode is on, so Gink doesn't use {what}. You can turn i
 def _refuse_in_lockdown(email: str, what: str):
     if _lockdown(email):
         raise HTTPException(status_code=403, detail=LOCKDOWN_MSG.format(what=what))
+    feature = {"web search": "web", "connected apps": "apps"}.get(what)
+    if feature:
+        _family_gate(email, feature)                 # a parent's controls, the same way
 
 
 @app.get("/account/lockdown")
@@ -5354,10 +5830,15 @@ def phone_verify(data: dict = Body(...)):
     if not email and not name:
         _check_phone_code("signin", phone, data.get("code"), consume=False)    # right code: now the name
         return {"need_name": True}
+    birth_year = None
+    if not email and data.get("birth_year") not in (None, ""):
+        birth_year = _check_birth_year(data["birth_year"])               # under 13: refused before anything is made
     _check_phone_code("signin", phone, data.get("code"))
     if not email:                                                        # a new account with this phone
         email = phone[1:] + PHONE_DOMAIN
         _upsert_user(email, name, None, "phone")
+        if birth_year:
+            _set_birth_year(email, birth_year)
         _phone_db(lambda con: con.execute("INSERT OR REPLACE INTO phone_numbers (phone, email, added) VALUES (?, ?, ?)",
                                           (phone, email, time.time())))
     user = _get_user(email) or {"name": name}

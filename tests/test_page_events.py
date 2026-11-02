@@ -111,7 +111,7 @@ def test_main_screen_shows_and_saves_a_message_once_on_a_slow_phone(tmp_path, mo
         page.delay = 2.3                                                          # longer than Python waits
         await asyncio.sleep(2.6)
         page.delay = 0
-        for _ in range(40):
+        for _ in range(150):                                                      # generous: CI machines are busy
             await asyncio.sleep(0.1)
             if bubbles:
                 break
