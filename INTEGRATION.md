@@ -1848,3 +1848,13 @@ New services/live_info.py (all free, no API keys):
 - genie_create: a refused first _genie_ask with no files written deletes the new project (+chat, snapshots).
 - Checked and fine: _genie_path, preview CSP (sandbox w/o allow-same-origin, form-action none, frame-ancestors
   self, nosniff), genie.html only ever sets innerHTML = "" (AI text goes in via textContent).
+
+## 0.1.102: parental controls in every AI feature
+- Audit of direct provider calls (GROQ_BASE/ANTHROPIC_BASE/Gemini outside ai_chat): _classify_risk (internal),
+  /web/search, _site_ai (websites), _genie_drive (0.1.101), images (Gemini), voice. Gaps closed:
+  _family_refusal/_family_gate(quiet=True) for things made with AI -> /media/image, /sites + edit
+  (_site_prepare), /web/search; _site_prepare passes the teen daily limit to _count_call;
+  _family_teen_messages() adds TEEN_SAFETY after the first system message and runs the linked-teen safety check
+  on the person's own words (prompt / instruction, not the current HTML).
+- tests/test_family_everywhere.py: AI_FEATURES lists every AI endpoint -- a NEW AI endpoint belongs there
+  (under-13 refused on all; quiet hours on all that make something).

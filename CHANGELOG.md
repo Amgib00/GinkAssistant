@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.102 (November 2026)
+
+- Parental controls now cover every way Gink makes something: quiet hours also pause making
+  websites and images and searching the web; websites count toward a teen's daily limit and get the
+  same stricter safety and safety checks as chat
+
 ## 0.1.101 (November 2026)
 
 - Gink Genie follows age and parental controls like chat: quiet hours, the daily limit and stricter

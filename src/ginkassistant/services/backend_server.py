@@ -2844,7 +2844,7 @@ async def media_song(request: Request):
 @app.post("/media/image")
 async def media_image(request: Request):
     email = _email_from_auth(request)
-    why = _family_refusal(email, "images")
+    why = _family_refusal(email, "images", quiet=True)
     if why:
         return _ai_error(403, why, "family_rule")
     if not _env("GEMINI_API_KEY"):
@@ -3521,8 +3521,9 @@ def _family_rules(email: str):
     return {"blocked": False, "teen": True, "parent": "", "controls": None}
 
 
-def _family_refusal(email: str, feature: str = ""):
-    """The reason this account can't use `feature` now ("" = fine). Under 13: nothing at all."""
+def _family_refusal(email: str, feature: str = "", quiet: bool = False):
+    """The reason this account can't use `feature` now ("" = fine). Under 13: nothing at all.
+    quiet=True for anything that makes something with AI: quiet hours apply too."""
     rules = _family_rules(email)
     if not rules:
         return ""
@@ -3531,12 +3532,26 @@ def _family_refusal(email: str, feature: str = ""):
     c = rules.get("controls")
     if c and feature and c.get(feature) is False:
         return f"{FEATURE_NAMES.get(feature, feature)} is turned off in your parental controls."
+    until = _quiet_until(c) if (c and quiet) else ""
+    if until:
+        return f"It's quiet time: your parental controls turn Gink off until {until}."
     return ""
 
 
-def _family_gate(email: str, feature: str = ""):
+def _family_teen_messages(email: str, messages: list, words: str) -> list:
+    """For AI features outside chat (websites...): every teen gets the stricter guidance, and a linked
+    teen's own words get the safety check, as in chat."""
+    rules = _family_rules(email)
+    if not rules or rules.get("blocked"):
+        return messages
+    if rules.get("parent"):
+        _start_safety_check(email, rules["parent"], words)
+    return messages[:1] + [{"role": "system", "content": TEEN_SAFETY}] + messages[1:]
+
+
+def _family_gate(email: str, feature: str = "", quiet: bool = False):
     """For endpoints that answer with HTTPException."""
-    why = _family_refusal(email, feature)
+    why = _family_refusal(email, feature, quiet)
     if why:
         raise HTTPException(status_code=403, detail=why)
 
@@ -3921,6 +3936,7 @@ async def web_search(request: Request, data: dict = Body(...)):
     if not _env("GROQ_API_KEY"):
         return _ai_error(503, "Web search isn't set up on this server yet.", "not_configured")
     _refuse_in_lockdown(email, "web search")
+    _family_gate(email, "web", quiet=True)          # quiet hours too (lockdown's check covers the switch)
     plan = _plan_status(email)["plan"]
     blocked = _count_search(email, plan, request.headers.get("x-gink-turn", ""))
     if blocked is not None:
@@ -4503,11 +4519,12 @@ def _site_url(request: Request, site_id: str) -> str:
 
 async def _site_prepare(request: Request):
     email = _email_from_auth(request)
-    _family_gate(email, "websites")
+    _family_gate(email, "websites", quiet=True)
     if not _env("GROQ_API_KEY"):
         return email, _ai_error(503, "Websites aren't set up on this server yet.", "not_configured")
     plan = _plan_status(email)["plan"]
-    return email, _count_call(email, request.headers.get("x-gink-turn", ""), plan)
+    controls = (_family_rules(email) or {}).get("controls") or {}
+    return email, _count_call(email, request.headers.get("x-gink-turn", ""), plan, int(controls.get("daily_limit") or 0))
 
 
 @app.post("/sites")
@@ -4521,8 +4538,8 @@ async def site_create(request: Request, data: dict = Body(...)):
     if _sites_db(lambda con: con.execute("SELECT COUNT(*) FROM sites WHERE email=?", (email,)).fetchone()[0]) >= SITES_PER_ACCOUNT:
         raise HTTPException(status_code=409, detail=f"You have {SITES_PER_ACCOUNT} websites already. Delete one to make another.")
     try:
-        html, title = _site_clean(await _site_ai([{"role": "system", "content": SITE_SYSTEM},
-                                                  {"role": "user", "content": prompt}]))
+        html, title = _site_clean(await _site_ai(_family_teen_messages(email, [{"role": "system", "content": SITE_SYSTEM},
+                                                                              {"role": "user", "content": prompt}], prompt)))
     except ValueError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
     site_id, now = secrets.token_urlsafe(6).replace("_", "x").replace("-", "y"), time.time()
@@ -4563,10 +4580,10 @@ async def site_edit(site_id: str, request: Request, data: dict = Body(...)):
     if not row:
         raise HTTPException(status_code=404, detail="That website wasn't found.")
     try:
-        html, title = _site_clean(await _site_ai([
+        html, title = _site_clean(await _site_ai(_family_teen_messages(email, [
             {"role": "system", "content": SITE_SYSTEM},
             {"role": "user", "content": f"Here is my current website:\n\n{row[0]}\n\nChange it: {instruction}\n"
-                                        "Reply with the complete updated HTML document."}]))
+                                        "Reply with the complete updated HTML document."}], instruction)))
     except ValueError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
     _sites_db(lambda con: con.execute("UPDATE sites SET html=?, title=?, updated=? WHERE id=? AND email=?",

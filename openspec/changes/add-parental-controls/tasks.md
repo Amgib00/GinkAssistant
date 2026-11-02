@@ -12,4 +12,7 @@
 - [x] 2.3 Server tests (tests/test_parental_controls.py)
 - [x] 2.4 Browser check of the panel (parent, invited teen, linked teen, no birth year), the age dialog
       and the sign-up year (tests/test_parental_controls_app.py: the Settings actions against a real server)
+- [x] 2.6 Every AI feature, not just chat: Genie (0.1.101); websites, images, web search get quiet hours, the
+      teen limit (websites) and teen safety + checks (websites) (0.1.102); tests/test_family_everywhere.py lists
+      every AI endpoint and checks under-13 and quiet hours on each
 - [ ] 2.5 On devices: a parent and a teen account end to end (invite, accept, a control, a notice email)
