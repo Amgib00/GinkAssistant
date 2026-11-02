@@ -119,9 +119,27 @@ def test_refused_key_is_explained(tmp_path, capsys):
     train.write_text(json.dumps({"category": "action", "language": "en", "messages": [
         {"role": "system", "content": "s"}, {"role": "user", "content": "Wake me up at 6:30 am"}]}), encoding="utf-8")
 
+    import io as _io
+
     def refused(*a):
-        raise urllib.error.HTTPError("https://api.groq.com", 401, "Unauthorized", {}, None)
-    pp.main(["--train", str(train), "--csv", str(tmp_path / "p.csv"), "--key", "gsk_wrong"], ask_fn=refused)
-    assert "API key was refused" in capsys.readouterr().out
+        raise urllib.error.HTTPError("https://api.groq.com", 401, "Unauthorized", {},
+                                     _io.BytesIO(b'{"error": {"message": "Invalid API Key", "code": "invalid_api_key"}}'))
+    pp.main(["--train", str(train), "--csv", str(tmp_path / "p.csv"), "--key", "gsk_wrong_but_long_enough_1234"], ask_fn=refused)
+    out = capsys.readouterr().out
+    assert "Groq refused the key (Invalid API Key)" in out and "--ask-key" in out
+    assert "gsk_\u20261234 (30 characters)" in out and "wrong_but" not in out          # masked, never the whole key
     rows = list(csv.DictReader(open(tmp_path / "p.csv", encoding="utf-8")))
     assert rows == []                                                           # nothing marked done: a re-run retries
+
+
+def test_ask_key_ignores_the_terminals_key(tmp_path, monkeypatch, capsys):
+    train = tmp_path / "train.jsonl"
+    train.write_text("", encoding="utf-8")
+    monkeypatch.setenv("GROQ_API_KEY", "gsk_old_revoked_key_000000")
+    typed = []
+    monkeypatch.setattr(pp.getpass, "getpass", lambda prompt: typed.append(prompt) or "gsk_new_working_key_999999")
+    pp.main(["--train", str(train), "--csv", str(tmp_path / "p.csv"), "--ask-key"], ask_fn=lambda *a: [])
+    out = capsys.readouterr().out
+    assert typed and "what you typed" in out and "9999" in out
+    pp.main(["--train", str(train), "--csv", str(tmp_path / "p.csv")], ask_fn=lambda *a: [])
+    assert "GROQ_API_KEY in this Terminal" in capsys.readouterr().out

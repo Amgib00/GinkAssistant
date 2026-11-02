@@ -1875,3 +1875,8 @@ New services/live_info.py (all free, no API keys):
 - The owner typed `GROQ_API_KEY=...` literally (copied from my chat example): real_key() treats "...", "xxx",
   "<...>", strings with spaces, "your-key" etc. as missing -> getpass. HTTPError 401/403 -> "key was refused",
   429 -> "wait a minute, it continues", others -> HTTP code; nothing is marked done, so a re-run retries.
+
+## 0.1.105: paraphrase.py key diagnostics
+- Owner's 2nd run: "key was refused" without being asked for a key -> GROQ_API_KEY is set in that shell (old/other
+  value). Now: prints the key's source (--key / GROQ_API_KEY in this Terminal / typed) masked as "gsk_…abcd (N
+  characters)", Groq's error message from the 401/403 body, and --ask-key skips the environment.

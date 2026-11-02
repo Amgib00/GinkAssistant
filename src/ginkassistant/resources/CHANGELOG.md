@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.105 (November 2026)
+
+- For the owner: paraphrase.py says which key it used (only its first and last 4 characters) and
+  Groq's own reason when it refuses; --ask-key ignores a key saved in the Terminal and asks instead
+
 ## 0.1.104 (November 2026)
 
 - For the owner: paraphrase.py and evaluate.py work with Python from python.org on a Mac (they failed

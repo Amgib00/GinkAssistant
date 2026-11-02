@@ -8,7 +8,8 @@ Apache-2.0 model (GPT-OSS on Groq by default), and keeps only rewrites that can'
     python tools/gink_dataset/generate.py && python tools/gink_dataset/validate.py
 
 Why GPT-OSS and not Claude: Anthropic's terms don't allow using Claude's output to train other
-models; GPT-OSS is Apache-2.0. The key: GROQ_API_KEY (or --key, asked for hidden).
+models; GPT-OSS is Apache-2.0. The key: GROQ_API_KEY, or it's asked for (hidden); --ask-key always
+asks. It prints which key it used (masked: first and last 4 characters) and Groq's reason if refused.
 
 Every rewrite must keep the request's facts -- each number and time, am/pm, day words (tomorrow,
 lundi...), names, places, currencies -- and add no new numbers, so the tool call the example teaches
@@ -60,6 +61,22 @@ def real_key(value: str) -> str:
     placeholder = (not v or set(v) <= {".", "x", "X", "*"} or any(c in v for c in "<> ")
                    or v.lower() in ("your-key", "your_key", "key", "groq_api_key", "api_key"))
     return "" if placeholder else v
+
+def masked(key: str) -> str:
+    """Enough to tell keys apart, never enough to use: "gsk_…9f2c (56 characters)"."""
+    k = key or ""
+    return f"{k[:4]}\u2026{k[-4:]} ({len(k)} characters)" if len(k) > 10 else f"({len(k)} characters)"
+
+
+def provider_message(exc) -> str:
+    """The provider's own reason, from its error reply (never the key)."""
+    try:
+        body = exc.read().decode("utf-8", "replace")
+        data = json.loads(body)
+        return str((data.get("error") or {}).get("message") or data.get("detail") or body)[:200]
+    except Exception:
+        return getattr(exc, "reason", "") or "no reason given"
+
 
 def words(text: str) -> list:
     return re.findall(r"[\w'’]+", text.lower())
@@ -153,11 +170,17 @@ def main(argv=None, ask_fn=ask):
     ap.add_argument("--limit", type=int, default=0, help="only this many requests (to try it)")
     ap.add_argument("--csv", default=CSV_PATH)
     ap.add_argument("--key", default="")
+    ap.add_argument("--ask-key", action="store_true", help="ignore GROQ_API_KEY and ask for the key (hidden)")
     a = ap.parse_args(argv)
     if not os.path.exists(a.train):
         print("Run tools/gink_dataset/generate.py first.")
         return 1
-    key = real_key(a.key) or real_key(os.environ.get("GROQ_API_KEY", "")) or getpass.getpass("Groq API key (hidden): ").strip()
+    key, source = real_key(a.key), "--key"
+    if not key and not a.ask_key:
+        key, source = real_key(os.environ.get("GROQ_API_KEY", "")), "GROQ_API_KEY in this Terminal"
+    if not key:
+        key, source = getpass.getpass("Groq API key (hidden): ").strip(), "what you typed"
+    print(f"Using the key from {source}: {masked(key)}")
     rows = [json.loads(l) for l in open(a.train, encoding="utf-8") if l.strip()]
     todo, seen = [], set()
     for r in rows:
@@ -181,8 +204,13 @@ def main(argv=None, ask_fn=ask):
             try:
                 variants = ask_fn(a.base_url, key, a.model, text, lang, a.per_request)
             except urllib.error.HTTPError as exc:
-                if exc.code in (401, 403):
-                    print("  The API key was refused. Check it at console.groq.com -> API Keys, then run again.")
+                why = provider_message(exc)
+                if exc.code == 401:
+                    print(f"  Groq refused the key ({why}). Copy a working one -- the same one your Gink server uses "
+                          "(Render -> gink-server -> Environment -> GROQ_API_KEY) -- and run again with --ask-key.")
+                elif exc.code == 403:
+                    print(f"  Groq said no (HTTP 403: {why}). If the key is right, Groq may be refusing this "
+                          "network or country: try once more on another connection, or ask your server to do it.")
                 elif exc.code == 429:
                     print("  Groq says: too many requests for now. Wait a minute and run again: it continues where it stopped.")
                 else:
