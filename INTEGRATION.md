@@ -1790,3 +1790,19 @@ New services/live_info.py (all free, no API keys):
 - Voice off on the device: voice_bridge.blocked[0] wraps listen/speak (all platforms); main_screen drops voice
   events and switches "Hey Gink" off; bridge.js VOICE_EVENTS + wakeWanted() check W.voiceOff.
 - login_screen busy(true) clears an old error (it stayed under a valid retry).
+
+## 0.1.98: Gink's own model -- plan, scripts, server switch; safety classifier fix
+- BUG (0.1.96): _classify_risk defaulted to llama-3.1-8b-instant, retired by Groq 16 Aug 2026 (RETIRED_MODELS) --
+  every check would 404 -> "none" -> no notice ever. Now openai/gpt-oss-20b, reasoning_effort low, max_tokens 400
+  (GPT-OSS reasoning counts toward max_tokens), no response_format; category read with a regex. Failures logged +
+  _health["safety_check_failed"]. Direct Groq calls bypass _current_model's retirement mapping: check new ones.
+- tools/gink_model: train_unsloth.py (Unsloth bf16 LoRA -- Unsloth advises against QLoRA for Qwen3.5; apply_chat_template
+  with tools + enable_thinking=False when supported; arguments as objects; train_on_responses_only on ChatML markers;
+  TRL kwarg renames handled by accepts(); held-out score parses <tool_call>{json}</tool_call> with evaluate.same_args),
+  prepare_hosted.py (OpenAI chat JSONL + tools, args as strings; token estimate chars/3.6 or exact with a tokenizer),
+  gate.py (overall >= baseline + margin, no tool worse by > 15 points), Colab notebook, PLAN.md. evaluate.py --save.
+- Server: _own_model() from GINK_OWN_BASE/KEY/MODEL (+NAME, TESTERS). Decided right after gink_web is read: not
+  allowed -> 403 model_not_available; allowed -> asked=False (no auto-search swap). Own provider: model id swapped,
+  no "user" hash, no reasoning_effort, NO fallback (both upstream loops). /ai/openai/v1/models adds it per account
+  (_with_own_model on top of the shared cache). Teen safety / limits / parental controls apply unchanged.
+- Dataset today: 649 train / 34 eval; each example carries ~4.1k chars of tool definitions (~0.85M tokens/epoch).

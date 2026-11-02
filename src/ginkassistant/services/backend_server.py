@@ -1582,7 +1582,7 @@ async def ai_models(request: Request):
     if not _env("GROQ_API_KEY"):
         return _ai_error(503, "AI isn't set up on this server yet.", "not_configured")
     if _models_cache["data"] and time.time() - _models_cache["at"] < 600:
-        return _models_cache["data"]
+        return _with_own_model(request, _models_cache["data"])
     import httpx
     async with httpx.AsyncClient(timeout=20) as c:
         r = await c.get(f"{GROQ_BASE}/models", headers={"Authorization": f"Bearer {_env('GROQ_API_KEY')}"})
@@ -1592,7 +1592,18 @@ async def ai_models(request: Request):
     data["data"] = list(data.get("data", [])) + [{"id": "gink-search", "object": "model", "owned_by": "gink"}] + \
         [{"id": m, "object": "model", "owned_by": "anthropic"} for m in sorted(await _live_claude_models())]
     _models_cache.update(at=time.time(), data=data)
-    return _models_cache["data"]
+    return _with_own_model(request, _models_cache["data"])
+
+
+def _with_own_model(request: Request, data: dict) -> dict:
+    own = _own_model()
+    try:
+        email = _email_from_auth(request)
+    except HTTPException:
+        return data
+    if not _own_allowed(email, own):
+        return data
+    return dict(data, data=list(data.get("data", [])) + [{"id": own["name"], "object": "model", "owned_by": "gink"}])
 
 
 # ---- Groq retires models (llama-3.3-70b-versatile and llama-3.1-8b-instant on 16 Aug 2026).
@@ -1698,6 +1709,23 @@ GINK_MODEL_NAMES = {"gink-flake": "openai/gpt-oss-20b", "gink-crystal": "openai/
                     "gink-flurry": "claude-haiku-5-5", "gink-frost": "claude-sonnet-5-5",           # Pro (Claude)
                     "gink-glacier": "claude-opus-5-5", "gink-aurora": "claude-fable-5-1"}
 _claude_models = {"ids": set(), "at": 0.0}
+
+# ---- Gink's OWN model (tools/gink_model): a fine-tuned model served anywhere OpenAI-style (Fireworks,
+# Together, your own vLLM...). Off until GINK_OWN_BASE, GINK_OWN_KEY and GINK_OWN_MODEL are set.
+#   GINK_OWN_NAME     what apps and developers ask for (default "gink-1")
+#   GINK_OWN_TESTERS  comma-separated emails: only they see and can use it (testing before launch);
+#                     empty = everyone. It never falls back silently to another model.
+def _own_model() -> dict:
+    base, key, model = _env("GINK_OWN_BASE"), _env("GINK_OWN_KEY"), _env("GINK_OWN_MODEL")
+    if not (base and key and model):
+        return {}
+    testers = {e.strip().lower() for e in (_env("GINK_OWN_TESTERS") or "").split(",") if e.strip()}
+    return {"name": (_env("GINK_OWN_NAME") or "gink-1").lower(), "base": base.rstrip("/"), "key": key,
+            "model": model, "testers": testers}
+
+
+def _own_allowed(email: str, own: dict) -> bool:
+    return bool(own) and (not own["testers"] or email.lower() in own["testers"])
 
 
 async def _live_claude_models() -> set:
@@ -2395,6 +2423,12 @@ async def ai_chat(request: Request):
     turn = "" if getattr(request.state, "gink_api_email", None) else request.headers.get("x-gink-turn", "")
     # Claude (Anthropic) or Groq: decided once, here
     asked = body.pop("gink_web", None)
+    own = _own_model()                              # Gink's own model (tools/gink_model), when set up
+    if own and str(body["model"]).lower() == own["name"]:
+        if not _own_allowed(email, own):
+            return _ai_error(403, "That model isn't available yet.", "model_not_available")
+        if asked is not True:
+            asked = False                             # it answers itself: no automatic web search
     family = _family_rules(email)                   # age and parental controls (teens 13-17)
     controls = (family or {}).get("controls") or {}
     if family and family.get("blocked"):
@@ -2415,6 +2449,7 @@ async def ai_chat(request: Request):
         web = auto = True                         # Gink searches by itself when the answer needs the web
     if web:
         body["model"] = SEARCH_MODEL                                         # web search runs on GPT-OSS
+    wants_own = bool(own) and str(body["model"]).lower() == own["name"] and not web
     body["model"] = GINK_MODEL_NAMES.get(str(body["model"]).lower(), body["model"])   # "gink-frost" -> Claude Sonnet
     await _add_live_context(body)                    # today's date; live data (weather...) when asked
     if family:
@@ -2447,7 +2482,12 @@ async def ai_chat(request: Request):
                 return blocked
             web, body["model"] = False, chosen_model          # automatic search over today's allowance: answer anyway
     body["max_tokens"] = min(int(body.get("max_tokens") or MAX_TOKENS[plan]), MAX_TOKENS[plan])
-    if wants_claude:
+    if wants_own:                                        # Gink's own model, on its own provider
+        body["model"] = own["model"]
+        body.pop("reasoning_effort", None)
+        body.pop("user", None)
+        base, key = own["base"], own["key"]
+    elif wants_claude:
         body["model"] = await _current_claude_model(str(body["model"]))
         body.pop("reasoning_effort", None)
         body.pop("user", None)
@@ -2473,7 +2513,7 @@ async def ai_chat(request: Request):
             if upstream.status_code == 200:
                 break
             text = await upstream.aread()
-            nxt = [] if wants_claude or not _fallback_ok(upstream.status_code, text) else _next_models(body, tried)
+            nxt = [] if wants_claude or wants_own or not _fallback_ok(upstream.status_code, text) else _next_models(body, tried)
             if not nxt:
                 break
             print(f"[gink] AI provider refused: HTTP {upstream.status_code} model={body.get('model')} -> trying {nxt[0]}", flush=True)
@@ -2522,7 +2562,7 @@ async def ai_chat(request: Request):
         tried = [body["model"]]
         while True:
             r = await client.post(f"{base}/chat/completions", json=body, headers=headers)
-            nxt = [] if r.status_code == 200 or wants_claude or not _fallback_ok(r.status_code, r.text) else _next_models(body, tried)
+            nxt = [] if r.status_code == 200 or wants_claude or wants_own or not _fallback_ok(r.status_code, r.text) else _next_models(body, tried)
             if not nxt:
                 break
             print(f"[gink] AI provider refused: HTTP {r.status_code} model={body.get('model')} -> trying {nxt[0]}", flush=True)
@@ -3558,18 +3598,24 @@ SAFETY_PROMPT = (
 
 async def _classify_risk(text: str) -> str:
     import httpx
-    body = {"model": _env("GINK_SAFETY_MODEL") or "llama-3.1-8b-instant", "temperature": 0, "max_tokens": 40,
-            "response_format": {"type": "json_object"},
+    # GPT-OSS 20B on Groq (llama-3.1-8b-instant was retired 16 Aug 2026). It reasons first, and the
+    # reasoning counts toward max_tokens: low effort and room to answer, then read the JSON loosely.
+    body = {"model": _env("GINK_SAFETY_MODEL") or "openai/gpt-oss-20b", "temperature": 0, "max_tokens": 400,
+            "reasoning_effort": "low",
             "messages": [{"role": "system", "content": SAFETY_PROMPT}, {"role": "user", "content": text[:4000]}]}
     async with httpx.AsyncClient(timeout=20) as client:
         r = await client.post(f"{GROQ_BASE}/chat/completions", json=body,
                               headers={"Authorization": f"Bearer {_env('GROQ_API_KEY')}"})
     if r.status_code != 200:
+        print(f"[Gink] safety check: the AI provider answered HTTP {r.status_code}", flush=True)
+        _health["safety_check_failed"] = _health.get("safety_check_failed", 0) + 1
         return "none"
     try:
-        return str(_json.loads(r.json()["choices"][0]["message"]["content"]).get("category") or "none")
+        content = str(r.json()["choices"][0]["message"].get("content") or "")
     except Exception:
         return "none"
+    m = re.search(r'"category"\s*:\s*"([a-z_]+)"', content)
+    return m.group(1) if m else "none"
 
 
 def _notify_parent(parent: str, teen: str, kind: str) -> None:

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.98 (November 2026)
+
+- Fixed: parental safety notices could never be sent -- the check used an AI model that Groq retired
+  in August. It now uses one Groq still offers
+- For the owner: the plan and tools for Gink's own AI model (tools/gink_model): a free first training
+  run in Google Colab, training a bigger one on a hosted service, and a test it must pass before launch.
+  The server can already serve it to chosen testers only
+
 ## 0.1.97 (November 2026)
 
 - Settings > Parental controls: parents link a teen by email or phone, then set quiet hours, a

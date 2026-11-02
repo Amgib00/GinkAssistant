@@ -33,7 +33,11 @@ python tools/gink_dataset/evaluate.py --base-url https://gink-server.onrender.co
 - Aim for a few thousand examples before the first real training run, with plenty of
   variety in phrasing.
 
-## Training (when the data is ready)
+## Training
+The plan and the scripts are in `tools/gink_model/` (start with `PLAN.md`): a free Colab pilot, hosted
+training for the bigger model, and a ship / not-yet gate. In short:
+
+### The short version
 1. Rent a GPU (Google Colab, RunPod, Lambda...) and fine-tune a small open model with **LoRA**
    (Unsloth, TRL or Axolotl all read this JSONL "messages" format).
 2. Measure it with `evaluate.py` against the **baseline** (today's `gink-crystal`). Ship it only

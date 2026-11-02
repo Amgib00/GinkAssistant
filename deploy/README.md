@@ -236,6 +236,14 @@ Africa's Talking adds countries, list them all in `GINK_AT_COUNTRIES` (calling c
 
 Check it: the owner dashboard shows the provider and this month's count; sign in with your own number.
 
+## Gink's own model (optional)
+
+When you have a fine-tuned model served somewhere OpenAI-style (see `tools/gink_model/PLAN.md`), set:
+`GINK_OWN_BASE` (its address, ending in /v1), `GINK_OWN_KEY`, `GINK_OWN_MODEL` (the provider's model id),
+optionally `GINK_OWN_NAME` (what people ask for; default `gink-1`) and `GINK_OWN_TESTERS` (comma-separated
+emails: only they see and can use it while you test; leave empty to open it to everyone). If its provider
+fails, Gink says so rather than quietly answering with another model.
+
 ## Song recognition on phones ("Identify a song")
 
 The Android app records about 8 seconds and sends it to `POST /media/song`; the server asks Shazam

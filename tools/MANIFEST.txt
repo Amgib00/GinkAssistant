@@ -131,6 +131,9 @@ openspec/changes/add-connected-apps/design.md
 openspec/changes/add-connected-apps/proposal.md
 openspec/changes/add-connected-apps/specs/connected-apps/spec.md
 openspec/changes/add-connected-apps/tasks.md
+openspec/changes/add-own-model/proposal.md
+openspec/changes/add-own-model/specs/own-model/spec.md
+openspec/changes/add-own-model/tasks.md
 openspec/changes/add-parental-controls/proposal.md
 openspec/changes/add-parental-controls/specs/parental-controls/spec.md
 openspec/changes/add-parental-controls/tasks.md
@@ -299,6 +302,7 @@ tests/test_genie.py
 tests/test_genie_github.py
 tests/test_gink_cloud.py
 tests/test_gink_dataset.py
+tests/test_gink_model_tools.py
 tests/test_ginkgenie_app.py
 tests/test_hey_gink.py
 tests/test_ios_startup.py
@@ -312,6 +316,7 @@ tests/test_model_upgrade.py
 tests/test_natural_voice.py
 tests/test_no_dead_buttons.py
 tests/test_offline_song_engine.py
+tests/test_own_model.py
 tests/test_owner_dashboard.py
 tests/test_owner_dashboard_live.py
 tests/test_page_events.py
@@ -367,6 +372,11 @@ tools/gink_dataset/languages/krio.csv
 tools/gink_dataset/languages/pidgin.csv
 tools/gink_dataset/languages/wolof.csv
 tools/gink_dataset/validate.py
+tools/gink_model/Gink_finetune_colab.ipynb
+tools/gink_model/PLAN.md
+tools/gink_model/gate.py
+tools/gink_model/prepare_hosted.py
+tools/gink_model/train_unsloth.py
 tools/grant_pro.py
 tools/make_genie_icons.py
 tools/make_icons.py

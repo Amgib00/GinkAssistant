@@ -79,6 +79,8 @@ def evaluate(base_url, key, model, rows, tools, out=print):
     out(f"\n{model}: {score}/{len(rows)} correct ({100 * score / max(1, len(rows)):.0f}%)")
     for name, (good, n) in sorted(per_tool.items()):
         out(f"  {name:18} {good}/{n}")
+    evaluate.last = {"model": model, "score": score / max(1, len(rows)), "correct": score, "total": len(rows),
+                     "per_tool": per_tool}                  # for --save (tools/gink_model/gate.py)
     return score / max(1, len(rows))
 
 
@@ -88,12 +90,17 @@ def main():
     ap.add_argument("--model", required=True)
     ap.add_argument("--file", default=os.path.join(HERE, "out", "eval.jsonl"))
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--save", default="", help="write the results as JSON (for tools/gink_model/gate.py)")
     a = ap.parse_args()
     key = os.environ.get("GINK_EVAL_KEY") or getpass.getpass("API key (hidden): ")
     rows = [json.loads(l) for l in open(a.file, encoding="utf-8") if l.strip()]
     rows = rows[:a.limit] if a.limit else rows
     tools = json.load(open(os.path.join(os.path.dirname(a.file), "tools.json"), encoding="utf-8"))
     evaluate(a.base_url, key, a.model, rows, tools)
+    if a.save:
+        with open(a.save, "w", encoding="utf-8") as f:
+            json.dump(evaluate.last, f, indent=2)
+        print(f"Saved {a.save}")
 
 
 if __name__ == "__main__":

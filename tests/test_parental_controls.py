@@ -219,11 +219,14 @@ def test_classifier_request(srv, monkeypatch):
         async def __aexit__(self, *a): return False
         async def post(self, url, json=None, headers=None):
             sent.update(url=url, body=json)
-            return httpx.Response(200, json={"choices": [{"message": {"content": '{"category": "harm_from_adult"}'}}]})
+            return httpx.Response(200, json={"choices": [{"message": {"content": 'Sure.\n{"category": "harm_from_adult"}'}}]})
     monkeypatch.setattr(httpx, "AsyncClient", Client)
+    monkeypatch.delenv("GINK_SAFETY_MODEL", raising=False)
     assert asyncio.run(b._classify_risk("a man online wants me to send photos and keep it secret")) == "harm_from_adult"
-    assert sent["body"]["temperature"] == 0 and sent["body"]["response_format"] == {"type": "json_object"}
+    assert sent["body"]["temperature"] == 0 and sent["body"]["model"] == "openai/gpt-oss-20b"   # not a retired model
+    assert sent["body"]["reasoning_effort"] == "low" and sent["body"]["max_tokens"] >= 300           # room after reasoning
     assert sent["body"]["messages"][0]["content"] == b.SAFETY_PROMPT
+    assert sent["body"]["model"] not in b.RETIRED_MODELS
 
 
 def test_deleting_an_account_removes_family_data(srv):
