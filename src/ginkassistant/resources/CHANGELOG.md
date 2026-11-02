@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.103 (November 2026)
+
+- Gink Genie's small icons (taskbar, Finder lists, iPhone Settings) are drawn bolder and larger, so
+  the lamp stays clear at 16-32 pixels
+
 ## 0.1.102 (November 2026)
 
 - Parental controls now cover every way Gink makes something: quiet hours also pause making

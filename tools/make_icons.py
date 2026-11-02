@@ -123,10 +123,17 @@ def small_art(size):
     return im.resize((size, size), Image.LANCZOS)
 
 
+SMALL_ART = None                # another app's tiny art (tools/make_genie_icons.py sets its lamp)
+
+
+def tiny(size):
+    return (SMALL_ART or small_art)(size)
+
+
 def small_rounded(size, pad=0.0):
-    """small_art as a rounded square on transparency (Linux, Windows, macOS tiny sizes)."""
+    """The tiny art as a rounded square on transparency (Linux, Windows, macOS tiny sizes)."""
     body = max(1, round(size * (1 - 2 * pad)))
-    art = small_art(body).convert("RGBA")
+    art = tiny(body).convert("RGBA")
     art.putalpha(rounded_mask(body))
     canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     canvas.paste(art, ((size - body) // 2,) * 2)
@@ -156,7 +163,7 @@ def main():
     for s in (16, 32, 64, 128, 256, 512):                                   # Linux
         made.append(save(small_rounded(s, pad=0.04) if s <= SMALL else rounded(s, pad=0.04), f"-{s}.png"))
     for s in (20, 29, 40, 58, 60, 76, 80, 87, 120, 152, 167, 180, 1024):     # iOS: opaque squares
-        made.append(save(small_art(s) if s <= SMALL else base_art(1024).resize((s, s), Image.LANCZOS), f"-{s}.png"))
+        made.append(save(tiny(s) if s <= SMALL else base_art(1024).resize((s, s), Image.LANCZOS), f"-{s}.png"))
     for s in (640, 1280, 1920):                                             # iOS launch images: icon on the splash colour
         made.append(save(rounded(s, pad=0.2), f"-{s}.png"))
     for s in (48, 72, 96, 144, 192):                                        # Android

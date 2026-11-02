@@ -1858,3 +1858,12 @@ New services/live_info.py (all free, no API keys):
   on the person's own words (prompt / instruction, not the current HTML).
 - tests/test_family_everywhere.py: AI_FEATURES lists every AI endpoint -- a NEW AI endpoint belongs there
   (under-13 refused on all; quiet hours on all that make something).
+
+## 0.1.103: Gink Genie's tiny icons
+- Latent bug from 0.1.94: make_genie_icons.py reuses make_icons.main(), whose <=32 px sizes became Gink's snowflake
+  (small_art) -- the next Genie icon run would have put snowflakes on Genie. make_icons.SMALL_ART hook (tiny());
+  make_genie_icons.small_lamp(): the same lamp SVG, stroke 2.0-2.4, 84% of the tile, drawn 8x and scaled down.
+  Regenerated: only ginkgenie-16/20/29/32, .icns, .ico changed (Gink's icons byte-identical); Genie's .ico also
+  gets all seven sizes now.
+- test_small_icons.same(): was ImageChops.difference(...).getbbox() -- on RGBA that only looks at ALPHA, so colour
+  differences passed. Now exact tobytes(); every icon check still passes.

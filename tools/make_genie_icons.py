@@ -1,7 +1,7 @@
 """
 Gink Genie's app icons (pyproject: icon = "icons/ginkgenie"): the lamp line icon (the same drawing as
 the sidebar's) in Gink's lime on Gink's dark tile -- like Gink's own lime snowflake -- styled exactly
-like Gink's icons by tools/make_icons.py.
+like Gink's icons by tools/make_icons.py. Tiny sizes (32 px and under) get the lamp with a bolder line.
     python tools/make_genie_icons.py          (needs: pip install cairosvg)
 """
 import io
@@ -30,7 +30,24 @@ def square_source(size=1024):
     return SQUARE
 
 
+def small_lamp(size):
+    """Tiny sizes (32 px and under): the same lamp, drawn with a bolder line for the pixel grid
+    (make_icons.py would otherwise use Gink's snowflake there)."""
+    import cairosvg
+    stroke = 2.4 if size <= 20 else 2.0
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{LIME}" '
+           f'stroke-width="{stroke}" stroke-linecap="round" stroke-linejoin="round" color="{LIME}">{LAMP_PATHS}</svg>')
+    big = size * 8
+    art = Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=int(big * 0.84),
+                                                 output_height=int(big * 0.84)))).convert("RGBA")
+    canvas = Image.new("RGBA", (big, big), m.BG + (255,))
+    off = (big - art.width) // 2
+    canvas.alpha_composite(art, (off, off - int(big * 0.02)))
+    return canvas.convert("RGB").resize((size, size), Image.LANCZOS)
+
+
 def main():
+    m.SMALL_ART = small_lamp
     m.SRC = square_source()
     m.CROP = (0, 0, 1024, 1024)
     m.OUT = os.path.join(ROOT, "icons", "ginkgenie")
