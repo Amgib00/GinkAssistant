@@ -1674,6 +1674,13 @@ class WebChatFeed:
         """'listening' | 'thinking' | 'speaking' | 'off' (ui/wake_ui.py)."""
         await self._js(f"wakeGlow({json.dumps(state)})")
 
+    async def ask_birth_year(self, message: str = "", blocked: bool = False):
+        """The one-time birth-year question (ui/settings_page.py askBirthYear)."""
+        await self._js(f"askBirthYear({json.dumps(message or '')}, {'true' if blocked else 'false'})")
+
+    async def birth_year_done(self):
+        await self._js("birthYearDone()")
+
     async def wake_chip(self, state: str, label: str = "", detail: str = ""):
         """The "Hey Gink" status chip in the composer (ui/wake_ui.py, services/wake_status.py)."""
         await self._js(f"wakeChip({json.dumps(state)}, {json.dumps(label or '')}, {json.dumps(detail or '')})")

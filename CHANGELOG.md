@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.97 (November 2026)
+
+- Settings > Parental controls: parents link a teen by email or phone, then set quiet hours, a
+  daily message limit, and switch voice, images, web search, websites and connected apps on or off.
+  Teens see the invitation (with what it means, including safety notices) and can accept, decline
+  or unlink. Parents see safety notices; teens see when one was sent
+- Signing up asks the year you were born (Gink is for 13+); accounts without one are asked once
+- When a parent turns voice off, the teen's device stops listening and speaking too
+- Sign-in screens: an old error disappears when you try again
+
 ## 0.1.96 (November 2026)
 
 - Gink is for people 13 and older. Signing up can now include your birth year (the sign-up screens

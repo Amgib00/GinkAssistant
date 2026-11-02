@@ -79,6 +79,8 @@
       <h1>Create your account</h1><p class="sub">Free to start. It takes a minute.</p>
       <label for="su-name">Name</label><input id="su-name" type="text" autocomplete="name" maxlength="80" required>
       <label for="su-email">Email</label><input id="su-email" type="email" autocomplete="email" required>
+      <label for="su-year">Year you were born</label><input id="su-year" type="text" inputmode="numeric" maxlength="4" autocomplete="bday-year" placeholder="e.g. 2001" aria-describedby="su-year-note" required>
+      <p class="sub" id="su-year-note" style="margin:4px 0 0;font-size:13px">Gink is for people 13 and older.</p>
       <label for="su-pass">Password</label>
       <div class="pw"><input id="su-pass" type="password" autocomplete="new-password" required aria-describedby="su-rules"><button type="button" data-show="su-pass">Show</button></div>
       <ul class="rules" id="su-rules"><li data-rule="len">At least 8 characters</li><li data-rule="mix">Letters and numbers or symbols</li></ul>
@@ -115,6 +117,7 @@
     <form id="v-name" novalidate hidden>
       <h1>Welcome to Gink</h1><p class="sub">One last thing: what should we call you?</p>
       <label for="nm-name">Name</label><input id="nm-name" type="text" autocomplete="name" maxlength="80" required>
+      <label for="nm-year">Year you were born</label><input id="nm-year" type="text" inputmode="numeric" maxlength="4" autocomplete="bday-year" placeholder="e.g. 2001" required>
       <div class="row" style="justify-content:flex-start"><label><input type="checkbox" id="nm-agree"> I agree to the <a href="https://amgib00.github.io/GinkAssistant/terms.html" target="_blank" rel="noopener">Terms</a> and <a href="https://amgib00.github.io/GinkAssistant/privacy.html" target="_blank" rel="noopener">Privacy Policy</a></label></div>
       <button class="go" type="submit">Create my account</button>
     </form>
@@ -291,8 +294,15 @@
     var tick = function () { b.disabled = S.cooldown > 0; b.textContent = S.cooldown > 0 ? "Resend code in " + S.cooldown + "s" : "Resend code"; S.cooldown--; if (S.cooldown < -1) clearInterval(S.timer); };
     tick(); S.timer = setInterval(tick, 1000);
   }
+  function yearProblem(y) {                         // Gink is for 13+ (the server checks again)
+    var n = parseInt(y, 10), now = new Date().getFullYear();
+    if (!/^\d{4}$/.test(String(y).trim()) || n < 1900 || n > now) return "Enter the year you were born, like 2001.";
+    if (now - n < 13) return "Gink is for people 13 and older.";
+    return "";
+  }
   function sendCode(mode, email) {
-    if (mode === "verify") return post("/auth/register", { name: $("su-name").value.trim(), email: email, password: $("su-pass").value });
+    if (mode === "verify") return post("/auth/register", { name: $("su-name").value.trim(), email: email, password: $("su-pass").value,
+                                                           birth_year: parseInt($("su-year").value, 10) });
     if (mode === "reset") return post("/auth/forgot", { email: email });
     if (mode === "phone") return post("/auth/phone/send", { phone: email });
     return post("/send-otp", null, { email: email });
@@ -317,6 +327,7 @@
     e.preventDefault(); var f = this, email = $("su-email").value.trim();
     if (!$("su-name").value.trim()) return say("Enter your name.");
     if (!validEmail(email)) return say("Enter a valid email address.");
+    if (yearProblem($("su-year").value)) return say(yearProblem($("su-year").value));
     if (!rules("su-pass", "su-rules")) return say("Choose a password that meets both rules.");
     if (!$("su-agree").checked) return say("Please agree to the Terms and Privacy Policy to continue.");
     busy(f, true); say("");
@@ -370,9 +381,11 @@
   $("v-name").onsubmit = function (e) {
     e.preventDefault(); var f = this;
     if (!$("nm-name").value.trim()) return say("Enter your name.");
+    if (yearProblem($("nm-year").value)) return say(yearProblem($("nm-year").value));
     if (!$("nm-agree").checked) return say("Please agree to the Terms and Privacy Policy to continue.");
     busy(f, true); say("");
-    post("/auth/phone/verify", { phone: S.email, code: S.phoneCode, name: $("nm-name").value.trim() }).then(finish)
+    post("/auth/phone/verify", { phone: S.email, code: S.phoneCode, name: $("nm-name").value.trim(),
+                                 birth_year: parseInt($("nm-year").value, 10) }).then(finish)
       .catch(function (err) { say(err.message); }).then(function () { busy(f, false); });
   };
   fetch("/auth/phone/status").then(function (r) { return r.json(); }).then(function (j) { $("li-phone").hidden = !j.enabled; }).catch(function () {});

@@ -270,6 +270,7 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
       <p class="sub">It takes less than a minute</p>
       <div class="field"><input id="s-name" placeholder="Your name" autocomplete="name"></div>
       <div class="field"><input id="s-email" type="email" placeholder="Email address" autocomplete="email"></div>
+      <div class="field"><input id="s-year" type="text" inputmode="numeric" maxlength="4" placeholder="Year you were born (Gink is for 13+)" autocomplete="bday-year" aria-label="Year you were born"></div>
       <div class="field pw"><input id="s-pass" type="password" placeholder="Password (8+ characters)" autocomplete="new-password">
         <button class="eye" data-eye="s-pass" title="Show password">__EYE__</button></div>
       <div class="meter"><i id="meter"></i></div><div class="meter-label" id="meter-label"></div>
@@ -361,6 +362,7 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
       <h1>Welcome to Gink</h1>
       <p class="sub">What should Gink call you?</p>
       <div class="field"><input id="n-name" type="text" placeholder="Your name" autocomplete="name"></div>
+      <div class="field"><input id="n-year" type="text" inputmode="numeric" maxlength="4" placeholder="Year you were born (Gink is for 13+)" autocomplete="bday-year" aria-label="Year you were born"></div>
       <div class="msg" id="m-name"></div>
       <button class="btn" id="b-name" data-primary><span class="label">Create account</span><span class="dots"><span></span><span></span><span></span></span></button>
     </div>
@@ -441,6 +443,7 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
   }
   function info(text) { var m = msgEl(); if (m) { m.textContent = text; m.className = 'msg ok'; } }
   function busy(on) {
+    if (on) { var m = msgEl(); if (m && /err/.test(m.className)) { m.textContent = ''; m.className = 'msg'; } }   // a new try: the old error goes
     document.body.classList.toggle('busy', on);
     document.querySelectorAll('.btn[data-primary]').forEach(function (b) { b.classList.toggle('loading', on); b.disabled = on; });
   }
@@ -455,6 +458,12 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
   }
   function setServer(url) { $('srv').value = url || ''; }
   function setPhoneEnabled(on) { $('b-phone-open').hidden = !on; }
+  function yearProblem(y) {                     /* Gink is for 13+; the server checks again */
+    var n = parseInt(y, 10), now = new Date().getFullYear();
+    if (!/^\d{4}$/.test(String(y).trim()) || n < 1900 || n > now) return 'Enter the year you were born, like 2001.';
+    if (now - n < 13) return 'Gink is for people 13 and older.';
+    return '';
+  }
   function phoneOk(p) { var d = p.replace(/\D/g, ''); return /^(\+|00)/.test(p.trim()) && d.length >= 8 && d.length <= 17; }
 
   // 6 code boxes: auto-advance, backspace, paste a whole code
@@ -517,8 +526,9 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
       if (!emailOk(e)) return error('Enter a valid email address.');
       if (p.length < 8) return error('Use at least 8 characters for your password.');
       if (p !== $('s-pass2').value) return error('The passwords don\u2019t match.');
+      var yp = yearProblem($('s-year').value); if (yp) return error(yp);
       if (!$('s-terms').checked) return error('Please accept the Terms & Privacy Policy.');
-      busy(true); ginkEmit('signup', {name: n, email: e, password: p, remember: true});
+      busy(true); ginkEmit('signup', {name: n, email: e, password: p, remember: true, birth_year: parseInt($('s-year').value, 10)});
     } else if (current === 'twofa') {
       var tc = recoveryMode ? $('tf-recovery').value.trim() : codeOf($('codes-twofa').querySelectorAll('input'));
       if (!recoveryMode && tc.length !== 6) return error('Enter all 6 digits.');
@@ -546,7 +556,8 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
       busy(true); ginkEmit('phone_send', {phone: ph, remember: $('p-remember').checked});
     } else if (current === 'name') {
       var nm = $('n-name').value.trim(); if (!nm) return error('Tell us your name.');
-      busy(true); ginkEmit('phone_name', {name: nm});
+      var ny = yearProblem($('n-year').value); if (ny) return error(ny);
+      busy(true); ginkEmit('phone_name', {name: nm, birth_year: parseInt($('n-year').value, 10)});
     } else if (current === 'server') {
       busy(true); ginkEmit('server_save', {url: $('srv').value.trim()});
     }
@@ -720,7 +731,8 @@ class LoginController:
                 await self.call("busy", False)
                 await self.call("show", "verify", {"email": v["phone"], "phone": True})
             elif kind == "phone_name" and self.pending.get("mode") == "phone" and self.pending.get("code"):
-                session = await self.api.phone_signin_verify(self.pending["email"], self.pending["code"], v["name"])
+                session = await self.api.phone_signin_verify(self.pending["email"], self.pending["code"], v["name"],
+                                                             v.get("birth_year"))
                 if session is None:
                     raise ApiError("Something was missing \u2014 please try again.")
                 self.finish(session, self.pending["remember"])
@@ -728,7 +740,7 @@ class LoginController:
                 session = await self.api.login(v["email"], v["password"])
                 self.finish(session, bool(v.get("remember", True)))
             elif kind == "signup":
-                await self.api.register(v["name"], v["email"], v["password"])
+                await self.api.register(v["name"], v["email"], v["password"], v.get("birth_year"))
                 self.pending.update(email=v["email"], mode="signup", remember=True,
                                     name=v["name"], password=v["password"])
                 await self.call("busy", False)

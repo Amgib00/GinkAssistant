@@ -154,14 +154,38 @@ class ApiClient:
     async def phone_signin_send(self, phone: str) -> None:
         await self._post("/auth/phone/send", {"phone": phone}, "Couldn't send the code. Please try again.")
 
-    async def phone_signin_verify(self, phone: str, code: str, name: str = ""):
+    async def phone_signin_verify(self, phone: str, code: str, name: str = "", birth_year=None):
         """-> Session, or None when the code is right but this number is new (then ask for a name and
         call again with it). Raises TwoFactorRequired when two-step verification is on."""
-        data = await self._post("/auth/phone/verify", {"phone": phone, "code": code, "name": name},
-                                "That code didn't work. Please try again.")
+        body = {"phone": phone, "code": code, "name": name}
+        if birth_year:
+            body["birth_year"] = int(birth_year)
+        data = await self._post("/auth/phone/verify", body, "That code didn't work. Please try again.")
         if data.get("need_name"):
             return None
         return self._session(data, data.get("email", ""))
+
+    # -- age and parental controls (server: /account/age, /family) ----------------
+    async def age(self, token: str) -> dict:
+        return await self._authed("GET", "/account/age", token)
+
+    async def set_age(self, token: str, birth_year) -> dict:
+        return await self._authed("POST", "/account/age", token, json={"birth_year": birth_year})
+
+    async def family(self, token: str) -> dict:
+        return await self._authed("GET", "/family", token)
+
+    async def family_invite(self, token: str, teen: str) -> dict:
+        return await self._authed("POST", "/family/invite", token, json={"teen": teen})
+
+    async def family_respond(self, token: str, accept: bool) -> dict:
+        return await self._authed("POST", "/family/respond", token, json={"accept": bool(accept)})
+
+    async def family_unlink(self, token: str, teen: str = "") -> dict:
+        return await self._authed("POST", "/family/unlink", token, json={"teen": teen} if teen else {})
+
+    async def family_controls(self, token: str, teen: str, controls: dict) -> dict:
+        return await self._authed("PUT", "/family/controls", token, json={"teen": teen, "controls": controls})
 
     async def login(self, email: str, password: str) -> Session:
         data = await self._post("/auth/login", {"email": email, "password": password}, "Couldn't log in.")
@@ -184,9 +208,11 @@ class ApiClient:
     async def twofa_disable(self, token: str, code: str) -> dict:
         return await self._authed("POST", "/account/2fa/disable", token, json={"code": code})
 
-    async def register(self, name: str, email: str, password: str) -> None:
-        await self._post("/auth/register", {"name": name, "email": email, "password": password},
-                         "Couldn't create the account.")
+    async def register(self, name: str, email: str, password: str, birth_year=None) -> None:
+        body = {"name": name, "email": email, "password": password}
+        if birth_year:
+            body["birth_year"] = int(birth_year)       # Gink is for 13+ (the server checks)
+        await self._post("/auth/register", body, "Couldn't create the account.")
 
     async def verify_register(self, email: str, code: str) -> Session:
         data = await self._post("/auth/register/verify", {"email": email, "code": code}, "Invalid code.")

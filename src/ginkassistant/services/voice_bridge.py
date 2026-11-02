@@ -588,3 +588,22 @@ else:
                 proc.terminate()               # macOS `say`
             except Exception:
                 pass
+
+# ---- Parental controls: a parent can turn voice off for a linked teen. The server then refuses its
+# voice services; this stops the device's own listening and speaking too (Android recognizer, desktop
+# microphone, Edge / system voices). ui/main_screen.py sets blocked[0] to the reason ("" = allowed).
+blocked = [""]
+_listen_any, _speak_any = listen, speak
+
+
+async def listen(on_amplitude: Optional[Callable[[float], None]] = None) -> str:   # noqa: F811
+    if blocked[0]:
+        raise VoiceUnavailable(blocked[0])
+    return await _listen_any(on_amplitude)
+
+
+async def speak(text: str, voice_key: str = "Female (Jenny)",                         # noqa: F811
+                on_amplitude: Optional[Callable[[float], None]] = None) -> None:
+    if blocked[0]:
+        return
+    return await _speak_any(text, voice_key, on_amplitude)

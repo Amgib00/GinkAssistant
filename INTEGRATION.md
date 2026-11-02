@@ -1774,3 +1774,19 @@ New services/live_info.py (all free, no API keys):
   (one per kind per teen per 24 h, dedup per message hash); abuse_at_home and none never. Email + /family list;
   the teen's /family shows notices_about_me. Teen unlink -> "unlinked" notice + email.
 - tests/test_parental_controls.py (14). Also: test_page_events' slow-phone wait made more patient (flaky under load).
+
+## 0.1.97: parental controls -- the screens
+- Settings panel 'family' (settings_page.familySections): no birth year -> the year input; teen -> invitation
+  (FAM_NOTICES_TEEN explains notices BEFORE accepting) / linked view (my_controls, notices_about_me, unlink) / not
+  linked; adult -> invite + one card per teen (switches data-fam, time data-famtime, number data-famnum ->
+  settings_action family_set JSON {teen,key,value,tz}; tz = the parent's browser/device zone) + notices.
+  /family now also returns my_controls for a linked teen. Actions: family_birth_year/_invite/_accept/_decline/
+  _unlink/_set in settings_controller (_family_call) and bridge.js (familyCall).
+- askBirthYear(message, blocked) / birthYearDone(): own overlay (#aby-back), not #modal-back (its backdrop click
+  runs closeDelete and would leave the delete dialog replaced). main_screen.check_family() on start + ~10 min;
+  bridge.js checkFamily() in start().
+- Sign-up year: app login (s-year, n-year) and web auth (su-year, nm-year) with the same yearProblem() check;
+  ApiClient.register/phone_signin_verify(birth_year).
+- Voice off on the device: voice_bridge.blocked[0] wraps listen/speak (all platforms); main_screen drops voice
+  events and switches "Hey Gink" off; bridge.js VOICE_EVENTS + wakeWanted() check W.voiceOff.
+- login_screen busy(true) clears an old error (it stayed under a valid retry).

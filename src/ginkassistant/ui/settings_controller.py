@@ -208,6 +208,11 @@ class SettingsController:
                 extra_info["twofa"] = dict(status, **self._twofa)
             except Exception:
                 extra_info["twofa"] = dict(self._twofa)
+        if token and panel == "family":                       # Parental controls
+            try:
+                extra_info["family"] = await asyncio.wait_for(api.family(token), timeout=8)
+            except Exception:
+                extra_info["family_error"] = "Parental controls aren't available right now (offline, or the server is older)."
         if token and panel == "connected":                    # Connected Apps
             try:
                 found = await asyncio.wait_for(api.connected_list(token), timeout=8)
@@ -512,6 +517,46 @@ class SettingsController:
                 return await self.web.settings_toast(str(exc))
             await self.web.settings_toast("Phone number removed.")
             await self.refresh("account")
+
+    # ---- Settings > Parental controls (server: /family) ----
+    async def _family_call(self, what, done: str = ""):
+        token = getattr(self.app, "session_token", None)
+        if not token:
+            return
+        try:
+            await what(ApiClient(self.app.state.base_url), token)
+        except ApiError as exc:
+            return await self.web.settings_toast(str(exc))
+        if done:
+            await self.web.settings_toast(done)
+        await self.refresh("family")
+
+    async def _a_family_birth_year(self, year):
+        await self._family_call(lambda api, t: api.set_age(t, str(year or "").strip()), "Saved.")
+
+    async def _a_family_invite(self, teen):
+        await self._family_call(lambda api, t: api.family_invite(t, str(teen or "").strip()),
+                                "Invitation sent. It applies once they accept.")
+
+    async def _a_family_accept(self, _):
+        await self._family_call(lambda api, t: api.family_respond(t, True), "Linked.")
+
+    async def _a_family_decline(self, _):
+        await self._family_call(lambda api, t: api.family_respond(t, False), "Declined.")
+
+    async def _a_family_unlink(self, teen):
+        await self._family_call(lambda api, t: api.family_unlink(t, str(teen or "")), "Unlinked.")
+
+    async def _a_family_set(self, raw):
+        import json as _json
+        try:
+            v = _json.loads(raw) if isinstance(raw, str) else dict(raw or {})
+        except Exception:
+            return
+        controls = {v.get("key"): v.get("value")}
+        if str(v.get("key", "")).startswith("quiet") and v.get("tz"):
+            controls["tz"] = v["tz"]                        # quiet hours in the parent's time zone
+        await self._family_call(lambda api, t: api.family_controls(t, str(v.get("teen") or ""), controls), "Saved.")
 
     async def _a_passkey_remove(self, pid):
         token = getattr(self.app, "session_token", None)

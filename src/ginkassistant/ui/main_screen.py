@@ -1133,6 +1133,8 @@ def build_main_screen(app: toga.App, email: str):
             await voice_bridge.speak(value, voice_key=selected_voice["value"])
         elif kind == "wake_chip":                      # the "Hey Gink" chip: its settings
             open_settings(panel="voice")
+        elif kind == "birth_year" and value:            # the one-time question (accounts without one)
+            await answer_birth_year(str(value))
         elif kind == "new_chat":
             on_select_session(None)
         elif kind == "temporary":
@@ -1511,7 +1513,8 @@ def build_main_screen(app: toga.App, email: str):
         """Start / stop listening to match Settings (downloads the offline model once)."""
         lst = wake["listener"]
         sync_background()
-        if not prefs.load(app).get("wake_enabled") or (_is_mobile() and not _is_android()):
+        if (not prefs.load(app).get("wake_enabled") or (_is_mobile() and not _is_android())
+                or voice_bridge.blocked[0]):              # a parent turned voice off
             if lst is not None:
                 lst.stop()
                 wake["listener"] = None
@@ -1659,10 +1662,61 @@ def build_main_screen(app: toga.App, email: str):
         pause_wake() if on else resume_wake()
     voice_bridge.on_speaking = _on_speaking
 
+    VOICE_EVENTS = {"voice_toggle", "voice_start", "dictate", "read_aloud", "voice_preview"}
+
+    async def check_family():
+        """Age and parental controls: the one-time birth-year question; and if a parent turned voice
+        off, this device doesn't listen or speak either (the server refuses its voice services)."""
+        token = getattr(app, "session_token", None)
+        if not token:
+            return
+        from ..services.api_client import ApiClient
+        api = ApiClient(app.state.base_url)
+        try:
+            age = await asyncio.wait_for(api.age(token), timeout=10)
+        except Exception:
+            return                                     # offline or an older server: ask another time
+        if age.get("blocked"):
+            return await web_chat.ask_birth_year("Gink is for people 13 and older.", blocked=True)
+        if age.get("needed"):
+            await web_chat.ask_birth_year()
+        try:
+            fam = await asyncio.wait_for(api.family(token), timeout=10)
+        except Exception:
+            return
+        off = (fam.get("my_controls") or {}).get("voice") is False
+        before = voice_bridge.blocked[0]
+        voice_bridge.blocked[0] = "Voice is turned off in your parental controls." if off else ""
+        if off and not before:
+            voice_bridge.stop_speaking()
+            if audio_engine._is_listening:
+                audio_engine.stop_listening()
+                await web_chat.set_voice_on(False)
+        if bool(before) != off:
+            await configure_wake()
+
+    async def answer_birth_year(year: str):
+        from ..services.api_client import ApiClient, ApiError
+        token = getattr(app, "session_token", None)
+        if not token:
+            return
+        try:
+            await ApiClient(app.state.base_url).set_age(token, year)
+        except ApiError as exc:
+            msg = str(exc)
+            return await web_chat.ask_birth_year(msg, blocked="13 and older" in msg)
+        except Exception:
+            return await web_chat.ask_birth_year("Couldn\u2019t save that \u2014 check your connection and try again.")
+        await web_chat.birth_year_done()
+        await check_family()
+
     async def safe_handle(event: dict):
         """Any unexpected error from one action is reported in the status
         line instead of disappearing as a background-task traceback."""
         try:
+            if event.get("type") in VOICE_EVENTS and voice_bridge.blocked[0]:
+                set_voice_status(voice_bridge.blocked[0])       # a parent turned voice off
+                return
             await handle_composer_event(event)
         except asyncio.CancelledError:
             set_voice_status("Stopped")         # Stop ring -- not an error
@@ -1688,6 +1742,7 @@ def build_main_screen(app: toga.App, email: str):
         push_user()
         refresh_sidebar()
         ticks = 0
+        asyncio.create_task(check_family())          # age question / a parent's voice setting
         while getattr(app, "_main_screen_token", None) is screen_token:
             for event in await web_chat.poll():
                 if event.get("type") == "stop":
@@ -1697,6 +1752,8 @@ def build_main_screen(app: toga.App, email: str):
                 if event.get("type") == "send":
                     running["task"] = task
             ticks += 1
+            if ticks % 4000 == 0:               # ~10 min: a parent may have changed the controls
+                asyncio.create_task(check_family())
             if ticks % 4 == 0:                  # ~0.6 s: the "Hey Gink" chip follows the listener
                 try:
                     await push_wake_chip()

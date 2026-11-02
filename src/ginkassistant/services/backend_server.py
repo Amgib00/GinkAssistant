@@ -3691,6 +3691,8 @@ def family_get(request: Request):
         "age": age, "birth_year_needed": age is None,
         "teen": bool(age is not None and MIN_AGE <= age < ADULT_AGE), "can_be_parent": bool(age and age >= ADULT_AGE),
         "parent": dict(person(link[0]), status=link[1]) if link else None,
+        "my_controls": _controls(email) if (link and link[1] == "active" and age is not None
+                                            and MIN_AGE <= age < ADULT_AGE) else None,
         "teens": [dict(person(t), status=s, controls=_controls(t) if s == "active" else None,
                        messages_today=used_today(t) if s == "active" else None) for t, s in teens],
         "notices": [{"teen": _account_label(t), "name": (_get_user(t) or {}).get("name") or "", "kind": k,

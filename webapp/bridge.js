@@ -572,7 +572,7 @@
   var WK = { rec: null, status: "", blocked: false };
   var WAKE_RE = /\b(hey|hi|ok|okay)[ ,]+(gink|ginks|king|jink|jinx|ginkgo|ging)\b/i;
   function wakeStatus(text) { if (WK.status !== text) { WK.status = text; pushSettings(); } }
-  function wakeWanted() { return !!(W.prefs.wake_enabled && Rec && W.token && !V.on && !WK.blocked && document.visibilityState === "visible"); }
+  function wakeWanted() { return !!(W.prefs.wake_enabled && Rec && W.token && !V.on && !WK.blocked && !W.voiceOff && document.visibilityState === "visible"); }
   function wakeStart() {
     if (WK.rec) return;
     if (!wakeWanted()) {
@@ -790,6 +790,21 @@
       pushSettings({ connected: j.services || [] }, { connected_configured: j.configured });
     }).catch(function () { pushSettings({ connected: [] }, { connected_error: "Connected apps aren\u2019t available right now." }); });
   }
+  // Settings > Parental controls (server: /family)
+  function loadFamily() {
+    pushSettings({}, {});
+    api("/family").then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) {
+      pushSettings({}, { family: j });
+    }).catch(function () { pushSettings({}, { family_error: "Parental controls aren\u2019t available right now." }); });
+  }
+  function familyCall(path, body, done, method) {
+    var req = method ? fetch(path, { method: method, headers: { Authorization: "Bearer " + W.token, "Content-Type": "application/json" },
+                                     body: JSON.stringify(body) }) : api(path, body);
+    return req.then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) {
+      if (!r.ok) throw new Error(j.detail || "That didn\u2019t work. Please try again.");
+      if (done) settingsToast(done); loadFamily(); }); })
+      .catch(function (err) { settingsToast(err.message); });
+  }
   function archivedList() {
     return Object.keys(W.sessions).map(function (k) { return W.sessions[k]; })
       .filter(function (s) { return s.archived && !s.deleted; }).map(function (s) { return { id: s.id, title: titleOf(s) }; });
@@ -945,7 +960,18 @@
     settings_action: function (v) {
       var name = v && v.name;
       if (name === "refresh") return (v.value === "account" ? loadDevices() : v.value === "connected" ? loadConnected()
-                                      : v.value === "privacy" ? loadLockdown() : pushSettings());
+                                      : v.value === "privacy" ? loadLockdown() : v.value === "family" ? loadFamily() : pushSettings());
+      if (name === "family_birth_year") return familyCall("/account/age", { birth_year: String(v.value || "").trim() }, "Saved.");
+      if (name === "family_invite") return familyCall("/family/invite", { teen: String(v.value || "").trim() }, "Invitation sent. It applies once they accept.");
+      if (name === "family_accept") return familyCall("/family/respond", { accept: true }, "Linked.");
+      if (name === "family_decline") return familyCall("/family/respond", { accept: false }, "Declined.");
+      if (name === "family_unlink") return familyCall("/family/unlink", v.value ? { teen: v.value } : {}, "Unlinked.");
+      if (name === "family_set") {
+        var fs = {}; try { fs = JSON.parse(v.value || "{}"); } catch (e) { return; }
+        var ctl = {}; ctl[fs.key] = fs.value;
+        if (String(fs.key || "").indexOf("quiet") === 0 && fs.tz) ctl.tz = fs.tz;
+        return familyCall("/family/controls", { teen: fs.teen, controls: ctl }, "Saved.", "PUT");
+      }
       if (name === "phone_send") {
         var num = String(v.value || "").trim();
         return api("/account/phone/send", { phone: num }).then(function (r) {
@@ -1099,7 +1125,30 @@
     voice_preview_stop: stopSpeaking
   };
   HANDLERS.file_thumb = function () {};
+  // Age and parental controls: the one-time birth-year question; a parent can turn voice off.
+  var VOICE_EVENTS = { voice_toggle: 1, voice_start: 1, dictate: 1, read_aloud: 1, voice_preview: 1 };
+  function checkFamily() {
+    var json = function (r) { return r.ok ? r.json() : Promise.reject(); };
+    api("/account/age").then(json).then(function (a) {
+      if (a.blocked) return askBirthYear("Gink is for people 13 and older.", true);
+      if (a.needed) askBirthYear();
+      return api("/family").then(json).then(function (f) {
+        var off = ((f && f.my_controls) || {}).voice === false;
+        W.voiceOff = off ? "Voice is turned off in your parental controls." : "";
+        if (off) { try { stopSpeaking(); wakeStop(); } catch (e) {} }
+      });
+    }).catch(function () {});
+  }
+  HANDLERS.birth_year = function (year) {
+    api("/account/age", { birth_year: String(year || "") }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) { var m = j.detail || "That didn\u2019t work. Please try again."; return askBirthYear(m, /13 and older/.test(m)); }
+        birthYearDone(); checkFamily();
+      });
+    }).catch(function () { askBirthYear("Couldn\u2019t save that \u2014 check your connection and try again."); });
+  };
   window.ginkEmit = function (type, value) {
+    if (VOICE_EVENTS[type] && W.voiceOff) { settingsToast(W.voiceOff); return; }
     var h = HANDLERS[type];
     if (h) { try { h(value); } catch (e) { console.error("Gink web:", type, e); } }
   };
@@ -1110,7 +1159,7 @@
     var first = (W.name || W.email || "Gink").split(/[\s@]/)[0];
     setUser(W.name || W.email || "Gink user", "", first);
     if (W.profile.updated) applyProfile();                         // the synced profile: name and photo
-    setTimeout(wakeStart, 1500);                                   // "Hey Gink", if it's switched on for this browser
+    setTimeout(function () { if (!W.voiceOff) wakeStart(); }, 1500);   // "Hey Gink", if it's on (and voice is allowed)
     applyAppearance();
     api("/ai/usage").then(function (r) { return r.ok ? r.json() : null; }).then(function (u) { if (u) W.plan = u.plan; }).catch(function () {});
     api("/ai/openai/v1/models").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
@@ -1120,6 +1169,7 @@
       setModels(W.models, W.model);
     }).catch(function () {});
     newChat(); sync();
+    checkFamily();
     clearInterval(W.timer); W.timer = setInterval(sync, 60000);
   }
   document.addEventListener("DOMContentLoaded", function () {

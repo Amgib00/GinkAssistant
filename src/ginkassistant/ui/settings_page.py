@@ -339,6 +339,7 @@ SETTINGS_JS = r"""
            empty: 'Sign-ins and security changes will appear here.'}]},
         {title: 'Delete account', rows: [
           {type: 'button', label: 'Delete your account', desc: 'Permanently deletes your account and everything synced to it. Payment records are kept for accounting, without your name or email. This can\u2019t be undone.', action: 'delete_account', text: 'Delete account', style: 'danger-ghost'}]}]},
+      {id: 'family', group: 'Settings', title: 'Parental controls', sections: familySections(info.family, info.family_error)},
       {id: 'privacy', group: 'Settings', title: 'Privacy', sections: [
         {title: 'Your data', rows: [
           {apps: true, type: 'toggle', key: 'use_memory', label: 'Use memories in answers', desc: 'When off, Gink ignores what you asked it to remember (they stay saved \u2014 manage them under Memory).'},
@@ -477,6 +478,80 @@ SETTINGS_JS = r"""
             ['Mute during voice', ['Space']], ['End a voice conversation', ['Esc']]];
   }
   function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+  // Settings > Parental controls (server: /family). Parents never see chats -- only these controls,
+  // today's message count, and safety notices that name the kind of risk, never the words.
+  var FAM_FEATURES = [['voice', 'Voice', 'Voice conversations, dictation and reading answers aloud'],
+                      ['images', 'Making images', 'Media Studio and \u201ccreate an image of\u2026\u201d'],
+                      ['web', 'Web search', 'Gink looking things up online'],
+                      ['websites', 'Making websites', 'Gink\u2019s website builder'],
+                      ['apps', 'Connected apps', 'Google Calendar, Gmail and Drive']];
+  var FAM_NOTICES = 'If Gink thinks a linked teen may be in serious danger \u2014 thinking about hurting themselves, someone threatening them or asking for photos or secrecy, or planning to hurt someone \u2014 the parent gets a short notice saying so. Never the teen\u2019s words. (Not when the danger could be at home.)';
+  var FAM_NOTICES_TEEN = 'If Gink thinks you may be in serious danger \u2014 thinking about hurting yourself, someone threatening you or asking you for photos or secrecy, or planning to hurt someone \u2014 your parent gets a short notice saying so. Never your messages. (Not when the danger could be at home: then Gink helps you find support instead.)';
+  function famSwitch(teen, key, on) {
+    return '<label class="sw"><input type="checkbox" data-fam="' + key + '" data-teen="' + esc(teen) + '"' + (on ? ' checked' : '') + '><i></i></label>';
+  }
+  function famDate(ts) { return new Date(ts * 1000).toLocaleString([], {dateStyle: 'medium', timeStyle: 'short'}); }
+  function familySections(f, err) {
+    if (!f) return [{title: 'Parental controls', rows: [{type: 'list', items: [], empty: err || 'Loading\u2026'}]}];
+    var out = [];
+    if (f.birth_year_needed) {
+      out.push({title: 'Your age', rows: [
+        {type: 'note', text: 'Gink is for people 13 and older. Add the year you were born to use parental controls (it can\u2019t be changed later).'},
+        {type: 'input', key: 'family_year', label: 'Year you were born', placeholder: 'e.g. 1990', narrow: true, action: 'family_birth_year', text: 'Save'}]});
+      return out;
+    }
+    if (f.teen) {
+      var p = f.parent;
+      if (p && p.status === 'pending') {
+        out.push({title: 'Invitation', rows: [
+          {type: 'note', text: (p.name || p.label) + ' wants to link your account as your parent. If you accept, they can set quiet hours and a daily message limit, and turn off voice, images, web search, websites and connected apps. They never see your chats.'},
+          {type: 'note', text: FAM_NOTICES_TEEN},
+          {type: 'button', label: 'Accept', desc: 'You can unlink any time (your parent is told).', action: 'family_accept', text: 'Accept', style: 'primary'},
+          {type: 'button', label: 'Decline', action: 'family_decline', text: 'Decline', style: 'danger-ghost'}]});
+      } else if (p) {
+        var c = f.my_controls || {}, off = FAM_FEATURES.filter(function (x) { return c[x[0]] === false; }).map(function (x) { return x[1]; });
+        out.push({title: 'Linked to ' + (p.name || p.label), rows: [
+          {type: 'info', label: 'Turned off', value: off.length ? off.join(', ') : 'Nothing'},
+          {type: 'info', label: 'Quiet hours', value: c.quiet ? (c.quiet_from + ' \u2013 ' + c.quiet_to) : 'Off'},
+          {type: 'info', label: 'Daily messages', value: c.daily_limit ? String(c.daily_limit) : 'No limit'},
+          {type: 'note', text: 'Your parent never sees your chats. ' + FAM_NOTICES_TEEN},
+          {type: 'list', items: (f.notices_about_me || []).map(function (n) { return {t: 'A safety notice was sent to your parent', m: famDate(n.at)}; }),
+           empty: 'No safety notices have been sent.'},
+          {type: 'button', label: 'Unlink from your parent', desc: 'The controls stop applying, and your parent is told.', action: 'family_unlink', value: '', text: 'Unlink', style: 'danger-ghost'}]});
+      } else {
+        out.push({title: 'Parental controls', rows: [{type: 'note', text: 'Your account isn\u2019t linked to a parent. A parent can invite you from their Gink account; you\u2019ll see the invitation here.'}]});
+      }
+      return out;
+    }
+    if (!f.can_be_parent) return [{title: 'Parental controls', rows: [{type: 'note', text: 'Parental controls are for parents (18+).'}]}];
+    out.push({title: 'Link a teen', rows: [
+      {type: 'note', text: 'Invite your teen (13\u201317) by their Gink email or phone number. Nothing applies until they accept. You never see their chats. ' + FAM_NOTICES},
+      {type: 'input', key: 'family_teen', label: 'Teen\u2019s email or phone', placeholder: 'email or +221\u2026', action: 'family_invite', text: 'Invite'}]});
+    (f.teens || []).forEach(function (t) {
+      var who = t.name || t.label, rows;
+      if (t.status !== 'active') {
+        rows = [{type: 'note', text: 'Waiting for ' + who + ' to accept.'},
+                {type: 'button', label: 'Cancel the invitation', action: 'family_unlink', value: t.id, text: 'Cancel', style: 'danger-ghost'}];
+      } else {
+        var c = t.controls || {};
+        rows = [{type: 'info', label: 'Messages today', value: String(t.messages_today || 0) + (c.daily_limit ? ' of ' + c.daily_limit : '')}]
+          .concat(FAM_FEATURES.map(function (x) { return {type: 'html', label: x[1], desc: x[2], html: famSwitch(t.id, x[0], c[x[0]] !== false)}; }))
+          .concat([
+            {type: 'html', label: 'Quiet hours', desc: 'Gink is off between these times (your time zone).',
+             html: '<input type="time" class="s-input" style="width:110px" data-famtime="quiet_from" data-teen="' + esc(t.id) + '" value="' + esc(c.quiet_from || '21:30') + '">' +
+                   '<span style="margin:0 6px">\u2013</span><input type="time" class="s-input" style="width:110px" data-famtime="quiet_to" data-teen="' + esc(t.id) + '" value="' + esc(c.quiet_to || '06:30') + '">' +
+                   '<span style="margin-left:12px">' + famSwitch(t.id, 'quiet', !!c.quiet) + '</span>'},
+            {type: 'html', label: 'Daily message limit', desc: '0 means no limit.',
+             html: '<input type="number" min="0" max="1000" class="s-input" style="width:90px" data-famnum="daily_limit" data-teen="' + esc(t.id) + '" value="' + esc(String(c.daily_limit || 0)) + '">'},
+            {type: 'button', label: 'Unlink', desc: 'Your controls stop applying to ' + who + '.', action: 'family_unlink', value: t.id, text: 'Unlink', style: 'danger-ghost'}]);
+      }
+      out.push({title: who + (t.status === 'active' ? '' : ' \u00b7 invited'), rows: rows});
+    });
+    out.push({title: 'Safety notices', rows: [{type: 'list', items: (f.notices || []).map(function (n) {
+      return {t: (n.name || n.teen) + ' ' + n.text, m: famDate(n.at)}; }), empty: 'No notices.'}]});
+    return out;
+  }
+
   function phoneRows(p) {
     if (p.phone) {
       return [{type: 'info', label: 'Phone number', value: p.phone},
@@ -689,7 +764,14 @@ SETTINGS_JS = r"""
     });
     var body = document.getElementById('s-body');
     body.addEventListener('change', function (e) {
-      var t = e.target, key = t.getAttribute('data-key'); if (!key) return;
+      var t = e.target, fk = t.getAttribute('data-fam') || t.getAttribute('data-famtime') || t.getAttribute('data-famnum');
+      if (fk) {                                    // Parental controls: one teen's setting
+        var fv = t.type === 'checkbox' ? t.checked : t.getAttribute('data-famnum') ? parseInt(t.value || '0', 10) : t.value;
+        var tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) {}
+        ginkEmit('settings_action', {name: 'family_set', value: JSON.stringify({teen: t.getAttribute('data-teen'), key: fk, value: fv, tz: tz})});
+        return;
+      }
+      var key = t.getAttribute('data-key'); if (!key) return;
       var val = t.type === 'checkbox' ? t.checked : t.value;
       S.values[key] = val;
       if (key === 'theme' || key === 'chat_font' || key === 'motion') setAppearance(S.values.theme, S.values.chat_font, S.values.motion);
@@ -779,6 +861,40 @@ SETTINGS_JS = r"""
     back.classList.add('open');
     setTimeout(function () { var w = modal.querySelector('#cd-word') || modal.querySelector('#cd-cancel'); if (w) w.focus(); }, 30);
   }
+  // One question, once, for accounts without a birth year (older accounts, Google/Apple/... sign-ups).
+  // Its own overlay, so it never disturbs the other dialogs. Python / bridge.js answer with
+  // askBirthYear(message) again (a problem), askBirthYear(message, true) (under 13) or birthYearDone().
+  function askBirthYear(message, blocked) {
+    var back = document.getElementById('aby-back');
+    if (!back) {
+      back = document.createElement('div');
+      back.id = 'aby-back';
+      back.setAttribute('role', 'dialog'); back.setAttribute('aria-modal', 'true'); back.setAttribute('aria-labelledby', 'aby-title');
+      back.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(28,33,29,0.28);display:flex;align-items:center;justify-content:center;padding:20px';
+      document.body.appendChild(back);
+    }
+    back.innerHTML = '<div class="modal"><h3 id="aby-title"></h3><p class="sub" id="aby-msg" style="font-size:14.5px;color:var(--text-main)"></p>' +
+      (blocked ? '' : '<input class="s-input" id="aby-year" inputmode="numeric" maxlength="4" autocomplete="bday-year" placeholder="Year you were born, e.g. 2001" style="width:100%;margin-top:8px" aria-label="Year you were born">') +
+      '<div class="actions">' + (blocked ? '<button class="pill ghost" id="aby-out">Log out</button>'
+                                        : '<button class="pill ghost" id="aby-ok" style="background:var(--accent);border-color:var(--accent);color:var(--on-accent)">Continue</button>') + '</div></div>';
+    back.querySelector('#aby-title').textContent = blocked ? 'Sorry' : 'One quick question';
+    back.querySelector('#aby-msg').textContent = message || 'Gink is for people 13 and older. What year were you born? It can\u2019t be changed later.';
+    if (blocked) {
+      back.querySelector('#aby-out').addEventListener('click', function () { ginkEmit('settings_action', {name: 'logout'}); });
+      return;
+    }
+    var input = back.querySelector('#aby-year'), ok = back.querySelector('#aby-ok');
+    function send() {
+      var y = input.value.trim(), now = new Date().getFullYear();
+      if (!/^\d{4}$/.test(y) || +y < 1900 || +y > now) { back.querySelector('#aby-msg').textContent = 'Enter the year you were born, like 2001.'; input.focus(); return; }
+      ok.disabled = true; ok.style.opacity = 0.6;
+      ginkEmit('birth_year', y);
+    }
+    ok.addEventListener('click', send);
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') send(); });
+    setTimeout(function () { input.focus(); }, 30);
+  }
+  function birthYearDone() { var b = document.getElementById('aby-back'); if (b) b.remove(); }
   function rebindDeleteModal() {
     var c = document.getElementById('del-cancel'), o = document.getElementById('del-ok');
     if (c) c.addEventListener('click', closeDelete);
