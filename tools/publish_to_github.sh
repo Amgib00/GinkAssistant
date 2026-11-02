@@ -20,6 +20,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PUBLISH=(.github .gitignore .env.example README.md SECURITY.md INTEGRATION.md LICENSE CHANGELOG.md AGENTS.md openspec cli pyproject.toml
          requirements.txt requirements-test.txt render.yaml src tests deploy tools icons website webapp)
 KEEP_FROM_REPO=(LICENSE .github/ISSUE_TEMPLATE)      # kept as they are on GitHub
+OWNER_DATA=(tools/gink_dataset/paraphrases.csv tools/gink_dataset/translations.csv
+            tools/gink_dataset/examples_general.csv tools/gink_dataset/languages)   # yours: from this folder
 SECRET_RE='hf_[A-Za-z0-9]{30,}|gsk_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|sk-(proj-)?[A-Za-z0-9]{32,}|sk_live_[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_-]{35}|-----BEGIN [A-Z ]*PRIVATE KEY'
 
 # No questions by default: the update commands are usually pasted all at once, and a question would
@@ -70,11 +72,16 @@ if [ -f "$MANIFEST" ]; then
     [ -f "$ROOT/$f" ] || { echo "Missing $f -- unzip the full package again."; exit 1; }
     mkdir -p "./$(dirname "$f")"; cp "$ROOT/$f" "./$f"
   done < "$MANIFEST"
+  # The owner's own data, written on this computer (never in an update package, so unzipping an update
+  # can't overwrite it): published exactly as it is here, if it exists.
+  for d in "${OWNER_DATA[@]}"; do
+    if [ -e "$ROOT/$d" ]; then mkdir -p "./$(dirname "$d")"; cp -R "$ROOT/$d" "./$(dirname "$d")/"; fi
+  done
   # Not leftovers: files kept from GitHub (KEEP_FROM_REPO) and generated folders that are never published.
   STALE=$(cd "$ROOT" && for p in "${PUBLISH[@]}"; do [ -d "$p" ] && find "$p" -type f -not -path "*/__pycache__/*" \
           -not -path "website/_site/*" -not -path "tools/gink_dataset/out/*" -not -name ".DS_Store" -not -name "*.pyc" \
           -not -path "*.dist-info/*"; done | sort | comm -23 - <(sort "$MANIFEST") | while IFS= read -r f; do
-            keep=0; for k in "${KEEP_FROM_REPO[@]}"; do case "$f" in "$k"|"$k"/*) keep=1;; esac; done
+            keep=0; for k in "${KEEP_FROM_REPO[@]}" "${OWNER_DATA[@]}"; do case "$f" in "$k"|"$k"/*) keep=1;; esac; done
             if [ "$keep" = 0 ]; then echo "$f"; fi; done || true)
   if [ -n "$STALE" ]; then
     echo; echo "Not published -- these files in your folder aren't part of this version (old leftovers?):"

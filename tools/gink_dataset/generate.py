@@ -348,6 +348,28 @@ def held_out(example) -> bool:
     return int(hashlib.sha256(key.encode("utf-8")).hexdigest(), 16) % 20 == 0
 
 
+def with_translations(train):
+    """translations.csv (translate.py, approved rows): the same action asked in other languages, with
+    Gink's reply in that language -- training examples only."""
+    from translate import approved_map, CSV_PATH
+    more = approved_map(os.environ.get("GINK_TRANSLATIONS") or CSV_PATH)
+    extra = []
+    for ex in train:
+        if ex.get("category") != "action" or ex.get("paraphrase"):
+            continue
+        user = next(m["content"] for m in ex["messages"] if m["role"] == "user")
+        for lang, t_user, t_reply in more.get(user, []):
+            copy = json.loads(json.dumps(ex))
+            copy["messages"][0]["content"] = SYSTEM_EN                   # one system prompt for other languages
+            next(m for m in copy["messages"] if m["role"] == "user")["content"] = t_user
+            last = copy["messages"][-1]
+            if t_reply and last["role"] == "assistant" and not last.get("tool_calls"):
+                last["content"] = t_reply
+            copy.update(language=lang, translation=True)
+            extra.append(copy)
+    return extra
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     data = [g() for g in GENERATORS for _ in range(PER_TOOL)]
@@ -361,9 +383,10 @@ def main():
     held = [r for r in data if held_out(r)]
     train = [r for r in data if not held_out(r)]
     train += with_paraphrases(train)
+    train += with_translations(train)
     rnd.shuffle(train)
     splits = {"eval.jsonl": held, "train.jsonl": train}
-    data = data + [r for r in train if r.get("paraphrase")]
+    data = data + [r for r in train if r.get("paraphrase") or r.get("translation")]
     for name, rows in splits.items():
         with open(os.path.join(OUT, name), "w", encoding="utf-8") as f:
             for r in rows:

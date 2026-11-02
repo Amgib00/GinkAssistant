@@ -129,10 +129,16 @@ def progress(rows) -> list:
     langs = {k: sum(1 for r in rows if r.get("language") == k) for k in ("wolof", "krio", "pidgin")}
     general = sum(1 for r in rows if r.get("category") in ("general", "safety", "honesty", "teen", "identity", "voice"))
     rewrites = sum(1 for r in rows if r.get("paraphrase"))
+    others = {}
+    for r in rows:
+        if r.get("translation"):
+            others[r.get("language")] = others.get(r.get("language"), 0) + 1
     return [f"Toward the first real training run (tools/gink_model/PLAN.md):",
             f"  examples                    {len(rows):>5} / {TARGETS['examples']}   ({rewrites} are rewrites from paraphrases.csv)",
             "  " + ", ".join(f"{k} {v}" for k, v in langs.items()) + f"   (aim: {TARGETS['language rows (each of wolof, krio, pidgin)']} each)",
-            f"  general / safety / honesty  {general:>5} / {TARGETS['general / safety / honesty']}"]
+            f"  general / safety / honesty  {general:>5} / {TARGETS['general / safety / honesty']}",
+            f"  other languages (translate.py): {sum(others.values())} examples in {len(others)} languages"
+            + (f" ({', '.join(f'{k} {v}' for k, v in sorted(others.items()))})" if others else "")]
 
 
 def main(paths):

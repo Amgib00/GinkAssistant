@@ -350,6 +350,7 @@ tests/test_sms_routing.py
 tests/test_song_server.py
 tests/test_sync_attach_memory_briefing.py
 tests/test_temporary_chat.py
+tests/test_translate_dataset.py
 tests/test_two_step.py
 tests/test_ui.py
 tests/test_unreachable.py
@@ -372,15 +373,12 @@ tools/check_mac_min_os.py
 tools/check_project.py
 tools/gink_dataset/README.md
 tools/gink_dataset/evaluate.py
-tools/gink_dataset/examples_general.csv
 tools/gink_dataset/examples_identity.jsonl
 tools/gink_dataset/examples_voice.jsonl
 tools/gink_dataset/generate.py
 tools/gink_dataset/languages/README.md
-tools/gink_dataset/languages/krio.csv
-tools/gink_dataset/languages/pidgin.csv
-tools/gink_dataset/languages/wolof.csv
 tools/gink_dataset/paraphrase.py
+tools/gink_dataset/translate.py
 tools/gink_dataset/validate.py
 tools/gink_model/Gink_finetune_colab.ipynb
 tools/gink_model/PLAN.md

@@ -104,6 +104,20 @@ def anchors(text: str) -> set:
     return keep
 
 
+REMEMBER_CUES = {"remember", "memorize", "memorise", "retiens", "souviens", "mémorise"}
+REMIND_CUES = {"remind", "reminder", "reminders", "rappelle", "rappel", "rappels", "rappeler"}
+
+
+def changed_intent(original: str, rewrite: str) -> str:
+    """"Remember that..." (a fact) and "Remind me..." (a reminder) are different actions."""
+    o, r = set(words(original)), set(words(rewrite))
+    if o & REMEMBER_CUES and r & REMIND_CUES and not r & REMEMBER_CUES:
+        return "turned 'remember' into 'remind'"
+    if o & REMIND_CUES and r & REMEMBER_CUES and not r & REMIND_CUES:
+        return "turned 'remind' into 'remember'"
+    return ""
+
+
 def problems(original: str, rewrite: str, language: str) -> list:
     out = []
     r = rewrite.strip()
@@ -122,6 +136,8 @@ def problems(original: str, rewrite: str, language: str) -> list:
                 out.append(f"lost {a!r}")
         elif f" {a} " not in low:
             out.append(f"lost {a!r}")
+    if changed_intent(original, r):
+        out.append(changed_intent(original, r))
     new_numbers = set(re.findall(r"\d+", r)) - set(re.findall(r"\d+", original))
     if new_numbers:
         out.append(f"added numbers {sorted(new_numbers)}")
@@ -154,6 +170,24 @@ def ask(base, key, model, text, language, n):
         return []
 
 
+def with_retries(call, tries: int = 8, out=print):
+    """Groq's free plan allows only so many requests a minute: on 429, wait (Retry-After, or longer each
+    time) and try again, so a full run finishes on its own."""
+    for attempt in range(1, tries + 1):
+        try:
+            return call()
+        except urllib.error.HTTPError as exc:
+            if exc.code != 429 or attempt == tries:
+                raise
+            try:
+                wait = float(exc.headers.get("Retry-After") or 0)
+            except (TypeError, ValueError, AttributeError):
+                wait = 0
+            wait = min(max(wait, 15 * attempt), 120)
+            out(f"  Groq is busy; waiting {wait:.0f} s and trying again ({attempt}/{tries - 1})")
+            time.sleep(wait)
+
+
 def load_csv(path=CSV_PATH) -> list:
     if not os.path.exists(path):
         return []
@@ -170,6 +204,26 @@ def approved_map(path=CSV_PATH) -> dict:
     return out
 
 
+def recheck(path=CSV_PATH) -> int:
+    """New checks apply to old rows too: approved rewrites that fail today's checks become "no"."""
+    rows = load_csv(path)
+    flipped = []
+    for row in rows:
+        if (row.get("approved") or "").lower() == "yes" and row.get("paraphrase"):
+            why = problems(row["original"], row["paraphrase"], row.get("language") or "en")
+            if why:
+                row["approved"] = "no"
+                flipped.append((row["paraphrase"], why[0]))
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS)
+        w.writeheader()
+        w.writerows(rows)
+    for text, why in flipped:
+        print(f"  no: {text}  ({why})")
+    print(f"Rechecked {len(rows)} rows: {len(flipped)} set to no.")
+    return 0
+
+
 def main(argv=None, ask_fn=ask):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--train", default=os.path.join(HERE, "out", "train.jsonl"))
@@ -180,7 +234,10 @@ def main(argv=None, ask_fn=ask):
     ap.add_argument("--csv", default=CSV_PATH)
     ap.add_argument("--key", default="")
     ap.add_argument("--ask-key", action="store_true", help="ignore GROQ_API_KEY and ask for the key (hidden)")
+    ap.add_argument("--recheck", action="store_true", help="run today's checks on paraphrases.csv again (no AI calls)")
     a = ap.parse_args(argv)
+    if a.recheck:
+        return recheck(a.csv)
     if not os.path.exists(a.train):
         print("Run tools/gink_dataset/generate.py first.")
         return 1
@@ -211,7 +268,7 @@ def main(argv=None, ask_fn=ask):
             w.writeheader()
         for i, (lang, text) in enumerate(todo, 1):
             try:
-                variants = ask_fn(a.base_url, key, a.model, text, lang, a.per_request)
+                variants = with_retries(lambda: ask_fn(a.base_url, key, a.model, text, lang, a.per_request))
             except urllib.error.HTTPError as exc:
                 why = provider_message(exc)
                 if exc.code == 401:
@@ -222,7 +279,7 @@ def main(argv=None, ask_fn=ask):
                           "network or country. Plan B, through your Gink server: --base-url "
                           "https://gink-server.onrender.com/v1 --model gink-crystal --ask-key (a Gink developer key).")
                 elif exc.code == 429:
-                    print("  Groq says: too many requests for now. Wait a minute and run again: it continues where it stopped.")
+                    print("  Groq is still busy after several tries. Run again later: it continues where it stopped.")
                 else:
                     print(f"  {i}: the AI service answered HTTP {exc.code}; run again later to continue")
                 break

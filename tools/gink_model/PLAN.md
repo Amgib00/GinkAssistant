@@ -39,6 +39,10 @@ Today: about 650 training examples (626 actions in English and French, 23 identi
   request this roughly triples the action examples. Skim `paraphrases.csv` before training.
 - Written by people in `examples_general.csv`: questions that need no tool, safety, honesty and
   teen-appropriate answers -- each one checked by a second person. Aim for 300.
+- Many languages: `translate.py` translates the actions whose details don't change between languages
+  into 22 widely used languages (approved automatically when they pass the checks) and 15 African
+  languages (drafts until a native speaker approves). Qwen3.5 already understands about 200 languages;
+  this teaches it Gink's *actions* in them.
 - `validate.py` prints how far you are from these targets every time.
 - Who may write examples: you, testers, native speakers, Gink's templates and Apache-2.0 models.
   Not Claude (Anthropic's terms), so these are tools, not ready-made examples.
@@ -86,3 +90,10 @@ want to learn from real chats, that needs its own clear opt-in first.
 | `prepare_hosted.py` | Upload files for a hosted service + token count and cost |
 | `gate.py` | Ship / not yet, from two `evaluate.py --save` results |
 | Server (`backend_server.py`) | Serves `gink-1` from any OpenAI-style provider; testers-only switch |
+
+## Later: a coding model for Gink Genie
+Training a large model from nothing costs millions of dollars and huge amounts of data -- that's not
+the route. The realistic one is the same as for chat: fine-tune an open, code-capable model (for example
+a larger Qwen) on Genie's own tools (write_file, run_command...) and serve it through the own-model
+switch. The data would come from Genie sessions **only of people who opted in**, plus Apache-2.0
+models' output -- never Claude's. That needs a consent setting in Genie first.

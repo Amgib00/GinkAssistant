@@ -39,6 +39,18 @@ time, a day, a name or a currency -- or add a number -- are dropped automaticall
 example teaches stays right. Kept rewrites go to `paraphrases.csv`: skim it, set `approved` to `no` for
 anything odd, then run `generate.py` again. Rewrites are used for training only, never the held-out set.
 
+### Many languages: `translate.py`
+GPT-OSS translates action examples, and Gink's short reply, into other languages:
+`--languages es,pt,ar` or `--languages all` (22 widely used languages plus 15 African languages). Only
+actions whose details stay the same in every language are translated (numbers, times, amounts, places,
+app names); every number must survive, place and app names must stay, and the script must be right.
+Widely used languages that pass are approved; Hausa, Yoruba, Wolof, Krio, Pidgin and the other
+African languages are **drafts** until a native speaker corrects them and sets `approved` to `yes`.
+Saved in `translations.csv`, used for training only.
+
+`paraphrase.py --recheck` runs the latest checks again on rows you already have (no AI calls) -- for
+example the remember / remind check added after the first review.
+
 ### Written by people: `examples_general.csv`
 Questions that need **no tool** (so Gink doesn't call tools when it shouldn't), **safety** (declining
 something dangerous kindly and saying why), **honesty** (it's an AI; it can be wrong; it doesn't know

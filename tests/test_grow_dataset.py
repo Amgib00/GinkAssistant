@@ -92,10 +92,17 @@ def test_generator_uses_rewrites_for_training_only(tmp_path):
         shutil.rmtree(out, ignore_errors=True)
 
 
-def test_people_files_start_empty():
-    """Nothing in the people-written sheet is pre-filled (by Claude or anyone): only real authors' rows."""
-    rows = list(csv.DictReader(open(os.path.join(DS, "examples_general.csv"), encoding="utf-8")))
-    assert rows == []
+def test_owners_data_is_never_in_an_update_package():
+    """People's examples, rewrites and translations are written on the owner's computer: an update
+    package must never contain them (unzipping it would overwrite them); publishing sends the owner's."""
+    manifest = open(os.path.join(ROOT, "tools", "MANIFEST.txt"), encoding="utf-8").read().split()
+    for f in ("tools/gink_dataset/paraphrases.csv", "tools/gink_dataset/translations.csv",
+              "tools/gink_dataset/examples_general.csv", "tools/gink_dataset/languages/wolof.csv"):
+        assert f not in manifest
+    script = open(os.path.join(ROOT, "tools", "publish_to_github.sh"), encoding="utf-8").read()
+    for f in ("tools/gink_dataset/paraphrases.csv", "tools/gink_dataset/translations.csv",
+              "tools/gink_dataset/examples_general.csv", "tools/gink_dataset/languages"):
+        assert f in script.split("OWNER_DATA=(", 1)[1].split(")", 1)[0]
 
 
 def test_placeholder_keys_and_certificates(monkeypatch):
@@ -167,3 +174,41 @@ def test_cloudflare_refusal_text_is_shown():
     import io as _io, urllib.error
     exc = urllib.error.HTTPError("https://api.groq.com", 403, "Forbidden", {}, _io.BytesIO(b"error code: 1010"))
     assert pp.provider_message(exc) == "error code: 1010"
+
+
+def test_remember_and_remind_are_different_actions():
+    """From the owner's first review: "Reminder: June 19 is my best friend's birthday." for a remember-a-fact
+    request would teach the reminder action."""
+    assert "turned 'remember' into 'remind'" in pp.problems(
+        "Remember that my best friend's birthday is on June 19", "Reminder: June 19 is my best friend's birthday.", "en")
+    assert pp.problems("Remember that my best friend's birthday is on June 19",
+                       "Please note that my best friend's birthday falls on June 19.", "en") == []
+    assert "turned 'remind' into 'remember'" in pp.problems("Rappelle-moi d'appeler maman demain à 9h",
+                                                            "Souviens-toi d'appeler maman demain à 9h", "fr")
+
+
+def test_waits_out_the_rate_limit(monkeypatch):
+    import urllib.error
+    waits, tries = [], {"n": 0}
+    monkeypatch.setattr(pp.time, "sleep", lambda s: waits.append(s))
+
+    def busy_twice():
+        tries["n"] += 1
+        if tries["n"] <= 2:
+            raise urllib.error.HTTPError("u", 429, "Too Many Requests", {"Retry-After": "7"}, None)
+        return ["ok"]
+    assert pp.with_retries(busy_twice, out=lambda *a: None) == ["ok"] and waits == [15, 30]
+    with pytest.raises(urllib.error.HTTPError):
+        pp.with_retries(lambda: (_ for _ in ()).throw(urllib.error.HTTPError("u", 401, "x", {}, None)), out=lambda *a: None)
+
+
+def test_recheck_applies_new_checks_to_old_rows(tmp_path):
+    p = tmp_path / "p.csv"
+    with open(p, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=pp.FIELDS); w.writeheader()
+        w.writerow({"language": "en", "original": "Remember that my best friend's birthday is on June 19",
+                    "paraphrase": "Reminder: June 19 is my best friend's birthday.", "model": "m", "approved": "yes"})
+        w.writerow({"language": "en", "original": "Set an alarm for 9:30 am", "paraphrase": "Alarm 9:30 am, thanks.",
+                    "model": "m", "approved": "yes"})
+    assert pp.main(["--recheck", "--csv", str(p)]) == 0
+    assert [r["approved"] for r in csv.DictReader(open(p, encoding="utf-8"))] == ["no", "yes"]

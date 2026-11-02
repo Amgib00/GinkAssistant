@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.107 (November 2026)
+
+- For the owner, data for Gink's own model: translate.py teaches Gink's actions in 37 more languages
+  (22 widely used ones; 15 African languages as drafts for native speakers); paraphrase.py now waits
+  out Groq's rate limit by itself, drops rewrites that turn "remember" into "remind", and
+  --recheck applies new checks to rows you already have
+- Your dataset files (paraphrases.csv, translations.csv, examples_general.csv, languages/*.csv) are no
+  longer in update packages, so unzipping an update can't overwrite them; publishing sends yours
+
 ## 0.1.106 (November 2026)
 
 - For the owner: paraphrase.py and evaluate.py identify themselves properly, so Groq's firewall no

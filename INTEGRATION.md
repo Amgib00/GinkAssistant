@@ -1887,3 +1887,20 @@ New services/live_info.py (all free, no API keys):
   httpx (python-httpx/...) and work. paraphrase.py / evaluate.py now send USER_AGENT "GinkDataset/1.0 (+repo)".
   provider_message() shows a non-JSON body as text (e.g. "error code: 1010"). Plan B in the 403 message: the Gink
   server's /v1 (Developer API key), which also sidesteps any regional block.
+
+## 0.1.107: many languages; paraphrase fixes from the owner's first real run
+- Owner's run: 20 + 50 requests -> 71 + 179 kept (~3.5/request); 1156 examples (473 rewrites); stopped at 429.
+  Review found "Remember that ... June 19" -> "Reminder: June 19 ..." (would teach add_reminder): changed_intent()
+  (remember cues vs remind cues, en+fr). with_retries(): 429 -> sleep max(Retry-After, 15 s x attempt) <= 120,
+  7 retries. --recheck re-applies problems() to existing approved rows (no API calls).
+- translate.py: only actions with no OWN_WORDS args (label/text/fact/content/title) among TRANSLATABLE_TOOLS;
+  every string arg not in SAME_EVERYWHERE (places, app names) must appear verbatim; digits kept in request and
+  reply, none added; SCRIPTS regex per non-Latin language. WELL_SUPPORTED (22) pass -> approved yes;
+  NEEDS_REVIEW (15, incl. wo/kri/pcm) -> approved "" (draft) -- keeps the "native speakers for those" rule.
+  generate.with_translations(): SYSTEM_EN, translated user + final reply, language=code, translation=True,
+  training only; validate prints other-language counts. GINK_TRANSLATIONS overrides the CSV path (tests).
+- DATA-LOSS TRAP fixed: examples_general.csv and languages/*.csv were in MANIFEST -> every update zip carried
+  the empty templates and `unzip -o` would overwrite the owner's/speakers' rows; paraphrases.csv/translations.csv
+  weren't in MANIFEST -> never published (and Colab never saw them). Now publish_to_github.sh OWNER_DATA copies
+  those from the owner's folder when present (and they're not "stale"); they're out of MANIFEST and out of the
+  zips (languages/README.md stays). Never ship owner data in a package again (test_grow_dataset checks).
