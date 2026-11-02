@@ -96,3 +96,32 @@ def test_people_files_start_empty():
     """Nothing in the people-written sheet is pre-filled (by Claude or anyone): only real authors' rows."""
     rows = list(csv.DictReader(open(os.path.join(DS, "examples_general.csv"), encoding="utf-8")))
     assert rows == []
+
+
+def test_placeholder_keys_and_certificates(monkeypatch):
+    """Mac python.org Python has no certificates of its own (CERTIFICATE_VERIFY_FAILED); and
+    `GROQ_API_KEY=...` copied literally is not a key."""
+    import evaluate
+    for mod in (pp, evaluate):
+        assert mod.real_key("...") == "" and mod.real_key("<your key>") == "" and mod.real_key("gsk_abc") == "gsk_abc"
+        import certifi, ssl
+        seen = {}
+        real = ssl.create_default_context
+        monkeypatch.setattr(ssl, "create_default_context", lambda cafile=None: seen.update(cafile=cafile) or real(cafile=cafile))
+        mod.ssl_context()
+        assert seen["cafile"] == certifi.where()
+        monkeypatch.setattr(ssl, "create_default_context", real)
+
+
+def test_refused_key_is_explained(tmp_path, capsys):
+    import urllib.error
+    train = tmp_path / "train.jsonl"
+    train.write_text(json.dumps({"category": "action", "language": "en", "messages": [
+        {"role": "system", "content": "s"}, {"role": "user", "content": "Wake me up at 6:30 am"}]}), encoding="utf-8")
+
+    def refused(*a):
+        raise urllib.error.HTTPError("https://api.groq.com", 401, "Unauthorized", {}, None)
+    pp.main(["--train", str(train), "--csv", str(tmp_path / "p.csv"), "--key", "gsk_wrong"], ask_fn=refused)
+    assert "API key was refused" in capsys.readouterr().out
+    rows = list(csv.DictReader(open(tmp_path / "p.csv", encoding="utf-8")))
+    assert rows == []                                                           # nothing marked done: a re-run retries

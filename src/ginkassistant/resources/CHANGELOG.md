@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.104 (November 2026)
+
+- For the owner: paraphrase.py and evaluate.py work with Python from python.org on a Mac (they failed
+  with CERTIFICATE_VERIFY_FAILED); a placeholder key like "..." is ignored and the real key is asked
+  for, hidden; a refused key or Groq's rate limit is explained in plain words
+
 ## 0.1.103 (November 2026)
 
 - Gink Genie's small icons (taskbar, Finder lists, iPhone Settings) are drawn bolder and larger, so

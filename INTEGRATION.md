@@ -1867,3 +1867,11 @@ New services/live_info.py (all free, no API keys):
   gets all seven sizes now.
 - test_small_icons.same(): was ImageChops.difference(...).getbbox() -- on RGBA that only looks at ALPHA, so colour
   differences passed. Now exact tobytes(); every icon check still passes.
+
+## 0.1.104: dataset scripts on a Mac (owner's first paraphrase run)
+- Owner's run: every request -> URLError CERTIFICATE_VERIFY_FAILED. python.org Python on macOS ships without a CA store
+  (its "Install Certificates.command" fixes it per install); urllib uses that store. paraphrase.py and evaluate.py
+  now pass ssl_context() = certifi's bundle (certifi is in every requirements list).
+- The owner typed `GROQ_API_KEY=...` literally (copied from my chat example): real_key() treats "...", "xxx",
+  "<...>", strings with spaces, "your-key" etc. as missing -> getpass. HTTPError 401/403 -> "key was refused",
+  429 -> "wait a minute, it continues", others -> HTTP code; nothing is marked done, so a re-run retries.

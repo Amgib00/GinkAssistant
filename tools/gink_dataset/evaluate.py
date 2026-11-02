@@ -43,13 +43,33 @@ def same_args(tool, want, got):
     return True
 
 
+
+def ssl_context():
+    """Certificates for https: Python from python.org on a Mac has none of its own until you run its
+    "Install Certificates" command, which made every request fail with CERTIFICATE_VERIFY_FAILED.
+    certifi (already installed with Gink) carries them."""
+    import ssl
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        return ssl.create_default_context()
+
+
+def real_key(value: str) -> str:
+    """Placeholders like "..." or "your-key" count as no key (then it's asked for, hidden)."""
+    v = (value or "").strip().strip("'\"")
+    placeholder = (not v or set(v) <= {".", "x", "X", "*"} or any(c in v for c in "<> ")
+                   or v.lower() in ("your-key", "your_key", "key", "groq_api_key", "api_key"))
+    return "" if placeholder else v
+
 def ask(base_url, key, model, messages, tools):
     body = {"model": model, "messages": messages, "temperature": 0, "max_tokens": 600}
     if tools:
         body.update(tools=tools, tool_choice="auto")
     req = urllib.request.Request(base_url.rstrip("/") + "/chat/completions", data=json.dumps(body).encode(), method="POST",
                                  headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}"})
-    with urllib.request.urlopen(req, timeout=120) as r:
+    with urllib.request.urlopen(req, timeout=120, context=ssl_context()) as r:
         return json.load(r)["choices"][0]["message"]
 
 
@@ -92,7 +112,7 @@ def main():
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--save", default="", help="write the results as JSON (for tools/gink_model/gate.py)")
     a = ap.parse_args()
-    key = os.environ.get("GINK_EVAL_KEY") or getpass.getpass("API key (hidden): ")
+    key = real_key(os.environ.get("GINK_EVAL_KEY", "")) or getpass.getpass("API key (hidden): ").strip()
     rows = [json.loads(l) for l in open(a.file, encoding="utf-8") if l.strip()]
     rows = rows[:a.limit] if a.limit else rows
     tools = json.load(open(os.path.join(os.path.dirname(a.file), "tools.json"), encoding="utf-8"))

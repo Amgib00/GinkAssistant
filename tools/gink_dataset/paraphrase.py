@@ -3,7 +3,7 @@ More ways to ask: rewrites each action request in the training set several ways,
 Apache-2.0 model (GPT-OSS on Groq by default), and keeps only rewrites that can't change the answer.
 
     python tools/gink_dataset/generate.py
-    python tools/gink_dataset/paraphrase.py --limit 20          # try a few first
+    python tools/gink_dataset/paraphrase.py --limit 20          # try a few first (asks for your Groq key, hidden)
     python tools/gink_dataset/paraphrase.py                     # then all (resumes where it stopped)
     python tools/gink_dataset/generate.py && python tools/gink_dataset/validate.py
 
@@ -25,6 +25,7 @@ import os
 import re
 import sys
 import time
+import urllib.error
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -39,6 +40,26 @@ CURRENCY_WORDS = {"euro", "euros", "dollar", "dollars", "naira", "nairas", "cedi
 FR_HINTS = {"le", "la", "les", "de", "du", "des", "à", "au", "mon", "ma", "mes", "pour", "est", "un", "une", "je",
             "moi", "tu", "te", "et", "dans", "s'il", "plaît", "combien", "quel", "quelle", "réveille", "mets"}
 
+
+
+def ssl_context():
+    """Certificates for https: Python from python.org on a Mac has none of its own until you run its
+    "Install Certificates" command, which made every request fail with CERTIFICATE_VERIFY_FAILED.
+    certifi (already installed with Gink) carries them."""
+    import ssl
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        return ssl.create_default_context()
+
+
+def real_key(value: str) -> str:
+    """Placeholders like "..." or "your-key" count as no key (then it's asked for, hidden)."""
+    v = (value or "").strip().strip("'\"")
+    placeholder = (not v or set(v) <= {".", "x", "X", "*"} or any(c in v for c in "<> ")
+                   or v.lower() in ("your-key", "your_key", "key", "groq_api_key", "api_key"))
+    return "" if placeholder else v
 
 def words(text: str) -> list:
     return re.findall(r"[\w'’]+", text.lower())
@@ -98,7 +119,7 @@ def ask(base, key, model, text, language, n):
                                                                    text=text)}]}
     req = urllib.request.Request(base.rstrip("/") + "/chat/completions", data=json.dumps(body).encode(), method="POST",
                                  headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}"})
-    with urllib.request.urlopen(req, timeout=120) as r:
+    with urllib.request.urlopen(req, timeout=120, context=ssl_context()) as r:
         content = json.load(r)["choices"][0]["message"].get("content") or ""
     m = re.search(r"\{.*\}", content, re.S)
     try:
@@ -136,7 +157,7 @@ def main(argv=None, ask_fn=ask):
     if not os.path.exists(a.train):
         print("Run tools/gink_dataset/generate.py first.")
         return 1
-    key = a.key or os.environ.get("GROQ_API_KEY") or getpass.getpass("API key (hidden): ")
+    key = real_key(a.key) or real_key(os.environ.get("GROQ_API_KEY", "")) or getpass.getpass("Groq API key (hidden): ").strip()
     rows = [json.loads(l) for l in open(a.train, encoding="utf-8") if l.strip()]
     todo, seen = [], set()
     for r in rows:
@@ -159,6 +180,14 @@ def main(argv=None, ask_fn=ask):
         for i, (lang, text) in enumerate(todo, 1):
             try:
                 variants = ask_fn(a.base_url, key, a.model, text, lang, a.per_request)
+            except urllib.error.HTTPError as exc:
+                if exc.code in (401, 403):
+                    print("  The API key was refused. Check it at console.groq.com -> API Keys, then run again.")
+                elif exc.code == 429:
+                    print("  Groq says: too many requests for now. Wait a minute and run again: it continues where it stopped.")
+                else:
+                    print(f"  {i}: the AI service answered HTTP {exc.code}; run again later to continue")
+                break
             except Exception as exc:
                 print(f"  {i}: request failed ({exc}); run again later to continue")
                 break
