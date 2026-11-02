@@ -345,6 +345,7 @@ SETTINGS_JS = r"""
           {apps: true, type: 'toggle', key: 'use_memory', label: 'Use memories in answers', desc: 'When off, Gink ignores what you asked it to remember (they stay saved \u2014 manage them under Memory).'},
           {type: 'button', label: 'Export my data', desc: 'Save your chats, Workspace, memories and settings as a file.', action: 'export', text: 'Export'},
           {type: 'button', label: 'Delete all chats', desc: 'Removes every conversation from this device and your other devices.', action: 'delete_chats', text: 'Delete all', style: 'danger-ghost'}]},
+        {title: 'Help improve Gink', rows: trainingRows(info.training)},
         {title: 'Archived chats', rows: [
           {type: 'list', items: (L.archived || []).map(function (c) {
             return {t: c.title || 'Untitled chat', m: '', button: {text: 'Unarchive', action: 'unarchive_chat', value: c.id, style: 'plain'}}; }),
@@ -551,6 +552,20 @@ SETTINGS_JS = r"""
     out.push({title: 'Safety notices', rows: [{type: 'list', items: (f.notices || []).map(function (n) {
       return {t: (n.name || n.teen) + ' ' + n.text, m: famDate(n.at)}; }), empty: 'No notices.'}]});
     return out;
+  }
+
+  // Settings > Privacy > Help improve Gink (server: /account/training) -- off unless switched on
+  function trainingRows(t) {
+    var what = 'Your Gink Genie requests, Genie\u2019s steps and the code it writes in your projects help train Gink\u2019s own coding model. Not your chats or anything else. Keys and passwords are removed automatically, and files like .env are never shared. Adults only.';
+    if (!t) return [{type: 'note', text: what}];
+    if (!t.can) return [{type: 'note', text: what}, {type: 'note', text: t.why}];
+    if (!t.genie) return [{type: 'note', text: what},
+      {type: 'button', label: 'Share my Gink Genie sessions', desc: 'You can stop any time, and delete what you shared.', action: 'training_on', text: 'Share'}];
+    return [{type: 'info', label: 'Sharing Gink Genie sessions', value: (t.shared || 0) + (t.shared === 1 ? ' shared' : ' shared') +
+               (t.since ? ' \u00b7 since ' + new Date(t.since * 1000).toLocaleDateString() : '')},
+      {type: 'note', text: what},
+      {type: 'button', label: 'Stop sharing', desc: 'What you already shared is kept for training.', action: 'training_off', text: 'Stop'},
+      {type: 'button', label: 'Stop and delete what I shared', action: 'training_delete', text: 'Delete', style: 'danger-ghost'}];
   }
 
   function phoneRows(p) {

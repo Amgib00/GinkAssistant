@@ -2257,6 +2257,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
           {apps: true, type: 'toggle', key: 'use_memory', label: 'Use memories in answers', desc: 'When off, Gink ignores what you asked it to remember (they stay saved \u2014 manage them under Memory).'},
           {type: 'button', label: 'Export my data', desc: 'Save your chats, Workspace, memories and settings as a file.', action: 'export', text: 'Export'},
           {type: 'button', label: 'Delete all chats', desc: 'Removes every conversation from this device and your other devices.', action: 'delete_chats', text: 'Delete all', style: 'danger-ghost'}]},
+        {title: 'Help improve Gink', rows: trainingRows(info.training)},
         {title: 'Archived chats', rows: [
           {type: 'list', items: (L.archived || []).map(function (c) {
             return {t: c.title || 'Untitled chat', m: '', button: {text: 'Unarchive', action: 'unarchive_chat', value: c.id, style: 'plain'}}; }),
@@ -2463,6 +2464,20 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     out.push({title: 'Safety notices', rows: [{type: 'list', items: (f.notices || []).map(function (n) {
       return {t: (n.name || n.teen) + ' ' + n.text, m: famDate(n.at)}; }), empty: 'No notices.'}]});
     return out;
+  }
+
+  // Settings > Privacy > Help improve Gink (server: /account/training) -- off unless switched on
+  function trainingRows(t) {
+    var what = 'Your Gink Genie requests, Genie\u2019s steps and the code it writes in your projects help train Gink\u2019s own coding model. Not your chats or anything else. Keys and passwords are removed automatically, and files like .env are never shared. Adults only.';
+    if (!t) return [{type: 'note', text: what}];
+    if (!t.can) return [{type: 'note', text: what}, {type: 'note', text: t.why}];
+    if (!t.genie) return [{type: 'note', text: what},
+      {type: 'button', label: 'Share my Gink Genie sessions', desc: 'You can stop any time, and delete what you shared.', action: 'training_on', text: 'Share'}];
+    return [{type: 'info', label: 'Sharing Gink Genie sessions', value: (t.shared || 0) + (t.shared === 1 ? ' shared' : ' shared') +
+               (t.since ? ' \u00b7 since ' + new Date(t.since * 1000).toLocaleDateString() : '')},
+      {type: 'note', text: what},
+      {type: 'button', label: 'Stop sharing', desc: 'What you already shared is kept for training.', action: 'training_off', text: 'Stop'},
+      {type: 'button', label: 'Stop and delete what I shared', action: 'training_delete', text: 'Delete', style: 'danger-ghost'}];
   }
 
   function phoneRows(p) {
@@ -4589,6 +4604,16 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
       .then(function (j) { pushSettings({ archived: archivedList(), shared: j.shared || [] }); }).catch(function () {});
     api("/account/lockdown").then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (j) { pushSettings({ archived: archivedList() }, { lockdown_on: !!j.on }); }).catch(function () {});
+    api("/account/training").then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (j) { pushSettings({ archived: archivedList() }, { training: j }); }).catch(function () {});
+  }
+  function setTraining(genie, del, done) {                 // Settings > Privacy > Help improve Gink
+    fetch("/account/training", { method: "PUT", headers: { Authorization: "Bearer " + W.token, "Content-Type": "application/json" },
+                                 body: JSON.stringify({ genie: genie, "delete": del }) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error(j.detail || "That didn\u2019t work. Please try again.");
+        settingsToast(done); loadLockdown(); }); })
+      .catch(function (err) { settingsToast(err.message); });
   }
   function connectApp(service) {
     var win = window.open("about:blank", "_blank");           // opened during the click, so it isn't blocked
@@ -4735,6 +4760,9 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
       var name = v && v.name;
       if (name === "refresh") return (v.value === "account" ? loadDevices() : v.value === "connected" ? loadConnected()
                                       : v.value === "privacy" ? loadLockdown() : v.value === "family" ? loadFamily() : pushSettings());
+      if (name === "training_on") return setTraining(true, false, "Thank you \u2014 your Gink Genie sessions will help train Gink.");
+      if (name === "training_off") return setTraining(false, false, "Stopped sharing.");
+      if (name === "training_delete") return setTraining(false, true, "Stopped, and deleted what you shared.");
       if (name === "family_birth_year") return familyCall("/account/age", { birth_year: String(v.value || "").trim() }, "Saved.");
       if (name === "family_invite") return familyCall("/family/invite", { teen: String(v.value || "").trim() }, "Invitation sent. It applies once they accept.");
       if (name === "family_accept") return familyCall("/family/respond", { accept: true }, "Linked.");

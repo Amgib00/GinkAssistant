@@ -305,6 +305,7 @@ tests/test_formatting_security.py
 tests/test_genie.py
 tests/test_genie_github.py
 tests/test_genie_review.py
+tests/test_genie_training_optin.py
 tests/test_gink_cloud.py
 tests/test_gink_dataset.py
 tests/test_gink_model_tools.py
@@ -382,6 +383,7 @@ tools/gink_dataset/translate.py
 tools/gink_dataset/validate.py
 tools/gink_model/Gink_finetune_colab.ipynb
 tools/gink_model/PLAN.md
+tools/gink_model/export_genie_data.py
 tools/gink_model/gate.py
 tools/gink_model/prepare_hosted.py
 tools/gink_model/train_unsloth.py

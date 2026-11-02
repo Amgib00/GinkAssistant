@@ -2657,6 +2657,10 @@ def delete_account(request: Request, data: dict = Body(...)):
             for t in _FAMILY_TABLES:
                 con.execute(t)
             con.execute("DELETE FROM account_age WHERE email=?", (email,))
+            for t in TRAINING_TABLES:
+                con.execute(t)
+            con.execute("DELETE FROM training_optin WHERE email=?", (email,))
+            con.execute("DELETE FROM genie_training WHERE email=?", (email,))
             con.execute("DELETE FROM family_controls WHERE teen=?", (email,))
             con.execute("DELETE FROM family_links WHERE teen=? OR parent=?", (email, email))
             con.execute("DELETE FROM family_notices WHERE teen=? OR parent=?", (email, email))
@@ -3863,6 +3867,132 @@ def family_controls(request: Request, data: dict = Body(...)):
     return {"controls": new}
 
 
+
+
+# ---- Help improve Gink's coding model (tools/gink_model/PLAN.md, "a coding model for Gink Genie").
+# OFF unless the person switches it on (Settings > Privacy); adults (18+) only -- never teens. When on,
+# each finished Genie request in their projects is kept as a training example: the request, Genie's
+# steps (tool calls and results) and its reply. Secrets are removed (API keys, private keys), and files
+# like .env, *.pem and id_rsa are never shared. They can stop any time and delete what they shared.
+# Only the owner can export it (GET /admin/training/genie.jsonl -> tools/gink_model/export_genie_data.py).
+TRAINING_TABLES = (
+    "CREATE TABLE IF NOT EXISTS training_optin (email TEXT PRIMARY KEY, genie INTEGER NOT NULL, since REAL)",
+    "CREATE TABLE IF NOT EXISTS genie_training (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT, project_id TEXT,"
+    " created REAL, record TEXT)",
+)
+TRAINING_RECORD_MAX = 300_000          # one request
+TRAINING_PERSON_MAX = 20_000_000       # one person
+TRAINING_TOTAL_MAX = 300_000_000       # everyone (the server disk is shared with accounts)
+SECRET_PATTERNS = re.compile(r"hf_[A-Za-z0-9]{30,}|gsk_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,}|"
+                             r"github_pat_[A-Za-z0-9_]{40,}|sk-(?:proj-|ant-)?[A-Za-z0-9_-]{20,}|sk_live_[A-Za-z0-9]{20,}|"
+                             r"AIza[0-9A-Za-z_-]{35}|xox[abp]-[A-Za-z0-9-]{10,}|"
+                             r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----", re.S)
+PRIVATE_FILES = re.compile(r"(^|/)(\.env(\..*)?|.*\.pem|.*\.key|id_rsa.*|id_ed25519.*|\.npmrc|\.pypirc|credentials.*|secrets?\..*)$", re.I)
+
+
+def _training_db(fn):
+    with _db_lock:
+        con = _db()
+        try:
+            for t in TRAINING_TABLES:
+                con.execute(t)
+            out = fn(con)
+            con.commit()
+            return out
+        finally:
+            con.close()
+
+
+def _training_on(email: str) -> bool:
+    row = _training_db(lambda con: con.execute("SELECT genie FROM training_optin WHERE email=?", (email,)).fetchone())
+    age = _age(email)
+    return bool(row and row[0]) and age is not None and age >= ADULT_AGE
+
+
+def _scrub_training(messages: list) -> list:
+    """Private files' contents and anything that looks like a key are taken out."""
+    private_ids = set()
+    out = []
+    for m in messages:
+        m = _json.loads(_json.dumps(m))
+        for c in m.get("tool_calls") or []:
+            try:
+                args = _json.loads(c["function"].get("arguments") or "{}")
+            except ValueError:
+                continue
+            if PRIVATE_FILES.search(str(args.get("path") or "")):
+                private_ids.add(c.get("id"))
+                if "content" in args:
+                    args["content"] = "[not shared: a private file]"
+                c["function"]["arguments"] = _json.dumps(args)
+        if m.get("role") == "tool" and m.get("tool_call_id") in private_ids:
+            m["content"] = "[not shared: a private file]"
+        out.append(m)
+    return _json.loads(SECRET_PATTERNS.sub("[REMOVED]", _json.dumps(out)))
+
+
+def _training_keep(state: dict, reply: str) -> None:
+    email = state.get("email") or ""
+    if not email or not _training_on(email):
+        return
+    messages = [m for m in state.get("messages") or [] if m.get("content") != TEEN_SAFETY]
+    record = _json.dumps({"messages": _scrub_training(messages + [{"role": "assistant", "content": reply}]),
+                          "mode": state.get("mode"), "failed": bool(state.get("failed"))})
+    if len(record) > TRAINING_RECORD_MAX:
+        return
+
+    def save(con):
+        mine = con.execute("SELECT COALESCE(SUM(length(record)), 0) FROM genie_training WHERE email=?", (email,)).fetchone()[0]
+        total = con.execute("SELECT COALESCE(SUM(length(record)), 0) FROM genie_training").fetchone()[0]
+        if mine + len(record) <= TRAINING_PERSON_MAX and total + len(record) <= TRAINING_TOTAL_MAX:
+            con.execute("INSERT INTO genie_training (email, project_id, created, record) VALUES (?, ?, ?, ?)",
+                        (email, state.get("pid"), time.time(), record))
+    _training_db(save)
+
+
+@app.get("/account/training")
+def training_get(request: Request):
+    email = _email_from_auth(request)
+    age = _age(email)
+    row = _training_db(lambda con: con.execute("SELECT genie, since FROM training_optin WHERE email=?", (email,)).fetchone())
+    shared = _training_db(lambda con: con.execute("SELECT COUNT(*) FROM genie_training WHERE email=?", (email,)).fetchone()[0])
+    why = "" if age is not None and age >= ADULT_AGE else (
+        "Add your birth year first (Settings > Parental controls)." if age is None else "This is only for adults (18+).")
+    return {"genie": bool(row and row[0]) and not why, "since": row[1] if row else None, "shared": shared,
+            "can": not why, "why": why}
+
+
+@app.put("/account/training")
+def training_set(request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    on = bool(data.get("genie"))
+    if on:
+        age = _age(email)
+        if age is None or age < ADULT_AGE:
+            raise HTTPException(status_code=403, detail=training_get(request)["why"])
+        _training_db(lambda con: con.execute("INSERT OR REPLACE INTO training_optin (email, genie, since) VALUES (?, 1, ?)",
+                                             (email, time.time())))
+    else:
+        _training_db(lambda con: con.execute("DELETE FROM training_optin WHERE email=?", (email,)))
+    if data.get("delete"):
+        _training_db(lambda con: con.execute("DELETE FROM genie_training WHERE email=?", (email,)))
+    return training_get(request)
+
+
+@app.get("/admin/training/genie.jsonl")
+def training_export(request: Request):
+    """Owner only: the shared Genie sessions as training examples (OpenAI chat format with Genie's tools)."""
+    _require_owner(request)
+    from fastapi.responses import StreamingResponse
+    rows = _training_db(lambda con: con.execute("SELECT record FROM genie_training ORDER BY id").fetchall())
+
+    def lines():
+        for (record,) in rows:
+            r = _json.loads(record)
+            yield _json.dumps({"messages": r["messages"], "tools": GENIE_TOOLS}, ensure_ascii=False) + "\n"
+    print(f"[Gink] ADMIN: Genie training data exported ({len(rows)} examples)", flush=True)
+    return StreamingResponse(lines(), media_type="application/x-ndjson",
+                             headers={"Content-Disposition": 'attachment; filename="genie_training.jsonl"'})
 
 # ---- Owner only: download a copy of the whole database (accounts, chats sync, payments...).
 #   GET /admin/backup  header x-admin-key: <GINK_ADMIN_KEY>  -> gink-backup-<date>.db
@@ -6203,6 +6333,7 @@ def _genie_failed(state: dict, why: str) -> dict:
     if not state["changes"]:
         raise HTTPException(status_code=502, detail=f"{why} Please try again.")
     reply = f"{why} I stopped partway: the changes so far are kept and you can undo them. Ask me to continue."
+    state["failed"] = True
     _genie_remember(state, reply)
     return {"reply": reply, "failed": True, "changes": state["changes"], "steps": state["steps"],
             "rounds": state["rounds"], "checkpoint": state.get("checkpoint")}
@@ -6366,6 +6497,10 @@ def _genie_remember(state: dict, reply: str):
                     (state["pid"], reply[:20000], extra[:400000], now)),
         con.execute("DELETE FROM genie_chat WHERE project_id=? AND id NOT IN (SELECT id FROM genie_chat WHERE project_id=? "
                     "ORDER BY id DESC LIMIT 400)", (state["pid"], state["pid"]))))
+    try:
+        _training_keep(state, reply)                   # only if this person chose to help (Settings > Privacy)
+    except Exception as exc:
+        print(f"[Gink] training example not kept ({type(exc).__name__})", flush=True)
 
 
 async def _genie_ask(request: Request, email: str, pid: str, instruction: str, progress: str = "", mode: str = "auto") -> dict:

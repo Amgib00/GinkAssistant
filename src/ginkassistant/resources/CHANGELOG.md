@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.109 (November 2026)
+
+- Settings > Privacy > Help improve Gink: adults can choose to share their Gink Genie sessions to help
+  train Gink's own coding model. It's off unless you switch it on; keys and passwords are removed and
+  private files (like .env) are never shared; you can stop, or stop and delete what you shared
+
 ## 0.1.108 (November 2026)
 
 - Updates reach people only when you choose: every release is now a test build on GitHub (you can

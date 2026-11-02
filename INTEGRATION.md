@@ -1911,3 +1911,16 @@ New services/live_info.py (all free, no API keys):
   `gh release edit vX.Y.Z --prerelease=false --latest --title "Gink vX.Y.Z"`. Nothing else changes: /app/version
   (the apps' daily update offer) and the website use GitHub's releases/latest, which never returns a pre-release.
   The owner's usual command block now makes test builds; add `-f for_users=true` to ship to users.
+
+## 0.1.109: opt-in Genie sessions for Gink's coding model
+- Owner wants a coding model; data only from people who opt in. training_optin + genie_training tables.
+  /account/training GET/PUT {genie, delete}: adults only (_age >= 18; unknown age or teen -> 403 with why).
+- _genie_remember -> _training_keep(state, reply) when opted in: state["messages"] (TEEN_SAFETY filtered) + the reply,
+  _scrub_training: tool calls whose path matches PRIVATE_FILES (.env*, *.pem, *.key, id_rsa*, credentials*, secrets.*,
+  .npmrc, .pypirc) get content "[not shared: a private file]" and their tool results too; SECRET_PATTERNS -> "[REMOVED]"
+  over the whole record (also catches keys pasted into requests). Caps: 300 KB/record, 20 MB/person, 300 MB total.
+  failed=True for _genie_failed records. Account deletion removes both tables' rows.
+- GET /admin/training/genie.jsonl (_require_owner): {"messages", "tools": GENIE_TOOLS} per line, no emails;
+  tools/gink_model/export_genie_data.py (certifi + User-Agent); genie_training.jsonl git-ignored.
+- Settings > Privacy "Help improve Gink" (trainingRows): note -> Share / Stop / Stop and delete; controller
+  _a_training_*; bridge setTraining(). Owner: put this in the Privacy Policy before telling users about it.

@@ -95,5 +95,8 @@ want to learn from real chats, that needs its own clear opt-in first.
 Training a large model from nothing costs millions of dollars and huge amounts of data -- that's not
 the route. The realistic one is the same as for chat: fine-tune an open, code-capable model (for example
 a larger Qwen) on Genie's own tools (write_file, run_command...) and serve it through the own-model
-switch. The data would come from Genie sessions **only of people who opted in**, plus Apache-2.0
-models' output -- never Claude's. That needs a consent setting in Genie first.
+switch. The data comes from Genie sessions **only of people who opted in** (Settings > Privacy > Help
+improve Gink: adults only, off by default, keys and private files removed, stop or delete any time),
+plus Apache-2.0 models' output -- never Claude's. Download it with
+`python tools/gink_model/export_genie_data.py` (owner key) when there's enough: a few thousand requests
+is a good first goal. Have the Privacy Policy say this before you switch it on for users.

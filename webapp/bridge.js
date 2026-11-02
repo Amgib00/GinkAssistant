@@ -817,6 +817,16 @@
       .then(function (j) { pushSettings({ archived: archivedList(), shared: j.shared || [] }); }).catch(function () {});
     api("/account/lockdown").then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (j) { pushSettings({ archived: archivedList() }, { lockdown_on: !!j.on }); }).catch(function () {});
+    api("/account/training").then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (j) { pushSettings({ archived: archivedList() }, { training: j }); }).catch(function () {});
+  }
+  function setTraining(genie, del, done) {                 // Settings > Privacy > Help improve Gink
+    fetch("/account/training", { method: "PUT", headers: { Authorization: "Bearer " + W.token, "Content-Type": "application/json" },
+                                 body: JSON.stringify({ genie: genie, "delete": del }) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error(j.detail || "That didn\u2019t work. Please try again.");
+        settingsToast(done); loadLockdown(); }); })
+      .catch(function (err) { settingsToast(err.message); });
   }
   function connectApp(service) {
     var win = window.open("about:blank", "_blank");           // opened during the click, so it isn't blocked
@@ -963,6 +973,9 @@
       var name = v && v.name;
       if (name === "refresh") return (v.value === "account" ? loadDevices() : v.value === "connected" ? loadConnected()
                                       : v.value === "privacy" ? loadLockdown() : v.value === "family" ? loadFamily() : pushSettings());
+      if (name === "training_on") return setTraining(true, false, "Thank you \u2014 your Gink Genie sessions will help train Gink.");
+      if (name === "training_off") return setTraining(false, false, "Stopped sharing.");
+      if (name === "training_delete") return setTraining(false, true, "Stopped, and deleted what you shared.");
       if (name === "family_birth_year") return familyCall("/account/age", { birth_year: String(v.value || "").trim() }, "Saved.");
       if (name === "family_invite") return familyCall("/family/invite", { teen: String(v.value || "").trim() }, "Invitation sent. It applies once they accept.");
       if (name === "family_accept") return familyCall("/family/respond", { accept: true }, "Linked.");

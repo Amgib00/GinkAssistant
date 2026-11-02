@@ -259,6 +259,10 @@ class SettingsController:
         if token and panel == "privacy":                      # Lockdown mode
             try:
                 extra_info["lockdown_on"] = await asyncio.wait_for(api.lockdown(token), timeout=8)
+                try:
+                    extra_info["training"] = await asyncio.wait_for(api.training(token), timeout=8)
+                except Exception:
+                    pass
             except Exception:
                 pass
         if token and panel == "account":                      # your websites
@@ -587,6 +591,26 @@ class SettingsController:
             await ApiClient(self.app.state.base_url).delete_shared(token, str(sid))
             await self.web.settings_toast("Link deleted: it no longer works.")
             await self.refresh("privacy")
+
+    async def _training(self, genie: bool, delete: bool, done: str):
+        token = getattr(self.app, "session_token", None)
+        if not token:
+            return
+        try:
+            await ApiClient(self.app.state.base_url).set_training(token, genie, delete)
+        except ApiError as exc:
+            return await self.web.settings_toast(str(exc))
+        await self.web.settings_toast(done)
+        await self.refresh("privacy")
+
+    async def _a_training_on(self, _):
+        await self._training(True, False, "Thank you \u2014 your Gink Genie sessions will help train Gink.")
+
+    async def _a_training_off(self, _):
+        await self._training(False, False, "Stopped sharing.")
+
+    async def _a_training_delete(self, _):
+        await self._training(False, True, "Stopped, and deleted what you shared.")
 
     async def _a_lockdown_on(self, _):
         await self._set_lockdown(True)

@@ -165,6 +165,13 @@ class ApiClient:
             return None
         return self._session(data, data.get("email", ""))
 
+    # -- Help improve Gink (server: /account/training) ----------------------------
+    async def training(self, token: str) -> dict:
+        return await self._authed("GET", "/account/training", token)
+
+    async def set_training(self, token: str, genie: bool, delete: bool = False) -> dict:
+        return await self._authed("PUT", "/account/training", token, json={"genie": bool(genie), "delete": bool(delete)})
+
     # -- age and parental controls (server: /account/age, /family) ----------------
     async def age(self, token: str) -> dict:
         return await self._authed("GET", "/account/age", token)

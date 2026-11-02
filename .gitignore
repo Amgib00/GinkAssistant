@@ -57,3 +57,5 @@ tools/gink_dataset/out/
 tools/gink_model/out/
 # owner database backups (tools/backup_db.py): everyone's accounts, never publish
 gink-backup-*.db
+# shared Genie sessions for training (tools/gink_model/export_genie_data.py): private, never publish
+genie_training.jsonl
