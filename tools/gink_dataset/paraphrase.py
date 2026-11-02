@@ -1,0 +1,185 @@
+"""
+More ways to ask: rewrites each action request in the training set several ways, with an
+Apache-2.0 model (GPT-OSS on Groq by default), and keeps only rewrites that can't change the answer.
+
+    python tools/gink_dataset/generate.py
+    python tools/gink_dataset/paraphrase.py --limit 20          # try a few first
+    python tools/gink_dataset/paraphrase.py                     # then all (resumes where it stopped)
+    python tools/gink_dataset/generate.py && python tools/gink_dataset/validate.py
+
+Why GPT-OSS and not Claude: Anthropic's terms don't allow using Claude's output to train other
+models; GPT-OSS is Apache-2.0. The key: GROQ_API_KEY (or --key, asked for hidden).
+
+Every rewrite must keep the request's facts -- each number and time, am/pm, day words (tomorrow,
+lundi...), names, places, currencies -- and add no new numbers, so the tool call the example teaches
+(computed from the original) is still exactly right. Rewrites that fail a check are dropped.
+Results go to paraphrases.csv (one row per rewrite): skim it and set approved to "no" for anything
+odd; generate.py uses rows with approved = yes, for the TRAINING examples only (the held-out
+examples stay as they are, so scores stay honest).
+"""
+import argparse
+import csv
+import getpass
+import json
+import os
+import re
+import sys
+import time
+import urllib.request
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+CSV_PATH = os.path.join(HERE, "paraphrases.csv")
+FIELDS = ["language", "original", "paraphrase", "model", "approved"]
+DAY_WORDS = {"today", "tonight", "tomorrow", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
+             "sunday", "aujourd'hui", "ce soir", "demain", "lundi", "mardi", "mercredi", "jeudi", "vendredi",
+             "samedi", "dimanche", "am", "pm", "morning", "evening", "matin", "soir", "minutes", "minute", "hour",
+             "hours", "heure", "heures"}
+CURRENCY_WORDS = {"euro", "euros", "dollar", "dollars", "naira", "nairas", "cedi", "cedis", "leone", "leones",
+                  "shilling", "shillings", "pound", "pounds", "livres", "franc", "francs", "cfa"}
+FR_HINTS = {"le", "la", "les", "de", "du", "des", "à", "au", "mon", "ma", "mes", "pour", "est", "un", "une", "je",
+            "moi", "tu", "te", "et", "dans", "s'il", "plaît", "combien", "quel", "quelle", "réveille", "mets"}
+
+
+def words(text: str) -> list:
+    return re.findall(r"[\w'’]+", text.lower())
+
+
+def anchors(text: str) -> set:
+    """What a rewrite must keep: numbers/times, day and time words, capitalised names, codes."""
+    keep = set(re.findall(r"\d+(?:[:h.,]\d+)?", text.lower()))
+    low = " " + " ".join(words(text)) + " "
+    keep |= {w for w in DAY_WORDS | CURRENCY_WORDS if f" {w} " in low}
+    tokens = re.findall(r"[\w'’]+", text)
+    for i, tok in enumerate(tokens):
+        if tok[:1].isupper() and i > 0 and tok.lower() not in DAY_WORDS and len(tok) > 1:
+            keep.add(tok.lower())                       # names, places (not the first word of the sentence)
+        if re.fullmatch(r"[A-Z]{3}", tok):
+            keep.add(tok.lower())                       # currency codes
+    return keep
+
+
+def problems(original: str, rewrite: str, language: str) -> list:
+    out = []
+    r = rewrite.strip()
+    if not r or len(r) > 300:
+        out.append("empty or too long")
+        return out
+    if re.sub(r"\W+", "", r.lower()) == re.sub(r"\W+", "", original.lower()):
+        out.append("same as the original")
+    ratio = len(r) / max(1, len(original))
+    if not 0.4 <= ratio <= 3.0:
+        out.append("length changed too much")
+    low = " " + " ".join(words(r)) + " "
+    for a in sorted(anchors(original)):
+        if a.isdigit() or re.fullmatch(r"\d+(?:[:h.,]\d+)?", a):
+            if a not in r.lower():
+                out.append(f"lost {a!r}")
+        elif f" {a} " not in low:
+            out.append(f"lost {a!r}")
+    new_numbers = set(re.findall(r"\d+", r)) - set(re.findall(r"\d+", original))
+    if new_numbers:
+        out.append(f"added numbers {sorted(new_numbers)}")
+    if language == "fr" and not (set(words(r)) & FR_HINTS):
+        out.append("doesn't look French")
+    if language == "en" and len(set(words(r)) & FR_HINTS) >= 3:
+        out.append("doesn't look English")
+    return out
+
+
+PROMPT = ("Rewrite this request to a phone assistant {n} different ways a real person might type or say it, "
+          "in {lang}. Keep EVERY number, time (with am/pm), day, name, place, amount and currency exactly as "
+          "written; don't add any. Vary the wording, length and tone (short, polite, casual). "
+          'Answer with JSON only: {{"variants": ["...", "..."]}}\n\nRequest: {text}')
+
+
+def ask(base, key, model, text, language, n):
+    body = {"model": model, "temperature": 0.9, "max_tokens": 900, "reasoning_effort": "low",
+            "messages": [{"role": "user", "content": PROMPT.format(n=n, lang="French" if language == "fr" else "English",
+                                                                   text=text)}]}
+    req = urllib.request.Request(base.rstrip("/") + "/chat/completions", data=json.dumps(body).encode(), method="POST",
+                                 headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}"})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        content = json.load(r)["choices"][0]["message"].get("content") or ""
+    m = re.search(r"\{.*\}", content, re.S)
+    try:
+        return [str(v) for v in json.loads(m.group(0)).get("variants", [])] if m else []
+    except ValueError:
+        return []
+
+
+def load_csv(path=CSV_PATH) -> list:
+    if not os.path.exists(path):
+        return []
+    with open(path, encoding="utf-8", newline="") as f:
+        return list(csv.DictReader(f))
+
+
+def approved_map(path=CSV_PATH) -> dict:
+    """original request -> [approved rewrites] (generate.py uses this)."""
+    out = {}
+    for row in load_csv(path):
+        if (row.get("approved") or "").strip().lower() == "yes" and row.get("paraphrase"):
+            out.setdefault(row["original"], []).append(row["paraphrase"])
+    return out
+
+
+def main(argv=None, ask_fn=ask):
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--train", default=os.path.join(HERE, "out", "train.jsonl"))
+    ap.add_argument("--base-url", default=os.environ.get("GINK_PARA_BASE", "https://api.groq.com/openai/v1"))
+    ap.add_argument("--model", default=os.environ.get("GINK_PARA_MODEL", "openai/gpt-oss-120b"))
+    ap.add_argument("--per-request", type=int, default=4)
+    ap.add_argument("--limit", type=int, default=0, help="only this many requests (to try it)")
+    ap.add_argument("--csv", default=CSV_PATH)
+    ap.add_argument("--key", default="")
+    a = ap.parse_args(argv)
+    if not os.path.exists(a.train):
+        print("Run tools/gink_dataset/generate.py first.")
+        return 1
+    key = a.key or os.environ.get("GROQ_API_KEY") or getpass.getpass("API key (hidden): ")
+    rows = [json.loads(l) for l in open(a.train, encoding="utf-8") if l.strip()]
+    todo, seen = [], set()
+    for r in rows:
+        if r.get("category") != "action":
+            continue
+        user = next(m["content"] for m in r["messages"] if m["role"] == "user")
+        if user not in seen:
+            seen.add(user)
+            todo.append((r.get("language", "en"), user))
+    done = {row["original"] for row in load_csv(a.csv)}
+    todo = [t for t in todo if t[1] not in done]
+    if a.limit:
+        todo = todo[:a.limit]
+    new_file = not os.path.exists(a.csv)
+    kept = dropped = 0
+    with open(a.csv, "a", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS)
+        if new_file:
+            w.writeheader()
+        for i, (lang, text) in enumerate(todo, 1):
+            try:
+                variants = ask_fn(a.base_url, key, a.model, text, lang, a.per_request)
+            except Exception as exc:
+                print(f"  {i}: request failed ({exc}); run again later to continue")
+                break
+            ok_any = False
+            for v in dict.fromkeys(v.strip() for v in variants):
+                why = problems(text, v, lang)
+                if why:
+                    dropped += 1
+                    continue
+                w.writerow({"language": lang, "original": text, "paraphrase": v, "model": a.model, "approved": "yes"})
+                kept += 1
+                ok_any = True
+            if not ok_any:                              # remember it was tried, so a re-run moves on
+                w.writerow({"language": lang, "original": text, "paraphrase": "", "model": a.model, "approved": "no"})
+            f.flush()
+            if i % 10 == 0:
+                print(f"  {i}/{len(todo)} requests: {kept} rewrites kept, {dropped} dropped")
+            time.sleep(0.2)
+    print(f"Done: {kept} rewrites kept, {dropped} dropped by the checks -> {a.csv}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

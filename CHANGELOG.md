@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.99 (November 2026)
+
+- For the owner, growing the data for Gink's own model: `paraphrase.py` asks GPT-OSS for more ways to
+  say each request and throws out any rewrite that changes a time, number, day, name or currency;
+  `examples_general.csv` is a sheet for people to write and approve everyday, safety and honesty
+  examples; the held-out test examples now stay the same as the data grows, so scores stay comparable;
+  `validate.py` shows how far the data is from the plan's targets
+
 ## 0.1.98 (November 2026)
 
 - Fixed: parental safety notices could never be sent -- the check used an AI model that Groq retired

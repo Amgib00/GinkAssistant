@@ -1,0 +1,98 @@
+"""Growing the Gink dataset: GPT-OSS rewrites that can't change the answer, people's examples, and a
+held-out set that stays the same."""
+import csv, json, os, subprocess, sys
+ROOT = os.path.join(os.path.dirname(__file__), "..")
+DS = os.path.join(ROOT, "tools", "gink_dataset")
+sys.path.insert(0, DS)
+import pytest
+import paraphrase as pp
+
+
+def test_checks_keep_the_facts():
+    assert pp.problems("Wake me up at 6:30 am for the gym", "Could you get me up at 6:30 am? Gym day.", "en") == []
+    assert "lost '6:30'" in pp.problems("Wake me up at 6:30 am", "Wake me up at 7:30 am", "en")
+    assert "lost 'am'" in pp.problems("Wake me up at 6:30 am", "Wake me up at 6:30 in the evening", "en")
+    assert any("added numbers" in p for p in pp.problems("Set a timer for 5 minutes", "Set 2 timers for 5 minutes", "en"))
+    assert "lost 'euros'" in pp.problems("How much is 100 euros in CFA francs?", "Convert 100 dollars to CFA francs", "en")
+    assert "lost 'tomorrow'" in pp.problems("Remind me to call mum tomorrow at 9 am", "Remind me to call mum at 9 am", "en")
+    assert "lost 'dakar'" in pp.problems("What's the weather in Dakar?", "What's the weather like?", "en")
+    assert "lost 'demain'" in pp.problems("Rappelle-moi demain à 9h d'appeler maman", "Rappelle-moi à 9h d'appeler maman", "fr")
+    assert pp.problems("Réveille-moi à 6h30", "Tu peux me réveiller à 6h30 ?", "fr") == []
+    assert "doesn't look French" in pp.problems("Réveille-moi à 6h30", "Wake me at 6h30", "fr")
+    assert "same as the original" in pp.problems("Set an alarm for 7 am", "set an alarm for 7 am!", "en")
+
+
+def test_run_writes_reviewable_rows_and_resumes(tmp_path):
+    train = tmp_path / "train.jsonl"
+    rows = [{"category": "action", "language": "en", "messages": [{"role": "system", "content": "s"},
+             {"role": "user", "content": "Wake me up at 6:30 am"}]},
+            {"category": "action", "language": "en", "messages": [{"role": "system", "content": "s"},
+             {"role": "user", "content": "Set a timer for 5 minutes"}]},
+            {"category": "identity", "language": "en", "messages": [{"role": "user", "content": "Who are you?"}]}]
+    train.write_text("\n".join(json.dumps(r) for r in rows), encoding="utf-8")
+    asked = []
+
+    def fake(base, key, model, text, lang, n):
+        asked.append(text)
+        if "6:30" in text:
+            return ["Get me up at 6:30 am please", "Wake me at 7 am", "Get me up at 6:30 am please"]
+        raise OSError("rate limited")
+    out = tmp_path / "p.csv"
+    assert pp.main(["--train", str(train), "--csv", str(out), "--key", "k"], ask_fn=fake) == 0
+    got = list(csv.DictReader(open(out, encoding="utf-8")))
+    assert [(r["original"], r["paraphrase"], r["approved"]) for r in got] == \
+        [("Wake me up at 6:30 am", "Get me up at 6:30 am please", "yes")]            # wrong time + duplicate dropped
+    assert asked == ["Wake me up at 6:30 am", "Set a timer for 5 minutes"]           # identity rows untouched
+    asked.clear()
+    pp.main(["--train", str(train), "--csv", str(out), "--key", "k"], ask_fn=fake)
+    assert asked == ["Set a timer for 5 minutes"]                                    # resumes where it stopped
+    assert pp.approved_map(str(out)) == {"Wake me up at 6:30 am": ["Get me up at 6:30 am please"]}
+
+
+def _generate(env, out_dir):
+    e = dict(os.environ, **env)
+    subprocess.run([sys.executable, os.path.join(DS, "generate.py")], check=True, capture_output=True, env=e)
+    return {n: [json.loads(l) for l in open(os.path.join(out_dir, n), encoding="utf-8")] for n in ("train.jsonl", "eval.jsonl")}
+
+
+def test_generator_uses_rewrites_for_training_only(tmp_path):
+    out = os.path.join(DS, "out")
+    try:
+        plain = _generate({"GINK_PARAPHRASES": str(tmp_path / "none.csv"), "GINK_GENERAL_CSV": str(tmp_path / "none2.csv")}, out)
+        train_user = next(m["content"] for r in plain["train.jsonl"] if r["category"] == "action"
+                          for m in r["messages"] if m["role"] == "user")
+        eval_user = next(m["content"] for r in plain["eval.jsonl"] if r["category"] == "action"
+                         for m in r["messages"] if m["role"] == "user")
+        p = tmp_path / "p.csv"
+        with open(p, "w", encoding="utf-8", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=pp.FIELDS); w.writeheader()
+            w.writerow({"language": "en", "original": train_user, "paraphrase": "REWRITE-A", "model": "m", "approved": "yes"})
+            w.writerow({"language": "en", "original": train_user, "paraphrase": "REWRITE-NO", "model": "m", "approved": "no"})
+            w.writerow({"language": "en", "original": eval_user, "paraphrase": "REWRITE-EVAL", "model": "m", "approved": "yes"})
+        g = tmp_path / "g.csv"
+        with open(g, "w", encoding="utf-8", newline="") as f:
+            w = csv.writer(f); w.writerow(["language", "category", "user_message", "gink_reply", "author", "reviewer", "approved"])
+            w.writerow(["en", "general", "Q-APPROVED", "A-APPROVED", "a", "b", "yes"])
+            w.writerow(["fr", "safety", "Q-NOT-YET", "A", "a", "", "no"])
+        grown = _generate({"GINK_PARAPHRASES": str(p), "GINK_GENERAL_CSV": str(g)}, out)
+        users = lambda rows: [m["content"] for r in rows for m in r["messages"] if m["role"] == "user"]
+        added = [r for r in grown["eval.jsonl"] if r not in plain["eval.jsonl"]]
+        assert all(r in grown["eval.jsonl"] for r in plain["eval.jsonl"])             # the held-out set doesn't move...
+        assert all(r["category"] == "general" for r in added)                          # ...new rows may join it
+        n_copies = users(plain["train.jsonl"]).count(train_user)
+        assert users(grown["train.jsonl"]).count("REWRITE-A") == n_copies
+        assert "REWRITE-NO" not in users(grown["train.jsonl"])                         # rejected by a person
+        assert "REWRITE-EVAL" not in users(grown["eval.jsonl"])                         # held-out examples stay as they are
+        assert users(grown["train.jsonl"]).count("REWRITE-EVAL") == users(plain["train.jsonl"]).count(eval_user)
+        assert "Q-APPROVED" in users(grown["train.jsonl"] + grown["eval.jsonl"]) and "Q-NOT-YET" not in users(grown["train.jsonl"])
+        r = subprocess.run([sys.executable, os.path.join(DS, "validate.py")], capture_output=True, text=True)
+        assert r.returncode == 0 and "rewrites from paraphrases.csv" in r.stdout
+    finally:
+        import shutil
+        shutil.rmtree(out, ignore_errors=True)
+
+
+def test_people_files_start_empty():
+    """Nothing in the people-written sheet is pre-filled (by Claude or anyone): only real authors' rows."""
+    rows = list(csv.DictReader(open(os.path.join(DS, "examples_general.csv"), encoding="utf-8")))
+    assert rows == []

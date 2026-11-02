@@ -34,10 +34,14 @@ you how far the data already goes. (Qwen3.5 LoRA needs about 10 GB of GPU memory
 ### 2. Grow the data (the real work)
 Today: about 650 training examples (626 actions in English and French, 23 identity / voice). Aim for
 **3,000+** before the 9B run:
-- More phrasings per action: `GINK_DATA_PER_TOOL=250 python tools/gink_dataset/generate.py`, and new
-  templates in `generate.py` (each one is checked by `validate.py`).
-- "No tool needed" questions, so it doesn't call tools when it shouldn't; follow-ups across turns.
-- Safety and honesty: refusing dangerous requests kindly, saying it's an AI, teen-appropriate answers.
+- More ways to ask each action: `paraphrase.py` has GPT-OSS rewrite the requests, and drops any rewrite
+  that changes a number, time, day, name or currency (they'd make the example wrong). With 4 per
+  request this roughly triples the action examples. Skim `paraphrases.csv` before training.
+- Written by people in `examples_general.csv`: questions that need no tool, safety, honesty and
+  teen-appropriate answers -- each one checked by a second person. Aim for 300.
+- `validate.py` prints how far you are from these targets every time.
+- Who may write examples: you, testers, native speakers, Gink's templates and Apache-2.0 models.
+  Not Claude (Anthropic's terms), so these are tools, not ready-made examples.
 - **Wolof, Krio, Pidgin:** native speakers fill `tools/gink_dataset/languages/*.csv`; a second
   speaker approves each row. Nothing machine-invented. Aim for 200+ approved rows per language.
 

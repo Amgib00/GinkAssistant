@@ -1806,3 +1806,17 @@ New services/live_info.py (all free, no API keys):
   no "user" hash, no reasoning_effort, NO fallback (both upstream loops). /ai/openai/v1/models adds it per account
   (_with_own_model on top of the shared cache). Teen safety / limits / parental controls apply unchanged.
 - Dataset today: 649 train / 34 eval; each example carries ~4.1k chars of tool definitions (~0.85M tokens/epoch).
+
+## 0.1.99: growing the Gink dataset (step 2 of tools/gink_model/PLAN.md)
+- Rule kept: Claude doesn't write training examples (Anthropic's terms); it builds tools. Sources: Gink's templates,
+  people (examples_general.csv, languages/*.csv; second-person approval), Apache-2.0 models (paraphrase.py).
+- paraphrase.py: unique action requests from out/train.jsonl -> GPT-OSS-120B (Groq default; any OpenAI-style base)
+  -> problems(): every anchor kept (digits/times incl. 6h30, am/pm and day/duration words, currency words, codes,
+  capitalised non-initial words), no new digits, not identical, length 0.4-3x, crude en/fr check. Appends to
+  paraphrases.csv (approved=yes if it passed; an all-failed request gets a blank "no" row so re-runs move on;
+  stops on the first API error -> resume). generate.py: approved_map() rewrites copied onto TRAINING examples with
+  the same user text (tool call unchanged); GINK_PARAPHRASES / GINK_GENERAL_CSV override paths (tests).
+- Held-out split changed (one time): was "first 5% after shuffle" (any new row reshuffled it); now
+  sha256(system+user) % 20 == 0 per example -> stable as data grows; exact duplicates can't straddle splits.
+  683 examples -> train 651, eval 32 (was 649/34): re-run any baseline evaluate.py --save after this version.
+- validate.py prints progress vs targets (3,000 examples; 200 per West African language; 300 general/safety/honesty).

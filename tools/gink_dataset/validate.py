@@ -121,8 +121,23 @@ def check_example(ex):
     return errs
 
 
+TARGETS = {"examples": 3000, "language rows (each of wolof, krio, pidgin)": 200, "general / safety / honesty": 300}
+
+
+def progress(rows) -> list:
+    """Lines saying how far the data is from the plan's targets (tools/gink_model/PLAN.md, step 2)."""
+    langs = {k: sum(1 for r in rows if r.get("language") == k) for k in ("wolof", "krio", "pidgin")}
+    general = sum(1 for r in rows if r.get("category") in ("general", "safety", "honesty", "teen", "identity", "voice"))
+    rewrites = sum(1 for r in rows if r.get("paraphrase"))
+    return [f"Toward the first real training run (tools/gink_model/PLAN.md):",
+            f"  examples                    {len(rows):>5} / {TARGETS['examples']}   ({rewrites} are rewrites from paraphrases.csv)",
+            "  " + ", ".join(f"{k} {v}" for k, v in langs.items()) + f"   (aim: {TARGETS['language rows (each of wolof, krio, pidgin)']} each)",
+            f"  general / safety / honesty  {general:>5} / {TARGETS['general / safety / honesty']}"]
+
+
 def main(paths):
     total, bad, seen, dupes = 0, 0, set(), 0
+    rows = []
     for path in paths:
         with open(path, encoding="utf-8") as f:
             for n, line in enumerate(f, 1):
@@ -133,6 +148,7 @@ def main(paths):
                     ex = json.loads(line)
                 except ValueError:
                     bad += 1; print(f"{os.path.basename(path)}:{n}: not valid JSON"); continue
+                rows.append(ex)
                 key = json.dumps(ex.get("messages"), sort_keys=True)
                 if key in seen:
                     dupes += 1
@@ -143,6 +159,7 @@ def main(paths):
                     if bad <= 25:
                         print(f"{os.path.basename(path)}:{n}: " + "; ".join(errs))
     print(f"checked {total} examples: {total - bad} OK, {bad} with problems, {dupes} exact duplicates")
+    print("\n".join(progress(rows)))
     return 1 if bad else 0
 
 

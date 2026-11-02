@@ -302,15 +302,68 @@ def load_language_rows():
     return out
 
 
+def load_general_rows():
+    """examples_general.csv, written by people: everyday questions that need no tool, safety, honesty,
+    teen-appropriate answers. Only rows with approved = yes (checked by a second person)."""
+    import csv
+    path = os.environ.get("GINK_GENERAL_CSV") or os.path.join(HERE, "examples_general.csv")
+    out = []
+    if not os.path.exists(path):
+        return out
+    with open(path, encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f):
+            if (row.get("approved") or "").strip().lower() != "yes":
+                continue
+            if not (row.get("user_message") and row.get("gink_reply")):
+                continue
+            fr = (row.get("language") or "en").strip().lower() == "fr"
+            out.append({"category": (row.get("category") or "general").strip().lower(), "language": "fr" if fr else "en",
+                        "messages": [{"role": "system", "content": SYSTEM_FR if fr else SYSTEM_EN},
+                                     {"role": "user", "content": row["user_message"].strip()},
+                                     {"role": "assistant", "content": row["gink_reply"].strip()}]})
+    return out
+
+
+def with_paraphrases(train):
+    """paraphrases.csv (paraphrase.py, approved rows): the same action asked other ways -- for
+    training examples only, so the held-out ones still measure something new."""
+    from paraphrase import approved_map, CSV_PATH
+    more = approved_map(os.environ.get("GINK_PARAPHRASES") or CSV_PATH)
+    extra = []
+    for ex in train:
+        if ex.get("category") != "action":
+            continue
+        user = next(m["content"] for m in ex["messages"] if m["role"] == "user")
+        for p in more.get(user, []):
+            copy = json.loads(json.dumps(ex))
+            next(m for m in copy["messages"] if m["role"] == "user")["content"] = p
+            copy["paraphrase"] = True
+            extra.append(copy)
+    return extra
+
+
+def held_out(example) -> bool:
+    import hashlib
+    key = json.dumps([m.get("content") for m in example["messages"][:2]], ensure_ascii=False)
+    return int(hashlib.sha256(key.encode("utf-8")).hexdigest(), 16) % 20 == 0
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     data = [g() for g in GENERATORS for _ in range(PER_TOOL)]
     data += load_jsonl(os.path.join(HERE, "examples_identity.jsonl"))
     data += load_jsonl(os.path.join(HERE, "examples_voice.jsonl"))
     data += load_language_rows()
+    data += load_general_rows()
     rnd.shuffle(data)
-    n_eval = max(20, len(data) // 20)                              # 5% held out to measure progress
-    splits = {"eval.jsonl": data[:n_eval], "train.jsonl": data[n_eval:]}
+    # 5% held out to measure progress -- chosen by each example's own content, so the held-out set
+    # stays the same as the data grows (scores from different dataset versions stay comparable)
+    held = [r for r in data if held_out(r)]
+    train = [r for r in data if not held_out(r)]
+    train += with_paraphrases(train)
+    rnd.shuffle(train)
+    splits = {"eval.jsonl": held, "train.jsonl": train}
+    data = data + [r for r in train if r.get("paraphrase")]
     for name, rows in splits.items():
         with open(os.path.join(OUT, name), "w", encoding="utf-8") as f:
             for r in rows:

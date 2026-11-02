@@ -28,6 +28,26 @@ python tools/gink_dataset/evaluate.py --base-url https://gink-server.onrender.co
   commercially; keep its licence notice. Llama requires "Llama" in derived models' names.
 
 ## Growing it
+**Who writes the examples matters.** Training data may come from Gink's own templates, from people
+(you, testers, native speakers), and from Apache-2.0 models (GPT-OSS, Qwen). It must not come from
+Claude: Anthropic's terms don't allow using Claude's output to train other models. That's why Claude
+builds the tools here but doesn't write the examples.
+
+### More ways to ask: `paraphrase.py`
+GPT-OSS rewrites each action request several ways (`GROQ_API_KEY`); rewrites that change a number, a
+time, a day, a name or a currency -- or add a number -- are dropped automatically, so the tool call the
+example teaches stays right. Kept rewrites go to `paraphrases.csv`: skim it, set `approved` to `no` for
+anything odd, then run `generate.py` again. Rewrites are used for training only, never the held-out set.
+
+### Written by people: `examples_general.csv`
+Questions that need **no tool** (so Gink doesn't call tools when it shouldn't), **safety** (declining
+something dangerous kindly and saying why), **honesty** (it's an AI; it can be wrong; it doesn't know
+what it can't know), and **teen**-appropriate answers. Columns: `language` (en/fr), `category`
+(general, safety, honesty, teen), `user_message`, `gink_reply` (warm, short, how Gink should really
+answer), `author`, then a **second** person checks it, writes their name in `reviewer` and sets
+`approved` to `yes`. Aim for 300.
+
+### Also
 - More actions: copy a `gen_...` function in `generate.py`; `validate.py` checks the result.
 - More languages: see `languages/README.md`.
 - Aim for a few thousand examples before the first real training run, with plenty of
