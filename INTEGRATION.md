@@ -1820,3 +1820,17 @@ New services/live_info.py (all free, no API keys):
   sha256(system+user) % 20 == 0 per example -> stable as data grows; exact duplicates can't straddle splits.
   683 examples -> train 651, eval 32 (was 649/34): re-run any baseline evaluate.py --save after this version.
 - validate.py prints progress vs targets (3,000 examples; 200 per West African language; 300 general/safety/honesty).
+
+## 0.1.100: own model in the picker; server-chosen offline model
+- Picker: GINK_MODELS in web_chat_view is a fixed list of three; "More models" now also lists available ids
+  matching /^gink-/ (not gink-search, not the fixed ones) as "Gink's own model". main_screen.add_own_models()
+  refreshes brain.active_models (server /models, per account) after push_models and re-pushes with
+  _model_entry -> "Gink 1" (own=True). bridge.js niceModel: gink-* -> "Gink 1". brain.resolve_model keeps gink-1
+  because the server lists it for that account (else it would fall back).
+- Offline (local_llm): chosen{url,name} default Llama-2-7B-Chat; configure() from /info "offline_model"
+  (GINK_OFFLINE_MODEL_URL/NAME; https + .gguf only); models/model.json records the file's URL (missing json +
+  existing file = the default, no re-download); new choice -> .part -> replace + drop the loaded Llama.
+  ask(): create_chat_completion (the GGUF's own template), falls back to the old "User:/Assistant:" prompt.
+- Version 0.1.100: Briefcase's Android versionCode concatenates zero-padded parts, so micro >= 100 just widens it
+  (0.1.99 -> 19900, 0.1.100 -> 110000: still increasing). TRAP for later: 0.2.0 -> 20000 < 110000. Before moving to
+  0.2.x, check how Android computes versionCode (Play rejects a lower one).

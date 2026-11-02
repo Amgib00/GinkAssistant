@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.100 (November 2026)
+
+- When your Gink server offers Gink's own model to your account, it appears in the model picker
+  (More models)
+- Computers' offline mode: the server can choose the offline model (for example Gink's own), which
+  is downloaded once and replaces the old one; offline answers now use the model's own chat format,
+  so they read better
+
 ## 0.1.99 (November 2026)
 
 - For the owner, growing the data for Gink's own model: `paraphrase.py` asks GPT-OSS for more ways to

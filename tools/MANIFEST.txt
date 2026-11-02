@@ -316,8 +316,10 @@ tests/test_media_files_profile.py
 tests/test_model_upgrade.py
 tests/test_natural_voice.py
 tests/test_no_dead_buttons.py
+tests/test_offline_model.py
 tests/test_offline_song_engine.py
 tests/test_own_model.py
+tests/test_own_model_picker.py
 tests/test_owner_dashboard.py
 tests/test_owner_dashboard_live.py
 tests/test_page_events.py

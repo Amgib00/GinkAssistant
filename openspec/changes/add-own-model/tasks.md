@@ -6,6 +6,9 @@
 - [x] 1.5 Growing the data: paraphrase.py (GPT-OSS rewrites, fact checks, paraphrases.csv), examples_general.csv
       (people-written, second-person approval), a held-out set chosen by content (stable as data grows),
       validate.py progress toward the targets; tests/test_grow_dataset.py
+- [x] 1.6 Apps' model picker lists own models the server offers ("Gink 1", More models); the server can name
+      the desktop offline model (GINK_OFFLINE_MODEL_URL in /info; model.json; chat templates);
+      tests/test_own_model_picker.py, tests/test_offline_model.py
 
 ## 2. Owner
 - [ ] 2.1 Pilot in Colab (Qwen3.5-4B); note the held-out score

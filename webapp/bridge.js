@@ -310,6 +310,8 @@
                  "claude-haiku-5-5": "Gink Flurry \u00b7 Pro \u00b7 Claude", "claude-sonnet-5-5": "Gink Frost \u00b7 Pro \u00b7 Claude",
                  "claude-opus-5-5": "Gink Glacier \u00b7 Pro \u00b7 Claude", "claude-fable-5-1": "Gink Aurora \u00b7 Pro \u00b7 Claude" };
     if (GINK[id]) return GINK[id];
+    if (/^gink-/.test(String(id)))                    // Gink's own model (tools/gink_model): "gink-1" -> "Gink 1"
+      return "Gink " + String(id).slice(5).split("-").map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(" ");
     var c = /^claude-([a-z]+)-(\d+)-(\d+)$/.exec(String(id));
     if (c) return "Claude " + c[1].charAt(0).toUpperCase() + c[1].slice(1) + " " + c[2] + "." + c[3] + " \u00b7 Pro";
     var n = String(id).split("/").pop().replace(/[-_]/g, " ");

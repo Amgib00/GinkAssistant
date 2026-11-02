@@ -39,6 +39,15 @@ except ImportError:
 
 MODEL_FILENAME = "model.gguf"
 MODEL_URL = "https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q4_K_M.gguf"
+# Which model: the default above, or the one your Gink server names (GINK_OFFLINE_MODEL_URL in /info) --
+# e.g. Gink's own fine-tuned GGUF (tools/gink_model/PLAN.md, step 6). models/model.json remembers which
+# file is on disk, so a new choice downloads once and replaces the old one.
+chosen = {"url": MODEL_URL, "name": "Llama 2 7B Chat"}
+
+
+def configure(url: str = "", name: str = "") -> None:
+    if url and url.startswith("https://") and url.endswith(".gguf"):
+        chosen.update(url=url, name=name or "Gink offline model")
 
 
 class LocalLLMUnavailable(Exception):
@@ -50,22 +59,38 @@ class LocalLLM:
         self.model_path = data_dir(app) / "models" / MODEL_FILENAME
         self._llm = None
 
+    def _recorded_url(self) -> str:
+        info = self.model_path.with_name("model.json")
+        try:
+            import json
+            return json.loads(info.read_text(encoding="utf-8")).get("url", "")
+        except Exception:
+            return MODEL_URL if self.model_path.exists() else ""     # files from before model.json: the default
+
+    def _record(self, url: str) -> None:
+        import json
+        self.model_path.with_name("model.json").write_text(json.dumps({"url": url, "name": chosen["name"]}),
+                                                           encoding="utf-8")
+
     async def ensure_model(self, on_status=None):
-        if self.model_path.exists():
+        url = chosen["url"]
+        if self.model_path.exists() and self._recorded_url() == url:
             return
         self.model_path.parent.mkdir(parents=True, exist_ok=True)
         if on_status:
-            on_status("Downloading local model (several GB, one-time)...")
+            on_status(f"Downloading the offline model ({chosen['name']}, a few GB, one-time)...")
 
         tmp_path = self.model_path.with_suffix(".part")
         try:
             async with httpx.AsyncClient(timeout=None) as client:
-                async with client.stream("GET", MODEL_URL) as resp:
+                async with client.stream("GET", url, follow_redirects=True) as resp:
                     resp.raise_for_status()
                     with open(tmp_path, "wb") as f:
                         async for chunk in resp.aiter_bytes(chunk_size=1024 * 1024):
                             f.write(chunk)
-            tmp_path.rename(self.model_path)
+            self._llm = None                                   # a loaded old model lets go of the file
+            tmp_path.replace(self.model_path)
+            self._record(url)
         except Exception as exc:
             if tmp_path.exists():
                 tmp_path.unlink(missing_ok=True)
@@ -85,6 +110,15 @@ class LocalLLM:
 
         def _run():
             llm = self._load()
+            try:                                              # the model's own chat template (Llama, Qwen...)
+                messages = ([{"role": "system", "content": system_prompt}] if system_prompt else []) + \
+                           [{"role": "user", "content": prompt}]
+                result = llm.create_chat_completion(messages=messages, max_tokens=512)
+                text = (result["choices"][0]["message"].get("content") or "").strip()
+                if text:
+                    return text
+            except Exception:
+                pass
             full_prompt = f"{system_prompt}\n\nUser: {prompt}\nAssistant:" if system_prompt else prompt
             result = llm(full_prompt, max_tokens=512, stop=["User:"])
             return result["choices"][0]["text"].strip()

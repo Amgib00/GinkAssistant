@@ -1191,7 +1191,7 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
   var MM = {current: '', names: {}, available: [], effort: 'medium', view: 'main', timer: null};
   function mmInfo(id) {
     for (var i = 0; i < GINK_MODELS.length; i++) if (GINK_MODELS[i].id === id) return GINK_MODELS[i];
-    return {id: id, name: MM.names[id] || 'Gink', desc: ''};
+    return {id: id, name: MM.names[id] || 'Gink', desc: /^gink-/.test(id) ? 'Gink\u2019s own model' : ''};
   }
   function setModels(models, currentId) {
     MM.available = (models || []).map(function (m) { MM.names[m.id] = m.name; return m.id; });
@@ -1220,7 +1220,9 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     }
     if (MM.view === 'models') {
       menu.appendChild(mmButton({'data-back': '1', 'class': 'mm-back'}, '\u2039&nbsp; More models'));
-      GINK_MODELS.filter(function (m) { return !MM.available.length || MM.available.indexOf(m.id) >= 0; }).forEach(function (m) {
+      var own = MM.available.filter(function (id) { return /^gink-/.test(id) && id !== 'gink-search' && !GINK_MODELS.some(function (m) { return m.id === id; }); })
+        .map(function (id) { return {id: id, name: MM.names[id] || 'Gink', desc: 'Gink\u2019s own model'}; });   // tools/gink_model
+      GINK_MODELS.filter(function (m) { return !MM.available.length || MM.available.indexOf(m.id) >= 0; }).concat(own).forEach(function (m) {
         menu.appendChild(mmButton({'data-id': m.id, 'class': 'mm-model' + (m.id === MM.current ? ' sel' : '')},
           '<span class="mm-col"><span class="mm-name">' + esc(m.name) + '</span><span class="mm-desc">' + esc(m.desc) + '</span></span>'));
       });

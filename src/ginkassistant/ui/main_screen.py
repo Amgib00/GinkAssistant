@@ -889,9 +889,28 @@ def build_main_screen(app: toga.App, email: str):
         "meta-llama/llama-4-maverick-17b-128e-instruct": ("Llama 4 Maverick", "Smart"),
     }
 
+    def _is_own_model(model_id: str) -> bool:
+        """Gink's own fine-tuned model (tools/gink_model), listed by the server for testers/everyone."""
+        m = str(model_id or "")
+        return m.startswith("gink-") and m != "gink-search" and m not in MODEL_LABELS
+
     def _model_entry(model_id: str) -> dict:
+        if _is_own_model(model_id):
+            return {"id": model_id, "name": "Gink " + " ".join(w.capitalize() for w in model_id[5:].split("-")),
+                    "tier": "Gink's own model", "own": True}
         name, tier = MODEL_LABELS.get(model_id, (model_id.split("/")[-1], ""))
         return {"id": model_id, "name": name, "tier": tier}
+
+    async def add_own_models():
+        """If the server offers Gink's own model to this account, put it in the picker too."""
+        try:
+            active = await asyncio.wait_for(brain.refresh_active_models(), timeout=15)
+        except Exception:
+            return
+        own = [m for m in active or [] if _is_own_model(m)]
+        if own:
+            ids = list(dict.fromkeys([brain.preferred_model] + _initial_model_choices() + own))
+            await web_chat.set_models([_model_entry(m) for m in ids], brain.preferred_model)
 
     def prompt_store():
         from ..services.prompts import PromptStore
@@ -1023,6 +1042,7 @@ def build_main_screen(app: toga.App, email: str):
         if brain.preferred_model not in ids:
             ids.insert(0, brain.preferred_model)
         await web_chat.set_models([_model_entry(m) for m in ids], brain.preferred_model)
+        asyncio.create_task(add_own_models())
 
     async def handle_composer_event(event: dict):
         kind, value = event.get("type"), event.get("value")
@@ -1695,6 +1715,15 @@ def build_main_screen(app: toga.App, email: str):
         if bool(before) != off:
             await configure_wake()
 
+    async def configure_offline_model():
+        """The server may name a different offline model for computers (e.g. Gink's own GGUF)."""
+        from ..services import local_llm
+        from ..services.api_client import ApiClient
+        info = await ApiClient(app.state.base_url).app_info()
+        om = info.get("offline_model") if isinstance(info, dict) else None
+        if isinstance(om, dict):
+            local_llm.configure(str(om.get("url") or ""), str(om.get("name") or ""))
+
     async def answer_birth_year(year: str):
         from ..services.api_client import ApiClient, ApiError
         token = getattr(app, "session_token", None)
@@ -1743,6 +1772,7 @@ def build_main_screen(app: toga.App, email: str):
         refresh_sidebar()
         ticks = 0
         asyncio.create_task(check_family())          # age question / a parent's voice setting
+        asyncio.create_task(configure_offline_model())
         while getattr(app, "_main_screen_token", None) is screen_token:
             for event in await web_chat.poll():
                 if event.get("type") == "stop":

@@ -2592,8 +2592,11 @@ async def ai_chat(request: Request):
 # =====================================================================
 @app.get("/info")
 def app_info():
-    return {"support_email": _env("GINK_SUPPORT_EMAIL"), "privacy_url": _env("GINK_PRIVACY_URL"),
-            "terms_url": _env("GINK_TERMS_URL"), "help_url": _env("GINK_HELP_URL")}
+    out = {"support_email": _env("GINK_SUPPORT_EMAIL"), "privacy_url": _env("GINK_PRIVACY_URL"),
+           "terms_url": _env("GINK_TERMS_URL"), "help_url": _env("GINK_HELP_URL")}
+    if _env("GINK_OFFLINE_MODEL_URL"):          # the desktop apps' offline model (services/local_llm.py)
+        out["offline_model"] = {"url": _env("GINK_OFFLINE_MODEL_URL"), "name": _env("GINK_OFFLINE_MODEL_NAME") or "Gink offline model"}
+    return out
 
 
 @app.get("/billing/history")

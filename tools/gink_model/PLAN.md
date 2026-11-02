@@ -62,13 +62,17 @@ a key and a model id.
    French, a vague request, a question that needs no tool. One bad answer is a reason to wait.
 4. Check speed and the provider's cost per 1,000 messages against Groq's.
 
+Testers see it in the apps' model picker (More models -> "Gink 1", "Gink's own model") as soon as the
+server offers it to them -- no app update needed.
+
 ### 5. Launch
-Empty `GINK_OWN_TESTERS` (everyone sees it), and add it to the apps' model picker with its name and a
-one-line description (a small app change at that point). `gink-crystal` stays available.
+Empty `GINK_OWN_TESTERS`: everyone sees it in the picker. `gink-crystal` stays available.
 
 ### 6. Offline on computers
-The GGUF from step 1 (or a 4B trained on the bigger data) can replace the desktop app's offline model
-(llama.cpp): smaller, and it knows Gink's actions.
+Upload the GGUF from step 1 (or a 4B trained on the bigger data) somewhere public over https -- a Hugging
+Face model repo works (GitHub release files are limited to 2 GB) -- and set `GINK_OFFLINE_MODEL_URL` (and
+`GINK_OFFLINE_MODEL_NAME`) on Render. Desktop apps download it once, the next time offline mode needs it,
+replacing the old Llama 2 file. First try it on your own Mac: Qwen3.5 needs a recent llama-cpp-python.
 
 ### 7. Keep improving
 Retrain when the data has grown by about a third, and compare with `gate.py` every time. If you ever

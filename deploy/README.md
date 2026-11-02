@@ -242,7 +242,11 @@ When you have a fine-tuned model served somewhere OpenAI-style (see `tools/gink_
 `GINK_OWN_BASE` (its address, ending in /v1), `GINK_OWN_KEY`, `GINK_OWN_MODEL` (the provider's model id),
 optionally `GINK_OWN_NAME` (what people ask for; default `gink-1`) and `GINK_OWN_TESTERS` (comma-separated
 emails: only they see and can use it while you test; leave empty to open it to everyone). If its provider
-fails, Gink says so rather than quietly answering with another model.
+fails, Gink says so rather than quietly answering with another model. Testers see it in the apps' model
+picker under More models.
+
+`GINK_OFFLINE_MODEL_URL` (an https address ending in .gguf) and `GINK_OFFLINE_MODEL_NAME` choose the model
+the desktop apps download for offline mode (default: Llama 2 7B Chat).
 
 ## Song recognition on phones ("Identify a song")
 
