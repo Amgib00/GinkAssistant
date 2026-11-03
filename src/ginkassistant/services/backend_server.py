@@ -61,6 +61,7 @@ import secrets
 import smtplib
 import threading
 import time
+import hmac
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
@@ -2210,7 +2211,11 @@ _models_used = {}                                # model -> requests since the s
 
 def _record_activity(email: str, model: str) -> None:
     now = time.time()
-    who = hashlib.sha256(("gink-activity:" + (email or "")).encode()).hexdigest()[:12]   # counted, never shown
+    who = hmac.new(
+        _get_secret_key().encode(),
+        ("gink-activity:" + (email or "")).encode(),
+        hashlib.sha256,
+    ).hexdigest()[:12]   # counted, never shown
     _activity.append((now, who, str(model or "")))
     while _activity and _activity[0][0] < now - 3600:
         _activity.pop(0)
