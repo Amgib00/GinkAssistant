@@ -186,8 +186,15 @@
 
   // ---- where to go afterwards: only Gink's own pages
   function nextPath() {
-    var n = new URLSearchParams(location.search).get("next") || "/app";
-    return /^\/(?!\/)[^\\\s]*$/.test(n) ? n : "/app";
+    var allowed = { "/app": true, "/login": true, "/signup": true, "/forgot": true };
+    var raw = new URLSearchParams(location.search).get("next") || "/app";
+    try {
+      var parsed = new URL(raw, location.origin);
+      var candidate = parsed.pathname;
+      return allowed[candidate] ? candidate : "/app";
+    } catch (e) {
+      return "/app";
+    }
   }
 
   function say(text, ok) { var m = $("msg"); m.textContent = text || ""; m.className = "msg " + (ok ? "ok" : "err"); }
