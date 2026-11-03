@@ -1,0 +1,777 @@
+language,original,user,reply,model,approved
+es,Baisse le son,Baja el sonido,Hecho.,Gink,yes
+es,Quel temps fait-il à Nairobi aujourd'hui ?,¿Qué tiempo hace en Nairobi hoy?,"En Nairobi hoy: nublado, alrededor de 28 °C.",Gink,yes
+es,"Hey, hit pause on the music for me.","Oye, pon pausa a la música por mí.",Listo.,Gink,yes
+es,Go back a song,Retrocede una canción,Hecho.,Gink,yes
+es,What's 18% of 250000?,¿Cuál es el 18% de 250000?,"Eso es 45,000.",Gink,yes
+es,"Hey, go back a song.","Oye, retrocede una canción.",Listo.,Gink,yes
+es,Next song,"Person: Next song
+Gink: Done.","Persona: Siguiente canción
+Gink: Hecho.",Gink,yes
+es,Chanson précédente,Canción anterior,Hecho.,Gink,yes
+es,Volume down.,Bajar el volumen.,Hecho.,Gink,yes
+es,What's the forecast for Bamako today?,Persona: ¿Cuál es el pronóstico para Bamako hoy?,"Gink: Bamako hoy: nublado, alrededor de 19°C.",Gink,yes
+pt,Baisse le son,Abaixe o som,Feito.,Gink,yes
+pt,Quel temps fait-il à Nairobi aujourd'hui ?,Que tempo está fazendo em Nairobi hoje?,"Em Nairobi hoje: nublado, cerca de 28 °C.",Gink,yes
+pt,"Hey, hit pause on the music for me.","Ei, pause a música para mim.",Feito.,Gink,yes
+pt,Go back a song,Volte uma música,Feito.,Gink,yes
+pt,What's 18% of 250000?,Qual é 18% de 250000?,"São 45,000.",Gink,yes
+pt,"Hey, go back a song.","Person: Hey, go back a song.
+Gink: Done.","Pessoa: Ei, volta a música anterior.
+Gink: Feito.",Gink,yes
+pt,Next song,Próxima música,Feito.,Gink,yes
+pt,Chanson précédente,Música anterior,Feito.,Gink,yes
+pt,Volume down.,Abaixar o volume.,Feito.,Gink,yes
+pt,What's the forecast for Bamako today?,Qual é a previsão para Bamako hoje?,"Bamako hoje: nublado, cerca de 19°C.",Gink,yes
+ar,Baisse le son,اخفض الصوت,تم,Gink,yes
+ar,Quel temps fait-il à Nairobi aujourd'hui ?,,,Gink,no
+ar,"Hey, hit pause on the music for me.",يا، أوقف الموسيقى لي.,تم.,Gink,yes
+ar,Go back a song,ارجع أغنية واحدة,تم,Gink,yes
+ar,What's 18% of 250000?,,,Gink,no
+ar,"Hey, go back a song.",,,Gink,no
+ar,Next song,الأغنية التالية,تم.,Gink,yes
+ar,Chanson précédente,الأغنية السابقة,تم,Gink,yes
+ar,Volume down.,,,Gink,no
+ar,What's the forecast for Bamako today?,,,Gink,no
+es,What is 965 times 15?,¿Cuánto es 965 por 15?,"Eso es 14,475.",Gink,yes
+es,Monte le son,Sube el sonido,Hecho.,Gink,yes
+es,Stop the music right now.,Detén la música ahora mismo.,Hecho.,Gink,yes
+es,"Mute the sound, thanks.","Silencia el sonido, gracias.",Listo.,Gink,yes
+es,What is 526 times 24?,¿Cuánto es 526 por 24?,"Eso es 12,624.",Gink,yes
+es,Set the volume to 70,Ajusta el volumen a 70,Volumen ajustado a 70.,Gink,yes
+es,Could you please pause the music?,"¿Podrías pausar la música, por favor?",Hecho.,Gink,yes
+es,Wake me up at 6:30 am,Despiértame a las 6:30 a.m.,"Listo, te despertaré a las 6:30 a.m.",Gink,yes
+es,"Mets la musique, merci.","Pon la música, gracias.",Hecho.,Gink,yes
+es,Programme un réveil à 6h15.,Programa una alarma a las 6:15.,Listo: te despertaré a las 6:15.,Gink,yes
+pt,What is 965 times 15?,Pessoa: Qual é 965 vezes 15?,"Gink: Isso é 14,475.",Gink,yes
+pt,Monte le son,Aumente o som,Feito.,Gink,yes
+pt,Stop the music right now.,Pare a música agora.,Feito.,Gink,yes
+pt,"Mute the sound, thanks.","Silencie o som, obrigado.",Feito.,Gink,yes
+pt,What is 526 times 24?,Qual é 526 vezes 24?,"É 12,624.",Gink,yes
+pt,Set the volume to 70,Defina o volume para 70,Volume ajustado para 70.,Gink,yes
+pt,Could you please pause the music?,"Você poderia pausar a música, por favor?",Feito.,Gink,yes
+pt,Wake me up at 6:30 am,"Person: Wake me up at 6:30 am
+Gink: Done, I'll wake you at 6:30 am.","Pessoa: Me acorde às 6:30 da manhã
+Gink: Pronto, vou acordá‑lo às 6:30 da manhã.",Gink,yes
+pt,"Mets la musique, merci.","Coloque a música, obrigado.",Feito.,Gink,yes
+pt,Programme un réveil à 6h15.,Programa um alarme para as 6h15.,Feito: vou te acordar às 6h15.,Gink,yes
+ar,What is 965 times 15?,ما حاصل ضرب 965 في 15؟,"الناتج هو 14,475.",Gink,yes
+ar,Monte le son,ارفع الصوت,تم,Gink,yes
+ar,Stop the music right now.,أوقف الموسيقى الآن.,تم.,Gink,yes
+ar,"Mute the sound, thanks.",,,Gink,no
+ar,What is 526 times 24?,,,Gink,no
+ar,Set the volume to 70,اضبط الصوت على 70,تم ضبط الصوت على 70,Gink,yes
+ar,Could you please pause the music?,هل يمكنك إيقاف الموسيقى مؤقتًا من فضلك؟,تم.,Gink,yes
+ar,Wake me up at 6:30 am,,,Gink,no
+ar,"Mets la musique, merci.",شغّل الموسيقى، شكرًا.,تم.,Gink,yes
+ar,Programme un réveil à 6h15.,برمج منبهًا على الساعة 6:15.,تم: سأوقظك في الساعة 6:15.,Gink,yes
+es,"Hey, what's it like outside in Thiès right now?","Oye, ¿cómo está el clima afuera en Thiès ahora?","Thiès ahora: lluvia ligera, alrededor de 37°C.",Gink,yes
+es,Calcule 672 fois 42,Calcule 672 por 42,"Da 28,224.",Gink,yes
+es,Can you set an alarm for 9:30 am?,¿Puedes programar una alarma para las 9:30 a.m.?,"Listo, te despertaré a las 9:30 a.m.",Gink,yes
+es,Convertis 100 cedis en dollars,Persona: Convierte 100 cedis a dólares,"100 cedis equivalen a aproximadamente 6.49 dólares, al tipo de cambio actual.",Gink,yes
+es,Weather Bamako today,Persona: Clima Bamako hoy,"Bamako hoy: nublado, alrededor de 35°C.",Gink,yes
+es,Mets une alarme à 9h30,Pon una alarma a las 9:30,Hecho: te despertaré a las 9:30.,Gink,yes
+es,"Hey, can you tell me what 526 times 24 is?","Oye, ¿me puedes decir cuánto es 526 por 24?","Eso es 12,624.",Gink,yes
+es,Convert 5000 euros to pounds,Convierte 5000 euros a libras,"5000 euros son aproximadamente 4,239.13 libras al tipo de cambio de hoy.",Gink,yes
+es,Lance la musique,Reproduce la música,Listo.,Gink,yes
+es,"Yo, put on some tunes.","Yo, pon algo de música.",Listo.,Gink,yes
+pt,"Hey, what's it like outside in Thiès right now?",,,Gink,no
+pt,Calcule 672 fois 42,Calcule 672 vezes 42,São 28.224.,Gink,yes
+pt,Can you set an alarm for 9:30 am?,Pode definir um alarme para as 9:30 da manhã?,"Feito, vou acordá‑lo às 9:30 da manhã.",Gink,yes
+pt,Convertis 100 cedis en dollars,Converte 100 cedis em dólares,"100 cedis equivalem a cerca de 6,49 dólares, na taxa atual.",Gink,yes
+pt,Weather Bamako today,Clima em Bamako hoje,"Bamako hoje: nublado, cerca de 35°C.",Gink,yes
+pt,Mets une alarme à 9h30,Mete um alarme para as 9h30,Feito: vou te acordar às 9h30.,Gink,yes
+pt,"Hey, can you tell me what 526 times 24 is?","Oi, você pode me dizer quanto é 526 vezes 24?",É 12.624.,Gink,yes
+pt,Convert 5000 euros to pounds,Converta 5000 euros para pounds,"5000 euros são cerca de 4,239.13 pounds na taxa de hoje.",Gink,yes
+pt,Lance la musique,Toque a música,Feito.,Gink,yes
+pt,"Yo, put on some tunes.",,,Gink,no
+ar,"Hey, what's it like outside in Thiès right now?",,,Gink,no
+ar,Calcule 672 fois 42,احسب 672 ضرب 42,"الناتج هو 28,224.",Gink,yes
+ar,Can you set an alarm for 9:30 am?,هل يمكنك ضبط منبه للساعة 9:30 ص؟,تم، سأوقظك في الساعة 9:30 ص.,Gink,yes
+ar,Convertis 100 cedis en dollars,حوّل 100 سيدي إلى دولارات,100 سيدي تعادل تقريباً 6.49 دولارات، حسب السعر الحالي.,Gink,yes
+ar,Weather Bamako today,,,Gink,no
+ar,Mets une alarme à 9h30,ضبط منبه على الساعة 9:30,تم: سأوقظك في الساعة 9:30.,Gink,yes
+ar,"Hey, can you tell me what 526 times 24 is?",,,Gink,no
+ar,Convert 5000 euros to pounds,حوّل 5000 يورو إلى جنيه,"5000 يورو تقريباً 4,239.13 جنيه حسب سعر اليوم",Gink,yes
+ar,Lance la musique,شغّل الموسيقى,تم,Gink,yes
+ar,"Yo, put on some tunes.",,,Gink,no
+es,Can you change the volume level to 30?,¿Puedes cambiar el nivel de volumen a 30?,Volumen ajustado a 30.,Gink,yes
+es,Convertis 1000 leones en dollars,Convierte 1000 leones a dólares,"1000 leones son aproximadamente 44.25 dólares, al tipo de cambio actual.",Gink,yes
+es,Backtrack one song for me.,Retrocede una canción para mí.,Hecho.,Gink,yes
+es,Please set the volume to 80.,"Por favor, pon el volumen a 80.",Volumen ajustado a 80.,Gink,yes
+es,Play some music,"Person: Play some music
+Gink: Done.","Persona: Pon algo de música
+Gink: Listo.",Gink,yes
+es,Set the volume to 80,Ajusta el volumen a 80,Volumen ajustado a 80.,Gink,yes
+es,Please convert 100000 CFA francs to cedis.,"Por favor, convierta 100000 francos CFA a cedis.","100000 francos CFA son aproximadamente 2,545.45 cedis al tipo de cambio de hoy.",Gink,yes
+es,Pouvez-vous me dire combien font 1000 leones en shillings kényans ?,¿Puede decirme cuánto son 1000 leones en chelines kenianos?,"1000 leones son aproximadamente 5,707.96 chelines kenianos, al tipo de cambio actual.",Gink,yes
+es,"Hey, could you play some music for me?","Oye, ¿puedes ponerme algo de música?",Listo.,Gink,yes
+es,What's 18% of 5000?,¿Cuál es el 18% de 5000?,Eso es 900.,Gink,yes
+pt,Can you change the volume level to 30?,Você pode mudar o nível de volume para 30?,Volume definido para 30.,Gink,yes
+pt,Convertis 1000 leones en dollars,Converta 1000 leões em dólares,"1000 leões equivalem a cerca de 44,25 dólares, na taxa atual.",Gink,yes
+pt,Backtrack one song for me.,Volte uma música para mim.,Feito.,Gink,yes
+pt,Please set the volume to 80.,"Por favor, ajuste o volume para 80.",Volume ajustado para 80.,Gink,yes
+pt,Play some music,Tocar música,Feito.,Gink,yes
+pt,Set the volume to 80,Defina o volume para 80,Volume definido para 80.,Gink,yes
+pt,Please convert 100000 CFA francs to cedis.,"Por favor, converta 100000 francos CFA para cedis.","100000 francos CFA são cerca de 2,545.45 cedis na taxa de hoje.",Gink,yes
+pt,Pouvez-vous me dire combien font 1000 leones en shillings kényans ?,Você pode me dizer quanto são 1000 leões em shillings quenianos?,"1000 leões equivalem a aproximadamente 5,707.96 shillings quenianos, na taxa atual.",Gink,yes
+pt,"Hey, could you play some music for me?",,,Gink,no
+pt,What's 18% of 5000?,,,Gink,no
+ar,Can you change the volume level to 30?,هل يمكنك تغيير مستوى الصوت إلى 30؟,تم ضبط الصوت على 30.,Gink,yes
+ar,Convertis 1000 leones en dollars,حوّل 1000 ليون إلى دولارات,1000 ليون تعادل تقريبًا 44.25 دولارًا، حسب السعر الحالي.,Gink,yes
+ar,Backtrack one song for me.,,,Gink,no
+ar,Please set the volume to 80.,من فضلك اضبط الصوت على 80.,تم ضبط الصوت على 80.,Gink,yes
+ar,Play some music,Person: شغّل بعض الموسيقى,Gink: تم.,Gink,yes
+ar,Set the volume to 80,اضبط الصوت إلى 80,تم ضبط الصوت إلى 80,Gink,yes
+ar,Please convert 100000 CFA francs to cedis.,من فضلك حوّل 100000 فرنك سيفي إلى السيدي.,"100000 فرنك سيفي يساوي تقريباً 2,545.45 سيدي حسب سعر اليوم.",Gink,yes
+ar,Pouvez-vous me dire combien font 1000 leones en shillings kényans ?,هل يمكنك أن تخبرني كم يساوي 1000 ليون كيني في الشلن الكيني؟,"1000 ليون يساوي تقريبًا 5,707.96 شلن كيني، حسب السعر الحالي.",Gink,yes
+ar,"Hey, could you play some music for me?",يا أهلاً، ممكن تشغل لي شوية موسيقى؟,تم,Gink,yes
+ar,What's 18% of 5000?,,,Gink,no
+es,Please calculate 18% of 5000 for me.,,,Gink,no
+es,Convert 250 CFA francs to Kenyan shillings,,,Gink,no
+es,Peux‑tu lancer Spotify ?,¿Puedes abrir Spotify?,Spotify está abierto.,Gink,yes
+es,Adjust the volume to 20.,Persona: Ajusta el volumen a 20.,Gink: Volumen ajustado a 20.,Gink,yes
+es,"Play some music, please.","Pon algo de música, por favor.",Listo.,Gink,yes
+es,Set a timer for 3 minutes,Pon un temporizador de 3 minutos,Tu temporizador de 3 minutos está en marcha.,Gink,yes
+es,"Hey, c’est quoi la météo à Paris demain ?",,,Gink,no
+es,"Turn off the sound, please.","Apaga el sonido, por favor.",Listo.,Gink,yes
+es,Lance Mail,"Person: Lance Mail
+Gink: Mail est ouvert.","Persona: Lance Mail
+Gink: El correo está abierto.",Gink,yes
+es,Turn it up,Sube el volumen,Listo.,Gink,yes
+pt,Please calculate 18% of 5000 for me.,,,Gink,no
+pt,Convert 250 CFA francs to Kenyan shillings,Converta 250 CFA francs para Kenyan shillings,"250 CFA francs equivalem a cerca de 53,31 Kenyan shillings na taxa de hoje.",Gink,yes
+pt,Peux‑tu lancer Spotify ?,Você pode abrir o Spotify?,Spotify está aberto.,Gink,yes
+pt,Adjust the volume to 20.,Ajuste o volume para 20.,Volume ajustado para 20.,Gink,yes
+pt,"Play some music, please.","Toque uma música, por favor.",Pronto.,Gink,yes
+pt,Set a timer for 3 minutes,Defina um timer de 3 minutos,Seu timer de 3 minutos está em execução.,Gink,yes
+pt,"Hey, c’est quoi la météo à Paris demain ?","Oi, qual é a previsão do tempo em Paris amanhã?","Em Paris amanhã: nublado, cerca de 32 °C.",Gink,yes
+pt,"Turn off the sound, please.","Desligue o som, por favor.",Feito.,Gink,yes
+pt,Lance Mail,Abrir Mail,Mail está aberto.,Gink,yes
+pt,Turn it up,Aumente o volume,Feito.,Gink,yes
+ar,Please calculate 18% of 5000 for me.,,,Gink,no
+ar,Convert 250 CFA francs to Kenyan shillings,حوّل 250 فرنك سيفي إلى شلن كيني,250 فرنك سيفي يساوي تقريبًا 53.31 شلن كيني وفقًا لسعر اليوم.,Gink,yes
+ar,Peux‑tu lancer Spotify ?,هل يمكنك تشغيل Spotify؟,تم فتح Spotify.,Gink,yes
+ar,Adjust the volume to 20.,,,Gink,no
+ar,"Play some music, please.",,,Gink,no
+ar,Set a timer for 3 minutes,,,Gink,no
+ar,"Hey, c’est quoi la météo à Paris demain ?",,,Gink,no
+ar,"Turn off the sound, please.",أوقف الصوت، من فضلك.,تم.,Gink,yes
+ar,Lance Mail,,,Gink,no
+ar,Turn it up,ارفع الصوت,تم,Gink,yes
+es,What's the forecast for Thiès today?,¿Cuál es el pronóstico para Thiès hoy?,"Thiès hoy: soleado, alrededor de 19°C.",Gink,yes
+es,Weather Kumasi tomorrow,Persona: Clima en Kumasi mañana,"Gink: Kumasi mañana: soleado, alrededor de 30°C.",Gink,yes
+es,"Hey, mets le volume plus fort.","Oye, sube el volumen.",Listo.,Gink,yes
+es,Combien font 5 % de 250000 ?,¿Cuánto es el 5 % de 250000?,"Son 12,500.",Gink,yes
+es,Can you make it quieter?,¿Puedes hacerlo más bajo?,Listo.,Gink,yes
+es,"Dis-moi vite, 20 % de 15000, c’est quoi ?","Dime rápido, ¿qué es el 20 % de 15000?","Son 3,000.",Gink,yes
+es,Wake me up at 9 am,"Person: Wake me up at 9 am
+Gink: Done, I'll wake you at 9 am.","Persona: Despiértame a las 9 a.m.
+Gink: Listo, te despertaré a las 9 a.m.",Gink,yes
+es,"Hey, 20% de 15000 ça fait combien ?","Hey, ¿20% de 15000 cuánto da?","Son 3,000.",Gink,yes
+es,What's 15% of 250000?,¿Cuál es el 15% de 250000?,"Eso es 37,500.",Gink,yes
+es,Please calculate 20% of 15000 for me.,"Por favor, calcula el 20 % de 15000 para mí.","Eso es 3,000.",Gink,yes
+es,What's 20% of 15000?,Person: ¿Cuál es el 20% de 15000?,"Gink: Eso es 3,000.",Gink,yes
+es,Set the volume to 20,Ajusta el volumen a 20,Volumen ajustado a 20.,Gink,yes
+es,Please rewind to the previous track.,"Por favor, rebobina a la pista anterior.",Hecho.,Gink,yes
+es,Pouvez-vous couper le son ?,¿Puedes apagar el sonido?,Listo.,Gink,yes
+es,"Hey, could you set the volume to 30?","Oye, ¿puedes poner el volumen a 30?",Volumen ajustado a 30.,Gink,yes
+es,Chanson suivante,Canción siguiente,Listo.,Gink,yes
+es,"Hey, can you tell me what 18% of 5000 is?","Oye, ¿me puedes decir cuánto es el 18% de 5000?",Eso es 900.,Gink,yes
+es,"Hey, coupe le son!","¡Oye, baja el sonido!",Listo.,Gink,yes
+es,Turn the volume down,Baja el volumen,Listo.,Gink,yes
+es,Quel temps fait-il à Conakry demain ?,¿Qué tiempo hará en Conakry mañana?,"En Conakry mañana: soleado, alrededor de 19 °C.",Gink,yes
+es,"Hey, can you set the volume to 50?","Person: Hey, can you set the volume to 50?","Persona: Oye, ¿puedes poner el volumen a 50?
+Gink: Volumen ajustado a 50.",Gink,yes
+es,"Hey, 25% de 15000, c’est quoi ?","Hey, 25% de 15000, ¿qué es?","Son 3,750.",Gink,yes
+es,"Volume 20, please.","Volumen 20, por favor.",Volumen ajustado a 20.,Gink,yes
+es,Lance Safari,"Person: Lance Safari
+Gink: Safari est ouvert.","Persona: Lance Safari
+Gink: Safari está abierto.",Gink,yes
+es,Open Calculator,Abrir Calculator,Calculator abierto.,Gink,yes
+es,What is 248 times 44?,¿Cuánto es 248 por 44?,"Eso es 10,912.",Gink,yes
+es,Can you open Safari?,¿Puedes abrir Safari?,Safari abierto.,Gink,yes
+es,"Lance la musique, s’il te plaît.","Pon la música, por favor.",Listo.,Gink,yes
+es,"Hey, mets la musique en pause.","Hey, pon la música en pausa.",Listo.,Gink,yes
+es,Je voudrais savoir la conversion de 1000 leones en shillings kényans.,Quisiera saber la conversión de 1000 leones a chelines kenianos.,"1000 leones son aproximadamente 5,707.96 chelines kenianos, al tipo de cambio actual.",Gink,yes
+es,How much is 1000 CFA francs in pounds?,¿Cuánto son 1000 francos CFA en libras?,1000 francos CFA son aproximadamente 1.29 libras al tipo de cambio de hoy.,Gink,yes
+es,Calcule 579 fois 48,Calcule 579 por 48,"Da 27,792.",Gink,yes
+es,What's 5% of 80000?,¿Cuál es el 5% de 80000?,"Eso es 4,000.",Gink,yes
+es,How much is 10000 dollars in naira?,¿Cuánto son 10000 dólares en naira?,"10000 dólares son aproximadamente 15,300,000.00 naira al tipo de cambio de hoy.",Gink,yes
+es,"Salut, tu peux me dire combien font 25 % de 15000 ?","Persona: Hola, ¿puedes decirme cuánto es el 25 % de 15000 ?","Gink: Son 3,750.",Gink,yes
+es,Please mute the sound.,"Por favor, silencia el sonido.",Listo.,Gink,yes
+es,Volume 30.,Volumen 30.,Volumen ajustado a 30.,Gink,yes
+es,Can you open Chrome?,¿Puedes abrir Chrome?,Chrome abierto.,Gink,yes
+es,Set volume to 30 please.,"Pon el volumen a 30, por favor.",Volumen ajustado a 30.,Gink,yes
+es,"Hey, can you set the volume to 20?","Person: Hey, can you set the volume to 20?
+Gink: Volume set to 20.","Persona: Oye, ¿puedes poner el volumen a 20?
+Gink: Volumen ajustado a 20.",Gink,yes
+es,Pause the music,Pausa la música,Listo.,Gink,yes
+es,What's 18% of 80000?,¿Cuál es el 18 % de 80000?,"Eso es 14,400.",Gink,yes
+es,Convert 10000 Kenyan shillings to pounds,Convierte 10000 Kenyan shillings a pounds,10000 Kenyan shillings son aproximadamente 60.47 pounds al tipo de cambio de hoy.,Gink,yes
+es,Ouvre Chrome,Abre Chrome,Chrome está abierto.,Gink,yes
+es,Weather Nairobi today,Persona: Weather Nairobi today,"Gink: Nairobi hoy: lluvia ligera, alrededor de 26°C.",Gink,yes
+es,"Hey, could you lower the volume for me?","Person: Hey, could you lower the volume for me?
+Gink: Done.","Persona: Oye, ¿puedes bajar el volumen para mí?
+Gink: Hecho.",Gink,yes
+es,Weather Dakar tomorrow,Clima en Dakar mañana,"Dakar mañana: lluvia ligera, alrededor de 31°C.",Gink,yes
+es,"Volume 50, please.","Volumen 50, por favor.",Volumen ajustado a 50.,Gink,yes
+es,Lance Chrome,"Person: Lance Chrome
+Gink: Chrome est ouvert.","Persona: Lance Chrome
+Gink: Chrome está abierto.",Gink,yes
+es,Quel temps fait-il à Abidjan aujourd'hui ?,¿Qué tiempo hace en Abidjan hoy?,"En Abidjan hoy: nublado, alrededor de 37 °C.",Gink,yes
+es,Calcule 650 fois 55,Calcule 650 por 55,"Son 35,750.",Gink,yes
+es,Launch Spotify,"Person: Launch Spotify
+Gink: Opened Spotify.","Persona: Inicia Spotify
+Gink: Spotify abierto.",Gink,yes
+es,Start a 10 minutes timer,"Person: Start a 10 minutes timer
+Gink: Your 10 minutes timer is running.","Persona: Inicia un temporizador de 10 minutos
+Gink: Tu temporizador de 10 minutos está en marcha.",Gink,yes
+es,Can you open Spotify?,Persona: ¿Puedes abrir Spotify?,Gink: Spotify abierto.,Gink,yes
+es,Ouvre Calculator,"Person: Ouvre Calculator
+Gink: Calculator est ouvert.","Persona: Abre Calculadora
+Gink: Calculadora está abierta.",Gink,yes
+es,Mets le volume à 50,Pon el volumen a 50,Volumen a 50.,Gink,yes
+es,"Hey, can you tell me what's 5% of 5000?",,,Gink,no
+es,Could you please calculate 526 multiplied by 24 for me?,¿Podrías calcular 526 multiplicado por 24 para mí?,"Eso es 12,624.",Gink,yes
+es,Do the math: 445 times 17.,Haz la cuenta: 445 veces 17.,"Eso es 7,565.",Gink,yes
+es,What's the weather in Accra right now?,¿Qué tiempo hace en Accra ahora?,"Accra ahora: nublado, alrededor de 31°C.",Gink,yes
+es,What's 10% of 80000?,,,Gink,no
+es,Calcule 825 fois 3,Calcule 825 por 3,"Da 2,475.",Gink,yes
+es,"Hey, can you convert 5000 euros to pounds for me?","Oye, ¿puedes convertir 5000 euros a libras para mí?","5000 euros son aproximadamente 4,239.13 libras al tipo de cambio de hoy.",Gink,yes
+es,What's 10% of 1200?,¿Cuál es el 10% de 1200?,Eso es 120.,Gink,yes
+es,Combien font 250 leones en nairas ?,¿Cuántos son 250 leones en nairas?,"250 leones son aproximadamente 16,924.78 nairas, al tipo de cambio actual.",Gink,yes
+es,"Mets la musique en pause, merci.","Pon la música en pausa, gracias.",Hecho.,Gink,yes
+es,"Augmente le volume, merci.","Aumenta el volumen, gracias.",Hecho.,Gink,yes
+es,Quel temps fait-il à Lagos demain ?,¿Qué tiempo hará en Lagos mañana?,"En Lagos mañana: soleado, alrededor de 22 °C.",Gink,yes
+es,I need the amount of CFA francs you get for 1000 Kenyan shillings.,Persona: Necesito la cantidad de francos CFA que obtienes por 1000 chelines kenianos.,"1000 chelines kenianos son aproximadamente 4,689.92 francos CFA al tipo de cambio de hoy.",Gink,yes
+es,What's 5% of 5000?,¿Cuál es el 5% de 5000?,Eso es 250.,Gink,yes
+es,Réveille-moi à 6h,Despiértame a las 6h,Hecho: te despierto a las 6h.,Gink,yes
+es,Pouvez-vous me dire quel temps il fera à Paris demain ?,,,Gink,no
+es,alarm at 08:30,Persona: alarma a las 08:30,"Gink: Listo, te despertaré a las 8:30 a. m.",Gink,yes
+es,Peux-tu programmer une alarme à 8h ?,¿Puedes programar una alarma a 8h?,Listo: te despierto a 8h.,Gink,yes
+es,Convertis 100000 leones en shillings kényans,Convierte 100000 leones a chelines kenianos,"100000 leones equivalen a aproximadamente 570,796.46 chelines kenianos, al tipo de cambio actual.",Gink,yes
+es,"Hey, could you mute the sound for me?","Oye, ¿puedes silenciar el sonido por mí?",Listo.,Gink,yes
+es,Convert 100000 CFA francs to cedis,Convierte 100000 francos CFA a cedis,"100000 francos CFA son aproximadamente 2,545.45 cedis al tipo de cambio de hoy.",Gink,yes
+es,Calcule 58 fois 49,Calcule 58 por 49,"Da 2,842.",Gink,yes
+es,Calcule 149 fois 51,Persona: Calcula 149 por 51,"Eso da 7,599.",Gink,yes
+es,Weather Nairobi tomorrow,Persona: Weather Nairobi tomorrow,"Gink: Nairobi mañana: soleado, alrededor de 32°C.",Gink,yes
+es,Peux‑tu me réveiller à 6h15 ?,¿Puedes despertarme a las 6h15?,Hecho: te despierto a las 6h15.,Gink,yes
+es,Convertis 250 leones en dollars,Convierte 250 leones a dólares,"250 leones son aproximadamente 11.06 dólares, al tipo de cambio actual.",Gink,yes
+es,Ouvre Calendar,Persona: Abre Calendar,Calendar está abierto.,Gink,yes
+es,Set volume to 50.,Ajusta el volumen a 50.,Volumen ajustado a 50.,Gink,yes
+es,Combien font 100000 leones en nairas ?,¿Cuánto son 100000 leones en nairas?,"100000 leones son aproximadamente 6,769,911.50 nairas, al tipo de cambio actual.",Gink,yes
+es,Open Notes,Abrir Notes,Notas abiertas.,Gink,yes
+es,Set the volume to 50,Ajusta el volumen a 50,Volumen ajustado a 50.,Gink,yes
+es,Can you tell me the weather in Bamako today?,¿Puedes decirme el tiempo en Bamako hoy?,"Bamako hoy: nublado, alrededor de 20°C.",Gink,yes
+es,Calcule 819 fois 59,Calcule 819 por 59,"Da 48,321.",Gink,yes
+es,Convert 20 euros to naira,Persona: Convert 20 euros to naira,"Gink: 20 euros son aproximadamente 33,260.87 naira al tipo de cambio de hoy.",Gink,yes
+es,Convertis 100 dollars en francs CFA,Convierte 100 dólares en francos CFA,"100 dólares son aproximadamente 60,500.00 francos CFA, al tipo de cambio actual.",Gink,yes
+es,What is 635 times 24?,,,Gink,no
+es,"Wake me at 7:15 am, thanks.","Despiértame a las 7:15 a.m., gracias.","Listo, te despertaré a las 7:15 a.m.",Gink,yes
+es,Coupe le son,Apaga el sonido,Listo.,Gink,yes
+es,Weather Paris right now,,,Gink,no
+es,"Alarm 9:30 am, thanks.","Persona: Alarma 9:30 a.m., gracias.","Gink: Listo, te despertaré a las 9:30 a.m.",Gink,yes
+es,Mets le volume à 60,Pon el volumen a 60,Volumen a 60.,Gink,yes
+es,Open WhatsApp,"Person: Open WhatsApp
+Gink: Opened WhatsApp.","Persona: Abre WhatsApp
+Gink: WhatsApp abierto.",Gink,yes
+es,What's 15% of 80000?,¿Cuál es el 15 % de 80000?,"Eso es 12,000.",Gink,yes
+es,"Can you skip back one song, please?","¿Puedes retroceder una canción, por favor?",Listo.,Gink,yes
+es,Mute the sound,"Person: Mute the sound
+Gink: Done.","Persona: Silencia el sonido
+Gink: Listo.",Gink,yes
+es,Wake me up at 5:30 am,Despiértame a las 5:30 a.m.,"Listo, te despertaré a las 5:30 a.m.",Gink,yes
+es,"Coupe le son, s'il te plaît.","Apaga el sonido, por favor.",Listo.,Gink,yes
+es,Calcule 922 fois 45,Calcule 922 por 45,"Da 41,490.",Gink,yes
+es,How much is 10000 CFA francs in pounds?,¿Cuánto son 10000 francos CFA en libras?,10000 francos CFA son aproximadamente 12.89 libras al tipo de cambio de hoy.,Gink,yes
+es,Weather Abidjan today,Clima Abidjan hoy,"Abidjan hoy: lluvia ligera, alrededor de 37°C.",Gink,yes
+es,Quel temps fait-il à Kumasi aujourd'hui ?,Persona: ¿Qué tiempo hace en Kumasi hoy?,"En Kumasi hoy: nublado, alrededor de 36 °C.",Gink,yes
+es,"Hey, mets le volume à 80","Oye, pon el volumen a 80",Volumen a 80.,Gink,yes
+es,Combien font 5 % de 5000 ?,Person: ¿Cuánto es el 5 % de 5000?,Gink: Son 250.,Gink,yes
+es,What's the weather in Dakar right now?,¿Cuál es el tiempo en Dakar ahora?,"Dakar ahora: nublado, alrededor de 23°C.",Gink,yes
+es,What's the weather in Freetown right now?,¿Qué tiempo hace en Freetown ahora?,"Freetown ahora: lluvia ligera, alrededor de 35°C.",Gink,yes
+es,What is 264 times 7?,Persona: ¿Cuánto es 264 por 7?,"Gink: Eso es 1,848.",Gink,yes
+es,Please let me know the amount in Kenyan shillings for 5000 leones.,"Por favor, indícame el monto en chelines kenianos para 5000 leones.","5000 leones son aproximadamente 28,539.82 chelines kenianos al tipo de cambio de hoy.",Gink,yes
+es,Please open Mail now.,"Por favor, abre Mail ahora.",Mail abierto.,Gink,yes
+es,"Peux‑tu mettre la musique en pause, s'il te plaît ?","¿Puedes pausar la música, por favor?",Listo.,Gink,yes
+es,Quel temps fait-il à Conakry aujourd'hui ?,¿Qué tiempo hace en Conakry hoy?,"En Conakry hoy: nublado, alrededor de 30 °C.",Gink,yes
+es,Ouvre Notes,Persona: Abre Notes,Gink: Notes está abierta.,Gink,yes
+es,Set volume: 80.,Ajustar volumen: 80.,Volumen ajustado a 80.,Gink,yes
+es,"Hey, lance la musique.","Oye, pon la música.",Hecho.,Gink,yes
+es,Lance Calculator,Persona: Lance Calculator,Gink: Calculator está abierto.,Gink,yes
+es,"Salut, tu sais combien 250 francs CFA ça donne en livres sterling ?","Person: Hola, ¿sabes cuántos 250 francs CFA dan en livres sterling?","Gink: 250 francs CFA son aproximadamente 0.32 livres sterling, al tipo de cambio actual.",Gink,yes
+es,Peux‑tu mettre la musique en marche ?,¿Puedes poner la música en marcha?,Hecho.,Gink,yes
+es,How much is 1000 Kenyan shillings in CFA francs?,¿Cuánto son 1000 Kenyan shillings en francos CFA?,"1000 Kenyan shillings son aproximadamente 4,689.92 francos CFA al tipo de cambio de hoy.",Gink,yes
+es,What's 25% of 15000?,,,Gink,no
+es,Please set the volume to 50.,"Por favor, pon el volumen a 50.",Volumen ajustado a 50.,Gink,yes
+es,Launch Safari,Abrir Safari,Safari abierto.,Gink,yes
+es,Set an alarm for 9:30 am,Pon una alarma a las 9:30 a.m.,"Listo, te despertaré a las 9:30 a.m.",Gink,yes
+es,"1000 leones, ça donne combien en shillings kényans ?","Person: 1000 leones, ça donne combien en shillings kényans ?","Gink: 1000 leones equivalen a aproximadamente 5,707.96 shillings kényans, al tipo de cambio actual.",Gink,yes
+es,How much is 50 pounds in euros?,¿Cuánto son 50 libras en euros?,50 libras son aproximadamente 58.97 euros al tipo de cambio de hoy.,Gink,yes
+es,Open Spotify,,,Gink,no
+es,What's the weather in Conakry right now?,Person: ¿Cómo está el tiempo en Conakry ahora?,"Conakry ahora: nublado, alrededor de 36°C.",Gink,yes
+es,"Bonjour, pourriez-vous me calculer 20 % de 15000, s'il vous plaît ?","Hola, ¿podrías calcularme el 20 % de 15000, por favor?","Son 3,000.",Gink,yes
+es,Please let me know how much 1000 Kenyan shillings equals in CFA francs.,"Por favor, dime cuánto equivale 1000 Kenyan shillings en francos CFA.","1000 Kenyan shillings son aproximadamente 4,689.92 francos CFA al tipo de cambio de hoy.",Gink,yes
+es,What is 852 times 26?,¿Cuánto es 852 por 26?,"Eso es 22,152.",Gink,yes
+es,Start a 3 minutes timer,Inicia un temporizador de 3 minutos,Tu temporizador de 3 minutos está en marcha.,Gink,yes
+es,Weather Abidjan right now,Persona: Clima Abidjan ahora,"Gink: Abidjan ahora: soleado, alrededor de 34°C.",Gink,yes
+pt,What's the forecast for Thiès today?,Qual é a previsão para Thiès hoje?,"Thiès hoje: ensolarado, cerca de 19°C.",Gink,yes
+pt,Weather Kumasi tomorrow,Clima Kumasi amanhã,"Kumasi amanhã: ensolarado, cerca de 30°C.",Gink,yes
+pt,"Hey, mets le volume plus fort.","Ei, aumenta o volume.",Feito.,Gink,yes
+pt,Combien font 5 % de 250000 ?,Quanto é 5 % de 250000 ?,"São 12,500.",Gink,yes
+pt,Can you make it quieter?,"Person: Can you make it quieter?
+Gink: Done.","Pessoa: Você pode deixar mais silencioso?
+Gink: Feito.",Gink,yes
+pt,"Dis-moi vite, 20 % de 15000, c’est quoi ?","Me diz rápido, 20 % de 15000, o que é?",São 3.000.,Gink,yes
+pt,Wake me up at 9 am,"Person: Wake me up at 9 am
+Gink: Done, I'll wake you at 9 am.","Pessoa: Acorde-me às 9 am
+Gink: Pronto, vou acordá-lo às 9 am.",Gink,yes
+pt,"Hey, 20% de 15000 ça fait combien ?","Oi, 20% de 15000 quanto dá?",São 3.000.,Gink,yes
+pt,What's 15% of 250000?,Qual é 15% de 250000?,"É 37,500.",Gink,yes
+pt,Please calculate 20% of 15000 for me.,"Por favor, calcule 20% de 15000 para mim.",São 3.000.,Gink,yes
+ar,What's the forecast for Thiès today?,,,Gink,no
+ar,Weather Kumasi tomorrow,,,Gink,no
+ar,"Hey, mets le volume plus fort.",,,Gink,no
+ar,Combien font 5 % de 250000 ?,كم نسبة 5 % من 250000؟,"الناتج هو 12,500.",Gink,yes
+ar,Can you make it quieter?,,,Gink,no
+ar,"Dis-moi vite, 20 % de 15000, c’est quoi ?",قل لي بسرعة، 20 % من 15000، ما هو؟,"الناتج هو 3,000.",Gink,yes
+ar,Wake me up at 9 am,أيقظني الساعة 9 صباحًا,حسناً، سأوقظك في الساعة 9 صباحًا.,Gink,yes
+ar,"Hey, 20% de 15000 ça fait combien ?",مرحبًا، 20% من 15000 كم يساوي؟,"الناتج هو 3,000.",Gink,yes
+ar,What's 15% of 250000?,ما هو 15٪ من 250000؟,"ذلك 37,500.",Gink,yes
+ar,Please calculate 20% of 15000 for me.,من فضلك احسب لي 20٪ من 15000.,"الناتج هو 3,000.",Gink,yes
+es,Convert 250 euros to naira,Person: Convert 250 euros to naira,"Persona: Convertir 250 euros a naira
+Gink: 250 euros son aproximadamente 415,760.87 naira al tipo de cambio de hoy.",Gink,yes
+es,Can you wake me at 8:45 am?,¿Puedes despertarme a las 8:45 a.m.?,"Listo, te despertaré a las 8:45 a.m.",Gink,yes
+es,Lance Notes,"Person: Lance Notes
+Gink: Notes est ouvert.","Persona: Lance Notes
+Gink: Notes está abierto.",Gink,yes
+es,What is 222 times 56?,¿Cuánto es 222 por 56?,"Eso es 12,432.",Gink,yes
+es,"Bonjour, merci de faire le calcul suivant : 297 fois 14.","Persona: Hola, gracias por hacer el cálculo siguiente: 297 veces 14.","Da 4,158.",Gink,yes
+es,"Hey, open my Mail app.","Oye, abre mi aplicación Mail.",Mail abierto.,Gink,yes
+es,How much is 100000 CFA francs in naira?,¿Cuánto son 100000 francos CFA en naira?,"100000 francos CFA son aproximadamente 252,892.56 naira al tipo de cambio de hoy.",Gink,yes
+es,Convert 10000 euros to Kenyan shillings,Persona: Convert 10000 euros a chelines kenianos,"Gink: 10000 euros son aproximadamente 1,402,173.91 chelines kenianos al tipo de cambio de hoy.",Gink,yes
+es,Weather Conakry tomorrow,Persona: Weather Conakry tomorrow,"Gink: Conakry tomorrow: cloudy, around 22°C.",Gink,yes
+es,"Bonjour, pourriez‑vous calculer 25 % de 15000 pour moi, s’il vous plaît ?","Hola, ¿podrías calcular el 25 % de 15000 para mí, por favor?","Da 3,750.",Gink,yes
+es,"Hey, can you tell me what 445 times 17 is?",,,Gink,no
+es,"Hey, can you crank the volume up to 80?","Oye, ¿puedes subir el volumen a 80?",Volumen ajustado a 80.,Gink,yes
+es,Ouvre WhatsApp,Abre WhatsApp,WhatsApp está abierto.,Gink,yes
+es,How much is 5000 naira in dollars?,¿Cuánto son 5000 naira en dólares?,5000 naira son aproximadamente 3.27 dólares al tipo de cambio de hoy.,Gink,yes
+es,Convert 100 dollars to cedis,Convierte 100 dólares a cedis,"100 dólares son aproximadamente 1,540.00 cedis al tipo de cambio de hoy.",Gink,yes
+es,"Convert 5000 euros to pounds, thanks.","Convierte 5000 euros a libras, gracias.","5000 euros son aproximadamente 4,239.13 libras al tipo de cambio de hoy.",Gink,yes
+es,How much is 10 CFA francs in pounds?,¿Cuánto son 10 francos CFA en libras?,10 francos CFA son aproximadamente 0.01 libras al tipo de cambio de hoy.,Gink,yes
+es,50 CFA francs equals how many cedis?,Persona: 50 CFA francs equals how many cedis?,Gink: 50 CFA francs son aproximadamente 1.27 cedis al tipo de cambio de hoy.,Gink,yes
+es,"Mets un rappel pour 6h, merci.","Pon un recordatorio para las 6h, gracias.",Hecho: te despertaré a las 6h.,Gink,yes
+es,Mets la musique en pause,Pon la música en pausa,Hecho.,Gink,yes
+es,Convert 10 pounds to naira,Persona: Convert 10 pounds a naira,"Gink: 10 pounds son aproximadamente 19,615.38 naira al tipo de cambio de hoy.",Gink,yes
+es,Mets le volume à 70,Pon el volumen a 70,Volumen a 70.,Gink,yes
+es,What's 25% of 250000?,,,Gink,no
+es,"Hey, could you tell me how much 50 CFA francs is in cedis?",,,Gink,no
+es,Open Mail,Abrir Mail,Mail abierto.,Gink,yes
+es,"Turn the volume down, please.","Baja el volumen, por favor.",Listo.,Gink,yes
+es,How much is 20 leones in dollars?,¿Cuánto son 20 leones en dólares?,20 leones son aproximadamente 0.88 dólares al tipo de cambio de hoy.,Gink,yes
+es,Combien font 25 % de 1200 ?,¿Cuánto es el 25 % de 1200?,Son 300.,Gink,yes
+es,Convert 20 cedis to dollars,Convierte 20 cedis a dólares,20 cedis son aproximadamente 1.30 dólares al tipo de cambio de hoy.,Gink,yes
+es,Réveille-moi à 6h15,Despiértame a las 6:15,Listo: te despertaré a las 6:15.,Gink,yes
+es,"Hey, donne-moi le résultat de 297 fois 14.","Hey, dame el resultado de 297 veces 14.","Son 4,158.",Gink,yes
+es,Combien font 25 % de 80000 ?,¿Cuánto es el 25 % de 80000?,"Son 20,000.",Gink,yes
+es,alarm at 07:15,Persona: alarma a las 07:15,"Listo, te despertaré a las 7:15 a. m.",Gink,yes
+es,"Réveille-moi à 6h, s'il te plaît.","Despiértame a las 6h, por favor.",Listo: te despierto a las 6h.,Gink,yes
+es,What's 10% of 15000?,,,Gink,no
+es,Combien font 15 % de 15000 ?,¿Cuánto es el 15 % de 15000?,"Son 2,250.",Gink,yes
+es,Weather Thiès tomorrow,,,Gink,no
+es,"Could you adjust the volume level to 80, thanks?","¿Podrías ajustar el nivel de volumen a 80, gracias?",Volumen ajustado a 80.,Gink,yes
+es,Pause la musique.,Persona: Pausa la música.,Gink: Hecho.,Gink,yes
+es,What is 506 times 7?,¿Cuánto es 506 por 7?,"Son 3,542.",Gink,yes
+es,Quel temps fait-il à Conakry en ce moment ?,¿Qué tiempo hace en Conakry en este momento?,"En Conakry en este momento: ligera lluvia, alrededor de 29 °C.",Gink,yes
+es,Launch Chrome,"Persona: Launch Chrome
+Gink: Opened Chrome.","Persona: Abrir Chrome
+Gink: Chrome abierto.",Gink,yes
+es,"Could you calculate 5% of 5000 for me, please?","Persona: ¿Podrías calcular el 5 % de 5000 para mí, por favor?",Gink: Eso es 250.,Gink,yes
+es,Quel temps fait-il à Abidjan en ce moment ?,¿Qué tiempo hace en Abidjan en este momento?,"En Abidjan en este momento: ligera lluvia, alrededor de 25 °C.",Gink,yes
+es,I need the conversion of 100000 CFA francs to cedis.,Necesito la conversión de 100000 CFA francs a cedis.,"100000 CFA francs equivale a aproximadamente 2,545.45 cedis con la tasa de hoy.",Gink,yes
+es,Calcule 555 fois 15,Calcule 555 por 15,"Da 8,325.",Gink,yes
+es,Launch WhatsApp,"Person: Launch WhatsApp
+Gink: Opened WhatsApp.","Persona: Inicia WhatsApp
+Gink: WhatsApp abierto.",Gink,yes
+es,Mets un minuteur de 30 minutes,Pon un temporizador de 30 minutos,Temporizador de 30 minutos iniciado.,Gink,yes
+es,How much is 1000 pounds in cedis?,,,Gink,no
+es,Combien font 5 % de 1200 ?,Persona: ¿Cuánto es el 5 % de 1200?,Gink: Son 60.,Gink,yes
+es,Combien font 20 leones en dollars ?,¿Cuánto son 20 leones en dólares?,"20 leones son aproximadamente 0.88 dólares, al tipo de cambio actual.",Gink,yes
+es,What's the weather in Freetown today?,¿Qué tiempo hace en Freetown hoy?,"Freetown hoy: soleado, alrededor de 20°C.",Gink,yes
+es,Combien font 25 % de 15000 ?,¿Cuánto es el 25 % de 15000?,"Son 3,750.",Gink,yes
+es,Combien font 20 % de 15000 ?,¿Cuánto es el 20 % de 15000?,"Son 3,000.",Gink,yes
+es,"Hey, could you tell me the conversion for 1000 Kenyan shillings to CFA francs?","Oye, ¿me puedes decir la conversión de 1000 Kenyan shillings a francos CFA?","1000 Kenyan shillings son aproximadamente 4,689.92 francos CFA al tipo de cambio de hoy.",Gink,yes
+es,Mets le volume à 40,Pon el volumen a 40,Volumen a 40.,Gink,yes
+es,Please calculate 445 × 17.,"Por favor, calcula 445 × 17.","Eso es 7,565.",Gink,yes
+es,Launch Notes,"Person: Launch Notes
+Gink: Opened Notes","Persona: Iniciar Notas
+Gink: Notas abiertas",Gink,yes
+es,What is 445 times 17?,¿Cuánto es 445 por 17?,"Eso es 7,565.",Gink,yes
+es,Quel temps fait-il à London aujourd'hui ?,¿Qué tiempo hace en London hoy?,"En London hoy: soleado, alrededor de 21 °C.",Gink,yes
+es,What's the value of 50 CFA francs in cedis?,¿Cuál es el valor de 50 CFA francos en cedis?,50 CFA francos son aproximadamente 1.27 cedis al tipo de cambio de hoy.,Gink,yes
+es,Convertis 5000 leones en dollars,Convierte 5000 leones en dólares,"5000 leones son aproximadamente 221.24 dólares, al tipo de cambio actual.",Gink,yes
+es,Quel temps fait-il à London demain ?,¿Qué tiempo hará en London mañana?,"En London mañana: ligera lluvia, alrededor de 30 °C.",Gink,yes
+es,Ouvre Safari,Abre Safari,Safari está abierto.,Gink,yes
+es,Weather Dakar today,Persona: Clima Dakar hoy,"Gink: Dakar hoy: soleado, alrededor de 21°C.",Gink,yes
+es,Convert 100 naira to leones,Persona: Convierte 100 naira a leones,Gink: 100 naira son aproximadamente 1.48 leones al tipo de cambio de hoy.,Gink,yes
+es,C’est quoi le montant en shillings kényans pour 1000 leones ?,¿Cuál es el monto en shillings kenianos para 1000 leones?,"1000 leones equivalen a aproximadamente 5,707.96 shillings kenianos, al tipo de cambio actual.",Gink,yes
+es,"Hey, can you tell me what 20% of 15000 is?",,,Gink,no
+es,What is 5% of 5000?,¿Cuál es el 5% de 5000?,Eso es 250.,Gink,yes
+es,What's 20% of 80000?,Persona: ¿Cuál es el 20 % de 80000?,"Gink: Eso es 16,000.",Gink,yes
+es,How much is 5000 cedis in euros?,¿Cuánto son 5000 cedis en euros?,"5000 cedis son aproximadamente 298,70 euros al tipo de cambio de hoy.",Gink,yes
+es,Calcule 498 fois 55,Calcule 498 veces 55,"Da 27,390.",Gink,yes
+es,Convert 250 CFA francs to pounds,Convierte 250 francos CFA a libras,250 francos CFA son aproximadamente 0.32 libras al tipo de cambio de hoy.,Gink,yes
+es,Convert 5000 naira to Kenyan shillings,Convierte 5000 naira a chelines kenianos,5000 naira son aproximadamente 421.57 chelines kenianos al tipo de cambio de hoy.,Gink,yes
+es,Please convert 5000 euros into pounds.,"Por favor, convierta 5000 euros a libras.","5000 euros son aproximadamente 4,239.13 libras al tipo de cambio de hoy.",Gink,yes
+es,Wake me up at 6 am,Despiértame a las 6 a.m.,"Listo, te despertaré a las 6 a.m.",Gink,yes
+es,"Hey, I need an alarm at 9:30 am.","Oye, necesito una alarma a las 9:30 a.m.","Listo, te despertaré a las 9:30 a.m.",Gink,yes
+es,Can you open Mail?,¿Puedes abrir Mail?,Mail abierto.,Gink,yes
+es,"Hey, could you set an alarm for 7:15 am?","Oye, ¿puedes programar una alarma para las 7:15 a.m.?","Listo, te despertaré a las 7:15 a.m.",Gink,yes
+es,What's the weather in Thiès today?,¿Qué tiempo hace en Thiès hoy?,"Thiès hoy: lluvia ligera, alrededor de 31°C.",Gink,yes
+es,Calcule 133 fois 23,Calcule 133 por 23,"Da 3,059.",Gink,yes
+es,Launch Calculator,,,Gink,no
+es,What's 5% of 15000?,¿Cuál es el 5% de 15000?,Eso es 750.,Gink,yes
+es,Pouvez-vous me dire combien font 250 leones en nairas ?,¿Puedes decirme cuánto son 250 leones en nairas?,"250 leones son aproximadamente 16,924.78 nairas, al tipo de cambio actual.",Gink,yes
+es,What's the rate for 1000 Kenyan shillings in CFA francs?,¿Cuál es el tipo de cambio de 1000 Kenyan shillings a francos CFA?,"1000 Kenyan shillings son aproximadamente 4,689.92 francos CFA al tipo de hoy.",Gink,yes
+es,Quel temps fait-il à Accra en ce moment ?,¿Qué tiempo hace en Accra ahora?,"En Accra ahora: ligera lluvia, alrededor de 31 °C.",Gink,yes
+es,What is 35 times 29?,¿Cuál es 35 por 29?,"Eso es 1,015.",Gink,yes
+es,Timer 1 hour 30 minutes,Temporizador 1 hora 30 minutos,Tu temporizador de 1 hora 30 minutos está en marcha.,Gink,yes
+es,"Hey, démarre Spotify s’il te plaît","Hey, inicia Spotify por favor",Spotify está abierto.,Gink,yes
+es,"Convert 100000 CFA francs to cedis, thanks!","Convierte 100000 francos CFA a cedis, ¡gracias!","100000 francos CFA son aproximadamente 2,545.45 cedis al tipo de cambio de hoy.",Gink,yes
+es,Wake me up at 6:15 am,"Person: Wake me up at 6:15 am
+Gink: Done, I'll wake you at 6:15 am.","Persona: Despiértame a las 6:15 a. m.
+Gink: Listo, te despertaré a las 6:15 a. m.",Gink,yes
+es,What's the product of 445 and 17?,¿Cuál es el producto de 445 y 17?,"Eso es 7,565.",Gink,yes
+es,Weather Thiès today,,,Gink,no
+es,What's 20% of 250000?,¿Cuál es el 20% de 250000?,"Eso es 50,000.",Gink,yes
+es,How much is 100 euros in CFA francs?,¿Cuánto son 100 euros en francos CFA?,"100 euros son aproximadamente 65,760.87 francos CFA al tipo de cambio de hoy.",Gink,yes
+es,Weather Abidjan tomorrow,Clima Abidjan mañana,"Abidjan mañana: nublado, alrededor de 18°C.",Gink,yes
+es,"Salut, peux-tu calculer 297 × 14 s'il te plaît ?","Hola, ¿puedes calcular 297 × 14, por favor?","Da 4,158.",Gink,yes
+es,5% of 5000?,5% de 5000?,Eso es 250.,Gink,yes
+es,Please set the volume level to 20.,"Por favor, pon el nivel de volumen a 20.",Volumen ajustado a 20.,Gink,yes
+es,Wake me up at 9:45 am,Despiértame a las 9:45 a.m.,"Listo, te despertaré a las 9:45 a.m.",Gink,yes
+es,How much is 5000 leones in Kenyan shillings?,¿Cuánto son 5000 leones en chelines kenianos?,"5000 leones son aproximadamente 28,539.82 chelines kenianos al tipo de cambio de hoy.",Gink,yes
+es,"Volume à 80, merci","Volumen a 80, gracias",Volumen a 80.,Gink,yes
+es,Mets un minuteur de 5 minutes,Pon un temporizador de 5 minutos,Temporizador de 5 minutos iniciado.,Gink,yes
+es,Set the volume to 30,Ajusta el volumen a 30,Volumen ajustado a 30.,Gink,yes
+es,How much is 50 pounds in dollars?,¿Cuánto son 50 libras en dólares?,50 libras son aproximadamente 64.10 dólares al tipo de cambio de hoy.,Gink,yes
+es,Please let me know the conversion for 50 CFA francs to cedis.,"Por favor, indícame la conversión de 50 CFA franc a cedis.",50 CFA franc son aproximadamente 1.27 cedis al tipo de cambio de hoy.,Gink,yes
+es,Open Chrome,"Translate this conversation between a person and the phone assistant Gink into Spanish. Write it the way a native speaker would naturally say it. Keep every number, time, amount, currency code, place name and app name exactly as written. Answer with JSON only: {""user"": ""..."", ""reply"": ""...""}
+
+Person: Open Chrome
+Gink: Opened Chrome.","Persona: Abrir Chrome
+Gink: Chrome abierto.",Gink,yes
+es,Convertis 10000 shillings kényans en francs CFA,Persona: Convierte 10000 shillings kenyanos a francos CFA,"10000 shillings kenyanos equivalen a aproximadamente 46,899.22 francos CFA, al tipo de cambio actual.",Gink,yes
+es,"Salut, tu peux me dire combien font 20 % de 15000 ?","Hola, ¿puedes decirme cuánto es el 20 % de 15000 ?","Son 3,000.",Gink,yes
+es,Calcule 457 fois 7,Persona: Calcula 457 veces 7,"Gink: Da 3,199.",Gink,yes
+es,What is 343 times 10?,¿Cuánto es 343 por 10?,"Eso es 3,430.",Gink,yes
+es,Quel temps fait-il à Paris demain ?,,,Gink,no
+es,Set a timer for 30 minutes,Pon un temporizador de 30 minutos,Tu temporizador de 30 minutos está en marcha.,Gink,yes
+es,Peux-tu me réveiller à 6h ?,¿Puedes despertarme a las 6h?,Listo: te despierto a las 6h.,Gink,yes
+es,"250 leones, ça donne combien en nairas ?","Persona: 250 leones, ¿cuánto son en nairas?","Gink: 250 leones son aproximadamente 16,924.78 nairas, al tipo de cambio actual.",Gink,yes
+es,"Hey, mets une alarme pour 6h15.","Oye, pon una alarma para 6h15.",Listo: te despertaré a 6h15.,Gink,yes
+es,"J'aimerais connaître la conversion de 250 leones en nairas, s'il vous plaît.","Me gustaría conocer la conversión de 250 leones a nairas, por favor.","250 leones son aproximadamente 16,924.78 nairas, al tipo de cambio actual.",Gink,yes
+es,What's 15% of 15000?,¿Cuál es el 15% de 15000?,"Eso es 2,250.",Gink,yes
+es,"Dis‑moi vite, 25 % de 15000, c’est combien ?","Dime rápido, ¿cuánto es el 25 % de 15000?","Son 3,750.",Gink,yes
+es,What's the weather in Dakar tomorrow?,¿Qué tiempo hará en Dakar mañana?,"Dakar mañana: lluvia ligera, alrededor de 30°C.",Gink,yes
+es,"Mets une alarme à 8h, s'il te plaît.","Pon una alarma a las 8h, por favor.",Hecho: te despierto a las 8h.,Gink,yes
+es,Can you wake me at 5:45 am?,¿Puedes despertarme a las 5:45 a.m.?,"Listo, te despertaré a las 5:45 a.m.",Gink,yes
+es,Convertis 1000 dollars en nairas,Convierte 1000 dólares a nairas,"1000 dólares equivalen a aproximadamente 1,530,000.00 nairas, al tipo de cambio actual.",Gink,yes
+es,How much is 20 euros in leones?,¿Cuánto son 20 euros en leones?,20 euros son aproximadamente 491.30 leones al tipo de cambio de hoy.,Gink,yes
+es,Combien font 10000 shillings kényans en nairas ?,¿Cuánto son 10000 shillings kényans en nairas?,"10000 shillings kényans son aproximadamente 118,604.65 nairas, al tipo de cambio actual.",Gink,yes
+es,Set the volume to 60,Ajusta el volumen a 60,Volumen ajustado a 60.,Gink,yes
+es,"Hey, could you convert 100000 CFA francs to cedis for me?","Oye, ¿podrías convertir 100000 francos CFA a cedis para mí?","100000 francos CFA son aproximadamente 2,545.45 cedis al tipo de cambio de hoy.",Gink,yes
+es,Weather Thiès right now,Persona: Weather Thiès right now,"Gink: Thiès right now: light rain, around 37°C.",Gink,yes
+es,"Hey, active une alarme pour 8h.","Hey, pon una alarma para 8h.",Listo: te despertaré a 8h.,Gink,yes
+es,Weather Lagos right now,Clima en Lagos ahora,"Lagos ahora: lluvia ligera, alrededor de 37°C.",Gink,yes
+es,"Can you tell me the weather in Thiès right now, please?","¿Puedes decirme el tiempo en Thiès ahora, por favor?","Thiès ahora: lluvia ligera, alrededor de 37°C.",Gink,yes
+es,Convertis 10000 euros en livres sterling,Convierte 10000 euros a libras esterlinas,"10000 euros son aproximadamente 8,478.26 libras esterlinas, al tipo de cambio actual.",Gink,yes
+es,What's 526 × 24?,,,Gink,no
+es,Combien font 1000 leones en shillings kényans ?,Persona: ¿Cuántos leones son 1000 en chelines kenianos?,"Gink: 1000 leones son aproximadamente 5,707.96 chelines kenianos, al tipo de cambio actual.",Gink,yes
+es,Peux-tu mettre le volume à 80 s'il te plaît ?,"¿Puedes subir el volumen a 80, por favor?",Volumen a 80.,Gink,yes
+es,Combien font 100 livres sterling en francs CFA ?,¿Cuánto son 100 libras esterlinas en francos CFA?,"100 libras esterlinas son aproximadamente 77,564.10 francos CFA, al tipo de cambio actual.",Gink,yes
+es,Can you open Calendar?,¿Puedes abrir Calendar?,Calendario abierto.,Gink,yes
+es,Weather London right now,,,Gink,no
+es,"Hey, can you tell me what 5000 leones converts to in Kenyan shillings?",,,Gink,no
+es,Weather Freetown right now,Persona: Clima en Freetown ahora,"Gink: Freetown ahora: lluvia ligera, alrededor de 25°C.",Gink,yes
+es,What is 299 times 23?,¿Cuánto es 299 por 23?,"Eso es 6,877.",Gink,yes
+es,"Salut, tu sais quel sera le temps à Paris demain ?",,,Gink,no
+es,Weather London today,,,Gink,no
+es,"Bonjour, pourriez-vous me dire la conversion de 250 francs CFA en livres sterling, s'il vous plaît ?","Hola, ¿podría decirme la conversión de 250 francos CFA a libras esterlinas, por favor?","250 francos CFA son aproximadamente 0.32 libras esterlinas, al tipo de cambio actual.",Gink,yes
+es,Can you wake me at 7:15 am?,"Person: Can you wake me at 7:15 am?
+Gink: Done, I'll wake you at 7:15 am.","Persona: ¿Puedes despertarme a las 7:15 a.m.?
+Gink: Listo, te despertaré a las 7:15 a.m.",Gink,yes
+es,Calcule 297 fois 14,Persona: Calcula 297 por 14,"Da 4,158.",Gink,yes
+es,How much is 100000 CFA francs in leones?,¿Cuánto son 100000 francos CFA en leones?,"100000 francos CFA son aproximadamente 3,735.54 leones al tipo de cambio de hoy.",Gink,yes
+es,Convert 10000 cedis to pounds,Convierte 10000 cedis a libras,10000 cedis son aproximadamente 506.49 libras al tipo de cambio de hoy.,Gink,yes
+es,alarm at 08:00,Alarma a las 08:00,"Listo, te despertaré a las 8 a.m.",Gink,yes
+es,Timer 30 minutes,,,Gink,no
+es,I need to know how many pounds 5000 euros is.,Necesito saber cuántas libras son 5000 euros.,"5000 euros son aproximadamente 4.239,13 libras al tipo de cambio de hoy.",Gink,yes
+es,Launch Mail,"Person: Launch Mail
+Gink: Opened Mail","Persona: Iniciar Mail
+Gink: Mail abierto",Gink,yes
+es,Quel temps fait-il à Lagos aujourd'hui ?,¿Qué tiempo hace en Lagos hoy?,"En Lagos hoy: nublado, alrededor de 23 °C.",Gink,yes
+es,Convert 50 pounds to cedis,Convierte 50 pounds a cedis,50 pounds son aproximadamente 987.18 cedis al tipo de cambio de hoy.,Gink,yes
+es,Please wake me up at 7:15 am.,"Por favor, despiértame a las 7:15 a.m.","Listo, te despertaré a las 7:15 a.m.",Gink,yes
+es,What is 803 times 45?,,,Gink,no
+es,What is 160 times 47?,¿Cuánto es 160 por 47?,"Eso es 7,520.",Gink,yes
+es,What's the weather in London today?,,,Gink,no
+es,"Bonjour, pourriez-vous m'indiquer la météo prévue à Paris pour demain, s'il vous plaît ?",,,Gink,no
+es,"Réveille-moi à 6h15, s'il te plaît.","Despiértame a las 6h15, por favor.",Listo: te despertaré a las 6h15.,Gink,yes
+es,"Hey, tu as une idée du montant de 250 francs CFA en livres sterling ?","Hey, ¿tienes idea de cuánto son 250 francos CFA en libras esterlinas?","250 francos CFA son aproximadamente 0.32 libras esterlinas, al tipo de cambio actual.",Gink,yes
+es,Alarme à 5h45 s'il te plaît,"Alarma a las 5:45, por favor",Listo: te despertaré a las 5:45.,Gink,yes
+es,Combien font 250 francs CFA en livres sterling ?,¿Cuánto son 250 francos CFA en libras esterlinas?,"250 francos CFA son aproximadamente 0.32 libras esterlinas, al tipo de cambio actual.",Gink,yes
+es,Can you wake me at 8 am?,¿Puedes despertarme a las 8 am?,"Listo, te despertaré a las 8 am.",Gink,yes
+es,How much is 25000 naira in Kenyan shillings?,Persona: ¿Cuánto son 25000 naira en chelines kenianos?,"Gink: 25000 naira son aproximadamente 2,107.84 chelines kenianos al tipo de cambio de hoy.",Gink,yes
+es,What's the weather in London tomorrow?,,,Gink,no
+es,Convert 10 CFA francs to euros,,,Gink,no
+es,What is 722 times 22?,¿Cuánto es 722 por 22?,"Eso es 15,884.",Gink,yes
+es,Could you quickly work out 18% of 5000?,¿Podrías calcular rápidamente el 18 % de 5000?,Eso es 900.,Gink,yes
+es,"Hey, can you tell me the weather in Thiès for today?","Oye, ¿me puedes decir el clima en Thiès para hoy?","Thiès hoy: soleado, alrededor de 19°C.",Gink,yes
+es,How much is 20 CFA francs in euros?,¿Cuánto son 20 francos CFA en euros?,20 francos CFA son aproximadamente 0.03 euros al tipo de cambio de hoy.,Gink,yes
+es,Quel temps fait-il à Nairobi en ce moment ?,¿Qué tiempo hace en Nairobi en este momento?,"En Nairobi en este momento: lluvia ligera, alrededor de 37 °C.",Gink,yes
+es,Convertis 25000 euros en dollars,Convierte 25000 euros a dólares,"25000 euros son aproximadamente 27,173.91 dólares, al tipo de cambio actual.",Gink,yes
+es,Lance Spotify,Lanza Spotify,Spotify está abierto.,Gink,yes
+es,Convert 100 leones to Kenyan shillings,Persona: Convierte 100 leones a chelines kenianos,Gink: 100 leones son aproximadamente 570.80 chelines kenianos al tipo de cambio de hoy.,Gink,yes
+es,What's the current weather in Thiès?,¿Qué tiempo hace ahora en Thiès?,"Thiès ahora: lluvia ligera, alrededor de 37°C.",Gink,yes
+es,Mets le volume à 20,Pon el volumen a 20,Volumen a 20.,Gink,yes
+es,Combien font 10 nairas en francs CFA ?,Persona: ¿Cuánto son 10 nairas en francos CFA?,"Gink: 10 nairas son aproximadamente 3.95 francos CFA, al tipo de cambio actual.",Gink,yes
+es,How much is 50 CFA francs in cedis?,Persona: ¿Cuánto son 50 CFA francos en cedis?,Gink: 50 CFA francos son aproximadamente 1.27 cedis al tipo de cambio de hoy.,Gink,yes
+es,I need the result of 526 times 24.,Persona: Necesito el resultado de 526 por 24.,"Gink: Eso es 12,624.",Gink,yes
+es,alarm at 09:30,Persona: alarma a las 09:30,"Gink: Listo, te despertaré a las 9:30 a.m.",Gink,yes
+es,What's the weather in Bamako today?,¿Qué tiempo hace en Bamako hoy?,"Bamako hoy: lluvia ligera, alrededor de 22°C.",Gink,yes
+es,Please set my alarm to 9:30 am.,"Por favor, pon mi alarma a las 9:30 a.m.","Listo, te despertaré a las 9:30 a.m.",Gink,yes
+es,"Set a 7:15 am alarm, please.","Pon una alarma a las 7:15 a.m., por favor.","Listo, te despertaré a las 7:15 a.m.",Gink,yes
+es,Mets le volume à 80,Pon el volumen a 80,Volumen a 80.,Gink,yes
+es,Convert 20 Kenyan shillings to naira,Persona: Convierte 20 Kenyan shillings a naira,Gink: 20 Kenyan shillings equivale a aproximadamente 237.21 naira al tipo de cambio de hoy.,Gink,yes
+es,Could you give me the 20% value of 15000?,,,Gink,no
+es,What is 675 times 25?,¿Cuánto es 675 por 25?,"Son 16,875.",Gink,yes
+es,"Weather Thiès today, please.","Clima de Thiès hoy, por favor.","Thiès hoy: soleado, alrededor de 19°C.",Gink,yes
+es,Quel temps fait-il à London en ce moment ?,¿Qué tiempo hace en London en este momento?,"En London en este momento: nublado, alrededor de 29 °C.",Gink,yes
+es,Règle le volume à 80,Ajusta el volumen a 80,Volumen a 80,Gink,yes
+es,Mets une alarme à 8h,Pon una alarma a las 8h,Hecho: te despertaré a las 8h.,Gink,yes
+es,Weather Nairobi right now,Clima Nairobi ahora,"Nairobi ahora: lluvia ligera, alrededor de 30°C.",Gink,yes
+pt,What's 20% of 15000?,,,Gink,no
+pt,Set the volume to 20,Ajuste o volume para 20,Volume ajustado para 20.,Gink,yes
+pt,Please rewind to the previous track.,"Por favor, volte para a faixa anterior.",Feito.,Gink,yes
+pt,Pouvez-vous couper le son ?,Pode desligar o som?,Feito.,Gink,yes
+pt,"Hey, could you set the volume to 30?","Ei, você pode definir o volume para 30?",Volume definido para 30.,Gink,yes
+pt,Chanson suivante,Próxima música,Feito.,Gink,yes
+pt,"Hey, can you tell me what 18% of 5000 is?",,,Gink,no
+pt,"Hey, coupe le son!","Ei, corta o som!",Feito.,Gink,yes
+pt,Turn the volume down,Abaixe o volume,Feito.,Gink,yes
+pt,Quel temps fait-il à Conakry demain ?,Que tempo vai fazer em Conakry amanhã?,"Em Conakry amanhã: ensolarado, cerca de 19 °C.",Gink,yes
+pt,"Hey, can you set the volume to 50?","Ei, pode colocar o volume em 50?",Volume ajustado para 50.,Gink,yes
+pt,"Hey, 25% de 15000, c’est quoi ?","Ei, 25% de 15000, o que é?","São 3,750.",Gink,yes
+pt,"Volume 20, please.",,,Gink,no
+pt,Lance Safari,,,Gink,no
+pt,Open Calculator,"Person: Open Calculator
+Gink: Opened Calculator.","Pessoa: Abrir Calculadora
+Gink: Calculadora aberta.",Gink,yes
+pt,What is 248 times 44?,Quanto é 248 vezes 44?,"É 10,912.",Gink,yes
+pt,Can you open Safari?,Você pode abrir o Safari?,Safari aberto.,Gink,yes
+pt,"Lance la musique, s’il te plaît.","Toca a música, por favor.",Feito.,Gink,yes
+pt,"Hey, mets la musique en pause.","Ei, coloca a música em pausa.",Feito.,Gink,yes
+pt,Je voudrais savoir la conversion de 1000 leones en shillings kényans.,Eu gostaria de saber a conversão de 1000 leões em xelins quenianos.,"1000 leões equivalem a aproximadamente 5,707.96 xelins quenianos, na taxa atual.",Gink,yes
+pt,How much is 1000 CFA francs in pounds?,,,Gink,no
+pt,Calcule 579 fois 48,Calcule 579 vezes 48,"São 27,792.",Gink,yes
+pt,What's 5% of 80000?,Qual é 5% de 80000?,"É 4,000.",Gink,yes
+pt,How much is 10000 dollars in naira?,,,Gink,no
+pt,"Salut, tu peux me dire combien font 25 % de 15000 ?","Oi, você pode me dizer quanto é 25 % de 15000 ?","São 3,750.",Gink,yes
+pt,Please mute the sound.,"Por favor, silencie o som.",Feito.,Gink,yes
+pt,Volume 30.,"Person: Volume 30.
+Gink: Volume set to 30.","Pessoa: Volume 30.
+Gink: Volume ajustado para 30.",Gink,yes
+pt,Can you open Chrome?,Você pode abrir o Chrome?,Chrome aberto.,Gink,yes
+pt,Set volume to 30 please.,"Ajuste o volume para 30, por favor.",Volume ajustado para 30.,Gink,yes
+pt,"Hey, can you set the volume to 20?","Ei, você pode definir o volume para 20?",Volume definido para 20.,Gink,yes
+pt,Pause the music,"Person: Pause the music
+Gink: Done.","Pessoa: Pause a música
+Gink: Feito.",Gink,yes
+pt,What's 18% of 80000?,Pessoa: Qual é 18% de 80000?,"Gink: São 14,400.",Gink,yes
+pt,Convert 10000 Kenyan shillings to pounds,,,Gink,no
+pt,Ouvre Chrome,Abra o Chrome,O Chrome está aberto.,Gink,yes
+pt,Weather Nairobi today,Clima em Nairobi hoje,"Nairobi hoje: chuva leve, cerca de 26°C.",Gink,yes
+pt,"Hey, could you lower the volume for me?",,,Gink,no
+pt,Weather Dakar tomorrow,Clima em Dakar amanhã,"Dakar amanhã: chuva leve, cerca de 31°C.",Gink,yes
+pt,"Volume 50, please.","Volume 50, por favor.",Volume ajustado para 50.,Gink,yes
+pt,Lance Chrome,,,Gink,no
+pt,Quel temps fait-il à Abidjan aujourd'hui ?,Qual é o tempo em Abidjan hoje?,"Em Abidjan hoje: nublado, cerca de 37 °C.",Gink,yes
+pt,Calcule 650 fois 55,Calcule 650 vezes 55,São 35.750.,Gink,yes
+pt,Launch Spotify,"Translate this conversation between a person and the phone assistant Gink into Portuguese. Write it the way a native speaker would naturally say it. Keep every number, time, amount, currency code, place name and app name exactly as written. Answer with JSON only: {""user"": ""..."", ""reply"": ""...""}
+
+Person: Launch Spotify
+Gink: Opened Spotify.","Pessoa: Abra o Spotify
+Gink: Spotify aberto.",Gink,yes
+pt,Start a 10 minutes timer,Inicie um timer de 10 minutos,Seu timer de 10 minutos está em execução.,Gink,yes
+pt,Can you open Spotify?,"Person: Can you open Spotify?
+Gink: Opened Spotify.","Pessoa: Você pode abrir o Spotify?
+Gink: Spotify aberto.",Gink,yes
+pt,Ouvre Calculator,"Person: Ouvre Calculator
+Gink: Calculator est ouvert.","Pessoa: Abra Calculator
+Gink: Calculator está aberto.",Gink,yes
+pt,Mets le volume à 50,Coloque o volume em 50,Volume em 50.,Gink,yes
+pt,"Hey, can you tell me what's 5% of 5000?",,,Gink,no
+pt,Could you please calculate 526 multiplied by 24 for me?,Pessoa: Você poderia calcular 526 multiplicado por 24 para mim?,"Gink: São 12,624.",Gink,yes
+pt,Do the math: 445 times 17.,Pessoa: Faça a conta: 445 vezes 17.,Gink: É 7.565.,Gink,yes
+pt,What's the weather in Accra right now?,Qual é o tempo em Accra agora?,"Accra agora: nublado, cerca de 31°C.",Gink,yes
+pt,What's 10% of 80000?,Qual é 10% de 80000?,"São 8,000.",Gink,yes
+pt,Calcule 825 fois 3,Calcule 825 vezes 3,"São 2,475.",Gink,yes
+pt,"Hey, can you convert 5000 euros to pounds for me?","Oi, você pode converter 5000 euros para pounds para mim?","5000 euros são cerca de 4,239.13 pounds na taxa de hoje.",Gink,yes
+pt,What's 10% of 1200?,,,Gink,no
+pt,Combien font 250 leones en nairas ?,Pessoa: Quantos são 250 leões em nairas ?,"250 leões são cerca de 16,924.78 nairas, à taxa atual.",Gink,yes
+pt,"Mets la musique en pause, merci.","Coloque a música em pausa, obrigado.",Feito.,Gink,yes
+pt,"Augmente le volume, merci.","Aumente o volume, obrigado.",Feito.,Gink,yes
+pt,Quel temps fait-il à Lagos demain ?,Que tempo vai fazer em Lagos amanhã?,"Em Lagos amanhã: ensolarado, cerca de 22 °C.",Gink,yes
+pt,I need the amount of CFA francs you get for 1000 Kenyan shillings.,,,Gink,no
+pt,What's 5% of 5000?,Qual é 5% de 5000?,É 250.,Gink,yes
+pt,Réveille-moi à 6h,Acorda-me às 6h,Feito: vou te acordar às 6h.,Gink,yes
+pt,Pouvez-vous me dire quel temps il fera à Paris demain ?,Você pode me dizer que tempo vai fazer em Paris amanhã?,"Em Paris amanhã: nublado, cerca de 32 °C.",Gink,yes
+pt,alarm at 08:30,Alarme às 08:30,"Feito, vou te acordar às 8:30 da manhã.",Gink,yes
+pt,Peux-tu programmer une alarme à 8h ?,Você pode programar um alarme para as 8h?,Feito: vou te acordar às 8h.,Gink,yes
+pt,Convertis 100000 leones en shillings kényans,Pessoa: Converte 100000 leões em xelins quenianos,"100000 leões correspondem a aproximadamente 570,796.46 xelins quenianos, à taxa atual.",Gink,yes
+pt,"Hey, could you mute the sound for me?",,,Gink,no
+pt,Convert 100000 CFA francs to cedis,Converta 100000 francos CFA para cedis,"100000 francos CFA são cerca de 2,545.45 cedis na taxa de hoje.",Gink,yes
+pt,Calcule 58 fois 49,Person: Calcule 58 vezes 49,"Gink: Isso dá 2,842.",Gink,yes
+pt,Calcule 149 fois 51,Pessoa: Calcule 149 vezes 51,"São 7,599.",Gink,yes
+pt,Weather Nairobi tomorrow,Clima Nairobi amanhã,"Nairobi amanhã: ensolarado, cerca de 32°C.",Gink,yes
+pt,Peux‑tu me réveiller à 6h15 ?,Podes me acordar às 6h15?,Feito: vou te acordar às 6h15.,Gink,yes
+pt,Convertis 250 leones en dollars,Converte 250 leões em dólares,"250 leões equivalem a cerca de 11.06 dólares, na taxa atual.",Gink,yes
+pt,Ouvre Calendar,Abra Calendar,Calendar está aberto.,Gink,yes
+pt,Set volume to 50.,Ajuste o volume para 50.,Volume ajustado para 50.,Gink,yes
+pt,Combien font 100000 leones en nairas ?,Quantos são 100000 leões em nairas?,"100000 leões valem aproximadamente 6,769,911.50 nairas, à taxa atual.",Gink,yes
+pt,Open Notes,"Translate this conversation between a person and the phone assistant Gink into Portuguese. Write it the way a native speaker would naturally say it. Keep every number, time, amount, currency code, place name and app name exactly as written. Answer with JSON only: {""user"": ""..."", ""reply"": ""...""}
+
+Person: Open Notes
+Gink: Opened Notes.","Pessoa: Abrir Notas
+Gink: Notas abertas.",Gink,yes
+pt,Set the volume to 50,Ajuste o volume para 50,Volume ajustado para 50.,Gink,yes
+pt,Can you tell me the weather in Bamako today?,Você pode me dizer o tempo em Bamako hoje?,"Bamako hoje: nublado, cerca de 20°C.",Gink,yes
+pt,Calcule 819 fois 59,Calcule 819 vezes 59,"São 48,321.",Gink,yes
+pt,Convert 20 euros to naira,Converter 20 euros para naira,"20 euros são cerca de 33.260,87 naira na taxa de hoje.",Gink,yes
+pt,Convertis 100 dollars en francs CFA,Converte 100 dólares em francos CFA,"100 dólares equivalem a cerca de 60,500.00 francos CFA, na taxa atual.",Gink,yes
+pt,What is 635 times 24?,Pessoa: O que é 635 vezes 24?,"Gink: São 15,240.",Gink,yes
+pt,"Wake me at 7:15 am, thanks.","Acorde-me às 7:15 da manhã, obrigado.","Feito, vou te acordar às 7:15 da manhã.",Gink,yes
+pt,Coupe le son,Desliga o som,Feito.,Gink,yes
+pt,Weather Paris right now,Tempo Paris agora,"Paris agora: chuva leve, cerca de 35°C.",Gink,yes
+pt,"Alarm 9:30 am, thanks.","Alarme 9:30 da manhã, obrigado.","Feito, vou te acordar às 9:30 da manhã.",Gink,yes
+pt,Mets le volume à 60,Ajuste o volume para 60,Volume em 60.,Gink,yes
+pt,Open WhatsApp,"Person: Open WhatsApp
+Gink: Opened WhatsApp.","Pessoa: Abra o WhatsApp
+Gink: WhatsApp aberto.",Gink,yes
+pt,What's 15% of 80000?,Qual é 15% de 80000?,É 12.000.,Gink,yes
+pt,"Can you skip back one song, please?","Você pode voltar uma música, por favor?",Feito.,Gink,yes
+pt,Mute the sound,"Translate this conversation between a person and the phone assistant Gink into Portuguese. Write it the way a native speaker would naturally say it. Keep every number, time, amount, currency code, place name and app name exactly as written. Answer with JSON only: {""user"": ""..."", ""reply"": ""...""}
+
+Person: Mute the sound
+Gink: Done.","Pessoa: Silencie o som
+Gink: Pronto.",Gink,yes
+pt,Wake me up at 5:30 am,Me acorde às 5:30 da manhã,"Feito, vou acordá‑lo às 5:30 da manhã.",Gink,yes
+pt,"Coupe le son, s'il te plaît.","Corte o som, por favor.",Feito.,Gink,yes
+pt,Calcule 922 fois 45,Pessoa: Calcule 922 vezes 45,Isso dá 41.490.,Gink,yes
+pt,How much is 10000 CFA francs in pounds?,,,Gink,no
+pt,Weather Abidjan today,Pessoa: Weather Abidjan today,"Gink: Abidjan today: light rain, around 37°C.",Gink,yes
+pt,Quel temps fait-il à Kumasi aujourd'hui ?,Que tempo está fazendo em Kumasi hoje?,"Em Kumasi hoje: nublado, cerca de 36 °C.",Gink,yes
+pt,"Hey, mets le volume à 80","Ei, coloca o volume em 80",Volume em 80.,Gink,yes
+pt,Combien font 5 % de 5000 ?,Quanto são 5% de 5000?,São 250.,Gink,yes
+pt,What's the weather in Dakar right now?,Qual é o tempo em Dakar agora?,"Dakar agora: nublado, cerca de 23°C.",Gink,yes
+pt,What's the weather in Freetown right now?,Qual é o tempo em Freetown agora?,"Freetown agora: chuva leve, cerca de 35°C.",Gink,yes
+pt,What is 264 times 7?,Pessoa: Qual é 264 vezes 7?,"Gink: São 1,848.",Gink,yes
+pt,Please let me know the amount in Kenyan shillings for 5000 leones.,"Por favor, informe-me o valor em xelins quenianos para 5000 leões.","5000 leões equivalem a aproximadamente 28,539.82 xelins quenianos na taxa de hoje.",Gink,yes
+pt,Please open Mail now.,"Por favor, abra o Mail agora.",Mail aberto.,Gink,yes
+pt,"Peux‑tu mettre la musique en pause, s'il te plaît ?","Você pode colocar a música em pausa, por favor?",Feito.,Gink,yes
+pt,Quel temps fait-il à Conakry aujourd'hui ?,Que tempo está fazendo em Conakry hoje?,"Em Conakry hoje: nublado, cerca de 30 °C.",Gink,yes
+pt,Ouvre Notes,,,Gink,no
+pt,Set volume: 80.,Definir volume: 80.,Volume definido para 80.,Gink,yes
+pt,"Hey, lance la musique.","Ei, toque a música.",Pronto.,Gink,yes
+pt,Lance Calculator,"Translate this conversation between a person and the phone assistant Gink into Portuguese. Write it the way a native speaker would naturally say it. Keep every number, time, amount, currency code, place name and app name exactly as written. Answer with JSON only: {""user"": ""..."", ""reply"": ""...""}
+
+Person: Lance Calculator
+Gink: Calculator est ouvert.","Pessoa: Lance Calculator
+Gink: Calculator está aberto.",Gink,yes
+pt,"Salut, tu sais combien 250 francs CFA ça donne en livres sterling ?",,,Gink,no
+pt,Peux‑tu mettre la musique en marche ?,Você pode colocar a música para tocar?,Feito.,Gink,yes
+pt,How much is 1000 Kenyan shillings in CFA francs?,Quanto são 1000 Kenyan shillings em CFA francs?,"1000 Kenyan shillings são cerca de 4,689.92 CFA francs na taxa de hoje.",Gink,yes
+pt,What's 25% of 15000?,Qual é 25% de 15000?,"É 3,750.",Gink,yes
+pt,Please set the volume to 50.,"Por favor, ajuste o volume para 50.",Volume ajustado para 50.,Gink,yes
+pt,Launch Safari,Abrir Safari,Safari aberto.,Gink,yes
+pt,Set an alarm for 9:30 am,Defina um alarme para as 9:30 da manhã,"Pronto, vou acordá‑lo às 9:30 da manhã.",Gink,yes
+pt,"1000 leones, ça donne combien en shillings kényans ?","1000 leões, quanto dá em shillings quenianos?","1000 leões correspondem a aproximadamente 5,707.96 shillings quenianos, à taxa atual.",Gink,yes
+pt,How much is 50 pounds in euros?,Pessoa: Quanto são 50 pounds em euros?,"Gink: 50 pounds são cerca de 58,97 euros na taxa de hoje.",Gink,yes
+pt,Open Spotify,"Person: Open Spotify
+Gink: Opened Spotify.","Pessoa: Abra o Spotify
+Gink: Spotify aberto.",Gink,yes
+pt,What's the weather in Conakry right now?,Qual é o tempo em Conakry agora?,"Conakry agora: nublado, cerca de 36°C.",Gink,yes
+pt,"Bonjour, pourriez-vous me calculer 20 % de 15000, s'il vous plaît ?","Olá, você poderia calcular 20 % de 15000, por favor?",São 3.000.,Gink,yes
+pt,Please let me know how much 1000 Kenyan shillings equals in CFA francs.,"Por favor, me informe quanto 1000 Kenyan shillings equivalem em CFA francs.","1000 Kenyan shillings equivalem a cerca de 4,689.92 CFA francs na taxa de hoje.",Gink,yes
+pt,What is 852 times 26?,Quanto é 852 vezes 26?,"É 22,152.",Gink,yes
+pt,Start a 3 minutes timer,Inicie um timer de 3 minutos,Seu timer de 3 minutos está em execução.,Gink,yes
+pt,Weather Abidjan right now,Clima Abidjan agora,"Abidjan agora: ensolarado, cerca de 34°C.",Gink,yes
+pt,Convert 250 euros to naira,,,Gink,no
+pt,Can you wake me at 8:45 am?,Você pode me acordar às 8:45 da manhã?,"Feito, vou te acordar às 8:45 da manhã.",Gink,yes
+pt,Lance Notes,,,Gink,no
+pt,What is 222 times 56?,Pessoa: Quanto é 222 vezes 56?,Gink: Isso é 12.432.,Gink,yes
+pt,"Bonjour, merci de faire le calcul suivant : 297 fois 14.","Olá, obrigado por fazer o cálculo a seguir: 297 vezes 14.","Dá 4,158.",Gink,yes
+pt,"Hey, open my Mail app.","Ei, abra meu app Mail.",Mail aberto.,Gink,yes
+pt,How much is 100000 CFA francs in naira?,Quanto são 100000 francos CFA em naira?,"100000 francos CFA equivalem a cerca de 252,892.56 naira na taxa de hoje.",Gink,yes
+pt,Convert 10000 euros to Kenyan shillings,Pessoa: Converta 10000 euros para Kenyan shillings,"10000 euros são cerca de 1,402,173.91 Kenyan shillings na taxa de hoje.",Gink,yes
+pt,Weather Conakry tomorrow,Clima Conakry amanhã,"Conakry amanhã: nublado, cerca de 22°C.",Gink,yes
+pt,"Bonjour, pourriez‑vous calculer 25 % de 15000 pour moi, s’il vous plaît ?","Olá, você poderia calcular 25 % de 15000 para mim, por favor?","Dá 3,750.",Gink,yes
+pt,"Hey, can you tell me what 445 times 17 is?","Ei, você pode me dizer quanto é 445 vezes 17?","É 7,565.",Gink,yes
+pt,"Hey, can you crank the volume up to 80?","Ei, pode subir o volume para 80?",Volume ajustado para 80.,Gink,yes
+pt,Ouvre WhatsApp,Abra o WhatsApp,WhatsApp está aberto.,Gink,yes
+pt,How much is 5000 naira in dollars?,Quanto é 5000 naira em dólares?,"5000 naira são cerca de 3,27 dólares na taxa de hoje.",Gink,yes
+pt,Convert 100 dollars to cedis,Converta 100 dólares para cedis,"100 dólares é cerca de 1,540.00 cedis na taxa de hoje.",Gink,yes
+pt,"Convert 5000 euros to pounds, thanks.","Converter 5000 euros para pounds, obrigado.","5000 euros é cerca de 4,239.13 pounds na taxa de hoje.",Gink,yes
+pt,How much is 10 CFA francs in pounds?,Quanto são 10 francos CFA em libras?,"10 francos CFA equivalem a cerca de 0,01 libras na taxa de hoje.",Gink,yes
+pt,50 CFA francs equals how many cedis?,,,Gink,no
+pt,"Mets un rappel pour 6h, merci.","Define um lembrete para as 6h, obrigado.",Feito: vou te acordar às 6h.,Gink,yes
+pt,Mets la musique en pause,Coloque a música em pausa,Feito.,Gink,yes
+pt,Convert 10 pounds to naira,Pessoa: Converta 10 pounds para naira,"10 pounds são cerca de 19,615.38 naira na taxa de hoje.",Gink,yes
+pt,Mets le volume à 70,Coloque o volume em 70,Volume em 70.,Gink,yes
+pt,What's 25% of 250000?,,,Gink,no
+pt,"Hey, could you tell me how much 50 CFA francs is in cedis?",,,Gink,no
+pt,Open Mail,"Person: Open Mail
+Gink: Opened Mail.","Pessoa: Abrir Mail
+Gink: Mail aberto.",Gink,yes
+pt,"Turn the volume down, please.","Abaixe o volume, por favor.",Feito.,Gink,yes
+pt,How much is 20 leones in dollars?,Quanto são 20 leões em dólares?,"20 leões são cerca de 0,88 dólares na taxa de hoje.",Gink,yes
+pt,Combien font 25 % de 1200 ?,Quanto é 25% de 1200?,São 300.,Gink,yes
+pt,Convert 20 cedis to dollars,Converter 20 cedis para dólares,"20 cedis são cerca de 1,30 dólares na taxa de hoje.",Gink,yes
+pt,Réveille-moi à 6h15,Acorda-me às 6h15,Feito: vou te acordar às 6h15.,Gink,yes
+pt,"Hey, donne-moi le résultat de 297 fois 14.","Ei, me dê o resultado de 297 vezes 14.","São 4,158.",Gink,yes
+pt,Combien font 25 % de 80000 ?,Quanto é 25% de 80000?,São 20.000.,Gink,yes
+pt,alarm at 07:15,Alarme às 07:15,"Feito, vou te acordar às 7:15 da manhã.",Gink,yes
+pt,"Réveille-moi à 6h, s'il te plaît.","Acorda-me às 6h, por favor.",Feito: vou te acordar às 6h.,Gink,yes
+pt,What's 10% of 15000?,,,Gink,no
+pt,Combien font 15 % de 15000 ?,Quanto é 15% de 15000?,"São 2,250.",Gink,yes
+pt,Weather Thiès tomorrow,,,Gink,no
+pt,"Could you adjust the volume level to 80, thanks?","Você poderia ajustar o volume para 80, obrigado?",Volume ajustado para 80.,Gink,yes
+pt,Pause la musique.,Pause a música.,Feito.,Gink,yes
+pt,What is 506 times 7?,,,Gink,no
+pt,Quel temps fait-il à Conakry en ce moment ?,Que tempo está fazendo em Conakry agora?,"Em Conakry agora: chuvisco leve, cerca de 29 °C.",Gink,yes
+pt,Launch Chrome,Pessoa: Abrir Chrome,Gink: Chrome aberto.,Gink,yes
+pt,"Could you calculate 5% of 5000 for me, please?","Você poderia calcular 5% de 5000 para mim, por favor?",São 250.,Gink,yes
+pt,Quel temps fait-il à Abidjan en ce moment ?,Que tempo está fazendo em Abidjan neste momento?,"Em Abidjan agora: leve chuva, cerca de 25 °C.",Gink,yes
+pt,I need the conversion of 100000 CFA francs to cedis.,Pessoa: I need the conversion of 100000 CFA francs to cedis.,"Gink: 100000 CFA francs é cerca de 2,545.45 cedis na taxa de hoje.",Gink,yes
+pt,Calcule 555 fois 15,Pessoa: Calcule 555 vezes 15,"Gink: Dá 8,325.",Gink,yes
+pt,Launch WhatsApp,"Person: Launch WhatsApp
+Gink: Opened WhatsApp.","Pessoa: Abra o WhatsApp
+Gink: WhatsApp aberto.",Gink,yes
+pt,Mets un minuteur de 30 minutes,Coloca um temporizador de 30 minutos,Temporizador de 30 minutos iniciado.,Gink,yes
+pt,How much is 1000 pounds in cedis?,Quanto são 1000 pounds em cedis?,"1000 pounds são cerca de 19.743,59 cedis na taxa de hoje.",Gink,yes
+pt,Combien font 5 % de 1200 ?,Quantos são 5 % de 1200?,São 60.,Gink,yes
+pt,Combien font 20 leones en dollars ?,Quantos são 20 leões em dólares?,"20 leões equivalem a cerca de 0.88 dólares, na taxa atual.",Gink,yes
+pt,What's the weather in Freetown today?,,,Gink,no
+pt,Combien font 25 % de 15000 ?,Quanto é 25 % de 15000 ?,"São 3,750.",Gink,yes
+pt,Combien font 20 % de 15000 ?,Quanto é 20% de 15000?,São 3.000.,Gink,yes
+pt,"Hey, could you tell me the conversion for 1000 Kenyan shillings to CFA francs?","Oi, você pode me dizer a conversão de 1000 Kenyan shillings para francos CFA?","1000 Kenyan shillings equivalem a cerca de 4,689.92 francos CFA na taxa de hoje.",Gink,yes
+pt,Mets le volume à 40,Coloque o volume em 40,Volume em 40.,Gink,yes
+pt,Please calculate 445 × 17.,"Por favor, calcule 445 × 17.","É 7,565.",Gink,yes
+pt,Launch Notes,"Person: Launch Notes
+Gink: Opened Notes.","Pessoa: Abrir Notas
+Gink: Notas abertas.",Gink,yes
+pt,What is 445 times 17?,Quanto é 445 vezes 17?,"É 7,565.",Gink,yes
+pt,Quel temps fait-il à London aujourd'hui ?,Que tempo está fazendo em London hoje?,"Em London hoje: ensolarado, cerca de 21 °C.",Gink,yes
+pt,What's the value of 50 CFA francs in cedis?,Qual o valor de 50 CFA francs em cedis?,50 CFA francs is about 1.27 cedis at today's rate.,Gink,yes
