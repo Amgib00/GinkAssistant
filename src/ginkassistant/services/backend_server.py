@@ -957,8 +957,10 @@ async def _oauth_callback(provider: str, request: Request):
         entry["result"] = _login_response(email, name or (existing or {}).get("name", ""))
         return HTMLResponse(_result_page(True, "Go back to Gink \u2014 you can close this tab."))
     except Exception as exc:
-        entry["result"] = {"error": f"{PROVIDERS[provider]['label']} sign-in failed: {exc}"}
-        return HTMLResponse(_result_page(False, str(exc)), status_code=400)
+        app.logger.exception("OAuth callback failed for provider '%s'", provider)
+        safe_error = f"{PROVIDERS[provider]['label']} sign-in failed. Please try again."
+        entry["result"] = {"error": safe_error}
+        return HTMLResponse(_result_page(False, safe_error), status_code=400)
 
 
 @app.get("/auth/{provider}/callback")
