@@ -393,7 +393,13 @@
   // In the Gink Genie app (its WebView adds "GinkGenieApp" to the browser identity) there are no pop-ups
   // and no downloads: links go through the same window (the app opens them in the real browser).
   var IN_APP = /GinkGenieApp/.test(navigator.userAgent);
-  function openOutside(url) { if (IN_APP) location.href = url; else window.open(url, "_blank", "noopener"); }
+  function openOutside(url) {
+    var parsed;
+    try { parsed = new URL(String(url || ""), location.href); } catch (e) { return; }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return;
+    var safeUrl = parsed.href;
+    if (IN_APP) location.href = safeUrl; else window.open(safeUrl, "_blank", "noopener");
+  }
 
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function api(path, opts) {
