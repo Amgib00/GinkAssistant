@@ -8,6 +8,10 @@
 # Apple Developer Program membership and signing (see deploy/IOS_AND_WEB.md).
 name: iOS build
 
+permissions:
+  contents: read
+  actions: read
+
 on:
   workflow_dispatch:
   push:
