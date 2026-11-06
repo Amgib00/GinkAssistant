@@ -162,6 +162,9 @@ openspec/changes/fix-official-sources/tasks.md
 openspec/changes/update-genie-review/proposal.md
 openspec/changes/update-genie-review/specs/gink-genie/spec.md
 openspec/changes/update-genie-review/tasks.md
+openspec/changes/update-wake-media-models/proposal.md
+openspec/changes/update-wake-media-models/specs/languages-voice/spec.md
+openspec/changes/update-wake-media-models/tasks.md
 openspec/config.yaml
 openspec/specs/accounts-security/spec.md
 openspec/specs/agent-mode/spec.md
@@ -372,6 +375,7 @@ tests/test_updates.py
 tests/test_video_and_live_tv.py
 tests/test_viewer_and_skeletons.py
 tests/test_voice_and_stop.py
+tests/test_wake_media_models.py
 tests/test_wake_profile_security.py
 tests/test_wake_status.py
 tests/test_wake_word.py

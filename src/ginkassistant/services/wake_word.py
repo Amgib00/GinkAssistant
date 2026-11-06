@@ -34,7 +34,7 @@ from typing import Callable, Optional
 # vocabulary" and drops them), so only words it knows are used: "ginkgo" starts with the very same
 # sounds as "Gink", and "king" is the closest short word. matches() also accepts "gink" for engines
 # (or future models) that know it.
-WAKE_PHRASES = ["hey ginkgo", "hey king", "hi ginkgo", "hi king", "okay ginkgo"]
+WAKE_PHRASES = ["hey ginkgo", "hey king", "hi ginkgo", "hi king", "okay ginkgo", "ginkgo"]   # "ginkgo" alone = "Gink"
 MATCH_WORDS = ("gink", "ginkgo", "king", "jink")
 MODEL_NAME = "vosk-model-small-en-us-0.15"
 MODEL_URL = f"https://alphacephei.com/vosk/models/{MODEL_NAME}.zip"
@@ -80,11 +80,17 @@ async def download_model(base_dir, on_progress: Optional[Callable[[float], None]
     return model_path(base_dir)
 
 
+SHORT = {"on": True}          # also wake on just "Gink" (Settings > Voice; main_screen sets it from prefs)
+
+
 def matches(text: str) -> bool:
-    """Does a recognized phrase contain the wake word?"""
+    """Does a recognized phrase contain the wake word? "Hey Gink" anywhere, or "Gink" on its own / first."""
     t = " " + re.sub(r"[^a-z ]", " ", (text or "").lower()) + " "
     t = re.sub(r"\s+", " ", t)
-    return any(f" {lead} {w} " in t for lead in ("hey", "hi", "okay", "ok") for w in MATCH_WORDS)
+    if any(f" {lead} {w} " in t for lead in ("hey", "hi", "okay", "ok") for w in MATCH_WORDS):
+        return True
+    first = t.split()[:1]
+    return bool(SHORT["on"] and first and first[0] in ("gink", "ginkgo", "jink"))   # not "king": too common
 
 
 # ---------------------------------------------------------------- engines

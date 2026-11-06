@@ -23,6 +23,9 @@ import time
 PERMISSION = "android.permission.RECORD_AUDIO"
 # "Hey Gink" as phone recognizers actually write it
 WAKE_RE = re.compile(r"\b(?:hey|hi|hay|ok|okay|a|he)[\s,.!]*(?:gink|ginc|gynk|jink|ginks|ging|gink's|kink|gin k)\b", re.I)
+# just "Gink" -- at the start of what was heard (Settings > Voice: also wake on just "Gink")
+WAKE_SHORT_RE = re.compile(r"^\s*(?:gink|ginc|gynk|jink|ginks|gink's)\b[\s,.!]*", re.I)
+SHORT = {"on": True}
 ERRORS = {1: "network timeout", 2: "no network", 3: "audio problem", 4: "speech service problem", 5: "client problem",
           6: "no speech", 7: "no match", 8: "recognizer busy", 9: "microphone permission is off", 10: "too many requests",
           11: "server disconnected", 12: "language not supported", 13: "language unavailable"}
@@ -439,7 +442,7 @@ class AndroidWakeListener:
             self.error = "" if failures == 0 else self.error
             if text:
                 self.engine.last_heard = text
-                m = WAKE_RE.search(text)
+                m = WAKE_RE.search(text) or (WAKE_SHORT_RE.match(text) if SHORT["on"] else None)
                 if m and not self._paused:
                     self.detections += 1
                     self.heard_after_wake = text[m.end():].strip(" ,.!?")

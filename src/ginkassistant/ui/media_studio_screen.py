@@ -7,8 +7,9 @@ Media Studio -- create images, keep them in a gallery.
   POST /media/image), which holds the Google key and applies the plan's daily
   image limit. The counter shows what's left today.
 * Gallery of everything you've made: open, save as, reuse the prompt, delete.
-* Video: Google is retiring the Veo models (22 Oct 2026); video returns once
-  it's moved to their replacement -- the tab says so instead of failing.
+* Ideas: ready-made looks to start from (Zen, Claw machine, Chibi keychain, Elven, Sitcom, 8-bit game,
+  Football figurine, Landscape, Statue, Underwater, Cozy room). A card fills in an editable prompt with
+  its style and shape; the cards' art is drawn here (no borrowed pictures). Video was removed.
 
 Drawn as one HTML page in a WebView, talking to Python through the same
 polling bridge as the chat page.
@@ -25,6 +26,32 @@ from ..services.api_client import ApiClient, ApiError
 from ..services.image_service import ASPECTS, STYLES, ImageService
 from ..services.paths import data_dir
 from .theme import css_vars
+
+# Ideas: (id, title, prompt with {subject}, default subject, style, aspect, card colours, symbol)
+IDEAS = [
+    ("zen", "Zen", "{subject} floating peacefully in deep meditation, soft morning light, calm and minimal, gentle film photograph",
+     "a person", "photo", "3:4", "#9FB4C7,#E8EEF2", "\U0001F9D8"),
+    ("claw", "Claw machine", "a cute plush toy of {subject} inside a colourful claw machine full of plushies, neon arcade lights",
+     "a smiling student", "3d", "3:4", "#F472B6,#8B5CF6", "\U0001F9F8"),
+    ("chibi", "Chibi keychain", "a tiny chibi keychain charm of {subject}, glossy acrylic, held up in front of a soft blurred background",
+     "a girl with round glasses", "3d", "3:4", "#FBCFE8,#FDE68A", "\U0001F511"),
+    ("elven", "Elven", "{subject} as an elven archer in a sunlit enchanted forest, fantasy film still, golden light",
+     "a young woman", "photo", "3:4", "#65A30D,#FACC15", "\U0001F3F9"),
+    ("sitcom", "Sitcom", "{subject} as the guest star of a bright 90s TV sitcom, colourful retro kitchen set, title card that says GUEST STAR",
+     "a cheerful man in a colourful jacket", "photo", "3:4", "#F59E0B,#10B981", "\U0001F4FA"),
+    ("8bit", "8-bit game", "{subject} as characters in a joyful 8-bit pixel-art video game scene, bright pixel sky, a heart above them",
+     "two friends and their cat", "illustration", "1:1", "#F97316,#DC2626", "\U0001F47E"),
+    ("figurine", "Football figurine", "a collectible action figure of {subject} as a footballer in a clear blister pack, with ball, boots and cones",
+     "a smiling young man", "3d", "3:4", "#1E3A8A,#FACC15", "\u26BD"),
+    ("landscape", "Landscape", "a wide, moody landscape photograph of {subject}, golden hour, high detail",
+     "a rugged coastline at dawn", "photo", "16:9", "#475569,#CBD5E1", "\U0001F3DE\uFE0F"),
+    ("statue", "Statue", "{subject} as a white marble statue in a grand classical museum hall, soft daylight",
+     "a woman holding a basket of fruit", "photo", "3:4", "#A8A29E,#F5F5F4", "\U0001F3DB\uFE0F"),
+    ("underwater", "Underwater", "an underwater portrait of {subject}, sunlight rippling through the water, tiny bubbles, dreamy",
+     "a young woman", "photo", "3:4", "#0E7490,#67E8F9", "\U0001F30A"),
+    ("room", "Cozy room", "a cozy reading nook for my room: {subject}, warm fairy lights, records on the wall, soft blankets, sunset window",
+     "a small bedroom", "photo", "4:3", "#7C2D12,#FDBA74", "\U0001F6CB\uFE0F"),
+]
 
 STYLE_LABELS = {"": "None", "photo": "Photo", "illustration": "Illustration", "3d": "3D", "sticker": "Sticker",
                 "poster": "Poster", "logo": "Logo", "watercolor": "Watercolour", "anime": "Anime"}
@@ -76,14 +103,26 @@ PAGE = r"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport
   .tile.pending span { position: absolute; left: 0; right: 0; bottom: 16px; text-align: center; font-size: 13px; color: var(--text-muted); z-index: 1; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .empty { text-align: center; color: var(--text-muted); padding: 50px 0; font-size: 14px; }
+  /* Ideas: big rounded cards in a row you can scroll, like a gallery of looks */
+  .ideas { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 12px; margin-bottom: 14px; scroll-snap-type: x proximity; }
+  .idea { flex: 0 0 132px; height: 176px; border-radius: 22px; border: 0; position: relative; cursor: pointer; overflow: hidden;
+    scroll-snap-align: start; box-shadow: 0 1px 3px rgba(0,0,0,0.18); transition: transform 0.15s ease, box-shadow 0.15s ease; }
+  .idea:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.22); }
+  .idea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .idea.on { box-shadow: 0 0 0 3px var(--accent); }
+  .idea .sym { position: absolute; top: 38%; left: 50%; transform: translate(-50%, -50%); font-size: 54px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25)); }
+  .idea .nm { position: absolute; left: 12px; bottom: 12px; right: 12px; text-align: left; color: #fff; font-weight: 600; font-size: 14px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.55); }
+  body.reduced-motion .idea { transition: none; }
   .soon { text-align: center; padding: 60px 20px; color: var(--text-muted); line-height: 1.6; }
   .soon b { color: var(--text-main); font-size: 16px; display: block; margin-bottom: 6px; }
   @media (max-width: 560px) { .gallery { grid-template-columns: repeat(2, 1fr); gap: 8px; } main { padding: 14px 12px 40px; } }
 </style></head><body>
 <header><button class="btn" id="back">&larr; Back</button><h1>Media Studio</h1></header>
-<div class="tabs"><button class="on" data-tab="images">Images</button><button data-tab="video">Video</button></div>
 <main>
   <section id="tab-images">
+    <div class="label" style="margin:0 0 8px">Ideas</div>
+    <div class="ideas" id="ideas" role="list"></div>
     <div class="create">
       <textarea id="prompt" placeholder="Describe the image you want \u2014 e.g. a sunset over the Dakar corniche, colourful fishing boats in the foreground"></textarea>
       <div class="label">Style</div><div class="chips" id="styles"></div>
@@ -93,10 +132,6 @@ PAGE = r"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport
     </div>
     <div class="gallery" id="gallery"></div>
   </section>
-  <section id="tab-video" style="display:none">
-    <div class="soon"><b>Video is coming back soon</b>Google is retiring the video models Media Studio used (on 22 October 2026).<br>
-      Video creation returns once Gink moves to Google's new video model.</div>
-  </section>
 </main>
 <script>
   var ginkEvents = [], ginkSeq = 0, ginkPage = String(Date.now()) + Math.random().toString(36).slice(2, 8);
@@ -105,7 +140,7 @@ PAGE = r"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport
     if (page === ginkPage) ginkEvents = ginkEvents.filter(function (e) { return e.seq > ack; });
     return JSON.stringify({page: ginkPage, events: ginkEvents});
   }
-  var STYLES = __STYLES__, ASPECTS = __ASPECTS__, state = {style: 'photo', aspect: '1:1', busy: false};
+  var STYLES = __STYLES__, ASPECTS = __ASPECTS__, IDEAS = __IDEAS__, state = {style: 'photo', aspect: '1:1', busy: false};
   function $(id) { return document.getElementById(id); }
   function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
   function chips() {
@@ -113,6 +148,12 @@ PAGE = r"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport
     $('aspects').innerHTML = ASPECTS.map(function (a) {
       var p = a[0].split(':'), w = +p[0], h = +p[1], k = 13 / Math.max(w, h);
       return '<button class="chip' + (state.aspect === a[0] ? ' on' : '') + '" data-aspect="' + a[0] + '"><i style="width:' + Math.round(w * k) + 'px;height:' + Math.round(h * k) + 'px"></i>' + esc(a[1]) + '</button>'; }).join('');
+  }
+  function ideas() {
+    $('ideas').innerHTML = IDEAS.map(function (it) {
+      var c = it[6].split(',');
+      return '<button class="idea" role="listitem" data-idea="' + it[0] + '" style="background:linear-gradient(160deg,' + c[0] + ',' + c[1] + ')">' +
+        '<span class="sym" aria-hidden="true">' + it[7] + '</span><span class="nm">' + esc(it[1]) + '</span></button>'; }).join('');
   }
   function setGallery(items) {
     var g = $('gallery'), pending = g.querySelector('.pending');
@@ -134,11 +175,16 @@ PAGE = r"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport
   document.addEventListener('DOMContentLoaded', function () {
     chips();
     $('back').addEventListener('click', function () { ginkEmit('back'); });
-    document.querySelector('.tabs').addEventListener('click', function (e) {
-      var b = e.target.closest('button'); if (!b) return;
-      Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function (x) { x.classList.toggle('on', x === b); });
-      $('tab-images').style.display = b.getAttribute('data-tab') === 'images' ? '' : 'none';
-      $('tab-video').style.display = b.getAttribute('data-tab') === 'video' ? '' : 'none';
+    ideas();
+    $('ideas').addEventListener('click', function (e) {
+      var c = e.target.closest('[data-idea]'); if (!c) return;
+      var it = IDEAS.filter(function (x) { return x[0] === c.getAttribute('data-idea'); })[0]; if (!it) return;
+      var typed = $('prompt').value.trim(), subject = (typed && typed.length < 80 && !/[.!?]$/.test(typed)) ? typed : it[3];
+      $('prompt').value = it[2].replace('{subject}', subject);     // editable: change the subject or anything else
+      state.style = it[4]; state.aspect = it[5]; chips();
+      Array.prototype.forEach.call(document.querySelectorAll('.idea'), function (x) { x.classList.toggle('on', x === c); });
+      $('prompt').focus(); $('prompt').setSelectionRange(0, 0);
+      setMsg('Change the words in the box if you like, then Create image.');
     });
     document.querySelector('.create').addEventListener('click', function (e) {
       var s = e.target.closest('[data-style]'), a = e.target.closest('[data-aspect]');
@@ -174,7 +220,8 @@ class MediaStudio:
             str(data_dir(app) / "files"), lambda: app.state.base_url, lambda: getattr(app, "session_token", None))
         page = (PAGE.replace("__THEME__", css_vars())
                 .replace("__STYLES__", json.dumps([[k, STYLE_LABELS[k]] for k in STYLES]))
-                .replace("__ASPECTS__", json.dumps([[a, ASPECT_LABELS[a]] for a in ASPECTS])))
+                .replace("__ASPECTS__", json.dumps([[a, ASPECT_LABELS[a]] for a in ASPECTS]))
+                .replace("__IDEAS__", json.dumps(IDEAS)))
         self.web = toga.WebView(style=Pack(flex=1))
         self.web.set_content("https://gink.local/media", page)
         self.token = object()

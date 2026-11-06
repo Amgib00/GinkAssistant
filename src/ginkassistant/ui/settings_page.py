@@ -289,6 +289,7 @@ SETTINGS_JS = r"""
                   : 'Say \u201cHey Gink\u201d to ask something hands-free. Listening for it happens entirely on this device \u2014 nothing is sent anywhere until you say it.') +
                  (info.wake_supported === false ? ' (Not available on this device yet.)' : '')},
           {type: 'info', label: 'Status', value: info.wake_status || 'Off'},
+          {type: 'toggle', key: 'wake_short', label: 'Also wake on just \u201cGink\u201d', desc: 'Say \u201cGink, what time is it?\u201d without \u201cHey\u201d. Turn it off if Gink wakes up when nobody called it.'},
           {type: 'toggle', key: 'wake_followup', label: 'Keep listening for a follow-up', desc: 'After answering, Gink listens a few more seconds so you can carry on without saying \u201cHey Gink\u201d again.'},
           info.wake_android
             ? {apps: true, type: 'toggle', key: 'wake_background', label: 'Keep listening in the background',

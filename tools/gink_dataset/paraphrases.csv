@@ -5359,3 +5359,66 @@ en,"Hey, I need a Markdown version of my grocery list—fish, bread, milk, eggs.
 en,"Hey, I need a Markdown version of my grocery list—fish, bread, milk, eggs.","Hey, I need my grocery list (fish, bread, milk, eggs) in Markdown format.",openai/gpt-oss-120b,yes
 en,"Hey, I need a Markdown version of my grocery list—fish, bread, milk, eggs.","Markdown my grocery list: fish, bread, milk, eggs.",openai/gpt-oss-120b,yes
 en,"Hey, I need a Markdown version of my grocery list—fish, bread, milk, eggs.","Please format my grocery list—fish, bread, milk, eggs—as Markdown.",openai/gpt-oss-120b,yes
+en,Please set a reminder: buy bread at 2 pm today.,"Hey, can you set a reminder for me? I need to buy bread at 2 pm today.",openai/gpt-oss-120b,yes
+en,Please set a reminder: buy bread at 2 pm today.,"Reminder: buy bread at 2 pm today, please.",openai/gpt-oss-120b,yes
+en,Please set a reminder: buy bread at 2 pm today.,Set a reminder – buy bread at 2 pm today.,openai/gpt-oss-120b,yes
+en,Please set a reminder: buy bread at 2 pm today.,Please remind me to buy bread at 2 pm today.,openai/gpt-oss-120b,yes
+es,¿Cuánto son 250 francos CFA en libras esterlinas?,How much is 250 CFA francs in British pounds?,openai/gpt-oss-120b,yes
+es,¿Cuánto son 250 francos CFA en libras esterlinas?,Can you tell me the conversion for 250 francos CFA to pounds sterling?,openai/gpt-oss-120b,yes
+es,¿Cuánto son 250 francos CFA en libras esterlinas?,What's the value of 250 CFA franc in GBP?,openai/gpt-oss-120b,yes
+es,¿Cuánto son 250 francos CFA en libras esterlinas?,Please convert 250 francos CFA into pounds.,openai/gpt-oss-120b,yes
+en,"Hey, could you remind me to book the car service on Wednesday at 8:30 pm?",Please remind me to book the car service on Wednesday at 8:30 pm.,openai/gpt-oss-120b,yes
+en,"Hey, could you remind me to book the car service on Wednesday at 8:30 pm?","Hey, can you set a reminder for me to book the car service on Wednesday at 8:30 pm?",openai/gpt-oss-120b,yes
+en,"Hey, could you remind me to book the car service on Wednesday at 8:30 pm?","Remind me to schedule the car service this Wednesday at 8:30 pm, thanks.",openai/gpt-oss-120b,yes
+en,"Hey, could you remind me to book the car service on Wednesday at 8:30 pm?","Yo, don't let me forget to book the car service on Wednesday at 8:30 pm.",openai/gpt-oss-120b,yes
+en,"Start a 30 minutes timer for the tea, please.","Could you set a 30 minutes timer for the tea, please?",openai/gpt-oss-120b,yes
+en,"Start a 30 minutes timer for the tea, please.","Hey, start a 30 minutes timer for the tea.",openai/gpt-oss-120b,yes
+en,"Start a 30 minutes timer for the tea, please.",Please start a 30 minutes timer for the tea.,openai/gpt-oss-120b,yes
+en,"Start a 30 minutes timer for the tea, please.","Timer for the tea: 30 minutes, please.",openai/gpt-oss-120b,yes
+en,"Could you put sugar, bread, rice, and milk into a Markdown list for me?","Hey, can you make a Markdown list that includes sugar, bread, rice, and milk?",openai/gpt-oss-120b,yes
+en,"Could you put sugar, bread, rice, and milk into a Markdown list for me?","Please put sugar, bread, rice, and milk into a Markdown list for me.",openai/gpt-oss-120b,yes
+en,"Could you put sugar, bread, rice, and milk into a Markdown list for me?","Could you format sugar, bread, rice, and milk as a Markdown list?",openai/gpt-oss-120b,yes
+en,"Could you put sugar, bread, rice, and milk into a Markdown list for me?","I need a Markdown list with sugar, bread, rice, and milk—thanks!",openai/gpt-oss-120b,yes
+en,Please remind me to water the plants at 12 pm today.,Remind me to water the plants at 12 pm today.,openai/gpt-oss-120b,yes
+en,Please remind me to water the plants at 12 pm today.,"Hey, could you set a reminder for me to water the plants at 12 pm today?",openai/gpt-oss-120b,yes
+en,Please remind me to water the plants at 12 pm today.,Please set a reminder: water the plants at 12 pm today.,openai/gpt-oss-120b,yes
+en,Please remind me to water the plants at 12 pm today.,"I need a reminder to water the plants at 12 pm today, thanks.",openai/gpt-oss-120b,yes
+en,"Hey, can you set a 3 minutes timer for the tea?","Hey, could you set a 3 minutes timer for the tea?",openai/gpt-oss-120b,yes
+en,"Hey, can you set a 3 minutes timer for the tea?","Set a timer for 3 minutes for the tea, thanks.",openai/gpt-oss-120b,yes
+en,Don't forget to remind me to book the car service tomorrow at 12 pm.,"Hey, please remind me to book the car service tomorrow at 12 pm.",openai/gpt-oss-120b,yes
+en,Don't forget to remind me to book the car service tomorrow at 12 pm.,Could you make sure I get a reminder to schedule the car service at 12 pm tomorrow? Thanks!,openai/gpt-oss-120b,yes
+en,Don't forget to remind me to book the car service tomorrow at 12 pm.,Remind me to book the car service tomorrow at 12 pm.,openai/gpt-oss-120b,yes
+en,Don't forget to remind me to book the car service tomorrow at 12 pm.,Don't let me forget: book the car service tomorrow at 12 pm.,openai/gpt-oss-120b,yes
+en,299 multiplied by 23 = ?,"Hey, could you tell me what 299 multiplied by 23 equals?",openai/gpt-oss-120b,yes
+en,299 multiplied by 23 = ?,Please calculate 299 × 23 for me.,openai/gpt-oss-120b,yes
+en,299 multiplied by 23 = ?,What's 299 times 23?,openai/gpt-oss-120b,yes
+en,299 multiplied by 23 = ?,Can you give me the result of 299 multiplied by 23?,openai/gpt-oss-120b,yes
+en,"5% of 80000, please?",Can you calculate 5% of 80000 for me?,openai/gpt-oss-120b,yes
+en,"5% of 80000, please?","Hey, what's 5% of 80000?",openai/gpt-oss-120b,yes
+en,"5% of 80000, please?",Please tell me 5% of 80000.,openai/gpt-oss-120b,yes
+es,Pon el volumen a 50,"Could you set the volume to 50, please?",openai/gpt-oss-120b,yes
+es,Pon el volumen a 50,"Hey, turn the volume up to 50.",openai/gpt-oss-120b,yes
+es,Pon el volumen a 50,Please increase the volume to 50.,openai/gpt-oss-120b,yes
+es,Pon el volumen a 50,Set volume 50.,openai/gpt-oss-120b,yes
+en,Can you set a reminder for me to call mum at 10 am today?,Please remind me to call mum at 10 am today.,openai/gpt-oss-120b,yes
+en,Can you set a reminder for me to call mum at 10 am today?,"Hey, set a reminder: call mum at 10 am today.",openai/gpt-oss-120b,yes
+en,Can you set a reminder for me to call mum at 10 am today?,"Reminder needed – call mum at 10 am today, thanks.",openai/gpt-oss-120b,yes
+en,I need an alarm at 06:00 for the work.,"Hey, can you set an alarm at 06:00 for the work?",openai/gpt-oss-120b,yes
+en,I need an alarm at 06:00 for the work.,Please schedule an alarm for 06:00 for work.,openai/gpt-oss-120b,yes
+en,I need an alarm at 06:00 for the work.,"Set a 06:00 alarm for work, thanks.",openai/gpt-oss-120b,yes
+en,"Wake me up at 9:30 am, thanks – I have to go to work.","Hey, could you set an alarm for 9:30 am? I need to be up for work.",openai/gpt-oss-120b,yes
+en,"Wake me up at 9:30 am, thanks – I have to go to work.",Please set a 9:30 am wake‑up alarm; I have to head to work.,openai/gpt-oss-120b,yes
+en,"Wake me up at 9:30 am, thanks – I have to go to work.","Alarm for 9:30 am, please. Got to get to work.",openai/gpt-oss-120b,yes
+en,"Can you create a PDF of my shopping list? It includes palm oil, tomatoes, milk, and onions.","Hey, could you make a PDF of my shopping list? It has palm oil, tomatoes, milk, and onions.",openai/gpt-oss-120b,yes
+en,Please note: my mother's birthday is on September 28.,"Hey, just a heads up—my mom's birthday is on September 28.",openai/gpt-oss-120b,yes
+en,Please note: my mother's birthday is on September 28.,Could you please note that my mother's birthday falls on September 28?,openai/gpt-oss-120b,yes
+en,Please note: my mother's birthday is on September 28.,Reminder: Mom's birthday = September 28.,openai/gpt-oss-120b,yes
+en,Please note: my mother's birthday is on September 28.,"Just so you know, my mother's birthday is on September 28.",openai/gpt-oss-120b,yes
+en,Please let me know the conversion rate for 1000 CFA francs to pounds.,Could you tell me the conversion rate for 1000 CFA francs to pounds?,openai/gpt-oss-120b,yes
+en,Please let me know the conversion rate for 1000 CFA francs to pounds.,"Hey, what's the rate for converting 1000 CFA francs into pounds?",openai/gpt-oss-120b,yes
+en,Please let me know the conversion rate for 1000 CFA francs to pounds.,Please provide the exchange rate for 1000 CFA francs to pounds.,openai/gpt-oss-120b,yes
+en,Please let me know the conversion rate for 1000 CFA francs to pounds.,"I need the conversion figure for 1000 CFA francs to pounds, thanks.",openai/gpt-oss-120b,yes
+en,"Set a 9:45 am alarm for the prayer, thanks.","Hey, could you set an alarm for 9:45 am for the prayer? Thanks!",openai/gpt-oss-120b,yes
+en,"Set a 9:45 am alarm for the prayer, thanks.","Set a 9:45 am prayer alarm, please.",openai/gpt-oss-120b,yes
+en,"Set a 9:45 am alarm for the prayer, thanks.",Please schedule a 9:45 am alarm for the prayer. Thanks.,openai/gpt-oss-120b,yes
+en,"Set a 9:45 am alarm for the prayer, thanks.","Alarm at 9:45 am for prayer, thank you.",openai/gpt-oss-120b,yes

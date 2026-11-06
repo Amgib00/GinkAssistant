@@ -889,6 +889,13 @@ def build_main_screen(app: toga.App, email: str):
         "meta-llama/llama-4-maverick-17b-128e-instruct": ("Llama 4 Maverick", "Smart"),
     }
 
+    def _gink_only(ids) -> list:
+        """Only Gink's own models in the pickers (Crystal, Flake, Prism, the Pro ones, Gink's own): not
+        the provider's raw list (old Llama, Mixtral, DeepSeek...)."""
+        out = [m for m in dict.fromkeys(ids) if (MODEL_LABELS.get(m, ("",))[0].startswith("Gink") and m != "gink-search")
+               or _is_own_model(m)]
+        return out or ["openai/gpt-oss-120b"]
+
     def _is_own_model(model_id: str) -> bool:
         """Gink's own fine-tuned model (tools/gink_model), listed by the server for testers/everyone."""
         m = str(model_id or "")
@@ -909,7 +916,7 @@ def build_main_screen(app: toga.App, email: str):
             return
         own = [m for m in active or [] if _is_own_model(m)]
         if own:
-            ids = list(dict.fromkeys([brain.preferred_model] + _initial_model_choices() + own))
+            ids = _gink_only([brain.preferred_model] + _initial_model_choices() + own)
             await web_chat.set_models([_model_entry(m) for m in ids], brain.preferred_model)
 
     def prompt_store():
@@ -1008,9 +1015,9 @@ def build_main_screen(app: toga.App, email: str):
             await asyncio.sleep(120)
 
     async def push_models_only():
-        ids = _initial_model_choices()
-        if brain.preferred_model not in ids:
-            ids.insert(0, brain.preferred_model)
+        if brain.preferred_model not in _gink_only([brain.preferred_model]):     # an old non-Gink choice: Crystal
+            brain.preferred_model = "openai/gpt-oss-120b"
+        ids = _gink_only([brain.preferred_model] + _initial_model_choices())
         await web_chat.set_models([_model_entry(m) for m in ids], brain.preferred_model)
 
     async def maybe_whats_new():
@@ -1038,9 +1045,9 @@ def build_main_screen(app: toga.App, email: str):
         asyncio.create_task(sync_prompts())
         if pref_sync["loop"] is None:
             pref_sync["loop"] = asyncio.ensure_future(_pull_prefs_forever())
-        ids = _initial_model_choices()
-        if brain.preferred_model not in ids:
-            ids.insert(0, brain.preferred_model)
+        if brain.preferred_model not in _gink_only([brain.preferred_model]):     # an old non-Gink choice: Crystal
+            brain.preferred_model = "openai/gpt-oss-120b"
+        ids = _gink_only([brain.preferred_model] + _initial_model_choices())
         await web_chat.set_models([_model_entry(m) for m in ids], brain.preferred_model)
         asyncio.create_task(add_own_models())
 
@@ -1439,7 +1446,8 @@ def build_main_screen(app: toga.App, email: str):
 
     settings = SettingsController(
         app, web_chat, brain, selected_voice, audio_engine, email=email, display_name=user_display_name,
-        models_fn=lambda: [_model_entry(m) for m in dict.fromkeys([brain.preferred_model] + _initial_model_choices())],
+        models_fn=lambda: [_model_entry(m) for m in _gink_only([brain.preferred_model] + _initial_model_choices()
+                                                                   + list(getattr(brain, "active_models", None) or []))],
         # these three are defined further down -> looked up when used
         push_models=push_models, open_pro=open_pro, on_log_out=lambda: on_log_out(),
         refresh_sidebar=lambda: refresh_sidebar(), clear_all_chats=clear_all_chats, brief_now=brief_now,
@@ -1532,6 +1540,11 @@ def build_main_screen(app: toga.App, email: str):
     async def configure_wake():
         """Start / stop listening to match Settings (downloads the offline model once)."""
         lst = wake["listener"]
+        short = prefs.load(app).get("wake_short", True) is not False      # also wake on just "Gink"
+        wake_word.SHORT["on"] = short
+        if _is_android():
+            from ..services import android_voice as _av
+            _av.SHORT["on"] = short
         sync_background()
         if (not prefs.load(app).get("wake_enabled") or (_is_mobile() and not _is_android())
                 or voice_bridge.blocked[0]):              # a parent turned voice off

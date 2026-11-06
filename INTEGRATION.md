@@ -1959,3 +1959,15 @@ New services/live_info.py (all free, no API keys):
   refresh_token renewal on 401; 15-min cache; dashboard tile (https links only, textContent).
 - build_mix.py: chat train + Genie export (+ --extra), per-line tools, genie share cap, valid() structure check, dedupe;
   train_unsloth/prepare_hosted use row["tools"] when present.
+
+## 0.1.112: "Gink" wake word, Media Studio Ideas, Gink-only model lists
+- Owner's screenshots: Settings > Capabilities listed DEFAULT_FALLBACKS/PREFERRED_CASCADE (llama3-70b-8192, mixtral,
+  deepseek-r1-distill...). main_screen._gink_only(): MODEL_LABELS names starting "Gink" (not gink-search) + own models;
+  used by models_fn, push_models(_only), add_own_models; an old non-Gink preferred_model -> openai/gpt-oss-120b.
+  bridge.js keeps ids whose niceModel() starts "Gink ".
+- Wake: wake_word.SHORT / android_voice.SHORT (from pref wake_short, set in configure_wake). Vosk grammar gains "ginkgo"
+  alone; matches(): "Gink"/"ginkgo"/"jink" as the FIRST word ("king" excluded: too common). Android WAKE_SHORT_RE
+  (^gink...) -> heard_after_wake. Web wakeHeard() + wakeGlow("listening"/"off") around voice mode.
+- Media Studio: tabs + video section removed; IDEAS (id, title, prompt "{subject}", default subject, style, aspect,
+  gradient, symbol) -> card row; a click fills the prompt (a short typed text becomes the subject). Emoji with
+  U+FE0F so they render in colour. The owner's reference screenshots were NOT copied into the app.

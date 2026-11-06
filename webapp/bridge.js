@@ -573,6 +573,8 @@
   // (Chrome sends what it hears to Google, Safari to Apple: Settings says so). On "Hey Gink", voice mode opens.
   var WK = { rec: null, status: "", blocked: false };
   var WAKE_RE = /\b(hey|hi|ok|okay)[ ,]+(gink|ginks|king|jink|jinx|ginkgo|ging)\b/i;
+  var WAKE_SHORT_RE = /^\s*(gink|ginks|jink|jinx|ginkgo)\b/i;          // just "Gink" (Settings > Voice)
+  function wakeHeard(t) { return WAKE_RE.test(t) || (W.prefs.wake_short !== false && WAKE_SHORT_RE.test(t)); }
   function wakeStatus(text) { if (WK.status !== text) { WK.status = text; pushSettings(); } }
   function wakeWanted() { return !!(W.prefs.wake_enabled && Rec && W.token && !V.on && !WK.blocked && !W.voiceOff && document.visibilityState === "visible"); }
   function wakeStart() {
@@ -586,7 +588,12 @@
     var r = new Rec(); r.lang = navigator.language || "en-US"; r.continuous = true; r.interimResults = true;
     r.onresult = function (e) {
       for (var i = e.resultIndex; i < e.results.length; i++) {
-        if (WAKE_RE.test(e.results[i][0].transcript)) { wakeStop(); if (typeof startVoice === "function") startVoice(); return; }
+        if (wakeHeard(e.results[i][0].transcript)) {
+          wakeStop();
+          if (typeof wakeGlow === "function") wakeGlow("listening");      // the same glow as the apps
+          if (typeof startVoice === "function") startVoice();
+          return;
+        }
       }
     };
     r.onerror = function (e) {
@@ -1126,7 +1133,7 @@
       if (v && v.voice) { W.prefs.voice = v.voice; save("gink_prefs", W.prefs); }
       V.on = true; V.muted = false; vListen();
     },
-    voice_end: function () { vStop(); setTimeout(wakeStart, 800); },   // then listen for "Hey Gink" again
+    voice_end: function () { vStop(); if (typeof wakeGlow === "function") wakeGlow("off"); setTimeout(wakeStart, 800); },   // then listen for "Hey Gink" again
     voice_mute: function (v) {
       V.muted = !!(v && v.muted);
       if (V.muted) { if (V.rec) { try { V.rec.abort(); } catch (e) {} } stopSpeaking(); voiceUiState("muted"); }
@@ -1198,7 +1205,9 @@
     applyAppearance();
     api("/ai/usage").then(function (r) { return r.ok ? r.json() : null; }).then(function (u) { if (u) W.plan = u.plan; }).catch(function () {});
     api("/ai/openai/v1/models").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-      var ids = ((j && j.data) || []).map(function (m) { return m.id; }).filter(function (id) { return !/whisper|tts|guard|embed|orpheus|compound|allam|playai/i.test(id); });   // chat models only
+      var ids = ((j && j.data) || []).map(function (m) { return m.id; }).filter(function (id) {
+        return !/whisper|tts|guard|embed|orpheus|compound|allam|playai/i.test(id) && /^Gink /.test(niceModel(id)) && id !== "gink-search";
+      });                                                       // Gink's models only (not the provider's raw list)
       W.models = ids.map(function (id) { return { id: id, name: niceModel(id), tier: "" }; });
       if (!W.model || ids.indexOf(W.model) < 0) W.model = ids[0] || "";
       setModels(W.models, W.model);

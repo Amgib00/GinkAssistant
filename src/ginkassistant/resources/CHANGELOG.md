@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.112 (November 2026)
+
+- "Hey Gink" or just "Gink": say "Gink, what time is it?" and Gink wakes, on computers, Android and
+  the web app, with the same glow everywhere (turn "Gink" alone off in Settings > Voice)
+- Media Studio: new Ideas -- Zen, Claw machine, Chibi keychain, Elven, Sitcom, 8-bit game, Football
+  figurine, Landscape, Statue, Underwater, Cozy room -- each fills in a prompt you can change. Video is gone
+- The model lists show only Gink's models (Crystal, Flake, Prism...), not old provider models
+
 ## 0.1.111 (November 2026)
 
 - Room to grow: big files can live in object storage (Cloudflare R2, Backblaze B2, S3...), paid by
