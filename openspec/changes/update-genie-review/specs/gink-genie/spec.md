@@ -20,3 +20,14 @@ Genie SHALL not store a new version when the project is unchanged, and SHALL kee
 #### Scenario: A question that changes nothing
 - **WHEN** the person asks Genie something that changes no files
 - **THEN** no new version is stored
+
+### Requirement: Work on real repositories
+Genie SHALL open a GitHub repository (a pasted link, public or via the person's connected GitHub, up to 10 MB), and SHALL have tools to find files by name, search lines with optional regular expressions, read long files in numbered parts, and change one exact piece of a file.
+
+#### Scenario: Pasting a GitHub link
+- **WHEN** the person pastes https://github.com/owner/repo into Genie
+- **THEN** the repository's text files and pictures are imported (build folders and node_modules skipped) and Genie can work on them
+
+#### Scenario: Changing one line of a big file
+- **WHEN** Genie needs to change one function in a 2,000-line file
+- **THEN** it replaces exactly that piece with edit_file instead of rewriting the file

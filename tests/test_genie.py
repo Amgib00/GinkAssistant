@@ -72,7 +72,7 @@ def test_change_many_files_and_refuse_unsafe_paths(srv):
     assert [(x["path"], x["action"]) for x in r["changes"]] == [("js/app.js", "changed"), ("styles.css", "deleted")]
     assert [f["path"] for f in r["files"]] == ["index.html", "js/app.js"]                 # nothing escaped the project
     tool_answers = [m["content"] for m in SEEN[-1]["messages"] if m["role"] == "tool"]
-    assert "js/app.js:1: console.log('grades')" in tool_answers[0] and tool_answers[1] == "console.log('grades')"
+    assert "js/app.js:1: console.log('grades')" in tool_answers[0] and tool_answers[1] == "1| console.log('grades')"   # numbered
     assert sum("isn't a valid file path" in t for t in tool_answers) == 3 and any("too large" in t for t in tool_answers)
     assert c.get(f"/genie/projects/{pid}/file", headers=h, params={"path": "js/app.js"}).json()["content"] == "console.log('grades v2')"
 
@@ -301,7 +301,7 @@ def test_plan_mode_looks_but_never_touches(srv):
     assert r["plan"] is True and r["reply"].startswith("1. Add a cart page") and "pending" not in r
     assert c.get(f"/genie/projects/{pid}/all", headers=h).json()["files"] == before                # nothing changed
     names = [t["function"]["name"] for t in SEEN[-2]["tools"]]
-    assert sorted(names) == ["list_files", "read_file", "search_files"]                           # only looking tools
+    assert sorted(names) == ["find_files", "list_files", "read_file", "search_files"]             # only looking tools
     assert "PLAN MODE" in SEEN[-2]["messages"][-1]["content"] or any("PLAN MODE" in m.get("content", "") for m in SEEN[-2]["messages"])
     refused = [m["content"] for m in SEEN[-1]["messages"] if m["role"] == "tool"]
     assert refused.count("Not allowed in plan mode: reply with your plan instead.") == 2

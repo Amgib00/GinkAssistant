@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.110 (November 2026)
+
+- Gink Genie works on real repositories: paste a GitHub link to open it (public, or private with
+  GitHub connected); Genie can find files by name, search with patterns, read long files in numbered
+  parts and change one exact piece of a file; projects can hold 600 files (6 MB) with deeper folders
+- Fixed the "Official" source badge: it now means a government or international public body, or the
+  organisation's own website -- not universities or news -- and only Gink's own check can show it
+
 ## 0.1.109 (November 2026)
 
 - Settings > Privacy > Help improve Gink: adults can choose to share their Gink Genie sessions to help

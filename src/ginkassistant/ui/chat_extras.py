@@ -953,7 +953,9 @@ JS = r"""
         var after = '', n = a.nextSibling;
         while (n && !(n.nodeType === 1 && (n.tagName === 'A' || n.tagName === 'BR'))) { after += n.textContent || ''; n = n.nextSibling; }
         var li = a.closest('li'); if (li) after += li.textContent.replace(a.textContent, '');
-        list.push({ url: a.href, title: (a.textContent || '').trim() || srcHost(a.href), official: /official/i.test(after) });
+        // only Gink's own marker (" \u00b7 official", added by the server after checking the address) earns the badge --
+        // not any text that happens to say "official" (an AI-written list could say anything)
+        list.push({ url: a.href, title: (a.textContent || '').trim() || srcHost(a.href), official: /\u00b7\s*official\s*$/i.test(after.trim()) });
       });
     }
     take(p);

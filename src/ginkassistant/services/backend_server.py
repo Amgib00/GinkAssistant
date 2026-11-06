@@ -2044,18 +2044,41 @@ def _needs_search(text: str) -> bool:
 _SEARCH_NOTE = ("Search the web for this. Prefer official and primary sources (government sites, the organisation's own "
                 "website, official documentation and statistics), then reputable news outlets. Check the information is "
                 "current, give dates where they matter, and say when sources disagree.")
-_OFFICIAL = re.compile(r"\.(gov|gouv|gob|go|govt|int|mil|edu|ac)(\.[a-z]{2})?$|\.(gov|gouv|gob|go|edu|ac)\.[a-z]{2,3}$", re.I)
+# "Official" = a government or an international public body, or the website of the organisation the
+# question is about (asking about Wave? wave.com is its own site). Universities and news are good sources,
+# but not "official". Before 0.1.110 universities counted, the UN, the World Bank and the EU didn't, and the
+# app showed the badge for ANY source whose line said "official" -- even in lists the AI wrote itself.
+_GOV_HOST = re.compile(r"\.(gov|mil|int)$|(^|\.)(gov|gouv|gob|go|govt|gv|gub|gc|admin|mil)\.[a-z]{2}$|"
+                       r"(^|\.)(europa\.eu|bund\.de|service-public\.fr|rijksoverheid\.nl)$", re.I)
+INTERNATIONAL = {"un.org", "who.int", "worldbank.org", "imf.org", "unicef.org", "unesco.org", "unhcr.org", "undp.org",
+                 "wfp.org", "fao.org", "ilo.org", "oecd.org", "wto.org", "afdb.org", "unaids.org", "gavi.org",
+                 "icrc.org", "ifrc.org", "iaea.org", "itu.int", "wipo.int", "unep.org", "canada.ca"}
+_NOT_A_NAME = {"news", "info", "world", "today", "best", "guide", "review", "reviews", "wiki", "wikipedia", "online",
+               "blog", "home", "free", "times", "post", "daily", "media", "global", "africa", "france", "music",
+               "health", "money", "travel", "sport", "sports", "weather", "google", "youtube", "facebook", "reddit"}
+_question = contextvars.ContextVar("gink_question", default="")
 
 
-def _is_official(url: str) -> bool:
-    host = (url.split("/")[2] if "://" in url else url).split(":")[0].lower()
-    return bool(_OFFICIAL.search(host))
+def _host(url: str) -> str:
+    h = (url.split("/")[2] if "://" in url else url).split(":")[0].lower()
+    return h[4:] if h.startswith("www.") else h
+
+
+def _is_official(url: str, question: str = "") -> bool:
+    host = _host(url)
+    if _GOV_HOST.search(host) or any(host == d or host.endswith("." + d) for d in INTERNATIONAL):
+        return True
+    parts = host.split(".")
+    name = parts[-3] if len(parts) >= 3 and len(parts[-2]) <= 3 and len(parts[-1]) == 2 else (parts[-2] if len(parts) >= 2 else "")
+    words = set(re.findall(r"[a-z0-9]+", (question or "").lower()))
+    return len(name) >= 4 and name not in _NOT_A_NAME and name.replace("-", "") in words
 
 
 def _rank_sources(sources: list) -> list:
-    """Official sources first (government, international bodies, universities), then the rest in order."""
+    """Official sources first (governments, international bodies, the organisation's own site), then the rest."""
+    question = _question.get()
     for s in sources:
-        s["official"] = _is_official(s["url"])
+        s["official"] = _is_official(s["url"], question)
     return sorted(sources, key=lambda s: 0 if s["official"] else 1)
 
 
@@ -2497,6 +2520,7 @@ async def ai_chat(request: Request):
         _fit_reasoning(body, MAX_TOKENS[plan])
         body["user"] = hashlib.sha256(email.encode()).hexdigest()[:32]   # abuse tracing without sharing the email
         if web:
+            _question.set(_last_user_text(body.get("messages") or []))   # to spot the organisation's own site
             _prepare_search(body)
         base, key = GROQ_BASE, _env("GROQ_API_KEY")
     if wants_claude and os.environ.get("GINK_CLAUDE_MODE", "native") != "compat":
@@ -4075,6 +4099,7 @@ async def web_search(request: Request, data: dict = Body(...)):
         {"role": "system", "content": "Search the web and answer the question accurately and concisely, with the most "
                                       "important facts and dates. Say so if you can't find reliable information."},
         {"role": "user", "content": query}], "user": hashlib.sha256(email.encode()).hexdigest()[:32]}
+    _question.set(_last_user_text(body.get("messages") or []))   # to spot the organisation's own site
     _prepare_search(body)
     import httpx
     try:
@@ -6090,8 +6115,8 @@ def account_phone_remove(request: Request):
 # Projects live on the server (genie_projects / genie_files). Genie works like an agent: the AI gets
 # tools (list, read, write, delete, search files) and loops until the job is done. Web projects can be
 # previewed at /genie/p/<secret key>/..., sandboxed like websites (they can't touch Gink sign-ins).
-GENIE_MAX_PROJECTS, GENIE_MAX_FILES = 30, 200
-GENIE_MAX_FILE, GENIE_MAX_PROJECT = 300_000, 3_000_000
+GENIE_MAX_PROJECTS, GENIE_MAX_FILES = 30, 600          # room for real repositories (imported from GitHub)
+GENIE_MAX_FILE, GENIE_MAX_PROJECT = 300_000, 6_000_000
 GENIE_ROUNDS = 24
 _GENIE_TABLES = (
     "CREATE TABLE IF NOT EXISTS genie_projects (id TEXT PRIMARY KEY, email TEXT NOT NULL, name TEXT NOT NULL, "
@@ -6134,8 +6159,11 @@ def _genie_checkpoint(pid: str, label: str) -> int:
     return _genie_db(save)
 GENIE_SYSTEM = (
     "You are Gink Genie, an expert software engineer working inside the user's project. Use the tools to look at "
-    "and change files: list_files, read_file, write_file (always the COMPLETE new content of the file), delete_file, "
-    "search_files. Build complete, working, well-organised projects -- several files when that is clearer (for a "
+    "and change files: list_files, find_files (by name), search_files (inside files), read_file (numbered lines; "
+    "long files in parts), edit_file (replace one exact piece -- the best way to change an existing file, "
+    "especially a big one), write_file (a new file, or a COMPLETE new version of a small one), delete_file. "
+    "In an imported repository, find your way first (find_files, search_files, read the README) and change only what "
+    "the request needs, in the project's own style. Build complete, working, well-organised projects -- several files when that is clearer (for a "
     "web app: index.html, styles.css, app.js...). Web projects must run by opening index.html: no build step, no "
     "frameworks from the internet, relative paths only. Read a file before changing it. Keep each file under "
     "250 KB. Never include passwords, API keys or secrets. Pictures in the project (marked \u201cpicture\u201d by "
@@ -6149,15 +6177,32 @@ GENIE_SYSTEM = (
 GENIE_TOOLS = [
     {"type": "function", "function": {"name": "list_files", "description": "List the project's files with sizes.",
                                       "parameters": {"type": "object", "properties": {}}}},
-    {"type": "function", "function": {"name": "read_file", "description": "Read one file.",
-                                      "parameters": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}}},
+    {"type": "function", "function": {"name": "read_file", "description": (
+        "Read one file, with line numbers. For a long file, read part of it with start_line and end_line."),
+                                      "parameters": {"type": "object", "properties": {
+                                          "path": {"type": "string"}, "start_line": {"type": "integer"},
+                                          "end_line": {"type": "integer"}}, "required": ["path"]}}},
+    {"type": "function", "function": {"name": "edit_file", "description": (
+        "Change part of a file: replace old_text (copied exactly from the file, including spaces, and found "
+        "exactly once) with new_text. Best for changing existing files, especially big ones."),
+                                      "parameters": {"type": "object", "properties": {
+                                          "path": {"type": "string"}, "old_text": {"type": "string"},
+                                          "new_text": {"type": "string"}}, "required": ["path", "old_text", "new_text"]}}},
+    {"type": "function", "function": {"name": "find_files", "description": (
+        "Find files by name: a pattern like *.py, src/**/*.js or *test*."),
+                                      "parameters": {"type": "object", "properties": {"pattern": {"type": "string"}},
+                                                     "required": ["pattern"]}}},
     {"type": "function", "function": {"name": "write_file", "description": "Create or replace a file with its complete content.",
                                       "parameters": {"type": "object", "properties": {"path": {"type": "string"}, "content": {"type": "string"}},
                                                      "required": ["path", "content"]}}},
     {"type": "function", "function": {"name": "delete_file", "description": "Delete a file.",
                                       "parameters": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}}},
-    {"type": "function", "function": {"name": "search_files", "description": "Find files containing some text (case-insensitive).",
-                                      "parameters": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}}},
+    {"type": "function", "function": {"name": "search_files", "description": (
+        "Find lines containing some text (case-insensitive), as path:line: text. regex: true treats text as a regular "
+        "expression; path_pattern (like *.py) limits it to some files."),
+                                      "parameters": {"type": "object", "properties": {
+                                          "text": {"type": "string"}, "regex": {"type": "boolean"},
+                                          "path_pattern": {"type": "string"}}, "required": ["text"]}}},
 ]
 MIME = {".html": "text/html", ".htm": "text/html", ".css": "text/css", ".js": "text/javascript", ".mjs": "text/javascript",
         ".json": "application/json", ".svg": "image/svg+xml", ".txt": "text/plain", ".md": "text/plain", ".py": "text/plain",
@@ -6183,8 +6228,8 @@ def _genie_path(raw: str) -> str:
     while p.startswith("./"):
         p = p[2:]
     parts = p.split("/")
-    if (not p or p.startswith("/") or len(p) > 200 or len(parts) > 8
-            or any(x in ("", ".", "..") or not re.fullmatch(r"[A-Za-z0-9._@+ -]+", x) for x in parts)):
+    if (not p or p.startswith("/") or len(p) > 260 or len(parts) > 12
+            or any(x in ("", ".", "..") or not re.fullmatch(r"[A-Za-z0-9._@+ ()\[\],=~-]+", x) for x in parts)):
         raise ValueError(f"\u201c{raw}\u201d isn't a valid file path in this project (use letters, numbers, . _ - and folders like src/app.js).")
     return p
 
@@ -6272,6 +6317,35 @@ def _genie_summary(pid: str) -> list:
             for p, c, u in rows]
 
 
+GENIE_READ_LINES = 400                 # a long file is read in parts
+
+
+def _genie_read_lines(content: str, start=None, end=None) -> str:
+    """Numbered lines ("12| text") so edits and errors can point at them; long files in parts."""
+    lines = content.splitlines()
+    total = len(lines)
+    try:
+        a = max(1, int(start or 1))
+        b = min(total, int(end)) if end else min(total, a + GENIE_READ_LINES - 1)
+    except (TypeError, ValueError):
+        a, b = 1, min(total, GENIE_READ_LINES)
+    width = len(str(max(b, 1)))
+    body = "\n".join(f"{i:>{width}}| {lines[i - 1][:1000]}" for i in range(a, b + 1)) if total else "(empty file)"
+    if b < total or a > 1:
+        body += f"\n[lines {a}-{b} of {total}; read more with start_line and end_line]"
+    return body
+
+
+def _genie_glob(path: str, pattern: str) -> bool:
+    """*.py anywhere, src/**/*.js, *test* -- folders included when the pattern has a /."""
+    import fnmatch
+    pattern = pattern.strip().lstrip("./")
+    if "/" not in pattern:
+        return fnmatch.fnmatch(path.rsplit("/", 1)[-1], pattern) or fnmatch.fnmatch(path, pattern)
+    rx = re.escape(pattern).replace(r"\*\*/", "(?:.*/)?").replace(r"\*\*", ".*").replace(r"\*", "[^/]*").replace(r"\?", "[^/]")
+    return re.fullmatch(rx, path) is not None
+
+
 def _genie_tool(pid: str, name: str, args: dict, changes: list) -> str:
     try:
         if name == "list_files":
@@ -6284,7 +6358,25 @@ def _genie_tool(pid: str, name: str, args: dict, changes: list) -> str:
             if content.startswith(GENIE_PIC):
                 return (f"{args.get('path')} is a picture ({_genie_size(content)} bytes). Use it by its path, for example "
                         f"<img src=\"{args.get('path')}\" alt=\"...\">.")
-            return content[:60000] + ("\n[... cut: the file is longer]" if len(content) > 60000 else "")
+            return _genie_read_lines(content, args.get("start_line"), args.get("end_line"))
+        if name == "edit_file":
+            path = _genie_path(args.get("path"))
+            content = _genie_texts(pid).get(path)
+            if content is None:
+                return f"No text file called {path}. Use write_file to create it."
+            old, new = str(args.get("old_text") or ""), str(args.get("new_text") or "")
+            count = content.count(old) if old else 0
+            if count != 1:
+                return (f"Error: old_text was found {count} times in {path}; it must be exactly once. "
+                        "Read the file again and copy a longer, unique piece.") if old else "Error: old_text is empty."
+            _genie_write(pid, path, content.replace(old, new, 1))
+            changes.append({"path": path, "action": "changed"})
+            line = content[:content.index(old)].count("\n") + 1
+            return f"Changed {path} at line {line}."
+        if name == "find_files":
+            pattern = str(args.get("pattern") or "").strip() or "*"
+            hits = [p for p in sorted(_genie_files(pid)) if _genie_glob(p, pattern)]
+            return "\n".join(hits[:200]) + (f"\n[... {len(hits) - 200} more]" if len(hits) > 200 else "") if hits else "No files match."
         if name == "write_file":
             existed = _genie_path(args.get("path")) in _genie_files(pid)
             path = _genie_write(pid, args.get("path"), args.get("content", ""))
@@ -6296,10 +6388,23 @@ def _genie_tool(pid: str, name: str, args: dict, changes: list) -> str:
                 return "Deleted."
             return "There was no such file."
         if name == "search_files":
-            needle = str(args.get("text") or "").lower()
+            text, only = str(args.get("text") or ""), str(args.get("path_pattern") or "").strip()
+            if not text:
+                return "Error: say what to look for."
+            if args.get("regex"):
+                try:
+                    rx = re.compile(text, re.I)
+                except re.error as exc:
+                    return f"Error: that regular expression doesn't work ({exc})."
+                match = lambda line: rx.search(line) is not None            # noqa: E731
+            else:
+                needle = text.lower()
+                match = lambda line: needle in line.lower()                  # noqa: E731
             hits = [f"{p}:{i + 1}: {line.strip()[:160]}" for p, c in _genie_texts(pid).items()
-                    for i, line in enumerate(c.splitlines()) if needle and needle in line.lower()]
-            return "\n".join(hits[:60]) or "Nothing found."
+                    if not only or _genie_glob(p, only)
+                    for i, line in enumerate(c.splitlines()) if match(line[:2000])]
+            return "\n".join(hits[:80]) + (f"\n[... {len(hits) - 80} more matches]" if len(hits) > 80 else "") if hits \
+                else "Nothing found."
         return f"Unknown tool {name}."
     except ValueError as exc:
         return f"Error: {exc}"
@@ -6313,8 +6418,8 @@ GENIE_COMMAND_TOOL = {"type": "function", "function": {
 _genie_runs = {}                     # paused requests waiting for a command's output: run_id -> state
 _genie_progress = {}                 # live steps for the page while it waits: progress id -> {email, pid, steps, updated}
 _genie_stops = set()                 # progress ids the person asked to stop
-GENIE_READ_ONLY = {"list_files", "read_file", "search_files"}      # plan mode: look, don't touch
-GENIE_PLAN_NOTE = ("PLAN MODE: do not change anything. Look at the project with list_files, read_file and search_files, "
+GENIE_READ_ONLY = {"list_files", "read_file", "search_files", "find_files"}   # plan mode: look, don't touch
+GENIE_PLAN_NOTE = ("PLAN MODE: do not change anything. Look at the project with list_files, find_files, read_file and search_files, "
                    "then reply with a short numbered plan of what you would build or change (files, steps, how to check it). "
                    "The person will approve it before you build.")
 GENIE_STOPPED = "Stopped before finishing. The changes made so far are kept; you can undo them."
@@ -6846,15 +6951,60 @@ def genie_zip(pid: str, request: Request):
                     headers={"Content-Disposition": f'attachment; filename="{safe}.zip"'})
 
 
+GITHUB_REPO = re.compile(r"^(?:https?://github\.com/)?([A-Za-z0-9_.-]{1,100})/([A-Za-z0-9_.-]{1,100}?)(?:\.git)?"
+                         r"(?:/tree/([^?#]{1,200}))?/?$")
+GITHUB_ZIP_MAX = 10_000_000
+
+
+async def _github_zip(email: str, repo: str, ref: str = "") -> bytes:
+    """A GitHub repository as a ZIP: public ones for anyone; private ones with the person's connected GitHub."""
+    import httpx
+    m = GITHUB_REPO.match(str(repo or "").strip())
+    if not m:
+        raise HTTPException(status_code=422, detail="Give a GitHub repository like owner/name or its github.com link.")
+    owner, name, tree = m.group(1), m.group(2), m.group(3) or ""
+    ref = str(ref or tree or "").strip()
+    if ref and not re.fullmatch(r"[A-Za-z0-9._/-]{1,200}", ref):
+        raise HTTPException(status_code=422, detail="That branch or tag name isn't valid.")
+    token, _login = _gh_token(email)
+    headers = {"Accept": "application/vnd.github+json", "User-Agent": "Gink-Genie"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    url = f"https://api.github.com/repos/{owner}/{name}/zipball" + (f"/{ref}" if ref else "")
+    data = bytearray()
+    async with httpx.AsyncClient(timeout=httpx.Timeout(60, connect=15), follow_redirects=True) as client:
+        async with client.stream("GET", url, headers=headers) as r:
+            if r.status_code == 404:
+                raise HTTPException(status_code=404, detail=(
+                    "That repository wasn't found." + ("" if token else " If it's private, connect GitHub in Gink Genie first.")))
+            if r.status_code != 200:
+                raise HTTPException(status_code=502, detail=f"GitHub answered HTTP {r.status_code}. Please try again.")
+            async for chunk in r.aiter_bytes():
+                data += chunk
+                if len(data) > GITHUB_ZIP_MAX:
+                    raise HTTPException(status_code=422, detail=(
+                        "That repository is too large to import (over 10 MB as a ZIP). Download it, keep the folders "
+                        "you need, and import those as a ZIP."))
+    return bytes(data)
+
+
 @app.post("/genie/projects/{pid}/import")
-def genie_import(pid: str, request: Request, data: dict = Body(...)):
-    """Open an existing project: a ZIP (base64). Text files are imported; others are listed as skipped."""
+async def genie_import(pid: str, request: Request, data: dict = Body(...)):
+    """Open an existing project: a ZIP (base64), or a GitHub repository ({"github": "owner/name", "ref"}).
+    Text files and pictures are imported; others are listed as skipped."""
     import io
     import zipfile
     email = _email_from_auth(request)
     _genie_project(email, pid)
+    _genie_family_gate(email)
+    if data.get("github"):
+        raw = await _github_zip(email, data.get("github"), data.get("ref") or "")
+    else:
+        try:
+            raw = base64.b64decode(str(data.get("zip_b64") or ""), validate=True)
+        except Exception:
+            raise HTTPException(status_code=422, detail="That isn't a ZIP file.")
     try:
-        raw = base64.b64decode(str(data.get("zip_b64") or ""), validate=True)
         z = zipfile.ZipFile(io.BytesIO(raw))
     except Exception:
         raise HTTPException(status_code=422, detail="That isn't a ZIP file.")
@@ -6866,7 +7016,8 @@ def genie_import(pid: str, request: Request, data: dict = Body(...)):
     imported, skipped = [], []
     for info in names:
         rel = info.filename[len(strip):] if strip else info.filename
-        if any(part in ("node_modules", ".git", "__pycache__", ".venv", "venv", "dist", "build") for part in rel.split("/")):
+        if any(part in ("node_modules", ".git", "__pycache__", ".venv", "venv", "dist", "build", ".next", ".nuxt",
+                        "target", ".gradle", ".idea", "coverage", ".pytest_cache", ".mypy_cache") for part in rel.split("/")):
             continue
         if info.file_size > GENIE_MAX_FILE:
             skipped.append(f"{rel} (too large)"); continue

@@ -1924,3 +1924,18 @@ New services/live_info.py (all free, no API keys):
   tools/gink_model/export_genie_data.py (certifi + User-Agent); genie_training.jsonl git-ignored.
 - Settings > Privacy "Help improve Gink" (trainingRows): note -> Share / Stop / Stop and delete; controller
   _a_training_*; bridge setTraining(). Owner: put this in the Privacy Policy before telling users about it.
+
+## 0.1.110: Genie on real repositories; the "Official" source badge
+- Genie tools: edit_file (exact-once old_text -> new_text, "found N times" errors), find_files (_genie_glob: no "/"
+  -> basename fnmatch; with "/" -> ** = any folders), read_file numbered lines in GENIE_READ_LINES (400) parts with
+  start/end, search_files regex + path_pattern (80 hits). Plan mode gains find_files. GENIE_SYSTEM explains them and
+  "in an imported repository, find your way first". test_genie expectations updated (numbered read, 4 look tools).
+- GitHub import: POST .../import {"github": "owner/repo" | github.com link (/tree/ref), "ref"} -> _github_zip via
+  api.github.com zipball (follow redirects to codeload), connected-GitHub token for private repos, streamed cap
+  GITHUB_ZIP_MAX 10 MB, then the existing ZIP import (more build folders skipped). genie.html: a pasted GitHub link
+  (start box or chat; "owner/repo" alone only after import/open/clone) opens it. Limits 600 files / 6 MB / 12 levels;
+  path chars add ( ) [ ] , = ~ (Next.js-style names).
+- Official: _GOV_HOST (gov/mil/int TLDs, gov|gouv|gob|go|govt|gv|gub|gc|admin|mil .xx, europa.eu...) + INTERNATIONAL
+  list + own site (registrable label >= 4 chars, not generic, appears as a word in the question; _question
+  contextvar set before _prepare_search in ai_chat and /web/search). Universities no longer official.
+  chat_extras: badge only for after-text ending in "· official" (the server's marker), not any "official" text.

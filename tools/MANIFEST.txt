@@ -153,6 +153,9 @@ openspec/changes/add-wake-status/proposal.md
 openspec/changes/add-wake-status/specs/languages-voice/spec.md
 openspec/changes/add-wake-status/tasks.md
 openspec/changes/archive/.gitkeep
+openspec/changes/fix-official-sources/proposal.md
+openspec/changes/fix-official-sources/specs/web-search/spec.md
+openspec/changes/fix-official-sources/tasks.md
 openspec/changes/update-genie-review/proposal.md
 openspec/changes/update-genie-review/specs/gink-genie/spec.md
 openspec/changes/update-genie-review/tasks.md
@@ -304,6 +307,7 @@ tests/test_family_everywhere.py
 tests/test_formatting_security.py
 tests/test_genie.py
 tests/test_genie_github.py
+tests/test_genie_repo_tools.py
 tests/test_genie_review.py
 tests/test_genie_training_optin.py
 tests/test_gink_cloud.py
@@ -322,6 +326,7 @@ tests/test_media_files_profile.py
 tests/test_model_upgrade.py
 tests/test_natural_voice.py
 tests/test_no_dead_buttons.py
+tests/test_official_sources.py
 tests/test_offline_model.py
 tests/test_offline_song_engine.py
 tests/test_own_model.py
