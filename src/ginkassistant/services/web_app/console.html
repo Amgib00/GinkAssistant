@@ -406,11 +406,16 @@ cat notes.txt | gink "summarise this"</code></pre>
   }
 
   function show(view) {
-    if (!VIEWS[view]) view = "dashboard";
+    var hasView = Object.prototype.hasOwnProperty.call(VIEWS, view);
+    var handler = hasView ? VIEWS[view] : null;
+    if (typeof handler !== "function") {
+      view = "dashboard";
+      handler = VIEWS.dashboard;
+    }
     STATE.view = view;
     document.querySelectorAll("[data-view]").forEach(function (s) { s.hidden = s.getAttribute("data-view") !== view; });
     document.querySelectorAll("#nav a[data-v]").forEach(function (a) { a.classList.toggle("on", a.getAttribute("data-v") === view); });
-    VIEWS[view]().catch(function (e) { if (e.message !== "signed out") console.warn(e); });
+    handler().catch(function (e) { if (e.message !== "signed out") console.warn(e); });
   }
 
   // ---- playground
