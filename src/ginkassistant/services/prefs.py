@@ -36,6 +36,7 @@ DEFAULTS = {
     "wake_followup": True,        # keep listening a few seconds for a follow-up
     "wake_front": True,           # bring Gink to the front when woken
     "wake_background": False,     # Android: keep listening for "Hey Gink" in the background (services/android_fgs.py)
+    "send_errors": True,          # Settings > Privacy: tell the server when something breaks (services/error_reports.py)
     "briefing_projects": True,    # briefing: "pick up where you left off" (tasks, chats, recent files)
 }
 

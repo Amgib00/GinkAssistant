@@ -25,7 +25,7 @@ PLAN_LABELS = {"pro_1m": "Pro \u00b7 1 month", "pro_3m": "Pro \u00b7 3 months", 
 STATUS_LABELS = {"success": "Paid", "pending": "Pending", "failed": "Not completed"}
 BOOL_KEYS = {"read_aloud", "notify_reminders", "briefing_enabled", "briefing_speak", "use_memory",
              "web_search", "video_suggestions", "single_keys", "wake_enabled", "wake_followup", "wake_front",
-             "wake_background", "briefing_projects", "use_location", "agent_confirm"}
+             "wake_background", "briefing_projects", "use_location", "agent_confirm", "send_errors"}
 CHOICES = {"effort": {"low", "medium", "high", "extra", "max"}, "theme": {"system", "light", "dark"}, "chat_font": {"sans", "serif", "mono"},
            "motion": {"system", "reduced"}, "voice_speed": {"slow", "normal", "fast"},
            "reply_language": set(languages.BY_CODE), "send_key": {"enter", "mod"},
@@ -111,7 +111,7 @@ class SettingsController:
                                    "notify_reminders", "briefing_enabled", "briefing_time", "briefing_speak",
                                    "use_memory", "web_search", "video_suggestions", "speech_lang", "send_key",
                                    "single_keys", "wake_enabled", "wake_followup", "wake_front", "wake_background",
-                                   "briefing_projects")}
+                                   "briefing_projects", "send_errors")}
         v.update(voice=self.selected_voice["value"], model=self.brain.preferred_model,
                  city=prefs.city(self.app), server_url=server_config.saved_url(self.app) or "",
                  launch_at_login=bool(launch_at_login.is_supported() and launch_at_login.is_enabled()))

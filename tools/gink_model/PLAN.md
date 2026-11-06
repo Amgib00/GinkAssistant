@@ -100,3 +100,7 @@ improve Gink: adults only, off by default, keys and private files removed, stop 
 plus Apache-2.0 models' output -- never Claude's. Download it with
 `python tools/gink_model/export_genie_data.py` (owner key) when there's enough: a few thousand requests
 is a good first goal. Have the Privacy Policy say this before you switch it on for users.
+`build_mix.py` then makes ONE training set from the chat dataset and the Genie sessions (each line keeps
+its own tools; --genie-share caps Genie's part), so a single model does Gink's actions and Genie's coding;
+`train_unsloth.py --data tools/gink_model/out/mix` and `prepare_hosted.py --data tools/gink_model/out/mix`
+take it as it is.

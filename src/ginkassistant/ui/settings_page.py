@@ -343,6 +343,7 @@ SETTINGS_JS = r"""
       {id: 'privacy', group: 'Settings', title: 'Privacy', sections: [
         {title: 'Your data', rows: [
           {apps: true, type: 'toggle', key: 'use_memory', label: 'Use memories in answers', desc: 'When off, Gink ignores what you asked it to remember (they stay saved \u2014 manage them under Memory).'},
+          {type: 'toggle', key: 'send_errors', label: 'Send error reports', desc: 'When something breaks, Gink tells its team what went wrong and where in Gink\u2019s code \u2014 never your chats, files or what you typed. It helps fix problems faster.'},
           {type: 'button', label: 'Export my data', desc: 'Save your chats, Workspace, memories and settings as a file.', action: 'export', text: 'Export'},
           {type: 'button', label: 'Delete all chats', desc: 'Removes every conversation from this device and your other devices.', action: 'delete_chats', text: 'Delete all', style: 'danger-ghost'}]},
         {title: 'Help improve Gink', rows: trainingRows(info.training)},

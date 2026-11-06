@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.111 (November 2026)
+
+- Room to grow: big files can live in object storage (Cloudflare R2, Backblaze B2, S3...), paid by
+  use, so Gink isn't limited by one server's disk; Gink Genie projects then hold up to 500 MB and
+  5,000 files; versions and copies of big files take almost no space
+- Problems are found automatically: when something breaks, the app tells Gink's team what went wrong
+  and where in Gink's code -- never your chats or files. Switch it off in Settings > Privacy
+- For the owner: the dashboard shows problems from all apps, and Gink's own Facebook, Instagram and
+  TikTok (followers and latest posts); tools to train one model on both chat and Genie's coding work
+
 ## 0.1.110 (November 2026)
 
 - Gink Genie works on real repositories: paste a GitHub link to open it (public, or private with

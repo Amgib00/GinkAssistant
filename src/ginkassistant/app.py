@@ -154,6 +154,8 @@ class GinkAssistantApp(toga.App):
             _start_backend_if_needed(self)
 
         self._setup_task_system()
+        from .services import error_reports
+        error_reports.install(self)                      # problems reach the owner dashboard (Settings > Privacy)
 
         self.main_window = toga.MainWindow(title="")      # no "Gink" in the title bar (the app is named by its icon and menu)
         self._try_auto_login()

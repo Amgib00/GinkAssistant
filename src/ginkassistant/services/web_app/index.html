@@ -2255,6 +2255,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
       {id: 'privacy', group: 'Settings', title: 'Privacy', sections: [
         {title: 'Your data', rows: [
           {apps: true, type: 'toggle', key: 'use_memory', label: 'Use memories in answers', desc: 'When off, Gink ignores what you asked it to remember (they stay saved \u2014 manage them under Memory).'},
+          {type: 'toggle', key: 'send_errors', label: 'Send error reports', desc: 'When something breaks, Gink tells its team what went wrong and where in Gink\u2019s code \u2014 never your chats, files or what you typed. It helps fix problems faster.'},
           {type: 'button', label: 'Export my data', desc: 'Save your chats, Workspace, memories and settings as a file.', action: 'export', text: 'Export'},
           {type: 'button', label: 'Delete all chats', desc: 'Removes every conversation from this device and your other devices.', action: 'delete_chats', text: 'Delete all', style: 'danger-ghost'}]},
         {title: 'Help improve Gink', rows: trainingRows(info.training)},
@@ -4929,6 +4930,26 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     voice_preview_stop: stopSpeaking
   };
   HANDLERS.file_thumb = function () {};
+  // Error reports (Settings > Privacy > Send error reports): what broke and where in Gink's code -- never chats.
+  var ERR = { sent: {}, n: 0 };
+  function reportError(kind, message, stack) {
+    if ((W.prefs || {}).send_errors === false || ERR.n >= 20) return;
+    var key = kind + "|" + String(stack || "").slice(0, 300); if (ERR.sent[key]) return;
+    ERR.sent[key] = 1; ERR.n++;
+    try {
+      fetch("/errors", { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
+        body: JSON.stringify({ kind: kind || "Error", message: String(message || "").slice(0, 300), stack: String(stack || "").slice(0, 6000),
+                               platform: "web", version: (window.GINK_VERSION || "?") }) }).catch(function () {});
+    } catch (e) {}
+  }
+  window.addEventListener("error", function (e) {
+    if (!e || !e.message) return;                                   // a picture that didn't load isn't a bug
+    reportError((e.error && e.error.name) || "Error", e.message, (e.error && e.error.stack) || (e.filename + ":" + e.lineno));
+  });
+  window.addEventListener("unhandledrejection", function (e) {
+    var r = e && e.reason; if (!r || (r.message === "signed out")) return;
+    reportError(r.name || "UnhandledRejection", r.message || String(r), r.stack || "");
+  });
   // Age and parental controls: the one-time birth-year question; a parent can turn voice off.
   var VOICE_EVENTS = { voice_toggle: 1, voice_start: 1, dictate: 1, read_aloud: 1, voice_preview: 1 };
   function checkFamily() {

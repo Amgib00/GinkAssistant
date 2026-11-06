@@ -178,6 +178,14 @@
       <div class="minis" id="health"></div>
       <div class="tscroll"><table class="compact"><tbody id="problems"></tbody></table><p class="note" id="noproblems" hidden>No problems since the last start &#10003;</p></div>
     </section>
+    <section class="tile s4" aria-label="Problems in the apps">
+      <div class="th"><strong>Problems in the apps</strong><span class="note" id="apperr-note"></span></div>
+      <div class="tscroll"><table class="compact"><tbody id="apperrors"></tbody></table><p class="note" id="noapperrors" hidden>No errors reported &#10003;</p></div>
+    </section>
+    <section class="tile s4" aria-label="Social accounts">
+      <div class="th"><strong>Social accounts</strong><span class="note" id="social-note"></span></div>
+      <div class="tscroll" id="social"><p class="note">Loading&hellip;</p></div>
+    </section>
     <section class="tile s4" aria-label="Usage today">
       <div class="th"><strong>Usage today</strong><span class="note" id="usage-note"></span></div>
       <div id="usagebars" class="grow"></div>
@@ -242,6 +250,29 @@
   }
   function show(loggedIn) { $("login").hidden = loggedIn; $("dash").hidden = !loggedIn; }
   var loadedAt = 0, busy = false;
+  // ---- Gink's own Facebook / Instagram / TikTok (GET /admin/social, tokens set on Render; cached 15 min)
+  function loadSocial() {
+    fetch("/admin/social", { headers: { "x-admin-key": key } }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      var box = $("social"); if (!j || !box) return; box.innerHTML = "";
+      var any = false;
+      [["facebook", "Facebook"], ["instagram", "Instagram"], ["tiktok", "TikTok"]].forEach(function (pair) {
+        var a = j[pair[0]] || {}; if (!a.set_up) return; any = true;
+        var head = el("p", "", pair[1] + (a.name ? " \u00b7 " + a.name : "") + (a.followers != null ? " \u00b7 " + fmt(a.followers) + " followers" : ""));
+        head.style.fontWeight = "600"; box.appendChild(head);
+        if (a.error) { box.appendChild(el("p", "note", a.error)); return; }
+        var t = el("table", "compact"), tb = el("tbody"); t.appendChild(tb);
+        (a.posts || []).slice(0, 5).forEach(function (p) {
+          var tr = el("tr"), link = el("a", "", (p.text || "(no text)").slice(0, 70));
+          link.href = /^https:\/\//.test(p.link || "") ? p.link : "#"; link.target = "_blank"; link.rel = "noopener";
+          var td = el("td"); td.appendChild(link); tr.appendChild(td);
+          tr.appendChild(el("td", "", (p.likes != null ? fmt(p.likes) + " \u2665" : "") + (p.comments != null ? "  " + fmt(p.comments) + " \ud83d\udcac" : "")));
+          tb.appendChild(tr);
+        });
+        box.appendChild(t);
+      });
+      if (!any) box.appendChild(el("p", "note", "None set up. Add their tokens on Render (deploy/README.md, \u201cSocial accounts\u201d)."));
+    }).catch(function () {});
+  }
   function load() {
     if (busy || !key) return Promise.resolve();
     busy = true; $("dash").classList.add("loading");
@@ -249,7 +280,7 @@
       if (r.status === 403 || r.status === 401) return r.json().then(function (j) { var e = new Error(j.detail || "Owner only."); e.auth = true; throw e; });
       if (!r.ok) throw new Error("The server had a problem (" + r.status + ").");
       return r.json();
-    }).then(function (j) { data = j; loadedAt = Date.now(); $("stale").hidden = true; show(true); render(); tick(); checkNew(); })
+    }).then(function (j) { data = j; loadedAt = Date.now(); $("stale").hidden = true; show(true); render(); tick(); checkNew(); loadSocial(); })
       .catch(function (e) {
         if (e.auth || !data) {                                     // a wrong key (or the first load): back to the key screen
           key = ""; try { sessionStorage.removeItem("gink_admin_key"); } catch (x) {} show(false); $("login-err").textContent = e.message;
@@ -359,6 +390,16 @@
       [new Date(x.at * 1000).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}), x.kind + (x.status ? " (" + x.status + ")" : ""), x.reason].forEach(function (v) {
         tr.appendChild(el("td", "", v)); });
       tr.title = x.model || ""; tr.dataset.id = x.id || 0; pb.appendChild(tr);
+    });
+    // ---- problems in the apps (POST /errors): one row per bug, newest first; hover for where it happened
+    var ae = $("apperrors"), errs = data.app_errors || []; ae.innerHTML = ""; $("noapperrors").hidden = errs.length > 0;
+    $("apperr-note").textContent = errs.length ? errs.reduce(function (n, x) { return n + (x.count || 0); }, 0) + " reports" : "";
+    errs.forEach(function (x) {
+      var tr = el("tr");
+      [new Date(x.last * 1000).toLocaleDateString([], {month: "short", day: "numeric"}), x.count + "\u00d7",
+       x.kind + ": " + (x.message || ""), (x.platforms || "").split(",").join(", ")].forEach(function (v) { tr.appendChild(el("td", "", v)); });
+      tr.title = (x.where || "") + (x.versions ? "  \u00b7  versions " + x.versions.split(",").join(", ") : "");
+      ae.appendChild(tr);
     });
     // ---- usage today: gradient bars
     $("usage-note").textContent = fmt(l.messages) + " messages in 7 days";

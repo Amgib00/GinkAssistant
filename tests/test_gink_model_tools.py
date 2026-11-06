@@ -101,3 +101,37 @@ def test_notebook_runs_the_real_scripts():
     for path in ("tools/gink_dataset/generate.py", "tools/gink_dataset/validate.py", "tools/gink_model/train_unsloth.py"):
         assert path in src and os.path.exists(os.path.join(ROOT, path))
     assert "Qwen3.5-4B" in src and nb["metadata"]["accelerator"] == "GPU"
+
+
+def test_build_mix_keeps_each_lines_tools_and_caps_genie(data, tmp_path):
+    out, _ = data
+    import build_mix
+    genie_tools = [{"type": "function", "function": {"name": "write_file", "parameters": {"type": "object"}}}]
+    g = tmp_path / "genie.jsonl"
+    good = {"messages": [{"role": "system", "content": "s"}, {"role": "user", "content": "Build a page"},
+                         {"role": "assistant", "content": "", "tool_calls": [{"id": "c1", "type": "function",
+                          "function": {"name": "write_file", "arguments": json.dumps({"path": "index.html"})}}]},
+                         {"role": "tool", "tool_call_id": "c1", "content": "Saved."}, {"role": "assistant", "content": "Done."}],
+            "tools": genie_tools}
+    broken = {"messages": [{"role": "user", "content": "x"}, {"role": "tool", "tool_call_id": "nope", "content": "?"}]}
+    with open(g, "w", encoding="utf-8") as f:
+        for i in range(2000):
+            row = json.loads(json.dumps(good)); row["messages"][1]["content"] = f"Build page {i}"
+            f.write(json.dumps(row) + "\n")
+        f.write(json.dumps(broken) + "\n"); f.write(json.dumps(good) + "\n"); f.write(json.dumps(good) + "\n")
+    mix = tmp_path / "mix"
+    assert build_mix.main(["--data", out, "--genie", str(g), "--genie-share", "0.25", "--out", str(mix)]) == 0
+    rows = [json.loads(l) for l in open(mix / "train.jsonl", encoding="utf-8")]
+    genie_rows = [r for r in rows if r["tools"] == genie_tools]
+    assert 0 < len(genie_rows) <= len(rows) * 0.26                               # capped at a quarter
+    assert all("tools" in r and r["tools"] for r in rows)
+    assert (mix / "eval.jsonl").exists() and (mix / "tools.json").exists()
+    totals = ph.main(["--data", str(mix), "--out", str(tmp_path / "hosted")])
+    first_g = next(json.loads(l) for l in open(tmp_path / "hosted" / "hosted_train.jsonl", encoding="utf-8")
+                   if "write_file" in l and "Build page" in l)
+    assert first_g["tools"] == genie_tools                                       # kept its own tools
+
+
+def test_training_uses_a_lines_own_tools():
+    src = open(os.path.join(ROOT, "tools", "gink_model", "train_unsloth.py"), encoding="utf-8").read()
+    assert 'r.get("tools") or tools' in src and 'ex.get("tools") or tools' in src

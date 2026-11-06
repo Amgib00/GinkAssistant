@@ -1752,6 +1752,8 @@ def build_main_screen(app: toga.App, email: str):
         except Exception as exc:
             import traceback
             traceback.print_exc()
+            from ..services import error_reports
+            error_reports.report(exc)                    # the owner sees it on the dashboard (if allowed)
             set_voice_status(f"Something went wrong ({exc.__class__.__name__}) \u2014 please try again.")
             if _sending["value"] and event.get("type") == "send":
                 _sending["value"] = False
@@ -1771,6 +1773,11 @@ def build_main_screen(app: toga.App, email: str):
         push_user()
         refresh_sidebar()
         ticks = 0
+        try:
+            from ..services import error_reports
+            error_reports.watch_loop(asyncio.get_running_loop())
+        except Exception:
+            pass
         asyncio.create_task(check_family())          # age question / a parent's voice setting
         asyncio.create_task(configure_offline_model())
         while getattr(app, "_main_screen_token", None) is screen_token:

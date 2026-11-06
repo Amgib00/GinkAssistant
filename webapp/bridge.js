@@ -1140,6 +1140,26 @@
     voice_preview_stop: stopSpeaking
   };
   HANDLERS.file_thumb = function () {};
+  // Error reports (Settings > Privacy > Send error reports): what broke and where in Gink's code -- never chats.
+  var ERR = { sent: {}, n: 0 };
+  function reportError(kind, message, stack) {
+    if ((W.prefs || {}).send_errors === false || ERR.n >= 20) return;
+    var key = kind + "|" + String(stack || "").slice(0, 300); if (ERR.sent[key]) return;
+    ERR.sent[key] = 1; ERR.n++;
+    try {
+      fetch("/errors", { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
+        body: JSON.stringify({ kind: kind || "Error", message: String(message || "").slice(0, 300), stack: String(stack || "").slice(0, 6000),
+                               platform: "web", version: (window.GINK_VERSION || "?") }) }).catch(function () {});
+    } catch (e) {}
+  }
+  window.addEventListener("error", function (e) {
+    if (!e || !e.message) return;                                   // a picture that didn't load isn't a bug
+    reportError((e.error && e.error.name) || "Error", e.message, (e.error && e.error.stack) || (e.filename + ":" + e.lineno));
+  });
+  window.addEventListener("unhandledrejection", function (e) {
+    var r = e && e.reason; if (!r || (r.message === "signed out")) return;
+    reportError(r.name || "UnhandledRejection", r.message || String(r), r.stack || "");
+  });
   // Age and parental controls: the one-time birth-year question; a parent can turn voice off.
   var VOICE_EVENTS = { voice_toggle: 1, voice_start: 1, dictate: 1, read_aloud: 1, voice_preview: 1 };
   function checkFamily() {

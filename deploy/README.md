@@ -248,6 +248,38 @@ picker under More models.
 `GINK_OFFLINE_MODEL_URL` (an https address ending in .gguf) and `GINK_OFFLINE_MODEL_NAME` choose the model
 the desktop apps download for offline mode (default: Llama 2 7B Chat).
 
+## Room to grow: object storage for big files
+
+Gink Genie's big files (and every version of them) live outside the database: on the server's disk by
+default, or -- with no size ceiling -- in object storage you pay for by use (Cloudflare R2, Backblaze B2,
+AWS S3, Wasabi...). Create a bucket and a key that can read and write it, then set on Render:
+`GINK_S3_BUCKET`, `GINK_S3_KEY`, `GINK_S3_SECRET`, and for anything but AWS `GINK_S3_ENDPOINT` (Cloudflare R2:
+`https://<account id>.r2.cloudflarestorage.com`; optional `GINK_S3_REGION`, default `auto`). With object
+storage on, Genie projects can hold up to 500 MB and 5,000 files and people up to 100 projects (change with
+`GINK_GENIE_PROJECT_MB`, `GINK_GENIE_FILES`, `GINK_GENIE_PROJECTS`). The same content is stored once however
+many copies and versions use it, and unused files are cleaned up daily. `/health` shows `"files"`: `disk` or
+`object storage`; the owner dashboard says why if object storage isn't working.
+
+## Problems in the apps (error reports)
+
+Nothing to set up. When something breaks in an app, the web app or this server, the owner dashboard's
+**Problems in the apps** lists it: what went wrong, where in Gink's code, how often, on which platforms and
+versions -- never chats or files (emails and keys are removed). People can switch it off in Settings >
+Privacy > Send error reports. Say so in the Privacy Policy.
+
+## Social accounts (owner dashboard)
+
+Gink's own Facebook Page, Instagram and TikTok -- followers and the latest posts with likes, comments and
+links -- read-only, with tokens set here (no connect buttons):
+- **Facebook Page:** `GINK_FB_PAGE_ID`, `GINK_FB_PAGE_TOKEN` (a long-lived Page access token from a Meta app
+  you own; your own Page works while the app is in development mode).
+- **Instagram** (a business or creator account linked to that Page): `GINK_IG_USER_ID`, and `GINK_IG_TOKEN`
+  if it isn't the Page token.
+- **TikTok:** `GINK_TIKTOK_TOKEN` (scopes user.info.basic, user.info.stats, video.list). TikTok tokens last a
+  day, so also set `GINK_TIKTOK_REFRESH`, `GINK_TIKTOK_CLIENT_KEY` and `GINK_TIKTOK_CLIENT_SECRET` and Gink
+  renews it itself.
+Optional `GINK_GRAPH_VERSION` (default v23.0). Keep these tokens secret: they open your accounts.
+
 ## Song recognition on phones ("Identify a song")
 
 The Android app records about 8 seconds and sends it to `POST /media/song`; the server asks Shazam

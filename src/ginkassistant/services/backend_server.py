@@ -84,8 +84,10 @@ async def _lifespan(_app):
     """Startup work (FastAPI's current way; @app.on_event is being removed): check where accounts are
     stored, then resume unfinished batches."""
     _check_storage_at_startup()
+    gc_task = asyncio.get_running_loop().create_task(_blob_gc_daily())   # unused big files (services/blob_store.py)
     await _resume_batches()
     yield
+    gc_task.cancel()
 
 
 app = FastAPI(title="Gink Assistant Backend", docs_url=None, redoc_url=None, openapi_url=None, lifespan=_lifespan)
@@ -293,7 +295,9 @@ async def health():
     check this server is reachable without sending anyone an email.
     "storage" is "disk" (accounts survive restarts), "temporary" (erased on every restart or
     publish) or "local" (a server on someone's own computer). The path itself is never shown."""
-    return {"status": "ok", "service": "gink-backend", "storage": _storage_status()["mode"]}
+    from . import blob_store
+    return {"status": "ok", "service": "gink-backend", "storage": _storage_status()["mode"],
+            "files": blob_store.store(_blob_root()).kind}
 
 
 _code_sends = {}              # (kind, email) -> recent send times: no flooding anyone's inbox
@@ -470,6 +474,13 @@ def _storage_status() -> dict:
     if not os.access(str(folder), os.W_OK):
         return {"mode": "disk", "ok": False, "detail": f"The disk at {folder} can't be written to."}
     return {"mode": "disk", "ok": True, "detail": "Accounts are stored on the disk and survive restarts."}
+
+
+def _files_status() -> str:
+    """Where big files live (services/blob_store.py), with the reason if object storage fell back to disk."""
+    from . import blob_store
+    kind = blob_store.store(_blob_root()).kind
+    return kind + (f" -- {blob_store._store['problem']}" if blob_store._store["problem"] else "")
 
 
 def _check_storage_at_startup() -> None:
@@ -4018,6 +4029,242 @@ def training_export(request: Request):
     return StreamingResponse(lines(), media_type="application/x-ndjson",
                              headers={"Content-Disposition": 'attachment; filename="genie_training.jsonl"'})
 
+
+# ---- Error reports from the apps, the web app and this server (owner dashboard: "Problems in the apps").
+# Apps send what went wrong (the kind of error, its message and where in Gink's code) -- never chats or
+# files. Grouped by fingerprint so one bug is one row with a count, versions and platforms. Emails and
+# keys are removed. People can switch it off (Settings > Privacy > Send error reports).
+ERROR_TABLE = ("CREATE TABLE IF NOT EXISTS error_reports (fingerprint TEXT PRIMARY KEY, kind TEXT, message TEXT, "
+               "location TEXT, stack TEXT, platforms TEXT, versions TEXT, count INTEGER, first REAL, last REAL)")
+_error_rate = {}
+ERRORS_PER_HOUR = 60
+
+
+def _scrub_text(text: str, limit: int) -> str:
+    t = SECRET_PATTERNS.sub("[REMOVED]", str(text or ""))
+    t = re.sub(r"[\w.+-]+@[\w-]+\.[\w.-]+", "[email]", t)
+    t = re.sub(r"(Bearer|token|password|key)([=: ]+)[^\s'\"]+", r"\1\2[REMOVED]", t, flags=re.I)
+    return t[:limit]
+
+
+def _record_error(kind: str, message: str, stack: str, platform: str, version: str, location: str = "") -> str:
+    kind = re.sub(r"[^\w.]", "", str(kind or "Error"))[:80] or "Error"
+    stack = _scrub_text(stack, 6000)
+    if not location:                                   # the deepest line in Gink's own code
+        frames = re.findall(r'File "([^"]+)", line (\d+), in (\S+)', stack) or re.findall(r"at (\S+) \(([^)]+)\)", stack)
+        own = [f for f in frames if "ginkassistant" in f[0] or "ginkgenie" in f[0]] or frames
+        if own and len(own[-1]) == 3:
+            f = own[-1]
+            location = f"{f[0].split('ginkassistant/')[-1].split('site-packages/')[-1]}:{f[2]}"
+        elif own:
+            location = own[-1][0][:120]
+    location = str(location)[:160]
+    fp = hashlib.sha1(f"{kind}|{location or _scrub_text(message, 80)}".encode()).hexdigest()[:20]
+    now = time.time()
+
+    def save(con):
+        con.execute(ERROR_TABLE)
+        row = con.execute("SELECT platforms, versions FROM error_reports WHERE fingerprint=?", (fp,)).fetchone()
+        if row:
+            plats = sorted(set(filter(None, row[0].split(","))) | {platform})[:12]
+            vers = sorted(set(filter(None, row[1].split(","))) | {version}, key=lambda v: [int(x) if x.isdigit() else 0
+                                                                                        for x in v.lstrip("v").split(".")])[-8:]
+            con.execute("UPDATE error_reports SET count=count+1, last=?, platforms=?, versions=?, message=?, stack=? "
+                        "WHERE fingerprint=?", (now, ",".join(plats), ",".join(vers), _scrub_text(message, 300), stack, fp))
+        else:
+            con.execute("INSERT INTO error_reports VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)",
+                        (fp, kind, _scrub_text(message, 300), location, stack, platform, version, now, now))
+        con.execute("DELETE FROM error_reports WHERE fingerprint NOT IN (SELECT fingerprint FROM error_reports "
+                    "ORDER BY last DESC LIMIT 500)")
+    with _db_lock:
+        con = _db()
+        try:
+            save(con)
+            con.commit()
+        finally:
+            con.close()
+    return fp
+
+
+@app.post("/errors")
+async def report_error(request: Request):
+    """From the apps and the web app (signed in or not). At most ERRORS_PER_HOUR per address."""
+    who = request.client.host if request.client else "?"
+    hour = int(time.time() // 3600)
+    n = _error_rate.get((who, hour), 0)
+    if n >= ERRORS_PER_HOUR:
+        return {"ok": False}
+    _error_rate[(who, hour)] = n + 1
+    if len(_error_rate) > 5000:
+        for k in [k for k in _error_rate if k[1] < hour]:
+            _error_rate.pop(k, None)
+    try:
+        data = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Send JSON.")
+    platform = re.sub(r"[^\w .-]", "", str(data.get("platform") or "unknown"))[:30]
+    version = re.sub(r"[^\w.-]", "", str(data.get("version") or "?"))[:20]
+    fp = _record_error(data.get("kind"), data.get("message"), data.get("stack"), platform, version, data.get("where") or "")
+    return {"ok": True, "id": fp}
+
+
+@app.get("/admin/errors")
+def admin_errors(request: Request):
+    _require_owner(request)
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(ERROR_TABLE)
+            rows = con.execute("SELECT fingerprint, kind, message, location, stack, platforms, versions, count, first, last "
+                               "FROM error_reports ORDER BY last DESC LIMIT 100").fetchall()
+        finally:
+            con.close()
+    return {"errors": [dict(zip(("id", "kind", "message", "where", "stack", "platforms", "versions", "count", "first", "last"), r))
+                       for r in rows]}
+
+
+class _ServerErrorRecorder:
+    """This server's own crashes go into the same list (then on to the normal error handling)."""
+    def __init__(self, inner):
+        self.inner = inner
+
+    async def __call__(self, scope, receive, send):
+        try:
+            await self.inner(scope, receive, send)
+        except Exception as exc:
+            if scope.get("type") == "http":
+                import traceback
+                try:
+                    _record_error(type(exc).__name__, str(exc), "".join(traceback.format_exception(exc)), "server",
+                                  _server_version(), "")
+                except Exception:
+                    pass
+            raise
+
+
+app.add_middleware(_ServerErrorRecorder)
+
+
+def _server_version() -> str:
+    try:
+        from importlib.metadata import version
+        return version("ginkassistant")
+    except Exception:
+        return "?"
+
+
+# ---- Gink's own social accounts on the owner dashboard (no connect buttons: tokens are set on Render).
+#   Facebook Page:  GINK_FB_PAGE_ID + GINK_FB_PAGE_TOKEN (a Page access token)
+#   Instagram:      GINK_IG_USER_ID (the business/creator account linked to that Page) + GINK_IG_TOKEN
+#                   (or the Page token)
+#   TikTok:         GINK_TIKTOK_TOKEN (scopes user.info.basic, user.info.stats, video.list); TikTok tokens last
+#                   a day, so also GINK_TIKTOK_REFRESH + GINK_TIKTOK_CLIENT_KEY + GINK_TIKTOK_CLIENT_SECRET to renew
+#   GINK_GRAPH_VERSION (default v23.0) for Meta's Graph API.
+# Read-only: followers, and the latest posts with their likes, comments and links. Cached 15 minutes.
+_social_cache = {"at": 0.0, "data": None}
+_tiktok_token = {"value": ""}
+
+
+async def _social_facebook(client) -> dict:
+    page, token = _env("GINK_FB_PAGE_ID"), _env("GINK_FB_PAGE_TOKEN")
+    if not (page and token):
+        return {"set_up": False}
+    v = _env("GINK_GRAPH_VERSION") or "v23.0"
+    info = await client.get(f"https://graph.facebook.com/{v}/{page}", params={"fields": "name,followers_count,fan_count,link",
+                                                                              "access_token": token})
+    posts = await client.get(f"https://graph.facebook.com/{v}/{page}/posts", params={
+        "fields": "message,created_time,permalink_url,comments.summary(true).limit(0),reactions.summary(true).limit(0)",
+        "limit": 10, "access_token": token})
+    if info.status_code != 200:
+        return {"set_up": True, "error": _meta_error(info)}
+    i = info.json()
+    return {"set_up": True, "name": i.get("name"), "followers": i.get("followers_count", i.get("fan_count")), "link": i.get("link"),
+            "posts": [{"text": (p.get("message") or "")[:200], "at": p.get("created_time"), "link": p.get("permalink_url"),
+                       "comments": ((p.get("comments") or {}).get("summary") or {}).get("total_count"),
+                       "likes": ((p.get("reactions") or {}).get("summary") or {}).get("total_count")}
+                      for p in (posts.json().get("data") or [] if posts.status_code == 200 else [])]}
+
+
+async def _social_instagram(client) -> dict:
+    user, token = _env("GINK_IG_USER_ID"), _env("GINK_IG_TOKEN") or _env("GINK_FB_PAGE_TOKEN")
+    if not (user and token):
+        return {"set_up": False}
+    v = _env("GINK_GRAPH_VERSION") or "v23.0"
+    info = await client.get(f"https://graph.facebook.com/{v}/{user}", params={"fields": "username,followers_count,media_count",
+                                                                              "access_token": token})
+    media = await client.get(f"https://graph.facebook.com/{v}/{user}/media", params={
+        "fields": "caption,media_type,permalink,timestamp,like_count,comments_count", "limit": 10, "access_token": token})
+    if info.status_code != 200:
+        return {"set_up": True, "error": _meta_error(info)}
+    i = info.json()
+    return {"set_up": True, "name": "@" + str(i.get("username") or ""), "followers": i.get("followers_count"),
+            "link": f"https://www.instagram.com/{i.get('username')}/" if i.get("username") else None,
+            "posts": [{"text": (m.get("caption") or "")[:200], "at": m.get("timestamp"), "link": m.get("permalink"),
+                       "comments": m.get("comments_count"), "likes": m.get("like_count")}
+                      for m in (media.json().get("data") or [] if media.status_code == 200 else [])]}
+
+
+def _meta_error(r) -> str:
+    try:
+        return str((r.json().get("error") or {}).get("message") or f"HTTP {r.status_code}")[:200]
+    except Exception:
+        return f"HTTP {r.status_code}"
+
+
+async def _tiktok_refresh(client) -> bool:
+    key, secret, refresh = _env("GINK_TIKTOK_CLIENT_KEY"), _env("GINK_TIKTOK_CLIENT_SECRET"), _env("GINK_TIKTOK_REFRESH")
+    if not (key and secret and refresh):
+        return False
+    r = await client.post("https://open.tiktokapis.com/v2/oauth/token/", data={
+        "client_key": key, "client_secret": secret, "grant_type": "refresh_token", "refresh_token": refresh})
+    if r.status_code == 200 and r.json().get("access_token"):
+        _tiktok_token["value"] = r.json()["access_token"]
+        return True
+    return False
+
+
+async def _social_tiktok(client) -> dict:
+    if not (_tiktok_token["value"] or _env("GINK_TIKTOK_TOKEN")):
+        return {"set_up": False}
+    for attempt in (1, 2):
+        token = _tiktok_token["value"] or _env("GINK_TIKTOK_TOKEN")
+        h = {"Authorization": f"Bearer {token}"}
+        info = await client.get("https://open.tiktokapis.com/v2/user/info/", headers=h, params={
+            "fields": "display_name,username,follower_count,likes_count,video_count,profile_deep_link"})
+        if info.status_code == 401 and attempt == 1 and await _tiktok_refresh(client):
+            continue
+        break
+    if info.status_code != 200:
+        return {"set_up": True, "error": "TikTok refused the token (it lasts a day: set GINK_TIKTOK_REFRESH and the "
+                                         "client key and secret so Gink renews it)" if info.status_code == 401
+                else f"HTTP {info.status_code}"}
+    u = ((info.json().get("data") or {}).get("user") or {})
+    videos = await client.post("https://open.tiktokapis.com/v2/video/list/", headers=h, json={"max_count": 10}, params={
+        "fields": "id,title,video_description,create_time,share_url,like_count,comment_count,view_count"})
+    vids = (videos.json().get("data") or {}).get("videos") or [] if videos.status_code == 200 else []
+    return {"set_up": True, "name": u.get("display_name") or u.get("username"), "followers": u.get("follower_count"),
+            "likes": u.get("likes_count"), "link": u.get("profile_deep_link"),
+            "posts": [{"text": (v.get("title") or v.get("video_description") or "")[:200], "at": v.get("create_time"),
+                       "link": v.get("share_url"), "comments": v.get("comment_count"), "likes": v.get("like_count"),
+                       "views": v.get("view_count")} for v in vids]}
+
+
+@app.get("/admin/social")
+async def admin_social(request: Request):
+    _require_owner(request)
+    if _social_cache["data"] and time.time() - _social_cache["at"] < 900 and not request.query_params.get("fresh"):
+        return _social_cache["data"]
+    import httpx
+    out = {}
+    async with httpx.AsyncClient(timeout=20) as client:
+        for name, fn in (("facebook", _social_facebook), ("instagram", _social_instagram), ("tiktok", _social_tiktok)):
+            try:
+                out[name] = await fn(client)
+            except Exception as exc:
+                out[name] = {"set_up": True, "error": f"couldn't reach it ({type(exc).__name__})"}
+    _social_cache.update(at=time.time(), data=out)
+    return out
+
 # ---- Owner only: download a copy of the whole database (accounts, chats sync, payments...).
 #   GET /admin/backup  header x-admin-key: <GINK_ADMIN_KEY>  -> gink-backup-<date>.db
 # Uses SQLite's own backup, so the copy is consistent even while people are using Gink.
@@ -4178,7 +4425,19 @@ def admin_stats(request: Request):
               "ai_fallbacks": _health["ai_fallbacks"], "live_ok": _health["live_ok"], "live_failed": _health["live_failed"],
               "problems": list(_health["problems"]), "version": (_release_cache.get("data") or {}).get("version") or ""}
     _st = _storage_status()
-    return {"generated": now, "users": users, "health": health, "now": _right_now(),
+    try:
+        with _db_lock:
+            _c = _db()
+            try:
+                _c.execute(ERROR_TABLE)
+                app_errors = [dict(zip(("id", "kind", "message", "where", "platforms", "versions", "count", "last"), r)) for r in
+                              _c.execute("SELECT fingerprint, kind, message, location, platforms, versions, count, last FROM "
+                                         "error_reports ORDER BY last DESC LIMIT 20").fetchall()]
+            finally:
+                _c.close()
+    except Exception:
+        app_errors = []
+    return {"generated": now, "users": users, "health": health, "now": _right_now(), "app_errors": app_errors,
             "today": {**(total([today]) if today in per_day else {k: 0 for k in keys}),
                       "active_users": per_day.get(today, {}).get("active_users", 0)},
             "last7": total(week), "daily": [per_day[d] for d in days], "revenue_30d": revenue,
@@ -4191,6 +4450,7 @@ def admin_stats(request: Request):
             "services": {"groq": bool(_env("GROQ_API_KEY")), "anthropic": bool(_env("ANTHROPIC_API_KEY")),
                          "gemini": bool(_env("GEMINI_API_KEY")), "email": bool(_email_status()), "email_service": _email_status(),
                          "storage": _st["mode"], "storage_ok": _st["ok"], "storage_detail": _st["detail"],
+                         "files": _files_status(),
                          "sms": bool(_sms_provider()), "sms_provider": _sms_provider(),
                          "sms_month": _sms_sent_this_month(), "sms_limit": _sms_limit()}}
 
@@ -6115,8 +6375,15 @@ def account_phone_remove(request: Request):
 # Projects live on the server (genie_projects / genie_files). Genie works like an agent: the AI gets
 # tools (list, read, write, delete, search files) and loops until the job is done. Web projects can be
 # previewed at /genie/p/<secret key>/..., sandboxed like websites (they can't touch Gink sign-ins).
-GENIE_MAX_PROJECTS, GENIE_MAX_FILES = 30, 600          # room for real repositories (imported from GitHub)
-GENIE_MAX_FILE, GENIE_MAX_PROJECT = 300_000, 6_000_000
+# Room per project. With object storage (services/blob_store.py: GINK_S3_*) big files leave the server's
+# disk, so the defaults grow; GINK_GENIE_FILES / GINK_GENIE_PROJECT_MB set them explicitly.
+_HAS_OBJECT_STORAGE = bool(os.environ.get("GINK_S3_BUCKET") and os.environ.get("GINK_S3_KEY") and os.environ.get("GINK_S3_SECRET"))
+GENIE_MAX_PROJECTS = int(os.environ.get("GINK_GENIE_PROJECTS") or (100 if _HAS_OBJECT_STORAGE else 30))
+GENIE_MAX_FILES = int(os.environ.get("GINK_GENIE_FILES") or (5000 if _HAS_OBJECT_STORAGE else 600))
+GENIE_MAX_FILE = 300_000 if not _HAS_OBJECT_STORAGE else 5_000_000
+GENIE_MAX_PROJECT = int(float(os.environ.get("GINK_GENIE_PROJECT_MB") or (500 if _HAS_OBJECT_STORAGE else 6)) * 1_000_000)
+GENIE_BLOB = "\x00gink-blob:"             # big file contents live in the blob store: marker + key:size:kind
+GENIE_BLOB_MIN = 8_000
 GENIE_ROUNDS = 24
 _GENIE_TABLES = (
     "CREATE TABLE IF NOT EXISTS genie_projects (id TEXT PRIMARY KEY, email TEXT NOT NULL, name TEXT NOT NULL, "
@@ -6139,7 +6406,7 @@ def _genie_checkpoint(pid: str, label: str) -> int:
     """The project as it is now, before a request changes it. Nothing new is stored when the project
     hasn't changed since the last snapshot (plan mode, a question, a request that changed nothing):
     that snapshot is the same state."""
-    files = _json.dumps(_genie_files(pid), sort_keys=True)
+    files = _json.dumps(_genie_files(pid, raw=True), sort_keys=True)     # big contents as markers: versions stay small
 
     def save(con):
         last = con.execute("SELECT id, files FROM genie_snapshots WHERE project_id=? ORDER BY id DESC LIMIT 1", (pid,)).fetchone()
@@ -6248,10 +6515,67 @@ GENIE_IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/
 GENIE_MAX_PICTURE = 1_000_000
 
 
-def _genie_files(pid: str) -> dict:
-    """Every file, raw (pictures still marked): use _genie_texts for code and text only."""
-    return dict(_genie_db(lambda con: con.execute("SELECT path, content FROM genie_files WHERE project_id=? ORDER BY path",
-                                                  (pid,)).fetchall()))
+def _blob_root() -> str:
+    return os.path.join(os.path.dirname(str(_db_path())), "blobs")
+
+
+def _genie_store_content(content: str) -> str:
+    """What the database keeps: small content itself, big content as a marker (the blob store has it)."""
+    if len(content) < GENIE_BLOB_MIN or content.startswith(GENIE_BLOB):
+        return content
+    from . import blob_store
+    key = blob_store.put(content.encode("utf-8"), _blob_root())
+    kind = "p" if content.startswith(GENIE_PIC) else "t"
+    return f"{GENIE_BLOB}{key}:{_genie_size(content)}:{kind}"
+
+
+def _blob_gc() -> int:
+    """Delete blobs no file, copy or version refers to any more (once a day, a minute after start)."""
+    from . import blob_store
+    marker = re.compile(re.escape(GENIE_BLOB) + r"([0-9a-f]{64})")
+    marker_json = re.compile(r"\\u0000gink-blob:([0-9a-f]{64})")
+    used = set()
+
+    def scan(con):
+        for (c,) in con.execute("SELECT content FROM genie_files WHERE content LIKE ?", (GENIE_BLOB + "%",)):
+            used.update(marker.findall(c))
+        for (f,) in con.execute("SELECT files FROM genie_snapshots"):
+            used.update(marker_json.findall(f))
+            used.update(marker.findall(f))
+    _genie_db(scan)
+    removed = blob_store.collect_garbage(used, _blob_root())
+    if removed:
+        print(f"[Gink] Storage: removed {removed} unused files", flush=True)
+    return removed
+
+
+async def _blob_gc_daily():
+    await asyncio.sleep(60)
+    while True:
+        try:
+            await asyncio.get_running_loop().run_in_executor(None, _blob_gc)
+        except Exception as exc:
+            print(f"[Gink] Storage clean-up failed ({type(exc).__name__})", flush=True)
+        await asyncio.sleep(24 * 3600)
+
+
+def _genie_resolve(content: str) -> str:
+    if not content.startswith(GENIE_BLOB):
+        return content
+    from . import blob_store
+    data = blob_store.get(content[len(GENIE_BLOB):].split(":", 1)[0], _blob_root())
+    if data is None:
+        print("[Gink] Genie: a file's content is missing from storage", flush=True)
+        return ""
+    return data.decode("utf-8")
+
+
+def _genie_files(pid: str, raw: bool = False) -> dict:
+    """Every file (pictures still marked): use _genie_texts for code and text only. raw=True: as stored
+    (big contents as blob markers) -- for versions and copies, which then cost almost nothing."""
+    rows = _genie_db(lambda con: con.execute("SELECT path, content FROM genie_files WHERE project_id=? ORDER BY path",
+                                             (pid,)).fetchall())
+    return dict(rows) if raw else {p: _genie_resolve(c) for p, c in rows}
 
 
 def _genie_texts(pid: str) -> dict:
@@ -6259,6 +6583,11 @@ def _genie_texts(pid: str) -> dict:
 
 
 def _genie_size(content: str) -> int:
+    if content.startswith(GENIE_BLOB):                    # key:size:kind -- no need to fetch it
+        try:
+            return int(content[len(GENIE_BLOB):].split(":")[1])
+        except (IndexError, ValueError):
+            return 0
     if content.startswith(GENIE_PIC):                     # the picture's real size (without the marker and padding)
         b64 = content[len(GENIE_PIC):]
         return len(b64) * 3 // 4 - (2 if b64.endswith("==") else 1 if b64.endswith("=") else 0)
@@ -6292,12 +6621,13 @@ def _genie_write(pid: str, path: str, content: str, picture: bytes = None):
             raise ValueError(f"{path} contains a null character, which text files can't have.")
         if len(content.encode()) > GENIE_MAX_FILE:
             raise ValueError(f"{path} is too large (over {GENIE_MAX_FILE // 1000} KB). Split it into smaller files.")
-    files = _genie_files(pid)
+    files = _genie_files(pid, raw=True)
     if path not in files and len(files) >= GENIE_MAX_FILES:
         raise ValueError(f"A project can have up to {GENIE_MAX_FILES} files.")
     total = sum(_genie_size(c) for p, c in files.items() if p != path) + _genie_size(content)
     if total > GENIE_MAX_PROJECT:
-        raise ValueError("The project is too large (over 3 MB). Remove something first.")
+        raise ValueError(f"The project is too large (over {GENIE_MAX_PROJECT // 1_000_000} MB). Remove something first.")
+    content = _genie_store_content(content)
     now = time.time()
     _genie_db(lambda con: (con.execute("INSERT OR REPLACE INTO genie_files (project_id, path, content, updated) VALUES (?, ?, ?, ?)",
                                        (pid, path, content, now)),
@@ -6313,7 +6643,8 @@ def _genie_delete_file(pid: str, path: str) -> bool:
 def _genie_summary(pid: str) -> list:
     rows = _genie_db(lambda con: con.execute("SELECT path, content, updated FROM genie_files WHERE project_id=? ORDER BY path",
                                              (pid,)).fetchall())
-    return [{"path": p, "size": _genie_size(c), "updated": u, **({"picture": True} if c.startswith(GENIE_PIC) else {})}
+    return [{"path": p, "size": _genie_size(c), "updated": u,
+             **({"picture": True} if c.startswith(GENIE_PIC) or (c.startswith(GENIE_BLOB) and c.endswith(":p")) else {})}
             for p, c, u in rows]
 
 
@@ -6734,11 +7065,12 @@ def genie_version_compare(pid: str, vid: int, request: Request):
                                             (vid, pid)).fetchone())
     if not row:
         raise HTTPException(status_code=404, detail="That version isn't kept any more.")
-    then, now = _json.loads(row[1]), _genie_files(pid)
+    then, now = _json.loads(row[1]), _genie_files(pid, raw=True)
     return {"label": row[0],
             "added": sorted(p for p in now if p not in then),               # appeared since that version
             "removed": sorted(p for p in then if p not in now),             # gone since that version
-            "changed": sorted(p for p in now if p in then and now[p] != then[p])}
+            "changed": sorted(p for p in now if p in then and now[p] != then[p]
+                              and _genie_resolve(now[p]) != _genie_resolve(then[p]))}
 
 
 @app.get("/genie/projects/{pid}/chat")
@@ -6770,7 +7102,7 @@ def genie_duplicate(pid: str, request: Request):
     n = _genie_db(lambda con: con.execute("SELECT COUNT(*) FROM genie_projects WHERE email=?", (email,)).fetchone()[0])
     if n >= GENIE_MAX_PROJECTS:
         raise HTTPException(status_code=409, detail=f"You have {GENIE_MAX_PROJECTS} projects. Delete one to make a copy.")
-    new, now, files = "gp_" + secrets.token_hex(6), time.time(), _genie_files(pid)
+    new, now, files = "gp_" + secrets.token_hex(6), time.time(), _genie_files(pid, raw=True)
     name = (src["name"][:53] + " (copy)")
 
     def copy(con):

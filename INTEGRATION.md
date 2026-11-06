@@ -1939,3 +1939,23 @@ New services/live_info.py (all free, no API keys):
   list + own site (registrable label >= 4 chars, not generic, appears as a word in the question; _question
   contextvar set before _prepare_search in ai_chat and /web/search). Universities no longer official.
   chat_extras: badge only for after-text ending in "· official" (the server's marker), not any "official" text.
+
+## 0.1.111: object storage, error reports, social accounts, training mix
+- Owner asked for 1,186 TB "room", finding Facebook/TikTok/Instagram accounts and automatic fixes. Declined: reserving
+  1,186 TB (~$17.8k/month) and finding private people's accounts (stalking risk, platform terms). Built instead:
+- blob_store.py: LocalStore (next to the DB, GINK_BLOB_DIR) or S3Store (boto3; GINK_S3_BUCKET/KEY/SECRET/ENDPOINT/
+  REGION, prefix gink/); sha256 keys; 64 MB LRU cache; collect_garbage(in_use). A broken S3 setup falls back to disk
+  with _store["problem"] (dashboard "files"). Genie: content >= GENIE_BLOB_MIN (8 KB) -> "\x00gink-blob:<sha>:<size>:<p|t>";
+  _genie_files(raw=True) for checkpoints/duplicate/diff (versions = markers); _genie_size/_genie_summary read the
+  marker; _blob_gc daily (markers in genie_files + snapshots, incl. JSON-escaped \u0000). Limits from env, bigger with
+  object storage (decided at import: _HAS_OBJECT_STORAGE).
+- Errors: POST /errors (60/hour per address), _record_error fingerprint = sha1(kind | deepest Gink frame or message),
+  scrubbed (SECRET_PATTERNS, emails, token=/key=), 500 rows kept; /admin/errors; dashboard "app_errors" + tile.
+  _ServerErrorRecorder (pure ASGI, re-raises). Apps: error_reports.install (sys/threading hooks), watch_loop (asyncio),
+  report() in main_screen.safe_handle; pref send_errors (device-only). Web: window error/unhandledrejection.
+- TEST FILES MUST NOT CONTAIN KEY-LIKE STRINGS: publish_to_github.sh's secret scan stops the publish (a literal
+  gsk_AAAA... in test_error_reports did). Build fakes at run time ("gsk_" + "A" * 27).
+- /admin/social: Graph API (GINK_GRAPH_VERSION v23.0) Page + IG business account; TikTok v2 user/info + video/list with
+  refresh_token renewal on 401; 15-min cache; dashboard tile (https links only, textContent).
+- build_mix.py: chat train + Genie export (+ --extra), per-line tools, genie share cap, valid() structure check, dedupe;
+  train_unsloth/prepare_hosted use row["tools"] when present.

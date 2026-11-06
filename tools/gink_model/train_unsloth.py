@@ -8,6 +8,7 @@ The easiest way is the notebook next to this file (Gink_finetune_colab.ipynb), w
     python tools/gink_dataset/generate.py && python tools/gink_dataset/validate.py
     python tools/gink_model/train_unsloth.py --base unsloth/Qwen3.5-4B --out gink-4b
     python tools/gink_model/train_unsloth.py --base unsloth/Qwen3.5-4B --out gink-4b --gguf q4_k_m
+    python tools/gink_model/train_unsloth.py --data tools/gink_model/out/mix ...   # chat + Genie (build_mix.py)
 
 What it does, and why:
   * bf16 LoRA (not 4-bit QLoRA): Unsloth advises against QLoRA for Qwen3.5.
@@ -137,7 +138,7 @@ def main():
 
     from datasets import Dataset
     from trl import SFTConfig, SFTTrainer
-    texts = [render(tokenizer, r["messages"], tools) for r in train_rows]
+    texts = [render(tokenizer, r["messages"], r.get("tools") or tools) for r in train_rows]   # a line's own tools (build_mix.py)
     longest = max(len(tokenizer(t)["input_ids"]) for t in texts[:50])
     print(f"Example length: up to ~{longest} tokens (max {a.max_len}).")
     cfg = dict(dataset_text_field="text", per_device_train_batch_size=a.batch,
@@ -159,7 +160,7 @@ def main():
     rows = eval_rows[:a.eval_limit]
     good = 0
     for ex in rows:
-        prompt = render(tokenizer, ex["messages"][:2], tools, add_generation_prompt=True)
+        prompt = render(tokenizer, ex["messages"][:2], ex.get("tools") or tools, add_generation_prompt=True)
         ids = tokenizer(prompt, return_tensors="pt").to(model.device)
         out = model.generate(**ids, max_new_tokens=300, do_sample=False)
         text = tokenizer.decode(out[0][ids["input_ids"].shape[1]:], skip_special_tokens=False)

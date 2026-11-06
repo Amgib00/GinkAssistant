@@ -59,7 +59,8 @@ def main(argv=None):
     os.makedirs(a.out, exist_ok=True)
     totals = {}
     for split in ("train", "eval"):
-        rows = [to_hosted(json.loads(l), tools) for l in open(os.path.join(a.data, f"{split}.jsonl"), encoding="utf-8") if l.strip()]
+        rows = [to_hosted(r, r.get("tools") or tools) for r in (json.loads(l) for l in
+                open(os.path.join(a.data, f"{split}.jsonl"), encoding="utf-8") if l.strip())]   # a line's own tools if it has them
         path = os.path.join(a.out, f"hosted_{split}.jsonl")
         with open(path, "w", encoding="utf-8") as f:
             for r in rows:

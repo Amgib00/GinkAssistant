@@ -149,6 +149,9 @@ openspec/changes/add-phone-song-recognition/tasks.md
 openspec/changes/add-plan-tiers/proposal.md
 openspec/changes/add-plan-tiers/specs/plan-tiers/spec.md
 openspec/changes/add-plan-tiers/tasks.md
+openspec/changes/add-scale-errors-social/proposal.md
+openspec/changes/add-scale-errors-social/specs/operations/spec.md
+openspec/changes/add-scale-errors-social/tasks.md
 openspec/changes/add-wake-status/proposal.md
 openspec/changes/add-wake-status/specs/languages-voice/spec.md
 openspec/changes/add-wake-status/tasks.md
@@ -202,9 +205,11 @@ src/ginkassistant/services/attachments.py
 src/ginkassistant/services/audio_engine.py
 src/ginkassistant/services/backend_server.py
 src/ginkassistant/services/billing_catalog.py
+src/ginkassistant/services/blob_store.py
 src/ginkassistant/services/briefing.py
 src/ginkassistant/services/data_export.py
 src/ginkassistant/services/device_region.py
+src/ginkassistant/services/error_reports.py
 src/ginkassistant/services/everyday.py
 src/ginkassistant/services/file_maker.py
 src/ginkassistant/services/groq_worker.py
@@ -287,6 +292,7 @@ tests/test_app_icons.py
 tests/test_archive_storage_limits.py
 tests/test_auto_search_sources.py
 tests/test_billing.py
+tests/test_blob_store.py
 tests/test_cards_memory_narration.py
 tests/test_catalina_workflow.py
 tests/test_chat_extras.py
@@ -302,6 +308,7 @@ tests/test_dev_platform.py
 tests/test_developer_api.py
 tests/test_device_signin.py
 tests/test_email_delivery.py
+tests/test_error_reports.py
 tests/test_everyday_money.py
 tests/test_family_everywhere.py
 tests/test_formatting_security.py
@@ -353,6 +360,7 @@ tests/test_shared_links.py
 tests/test_signin_name_and_history.py
 tests/test_small_icons.py
 tests/test_sms_routing.py
+tests/test_social_accounts.py
 tests/test_song_server.py
 tests/test_sync_attach_memory_briefing.py
 tests/test_temporary_chat.py
@@ -388,6 +396,7 @@ tools/gink_dataset/translate.py
 tools/gink_dataset/validate.py
 tools/gink_model/Gink_finetune_colab.ipynb
 tools/gink_model/PLAN.md
+tools/gink_model/build_mix.py
 tools/gink_model/export_genie_data.py
 tools/gink_model/gate.py
 tools/gink_model/prepare_hosted.py

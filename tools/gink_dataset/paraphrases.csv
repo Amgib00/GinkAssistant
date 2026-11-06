@@ -5303,3 +5303,59 @@ en,What’s the product of 35 and 29?,"Hey, can you tell me the product of 35 an
 en,What’s the product of 35 and 29?,Could you please calculate 35 times 29 for me?,openai/gpt-oss-120b,yes
 en,What’s the product of 35 and 29?,What's 35 multiplied by 29?,openai/gpt-oss-120b,yes
 en,What’s the product of 35 and 29?,I need the result of 35 × 29.,openai/gpt-oss-120b,yes
+fr,"S'il te plaît, retiens que le 22 décembre, c'est l'anniversaire de mon meilleur ami.","Peux-tu noter que le 22 décembre, c'est l'anniversaire de mon meilleur ami ?",openai/gpt-oss-120b,yes
+fr,"S'il te plaît, retiens que le 22 décembre, c'est l'anniversaire de mon meilleur ami.","Le 22 décembre, c’est l’anniversaire de mon meilleur ami, garde ça en mémoire.",openai/gpt-oss-120b,yes
+en,"Hey, can you tell me what 25% of 250000 is?","Hey, could you let me know what 25% of 250000 equals?",openai/gpt-oss-120b,yes
+en,"Hey, can you tell me what 25% of 250000 is?","Can you calculate 25% of 250000 for me, please?",openai/gpt-oss-120b,yes
+en,"Hey, can you tell me what 25% of 250000 is?",What's 25% of 250000?,openai/gpt-oss-120b,yes
+en,"Hey, can you tell me what 25% of 250000 is?",I need to know the result of 25% of 250000.,openai/gpt-oss-120b,yes
+ar,ابدأ مؤقتًا لمدة 10 دقائق,Start a timer for 10 minutes.,openai/gpt-oss-120b,yes
+ar,ابدأ مؤقتًا لمدة 10 دقائق,"Hey, could you set a timer for 10 minutes?",openai/gpt-oss-120b,yes
+ar,ابدأ مؤقتًا لمدة 10 دقائق,Please begin a 10‑minute timer.,openai/gpt-oss-120b,yes
+ar,ابدأ مؤقتًا لمدة 10 دقائق,"Timer, 10 minutes, go.",openai/gpt-oss-120b,yes
+en,Please note that my best friend's birthday falls on August 1.,"Hey, just a heads‑up: my best friend's birthday is on August 1.",openai/gpt-oss-120b,yes
+en,Please note that my best friend's birthday falls on August 1.,Could you please note that my best friend's birthday falls on August 1?,openai/gpt-oss-120b,yes
+en,Please note that my best friend's birthday falls on August 1.,Reminder: my best friend's birthday is August 1.,openai/gpt-oss-120b,yes
+en,Please note that my best friend's birthday falls on August 1.,"My best friend's birthday is on August 1, just so you know.",openai/gpt-oss-120b,yes
+es,"Person: Launch Spotify
+Gink: Opened Spotify.",,openai/gpt-oss-120b,no
+pt,Quanto é 25% de 1200?,"Hey, can you tell me what 25% of 1200 is?",openai/gpt-oss-120b,yes
+pt,Quanto é 25% de 1200?,"What's 25% of 1200, please?",openai/gpt-oss-120b,yes
+pt,Quanto é 25% de 1200?,Could you calculate 25% of 1200 for me?,openai/gpt-oss-120b,yes
+pt,Quanto é 25% de 1200?,25% of 1200 equals what?,openai/gpt-oss-120b,yes
+es,¿Qué tiempo hace en Accra ahora?,"Hey, what's the current weather in Accra?",openai/gpt-oss-120b,yes
+es,¿Qué tiempo hace en Accra ahora?,"Can you tell me the weather in Accra right now, please?",openai/gpt-oss-120b,yes
+es,¿Qué tiempo hace en Accra ahora?,What's the weather like in Accra at the moment?,openai/gpt-oss-120b,yes
+es,¿Qué tiempo hace en Accra ahora?,Accra weather now?,openai/gpt-oss-120b,yes
+en,"Could you set a reminder for me to book the car service in 20 minutes, please?","Hey, can you set a reminder for me to book the car service in 20 minutes, please?",openai/gpt-oss-120b,yes
+en,"Could you set a reminder for me to book the car service in 20 minutes, please?",Please remind me to book the car service in 20 minutes.,openai/gpt-oss-120b,yes
+en,"Could you set a reminder for me to book the car service in 20 minutes, please?",Reminder: book the car service in 20 minutes.,openai/gpt-oss-120b,yes
+en,"Could you set a reminder for me to book the car service in 20 minutes, please?",Could you ping me about booking the car service after 20 minutes? Thanks!,openai/gpt-oss-120b,yes
+en,Timer 1 hour tea.,Set a timer for 1 hour for tea.,openai/gpt-oss-120b,yes
+en,Timer 1 hour tea.,"Hey, could you start a 1‑hour timer for my tea?",openai/gpt-oss-120b,yes
+en,Timer 1 hour tea.,"Timer 1 hour tea, please.",openai/gpt-oss-120b,yes
+en,Timer 1 hour tea.,I need a 1 hour tea timer.,openai/gpt-oss-120b,yes
+fr,"Bonjour, pourriez-vous calculer 25 % de 1200, s'il vous plaît ?","Salut, calcule-moi 25 % de 1200, s'il te plaît.",openai/gpt-oss-120b,yes
+fr,"Bonjour, pourriez-vous calculer 25 % de 1200, s'il vous plaît ?","Bonjour, pourriez-vous s'il vous plaît déterminer 25 % de 1200 ?",openai/gpt-oss-120b,yes
+fr,"Bonjour, pourriez-vous calculer 25 % de 1200, s'il vous plaît ?","Hey, 25 % de 1200, tu peux me le faire rapidement ?",openai/gpt-oss-120b,yes
+fr,"Bonjour, pourriez-vous calculer 25 % de 1200, s'il vous plaît ?","Bonjour, merci de me donner le résultat de 25 % de 1200.",openai/gpt-oss-120b,yes
+en,"Wake me at 5:45 am, thanks!",Please set an alarm for 5:45 am.,openai/gpt-oss-120b,yes
+en,"Wake me at 5:45 am, thanks!","Hey, could you wake me up at 5:45 am? Thanks!",openai/gpt-oss-120b,yes
+en,"Wake me at 5:45 am, thanks!","Wake me up at 5:45 am, please.",openai/gpt-oss-120b,yes
+en,"Wake me at 5:45 am, thanks!","5:45 am alarm, thank you.",openai/gpt-oss-120b,yes
+pt,Clima em Freetown agora,What's the weather like in Freetown right now?,openai/gpt-oss-120b,yes
+pt,Clima em Freetown agora,Can you tell me the current climate in Freetown?,openai/gpt-oss-120b,yes
+pt,Clima em Freetown agora,"Hey, give me the weather update for Freetown at this moment.",openai/gpt-oss-120b,yes
+pt,Clima em Freetown agora,Please check the present conditions in Freetown.,openai/gpt-oss-120b,yes
+en,Start Calculator now.,"Hey, could you open the Calculator app right now?",openai/gpt-oss-120b,yes
+en,Start Calculator now.,Please start Calculator now.,openai/gpt-oss-120b,yes
+en,Start Calculator now.,Launch Calculator ASAP.,openai/gpt-oss-120b,yes
+en,Start Calculator now.,"Open Calculator, please.",openai/gpt-oss-120b,yes
+en,"Wake me at 9:45 am, I have a gym session.","Hey, could you set an alarm for 9:45 am? I need to be up for my gym session.",openai/gpt-oss-120b,yes
+en,"Wake me at 9:45 am, I have a gym session.","Wake me up at 9:45 am, please. Got a gym class.",openai/gpt-oss-120b,yes
+en,"Wake me at 9:45 am, I have a gym session.","9:45 am alarm, I have a gym session.",openai/gpt-oss-120b,yes
+en,"Wake me at 9:45 am, I have a gym session.",Please wake me at 9:45 am; I have a gym session scheduled.,openai/gpt-oss-120b,yes
+en,"Hey, I need a Markdown version of my grocery list—fish, bread, milk, eggs.","Could you please give me a Markdown version of my grocery list? It includes fish, bread, milk, and eggs.",openai/gpt-oss-120b,yes
+en,"Hey, I need a Markdown version of my grocery list—fish, bread, milk, eggs.","Hey, I need my grocery list (fish, bread, milk, eggs) in Markdown format.",openai/gpt-oss-120b,yes
+en,"Hey, I need a Markdown version of my grocery list—fish, bread, milk, eggs.","Markdown my grocery list: fish, bread, milk, eggs.",openai/gpt-oss-120b,yes
+en,"Hey, I need a Markdown version of my grocery list—fish, bread, milk, eggs.","Please format my grocery list—fish, bread, milk, eggs—as Markdown.",openai/gpt-oss-120b,yes
