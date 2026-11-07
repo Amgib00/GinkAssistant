@@ -310,6 +310,7 @@ tests/test_cli.py
 tests/test_computer_actions.py
 tests/test_connected_apps.py
 tests/test_dark_theme.py
+tests/test_db_lock.py
 tests/test_dev_platform.py
 tests/test_developer_api.py
 tests/test_device_signin.py

@@ -2027,3 +2027,11 @@ New services/live_info.py (all free, no API keys):
 - The owner's Nov 6 recording "icons morphing on hover" = the sidebar peeking open over the icon rail when the
   mouse crossed the 14 px #edge zone on its way to the rail. peek(true) now waits PEEK_DELAY (300 ms) of rest; a
   pending open is cancelled on leave. Checked in Chromium (crossing: closed; resting: open).
+
+## 0.1.118: lock and access audits
+- tests/test_db_lock.py: AST scan of backend_server.py -- every top-level function that takes _db_lock (directly or
+  through helpers, transitively; local lambdas/inner functions with the same name excluded) must not be called
+  inside a `with _db_lock:` block. 261 lock-taking functions, 0 nested uses; re-inserting 0.1.117's bug fails it.
+- Access audit (one-off): every POST/PUT/DELETE route either authenticates (_email_from_auth / _require_owner /
+  _session_email / _api_key_owner / _device_entry) or is public by design (sign-in flows, /errors with a rate
+  limit, payment callbacks: Paystack HMAC-checked; CinetPay only triggers _settle, which verifies the payment).

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.118 (November 2026)
+
+- Behind the scenes: a safety check now runs with every test, so the kind of server freeze caught last
+  time can't slip in again; and a review of every server address that changes data confirmed each one
+  checks who is calling (sign-in, API key, owner key or payment signature)
+
 ## 0.1.117 (November 2026)
 
 - Workspaces: admins can download usage for the last 30 days (messages, images and songs per person
