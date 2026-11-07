@@ -155,6 +155,9 @@ openspec/changes/add-scale-errors-social/tasks.md
 openspec/changes/add-wake-status/proposal.md
 openspec/changes/add-wake-status/specs/languages-voice/spec.md
 openspec/changes/add-wake-status/tasks.md
+openspec/changes/add-workspaces/proposal.md
+openspec/changes/add-workspaces/specs/workspaces/spec.md
+openspec/changes/add-workspaces/tasks.md
 openspec/changes/archive/.gitkeep
 openspec/changes/fix-official-sources/proposal.md
 openspec/changes/fix-official-sources/specs/web-search/spec.md
@@ -383,6 +386,7 @@ tests/test_web_app.py
 tests/test_web_search.py
 tests/test_websites.py
 tests/test_whats_new.py
+tests/test_workspaces.py
 tools/MANIFEST.txt
 tools/backup_db.py
 tools/build_web_app.py

@@ -341,6 +341,7 @@ SETTINGS_JS = r"""
         {title: 'Delete account', rows: [
           {type: 'button', label: 'Delete your account', desc: 'Permanently deletes your account and everything synced to it. Payment records are kept for accounting, without your name or email. This can\u2019t be undone.', action: 'delete_account', text: 'Delete account', style: 'danger-ghost'}]}]},
       {id: 'family', group: 'Settings', title: 'Parental controls', sections: familySections(info.family, info.family_error)},
+      {id: 'workspace', group: 'Settings', title: 'Workspace', sections: workspaceSections(info.org, info.org_error)},
       {id: 'privacy', group: 'Settings', title: 'Privacy', sections: [
         {title: 'Your data', rows: [
           {apps: true, type: 'toggle', key: 'use_memory', label: 'Use memories in answers', desc: 'When off, Gink ignores what you asked it to remember (they stay saved \u2014 manage them under Memory).'},
@@ -553,6 +554,43 @@ SETTINGS_JS = r"""
     });
     out.push({title: 'Safety notices', rows: [{type: 'list', items: (f.notices || []).map(function (n) {
       return {t: (n.name || n.teen) + ' ' + n.text, m: famDate(n.at)}; }), empty: 'No notices.'}]});
+    return out;
+  }
+
+  // Settings > Workspace (server: /org): hospitals, schools, businesses. Admins see members and today's
+  // message counts -- never chats -- and set instructions Gink follows for everyone; healthcare mode keeps
+  // patient data out (messages that look like a patient's details are refused).
+  function workspaceSections(o, err) {
+    if (!o) return [{title: 'Workspace', rows: [{type: 'list', items: [], empty: err || 'Loading\u2026'}]}];
+    if (!o.org) return [{title: 'Create a workspace', rows: [
+      {type: 'note', text: 'A workspace is Gink for a team: a hospital, school or business. You invite people by their Gink email or phone; they accept first. Admins see who is in it and how many messages each person sent today \u2014 never their chats \u2014 and can give Gink instructions for everyone.'},
+      {type: 'input', key: 'org_name', label: 'Workspace name', placeholder: 'e.g. Hôpital Principal \u2014 Admin team', action: 'org_create', text: 'Create'}]}];
+    var org = o.org, admin = o.role === 'admin' && o.status === 'active', out = [];
+    if (admin && S.values.org_instructions === undefined) S.values.org_instructions = org.instructions || '';
+    if (o.status === 'invited') return [{title: 'Invitation', rows: [
+      {type: 'note', text: org.name + ' invited you to its workspace. Its admins would see your name and how many messages you send each day \u2014 never your chats \u2014 and Gink would follow the workspace\u2019s instructions.' + (org.healthcare ? ' It\u2019s in healthcare mode: no patient details may be typed.' : '')},
+      {type: 'button', label: 'Accept', action: 'org_accept', text: 'Accept', style: 'primary'},
+      {type: 'button', label: 'Decline', action: 'org_decline', text: 'Decline', style: 'danger-ghost'}]}];
+    out.push({title: org.name, rows: [
+      {type: 'info', label: 'You are', value: admin ? 'An admin' : 'A member'}]
+      .concat(admin ? [] : [{type: 'info', label: 'Healthcare mode', value: org.healthcare ? 'On \u2014 no patient details' : 'Off'}])
+      .concat(admin ? [
+        {type: 'html', label: 'Healthcare mode', desc: 'For hospitals and clinics: Gink won\u2019t diagnose or decide treatment, and refuses messages that look like a patient\u2019s details (name, record number, date of birth, phone).',
+         html: '<label class="sw"><input type="checkbox" data-org="healthcare"' + (org.healthcare ? ' checked' : '') + '><i></i></label>'},
+        {type: 'textarea', key: 'org_instructions', label: 'Instructions Gink follows for everyone in the workspace', placeholder: 'e.g. Answer in French. Our hospital is in Dakar. Use our policy names.', action: 'org_instructions', text: 'Save'}] :
+        (org.instructions ? [{type: 'note', text: 'Workspace instructions: ' + org.instructions}] : []))
+      .concat([{type: 'button', label: 'Leave the workspace', action: 'org_leave', text: 'Leave', style: 'danger-ghost'}])});
+    if (admin) {
+      out.push({title: 'People', rows: [
+        {type: 'input', key: 'org_invite', label: 'Invite by Gink email or phone', placeholder: 'email or +221\u2026', action: 'org_invite', text: 'Invite'},
+        {type: 'list', items: (o.members || []).map(function (m) {
+          return {t: (m.name || m.label) + (m.role === 'admin' ? ' \u00b7 admin' : '') + (m.status === 'invited' ? ' \u00b7 invited' : ''),
+                  m: m.status === 'active' ? (m.messages_today || 0) + ' messages today' : 'hasn\u2019t accepted yet',
+                  button: m.role === 'admin' ? null : {text: 'Remove', action: 'org_remove', value: m.id}}; }),
+         empty: 'Nobody yet.'}]});
+      out.push({title: 'Delete the workspace', rows: [
+        {type: 'input', key: 'org_delete', label: 'Type the workspace\u2019s name to delete it for everyone', placeholder: org.name, action: 'org_delete', text: 'Delete'}]});
+    }
     return out;
   }
 
@@ -783,6 +821,10 @@ SETTINGS_JS = r"""
     var body = document.getElementById('s-body');
     body.addEventListener('change', function (e) {
       var t = e.target, fk = t.getAttribute('data-fam') || t.getAttribute('data-famtime') || t.getAttribute('data-famnum');
+      if (t.getAttribute('data-org')) {          // Workspace: healthcare mode
+        ginkEmit('settings_action', {name: 'org_set', value: JSON.stringify({key: t.getAttribute('data-org'), value: t.checked})});
+        return;
+      }
       if (fk) {                                    // Parental controls: one teen's setting
         var fv = t.type === 'checkbox' ? t.checked : t.getAttribute('data-famnum') ? parseInt(t.value || '0', 10) : t.value;
         var tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) {}

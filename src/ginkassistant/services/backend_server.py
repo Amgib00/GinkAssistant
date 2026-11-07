@@ -2486,6 +2486,11 @@ async def ai_chat(request: Request):
     wants_own = bool(own) and str(body["model"]).lower() == own["name"] and not web
     body["model"] = GINK_MODEL_NAMES.get(str(body["model"]).lower(), body["model"])   # "gink-frost" -> Claude Sonnet
     await _add_live_context(body)                    # today's date; live data (weather...) when asked
+    org_text, org_refusal = _org_guard(email, _last_user_text(body["messages"]))   # workspace rules (healthcare mode)
+    if org_refusal:
+        return _ai_error(422, org_refusal, "patient_data")
+    if org_text:
+        body["messages"] = [{"role": "system", "content": org_text}] + list(body["messages"])
     if family:
         if family.get("parent"):                     # safety notices: the kind of risk, never the words
             _start_safety_check(email, family["parent"], _last_user_text(body["messages"]))
@@ -2692,6 +2697,9 @@ def delete_account(request: Request, data: dict = Body(...)):
             for t in _FAMILY_TABLES:
                 con.execute(t)
             con.execute("DELETE FROM account_age WHERE email=?", (email,))
+            for t in ORG_TABLES:
+                con.execute(t)
+            con.execute("DELETE FROM org_members WHERE email=?", (email,))
             for t in TRAINING_TABLES:
                 con.execute(t)
             con.execute("DELETE FROM training_optin WHERE email=?", (email,))
@@ -3579,7 +3587,12 @@ def _family_refusal(email: str, feature: str = "", quiet: bool = False):
 
 def _family_teen_messages(email: str, messages: list, words: str) -> list:
     """For AI features outside chat (websites...): every teen gets the stricter guidance, and a linked
-    teen's own words get the safety check, as in chat."""
+    teen's own words get the safety check, as in chat; a workspace's rules apply too."""
+    org_text, org_refusal = _org_guard(email, words)
+    if org_refusal:
+        raise HTTPException(status_code=422, detail=org_refusal)
+    if org_text:
+        messages = messages[:1] + [{"role": "system", "content": org_text}] + messages[1:]
     rules = _family_rules(email)
     if not rules or rules.get("blocked"):
         return messages
@@ -4264,6 +4277,260 @@ async def admin_social(request: Request):
                 out[name] = {"set_up": True, "error": f"couldn't reach it ({type(exc).__name__})"}
     _social_cache.update(at=time.time(), data=out)
     return out
+
+
+# =====================================================================
+# Workspaces (organisations: hospitals, schools, businesses)
+#   An admin creates a workspace and invites people by their Gink account. Members accept first.
+#   The admin sees members and today's message counts -- never chats -- and sets shared instructions
+#   that Gink follows for everyone in the workspace (chat, Genie, websites).
+#   Healthcare mode (for hospitals and clinics): Gink helps staff with non-clinical work and general
+#   medical information for professionals, never diagnoses or decides treatment, and REFUSES messages
+#   that look like they contain a patient's identifying details (names with "patient", record numbers,
+#   dates of birth, phone numbers...) -- the workspace is for work WITHOUT patient data. (Patient data
+#   would need agreements with each AI provider, an agreed data location and audit logs: not this.)
+#     GET /org   POST /org {name, healthcare}   POST /org/invite {email}   POST /org/respond {accept}
+#     POST /org/leave   POST /org/remove {email}   PUT /org/settings {name, instructions, healthcare}
+#     POST /org/delete
+# =====================================================================
+ORG_TABLES = (
+    "CREATE TABLE IF NOT EXISTS orgs (id TEXT PRIMARY KEY, name TEXT, owner TEXT, created REAL, instructions TEXT, "
+    "healthcare INTEGER NOT NULL DEFAULT 0)",
+    "CREATE TABLE IF NOT EXISTS org_members (org_id TEXT, email TEXT PRIMARY KEY, role TEXT, status TEXT, invited REAL, "
+    "joined REAL)",
+)
+ORG_MAX_MEMBERS = int(os.environ.get("GINK_ORG_MAX_MEMBERS") or 500)
+HEALTHCARE_RULES = (
+    "You are assisting staff of a healthcare organisation (hospital or clinic). Help with non-clinical work -- "
+    "rotas, policies, letters, translations, training material, summaries of guidelines, general medical "
+    "information for professionals. Never diagnose a specific patient, never decide or change a specific "
+    "patient's treatment or dose, and say that clinical decisions belong to qualified staff following local "
+    "protocols. If someone shares details that could identify a patient (name, record number, date of birth, "
+    "address, phone), don't repeat them; remind them this workspace must not be used with patient data. "
+    "In an emergency, tell them to follow their hospital's emergency procedure immediately."
+)
+PATIENT_DATA = [
+    re.compile(r"\b(mrn|medical record|record number|hospital number|patient (?:id|number|no\.?)|n[°o]\s*dossier|"
+               r"num[ée]ro de dossier|ipp|nhs number)\b[\s:#n°.-]*[A-Z0-9-]{4,}", re.I),
+    re.compile(r"\b(dob|d\.o\.b\.?|date of birth|born on|n[ée]e? le|date de naissance)\b[\s:.-]*"
+               r"\d{1,4}[/.-]\d{1,2}[/.-]\d{1,4}", re.I),
+    re.compile(r"\b(patient|patiente|pt)\b[\s:,-]+(?:(?:mr|mrs|ms|miss|mme|m\.)\.?\s+)?[A-Z][a-z\u00C0-\u017F]+\s+[A-Z][a-z\u00C0-\u017F]+"),
+    re.compile(r"\b(patient|patiente)\b[^.\n]{0,60}\+?\d[\d\s().-]{7,}\d"),
+]
+
+
+def _looks_like_patient_data(text: str) -> bool:
+    return any(p.search(text or "") for p in PATIENT_DATA)
+
+
+def _org_db(fn):
+    with _db_lock:
+        con = _db()
+        try:
+            for t in ORG_TABLES:
+                con.execute(t)
+            out = fn(con)
+            con.commit()
+            return out
+        finally:
+            con.close()
+
+
+def _org_of(email: str):
+    """(org row as dict, my role, my status) or (None, "", "")."""
+    def read(con):
+        m = con.execute("SELECT org_id, role, status FROM org_members WHERE email=?", (email,)).fetchone()
+        if not m:
+            return None, "", ""
+        o = con.execute("SELECT id, name, owner, created, instructions, healthcare FROM orgs WHERE id=?", (m[0],)).fetchone()
+        if not o:
+            return None, "", ""
+        return dict(zip(("id", "name", "owner", "created", "instructions", "healthcare"), o)), m[1], m[2]
+    return _org_db(read)
+
+
+def _org_rules(email: str):
+    """For AI requests: the workspace's instructions and healthcare mode (active members only)."""
+    org, _role, status = _org_of(email)
+    if not org or status != "active":
+        return None
+    return {"name": org["name"], "instructions": org["instructions"] or "", "healthcare": bool(org["healthcare"])}
+
+
+def _org_system(rules) -> str:
+    parts = []
+    if rules.get("healthcare"):
+        parts.append(HEALTHCARE_RULES)
+    if rules.get("instructions"):
+        parts.append(f"Instructions from the {rules['name']} workspace (follow them unless they conflict with safety): "
+                     + rules["instructions"])
+    return "\n\n".join(parts)
+
+
+PATIENT_DATA_MSG = ("This looks like it contains a patient's details (a name, record number, date of birth or phone). "
+                    "Your workspace is in healthcare mode and must not be used with patient data -- remove the details "
+                    "and ask again.")
+
+
+def _org_guard(email: str, text: str):
+    """(system text to add, refusal message or "")."""
+    rules = _org_rules(email)
+    if not rules:
+        return "", ""
+    if rules["healthcare"] and _looks_like_patient_data(text):
+        return "", PATIENT_DATA_MSG
+    return _org_system(rules), ""
+
+
+def _org_admin(email: str):
+    org, role, status = _org_of(email)
+    if not org or role != "admin" or status != "active":
+        raise HTTPException(status_code=403, detail="Only the workspace's admins can do that.")
+    return org
+
+
+@app.get("/org")
+def org_get(request: Request):
+    email = _email_from_auth(request)
+    org, role, status = _org_of(email)
+    if not org:
+        return {"org": None}
+    out = {"org": {"id": org["id"], "name": org["name"], "healthcare": bool(org["healthcare"]),
+                   "instructions": org["instructions"] or "", "owner": _account_label(org["owner"])},
+           "role": role, "status": status}
+    if role == "admin" and status == "active":
+        day = _today()
+        rows = _org_db(lambda con: con.execute("SELECT email, role, status FROM org_members WHERE org_id=? ORDER BY role, email",
+                                               (org["id"],)).fetchall())
+
+        def used(e):
+            with _db_lock:
+                con = _usage_db()
+                try:
+                    r = con.execute("SELECT messages FROM ai_usage WHERE email=? AND day=?", (e, day)).fetchone()
+                except sqlite3.Error:
+                    r = None
+                finally:
+                    con.close()
+            return r[0] if r else 0
+        out["members"] = [{"id": e, "label": _account_label(e), "name": (_get_user(e) or {}).get("name") or "", "role": r,
+                           "status": st, "messages_today": used(e) if st == "active" else None} for e, r, st in rows]
+    return out
+
+
+@app.post("/org")
+def org_create(request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    age = _age(email)
+    if age is None or age < ADULT_AGE:
+        raise HTTPException(status_code=403, detail="Workspaces are created by adults (18+). Add your birth year first if needed.")
+    if _org_of(email)[0]:
+        raise HTTPException(status_code=409, detail="You're already in a workspace. Leave it first.")
+    name = " ".join(str(data.get("name") or "").split())[:80]
+    if not name:
+        raise HTTPException(status_code=422, detail="Give the workspace a name.")
+    oid, now = "org_" + secrets.token_hex(6), time.time()
+    _org_db(lambda con: (con.execute("INSERT INTO orgs VALUES (?, ?, ?, ?, '', ?)", (oid, name, email, now, int(bool(data.get("healthcare"))))),
+                         con.execute("INSERT INTO org_members VALUES (?, ?, 'admin', 'active', ?, ?)", (oid, email, now, now))))
+    return org_get(request)
+
+
+@app.post("/org/invite")
+def org_invite(request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    org = _org_admin(email)
+    who = _find_account(data.get("email"))
+    other, _r, _s = _org_of(who)
+    if other:
+        raise HTTPException(status_code=409, detail="That person is already in a workspace (or invited to one).")
+    n = _org_db(lambda con: con.execute("SELECT COUNT(*) FROM org_members WHERE org_id=?", (org["id"],)).fetchone()[0])
+    if n >= ORG_MAX_MEMBERS:
+        raise HTTPException(status_code=409, detail=f"A workspace can have up to {ORG_MAX_MEMBERS} people.")
+    _org_db(lambda con: con.execute("INSERT INTO org_members VALUES (?, ?, 'member', 'invited', ?, NULL)", (org["id"], who, time.time())))
+    _send_email(who, f"You're invited to the {org['name']} workspace on Gink", (
+        f"{org['name']} invited you to their Gink workspace. Open Gink > Settings > Workspace to accept or decline.\n\n"
+        "In a workspace, the admins see your name and how many messages you send each day -- never your chats -- and "
+        "Gink follows the workspace's instructions."))
+    return {"status": "invited", "email": _account_label(who)}
+
+
+@app.post("/org/respond")
+def org_respond(request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    org, role, status = _org_of(email)
+    if not org or status != "invited":
+        raise HTTPException(status_code=404, detail="There's no invitation to answer.")
+    if data.get("accept") is True:
+        _org_db(lambda con: con.execute("UPDATE org_members SET status='active', joined=? WHERE email=?", (time.time(), email)))
+    else:
+        _org_db(lambda con: con.execute("DELETE FROM org_members WHERE email=?", (email,)))
+    return org_get(request)
+
+
+@app.post("/org/leave")
+def org_leave(request: Request):
+    email = _email_from_auth(request)
+    org, role, status = _org_of(email)
+    if not org:
+        raise HTTPException(status_code=404, detail="You're not in a workspace.")
+    if role == "admin":
+        admins = _org_db(lambda con: con.execute("SELECT COUNT(*) FROM org_members WHERE org_id=? AND role='admin' AND "
+                                                 "status='active'", (org["id"],)).fetchone()[0])
+        members = _org_db(lambda con: con.execute("SELECT COUNT(*) FROM org_members WHERE org_id=?", (org["id"],)).fetchone()[0])
+        if admins <= 1 and members > 1:
+            raise HTTPException(status_code=409, detail="You're the only admin: make someone else admin, or delete the workspace.")
+    _org_db(lambda con: con.execute("DELETE FROM org_members WHERE email=?", (email,)))
+    if role == "admin" and _org_db(lambda con: con.execute("SELECT COUNT(*) FROM org_members WHERE org_id=?", (org["id"],)).fetchone()[0]) == 0:
+        _org_db(lambda con: con.execute("DELETE FROM orgs WHERE id=?", (org["id"],)))
+    return {"org": None}
+
+
+@app.post("/org/remove")
+def org_remove(request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    org = _org_admin(email)
+    target = str(data.get("email") or "").strip()
+    if target == email:
+        raise HTTPException(status_code=422, detail="Use Leave to leave the workspace yourself.")
+    n = _org_db(lambda con: con.execute("DELETE FROM org_members WHERE org_id=? AND email=?", (org["id"], target)).rowcount)
+    if not n:
+        raise HTTPException(status_code=404, detail="That person isn't in this workspace.")
+    return org_get(request)
+
+
+@app.post("/org/admin")
+def org_make_admin(request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    org = _org_admin(email)
+    target = str(data.get("email") or "").strip()
+    n = _org_db(lambda con: con.execute("UPDATE org_members SET role=? WHERE org_id=? AND email=? AND status='active'",
+                                        ("admin" if data.get("admin", True) else "member", org["id"], target)).rowcount)
+    if not n:
+        raise HTTPException(status_code=404, detail="That person isn't an active member of this workspace.")
+    return org_get(request)
+
+
+@app.put("/org/settings")
+def org_settings(request: Request, data: dict = Body(...)):
+    email = _email_from_auth(request)
+    org = _org_admin(email)
+    name = " ".join(str(data.get("name", org["name"]) or "").split())[:80] or org["name"]
+    instructions = str(data.get("instructions", org["instructions"] or ""))[:4000]
+    healthcare = int(bool(data.get("healthcare", org["healthcare"])))
+    _org_db(lambda con: con.execute("UPDATE orgs SET name=?, instructions=?, healthcare=? WHERE id=?",
+                                    (name, instructions, healthcare, org["id"])))
+    return org_get(request)
+
+
+@app.post("/org/delete")
+def org_delete(request: Request, data: dict = Body(default={})):
+    email = _email_from_auth(request)
+    org = _org_admin(email)
+    if (data or {}).get("confirm") != org["name"]:
+        raise HTTPException(status_code=422, detail="Type the workspace's name to confirm.")
+    _org_db(lambda con: (con.execute("DELETE FROM org_members WHERE org_id=?", (org["id"],)),
+                         con.execute("DELETE FROM orgs WHERE id=?", (org["id"],))))
+    return {"org": None}
 
 # ---- Owner only: download a copy of the whole database (accounts, chats sync, payments...).
 #   GET /admin/backup  header x-admin-key: <GINK_ADMIN_KEY>  -> gink-backup-<date>.db
@@ -6902,7 +7169,7 @@ async def _genie_drive(state: dict) -> dict:
 
 
 async def _genie_run(email: str, pid: str, instruction: str, progress: str = "", mode: str = "auto",
-                     teen: bool = False) -> dict:
+                     teen: bool = False, org_text: str = "") -> dict:
     """The AI coding loop for one request (it pauses while the browser runs a command)."""
     files = _genie_summary(pid)
     listing = "\n".join(f"- {f['path']} ({f['size']} bytes)" for f in files) or "(empty project)"
@@ -6915,7 +7182,8 @@ async def _genie_run(email: str, pid: str, instruction: str, progress: str = "",
              "mode": "plan" if mode == "plan" else "auto",
              "pending": None, "model": await _current_model("openai/gpt-oss-120b"),
              "messages": [{"role": "system", "content": GENIE_SYSTEM}]
-                         + ([{"role": "system", "content": TEEN_SAFETY}] if teen else []) + history +
+                         + ([{"role": "system", "content": TEEN_SAFETY}] if teen else [])
+                         + ([{"role": "system", "content": org_text}] if org_text else []) + history +
                          [{"role": "user", "content": f"Project files:\n{listing}\n\nRequest: {instruction}"
                                    + (f"\n\n{GENIE_PLAN_NOTE}" if mode == "plan" else "")}]}
     return await _genie_drive(state)
@@ -6951,9 +7219,12 @@ async def _genie_ask(request: Request, email: str, pid: str, instruction: str, p
     if blocked is not None:
         detail = _json.loads(bytes(blocked.body))["error"]["message"]
         raise HTTPException(status_code=429, detail=detail)
+    org_text, org_refusal = _org_guard(email, instruction)
+    if org_refusal:
+        raise HTTPException(status_code=422, detail=org_refusal)
     if family and family.get("parent"):
         _start_safety_check(email, family["parent"], instruction)
-    return await _genie_run(email, pid, instruction, progress, mode, teen=bool(family))
+    return await _genie_run(email, pid, instruction, progress, mode, teen=bool(family), org_text=org_text)
 
 
 def _genie_family_gate(email: str):

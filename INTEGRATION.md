@@ -1971,3 +1971,16 @@ New services/live_info.py (all free, no API keys):
 - Media Studio: tabs + video section removed; IDEAS (id, title, prompt "{subject}", default subject, style, aspect,
   gradient, symbol) -> card row; a click fills the prompt (a short typed text becomes the subject). Emoji with
   U+FE0F so they render in colour. The owner's reference screenshots were NOT copied into the app.
+
+## 0.1.113: workspaces + healthcare mode (hospital option 1: no patient data)
+- orgs(id, name, owner, created, instructions, healthcare) / org_members(org_id, email PK -> one workspace per person,
+  role admin|member, status invited|active). /org GET (admins: members + messages_today), POST create (adults),
+  /org/invite (_find_account, ORG_MAX_MEMBERS 500), /respond, /leave (last admin with others -> 409), /remove,
+  /admin (make admin), PUT /settings, /delete (confirm = name). Account deletion removes the membership.
+- _org_guard(email, text) -> (system text, refusal): healthcare -> PATIENT_DATA regexes (record numbers incl. French
+  "numéro de dossier"/IPP, DOB markers + a date, "patient(e)" + two capitalised words, "patient" near a phone) ->
+  refusal; else HEALTHCARE_RULES + workspace instructions as a system message. Chat: 422 code patient_data; Genie
+  (_genie_ask -> _genie_run(org_text)); websites via _family_teen_messages (now also applies workspace rules).
+  The regexes are a guard, not a guarantee: the panel and the rules say not to type patient details at all.
+- Settings > Workspace (workspaceSections; org_* actions in settings_controller._org and bridge.js orgCall);
+  the instructions textarea is seeded from info into S.values once.

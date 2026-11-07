@@ -165,6 +165,13 @@ class ApiClient:
             return None
         return self._session(data, data.get("email", ""))
 
+    # -- Workspaces (server: /org) --------------------------------------------------
+    async def org(self, token: str) -> dict:
+        return await self._authed("GET", "/org", token)
+
+    async def org_call(self, token: str, method: str, path: str, body: dict = None) -> dict:
+        return await self._authed(method, path, token, json=body or {})
+
     # -- Help improve Gink (server: /account/training) ----------------------------
     async def training(self, token: str) -> dict:
         return await self._authed("GET", "/account/training", token)

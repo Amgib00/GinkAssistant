@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.113 (November 2026)
+
+- Workspaces, for hospitals, schools and businesses (Settings > Workspace): invite your team by their
+  Gink account; admins see who's in it and today's message counts -- never chats -- and can give Gink
+  instructions for everyone (for example "Answer in French")
+- Healthcare mode for hospitals and clinics: Gink helps staff with rotas, letters, policies, training
+  and general medical information, never diagnoses or decides a patient's treatment, and refuses
+  messages that look like a patient's details -- in chat, Gink Genie and websites
+
 ## 0.1.112 (November 2026)
 
 - "Hey Gink" or just "Gink": say "Gink, what time is it?" and Gink wakes, on computers, Android and

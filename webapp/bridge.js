@@ -799,6 +799,20 @@
       pushSettings({ connected: j.services || [] }, { connected_configured: j.configured });
     }).catch(function () { pushSettings({ connected: [] }, { connected_error: "Connected apps aren\u2019t available right now." }); });
   }
+  // Settings > Workspace (server: /org)
+  function loadOrg() {
+    api("/org").then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (j) { pushSettings({}, { org: j }); })
+      .catch(function () { pushSettings({}, { org_error: "Workspaces aren\u2019t available right now." }); });
+  }
+  function orgCall(method, path, body, done) {
+    return fetch(path, { method: method, headers: { Authorization: "Bearer " + W.token, "Content-Type": "application/json" },
+                         body: JSON.stringify(body || {}) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error(j.detail || "That didn\u2019t work. Please try again.");
+        if (done) settingsToast(done); loadOrg(); }); })
+      .catch(function (err) { settingsToast(err.message); });
+  }
   // Settings > Parental controls (server: /family)
   function loadFamily() {
     pushSettings({}, {});
@@ -979,7 +993,21 @@
     settings_action: function (v) {
       var name = v && v.name;
       if (name === "refresh") return (v.value === "account" ? loadDevices() : v.value === "connected" ? loadConnected()
-                                      : v.value === "privacy" ? loadLockdown() : v.value === "family" ? loadFamily() : pushSettings());
+                                      : v.value === "privacy" ? loadLockdown() : v.value === "family" ? loadFamily()
+                                      : v.value === "workspace" ? loadOrg() : pushSettings());
+      if (name === "org_create") return orgCall("POST", "/org", { name: String(v.value || "").trim() }, "Workspace created.");
+      if (name === "org_invite") return orgCall("POST", "/org/invite", { email: String(v.value || "").trim() }, "Invitation sent.");
+      if (name === "org_accept") return orgCall("POST", "/org/respond", { accept: true }, "You joined the workspace.");
+      if (name === "org_decline") return orgCall("POST", "/org/respond", { accept: false }, "Declined.");
+      if (name === "org_leave") return orgCall("POST", "/org/leave", {}, "You left the workspace.");
+      if (name === "org_remove") return orgCall("POST", "/org/remove", { email: v.value || "" }, "Removed.");
+      if (name === "org_instructions") return orgCall("PUT", "/org/settings", { instructions: String(v.value || "") }, "Saved.");
+      if (name === "org_delete") return orgCall("POST", "/org/delete", { confirm: String(v.value || "").trim() }, "Workspace deleted.");
+      if (name === "org_set") {
+        var os_ = {}; try { os_ = JSON.parse(v.value || "{}"); } catch (e) { return; }
+        var ob = {}; ob[os_.key] = os_.value;
+        return orgCall("PUT", "/org/settings", ob, "Saved.");
+      }
       if (name === "training_on") return setTraining(true, false, "Thank you \u2014 your Gink Genie sessions will help train Gink.");
       if (name === "training_off") return setTraining(false, false, "Stopped sharing.");
       if (name === "training_delete") return setTraining(false, true, "Stopped, and deleted what you shared.");

@@ -209,6 +209,11 @@ class SettingsController:
                 extra_info["twofa"] = dict(status, **self._twofa)
             except Exception:
                 extra_info["twofa"] = dict(self._twofa)
+        if token and panel == "workspace":                    # Workspace (organisations)
+            try:
+                extra_info["org"] = await asyncio.wait_for(api.org(token), timeout=8)
+            except Exception:
+                extra_info["org_error"] = "Workspaces aren't available right now (offline, or the server is older)."
         if token and panel == "family":                       # Parental controls
             try:
                 extra_info["family"] = await asyncio.wait_for(api.family(token), timeout=8)
@@ -522,6 +527,51 @@ class SettingsController:
                 return await self.web.settings_toast(str(exc))
             await self.web.settings_toast("Phone number removed.")
             await self.refresh("account")
+
+    # ---- Settings > Workspace (server: /org) ----
+    async def _org(self, method: str, path: str, body: dict = None, done: str = ""):
+        token = getattr(self.app, "session_token", None)
+        if not token:
+            return
+        try:
+            await ApiClient(self.app.state.base_url).org_call(token, method, path, body)
+        except ApiError as exc:
+            return await self.web.settings_toast(str(exc))
+        if done:
+            await self.web.settings_toast(done)
+        await self.refresh("workspace")
+
+    async def _a_org_create(self, name):
+        await self._org("POST", "/org", {"name": str(name or "").strip()}, "Workspace created.")
+
+    async def _a_org_invite(self, who):
+        await self._org("POST", "/org/invite", {"email": str(who or "").strip()}, "Invitation sent.")
+
+    async def _a_org_accept(self, _):
+        await self._org("POST", "/org/respond", {"accept": True}, "You joined the workspace.")
+
+    async def _a_org_decline(self, _):
+        await self._org("POST", "/org/respond", {"accept": False}, "Declined.")
+
+    async def _a_org_leave(self, _):
+        await self._org("POST", "/org/leave", {}, "You left the workspace.")
+
+    async def _a_org_remove(self, who):
+        await self._org("POST", "/org/remove", {"email": str(who or "")}, "Removed.")
+
+    async def _a_org_instructions(self, text):
+        await self._org("PUT", "/org/settings", {"instructions": str(text or "")}, "Saved.")
+
+    async def _a_org_set(self, raw):
+        import json as _json
+        try:
+            v = _json.loads(raw) if isinstance(raw, str) else dict(raw or {})
+        except Exception:
+            return
+        await self._org("PUT", "/org/settings", {v.get("key"): v.get("value")}, "Saved.")
+
+    async def _a_org_delete(self, name):
+        await self._org("POST", "/org/delete", {"confirm": str(name or "").strip()}, "Workspace deleted.")
 
     # ---- Settings > Parental controls (server: /family) ----
     async def _family_call(self, what, done: str = ""):
