@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.116 (November 2026)
+
+- For the owner: no more "Potential merge conflicts detected" in PyCharm. After publishing, your project
+  folder's Git moves to the version you just published (your files aren't touched), so PyCharm no
+  longer sees every file as changed both on your Mac and on GitHub
+- The publish script can no longer stop silently partway (it sometimes quit right after pushing)
+
 ## 0.1.115 (November 2026)
 
 - Code clean-up: the warnings PyCharm showed that were real problems are fixed (unused imports and

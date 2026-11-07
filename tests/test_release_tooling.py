@@ -80,3 +80,43 @@ def test_releases_are_test_builds_unless_for_users():
     assert "--prerelease --latest=false" in for_users
     src = open(os.path.join(ROOT, "src", "ginkassistant", "services", "backend_server.py"), encoding="utf-8").read()
     assert "/releases/latest" in src                                    # GitHub leaves pre-releases out of "latest"
+
+
+def _project_with_git(tmp_path):
+    """A fake GitHub with an old version, and the owner's project folder: a Git clone of it whose files are the
+    new version (unzipped over it) -- exactly the owner's Mac."""
+    fake = tmp_path / "github.git"
+    sh(f"git init -q --bare {fake} && git -C {fake} symbolic-ref HEAD refs/heads/main", tmp_path)
+    seed = tmp_path / "seed"; seed.mkdir()
+    sh("git init -q && git checkout -q -b main && printf '[project]\\\\nversion = \\\"0.0.1\\\"\\\\n' > pyproject.toml && echo MIT > LICENSE && "
+       "git add -A && git -c user.email=t@t -c user.name=t commit -qm old && git push -q " + str(fake) + " main", seed)
+    work = tmp_path / "gink"
+    sh(f"git clone -q {fake} {work}", tmp_path)
+    shutil.copytree(ROOT, work, dirs_exist_ok=True,
+                    ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache", ".git", "*.egg-info", ".ruff_cache"))
+    env = {"GINK_REPO": str(fake), "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
+           "GIT_COMMITTER_EMAIL": "t@t"}
+    return fake, work, env
+
+
+def test_publish_brings_the_project_folders_git_along(tmp_path):
+    """PyCharm showed thousands of "Potential merge conflicts detected": the folder's Git stayed on an old
+    version while every file was changed both here and on GitHub."""
+    fake, work, env = _project_with_git(tmp_path)
+    assert " M pyproject.toml" in sh("git status --porcelain", work).stdout              # before: changed here and there
+    r = sh("bash tools/publish_to_github.sh", work, **env)
+    assert "no more merge-conflict warnings" in r.stdout, r.stdout[-1500:] + r.stderr[-500:]
+    head = sh("git rev-parse HEAD", work).stdout.strip()
+    assert head == sh(f"git --git-dir={fake} rev-parse main", tmp_path).stdout.strip()
+    left = [l for l in sh("git status --porcelain", work).stdout.splitlines() if not l.startswith("??")]
+    assert left == [], left[:10]                                                      # nothing "changed" any more
+    assert version_of(work) == version_of(ROOT)                                        # files untouched
+
+
+def test_publish_leaves_a_folder_with_its_own_commits_alone(tmp_path):
+    fake, work, env = _project_with_git(tmp_path)
+    sh("git -c user.email=t@t -c user.name=t commit -qm mine --allow-empty", work)
+    mine = sh("git rev-parse HEAD", work).stdout.strip()
+    r = sh("bash tools/publish_to_github.sh", work, **env)
+    assert "own commits that aren't on GitHub" in r.stdout, r.stdout[-1200:] + r.stderr[-600:]
+    assert sh("git rev-parse HEAD", work).stdout.strip() == mine

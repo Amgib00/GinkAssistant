@@ -2006,3 +2006,14 @@ New services/live_info.py (all free, no API keys):
 - [tool.ruff] in pyproject (target py311, select F + E9, line-length 120 for editors); tests.yml job `lint` runs
   `ruff check src tools tests cli` (ruff pinned). Long lines (1,800+) and other style choices deliberately not mass-
   reformatted.
+
+## 0.1.116: "Potential merge conflicts detected" x 6,000 (PyCharm) + a silent exit in the publish script
+- Cause: publish_to_github.sh commits and pushes from a TEMPORARY clone, so the owner's project folder (a clone of
+  the same repo) never moved: HEAD stayed on an old version while every unzip changed ~500 files locally and every
+  publish changed them on GitHub -> PyCharm's conflict detection flagged each file after each fetch.
+- sync_project_git(): after a verified push (and when GitHub already had the version), if $ROOT/.git's origin is
+  the same repo (https/ssh/.git-insensitive), the folder is on $BRANCH, and it has no commits missing from GitHub:
+  `git fetch` + `git reset --mixed origin/$BRANCH` -- branch + index move, FILES untouched. Otherwise it says why
+  and leaves it. tests/test_release_tooling.py covers both.
+- Found while testing it: with `set -euo pipefail`, `git show ... | grep -m1` (and `| head -N`) can SIGPIPE the writer
+  -> the script exited 141 silently, right after pushing. All such pipes now read to the end (awk NR<=N, awk END).

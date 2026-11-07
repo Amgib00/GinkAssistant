@@ -12,6 +12,8 @@
 # Pushing needs your GitHub sign-in (macOS Keychain / GitHub Desktop / `gh auth login`,
 # or a personal access token when git asks for a password).
 set -euo pipefail
+# With pipefail, a reader that stops early (head, grep -m1) can kill the writer with SIGPIPE and the whole script
+# silently exits 141 -- it happened right after a successful push. Pipes here read their input to the end (awk).
 
 REPO="${GINK_REPO:-https://github.com/Amgib00/GinkAssistant.git}"
 REPO_SLUG=$(echo "$REPO" | sed -E 's#^https://github.com/##; s#\.git$##')
@@ -33,6 +35,28 @@ ask() {                                   # ask "question" -> 0 for yes
   read -r -p "$1 [y/N] " a; [ "$a" = "y" ] || [ "$a" = "Y" ]
 }
 
+# 4b) your project folder's own Git catches up (files untouched). Publishing works in a temporary clone, so
+# before this the folder's Git stayed on an old version while GitHub moved on, and PyCharm saw ~500 files
+# "changed here AND on GitHub" after every update: thousands of "Potential merge conflicts detected".
+sync_project_git() {
+  [ -d "$ROOT/.git" ] || return 0                                   # not a Git folder: nothing to do
+  local url; url=$(git -C "$ROOT" remote get-url origin 2>/dev/null || true)
+  norm() { echo "$1" | sed -E 's#^git@github.com:#https://github.com/#; s#\.git$##; s#/$##' | tr 'A-Z' 'a-z'; }
+  if [ -z "$url" ] || [ "$(norm "$url")" != "$(norm "$REPO")" ]; then
+    echo "(Your project folder's Git points elsewhere -- left as it is.)"; return 0
+  fi
+  git -C "$ROOT" fetch --quiet origin "$BRANCH" || { echo "(Couldn't update your project folder's Git -- harmless.)"; return 0; }
+  local here; here=$(git -C "$ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+  if [ "$here" != "$BRANCH" ]; then
+    echo "(Your project folder is on branch '$here', not $BRANCH -- left as it is.)"; return 0
+  fi
+  if [ -n "$(git -C "$ROOT" rev-list "origin/$BRANCH..HEAD" 2>/dev/null)" ]; then
+    echo "(Your project folder has its own commits that aren't on GitHub -- left as it is.)"; return 0
+  fi
+  # --mixed: the branch and Git's index move to what was just published; the FILES stay exactly as they are
+  git -C "$ROOT" reset --quiet --mixed "origin/$BRANCH" && \
+    echo "Your project folder's Git is now on version $VERSION too (no more merge-conflict warnings in PyCharm)."
+}
 echo "Project:    $ROOT"
 echo "GitHub:     $REPO ($BRANCH)"
 cd "$ROOT"
@@ -43,7 +67,7 @@ done
 # 1) secrets check (only what will be published)
 if grep -rInE "$SECRET_RE" "${PUBLISH[@]}" --exclude-dir=__pycache__ --exclude=publish_to_github.sh >/tmp/gink_secret_hits 2>/dev/null; then
   echo; echo "STOP: these look like secret keys -- remove them (and revoke them) before publishing:"
-  sed -E 's/(hf_|gsk_|AKIA|ghp_|github_pat_|sk-|sk_live_|AIza)[A-Za-z0-9_-]{4,}/\1…/g' /tmp/gink_secret_hits | head -20
+  sed -E 's/(hf_|gsk_|AKIA|ghp_|github_pat_|sk-|sk_live_|AIza)[A-Za-z0-9_-]{4,}/\1…/g' /tmp/gink_secret_hits | awk 'NR<=20'
   exit 1
 fi
 echo "Secrets:    none found in the files to publish"
@@ -85,7 +109,7 @@ if [ -f "$MANIFEST" ]; then
             if [ "$keep" = 0 ]; then echo "$f"; fi; done || true)
   if [ -n "$STALE" ]; then
     echo; echo "Not published -- these files in your folder aren't part of this version (old leftovers?):"
-    echo "$STALE" | head -20 | sed 's/^/   - /'
+    echo "$STALE" | awk 'NR<=20' | sed 's/^/   - /'
     echo "   (they're left alone; delete them from your folder if they're old)"
   fi
 else
@@ -104,25 +128,27 @@ CHANGED=$(git diff --cached --name-only --diff-filter=M | wc -l | tr -d ' ')
 REMOVED=$(git diff --cached --name-only --diff-filter=D | wc -l | tr -d ' ')
 echo; echo "Changes on GitHub: $ADDED added, $CHANGED updated, $REMOVED old files removed"
 echo "Old files being removed (first 25):"
-git diff --cached --name-only --diff-filter=D | head -25 | sed 's/^/   - /'
+git diff --cached --name-only --diff-filter=D | awk 'NR<=25' | sed 's/^/   - /'
 echo "Kept from GitHub: ${KEEP_FROM_REPO[*]}"
 echo "Size of the new version: $(du -sh --exclude=.git . 2>/dev/null | cut -f1 || du -sh . | cut -f1)"
 VERSION=$(grep -m1 '^version' "$ROOT/pyproject.toml" | sed -E 's/.*"(.*)".*/\1/')
-if [ "$ADDED$CHANGED$REMOVED" = "000" ]; then echo "GitHub already has exactly this version ($VERSION)."; exit 0; fi
+if [ "$ADDED$CHANGED$REMOVED" = "000" ]; then echo "GitHub already has exactly this version ($VERSION)."; sync_project_git; exit 0; fi
 echo
 ask "Push version $VERSION to $BRANCH on GitHub?" || { echo "Nothing pushed."; exit 1; }
 
-git commit --quiet -m "Gink $VERSION" -m "$(awk '/^## /{n++} n==1' "$ROOT/CHANGELOG.md" | head -30)"
+git commit --quiet -m "Gink $VERSION" -m "$(awk '/^## /{n++} n==1 && c++<30' "$ROOT/CHANGELOG.md")"
 if ! git push --quiet origin "HEAD:$BRANCH"; then
   echo; echo "STOP: the push to GitHub failed (see the message above). Nothing was published, so don't run Release yet."
   exit 1
 fi
 # make sure GitHub really has it before anyone starts a release
 git fetch --quiet origin "$BRANCH"
-ON_GITHUB=$(git show "origin/$BRANCH:pyproject.toml" | grep -m1 '^version' | sed -E 's/.*"(.*)".*/\1/')
+ON_GITHUB=$(git show "origin/$BRANCH:pyproject.toml" | awk '/^version/ && !v {v=$0} END {print v}' | sed -E 's/.*"(.*)".*/\1/')
 if [ "$ON_GITHUB" != "$VERSION" ]; then
   echo; echo "STOP: GitHub has version $ON_GITHUB, not $VERSION. Don't run Release yet."; exit 1
 fi
+sync_project_git
+
 echo
 echo "================================================================"
 echo "  GitHub now has version $VERSION."
