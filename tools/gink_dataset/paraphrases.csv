@@ -8504,3 +8504,20 @@ en,"I need a Word document listing fish, onions, milk, sugar for my shopping lis
 en,"I need a Word document listing fish, onions, milk, sugar for my shopping list.","Please make a Word document listing fish, onions, milk, and sugar for my grocery list.",openai/gpt-oss-120b,yes
 en,"I need a Word document listing fish, onions, milk, sugar for my shopping list.","I need a Word file that has fish, onions, milk, and sugar on it for my shopping list.",openai/gpt-oss-120b,yes
 en,"I need a Word document listing fish, onions, milk, sugar for my shopping list.","Could you put fish, onions, milk, and sugar into a Word document for my shopping list, thanks?",openai/gpt-oss-120b,yes
+es,Persona: Weather Nairobi tomorrow,"Hey, can you tell me the weather in Nairobi tomorrow?",openai/gpt-oss-120b,yes
+es,Persona: Weather Nairobi tomorrow,What's the weather like in Nairobi tomorrow?,openai/gpt-oss-120b,yes
+es,Persona: Weather Nairobi tomorrow,"Nairobi weather tomorrow, please.",openai/gpt-oss-120b,yes
+es,Convierte 5000 euros a libras,"Convert 5000 euros to pounds, please.",openai/gpt-oss-120b,yes
+es,Convierte 5000 euros a libras,"Hey, can you change 5000 euros into pounds?",openai/gpt-oss-120b,yes
+es,Convierte 5000 euros a libras,Please convert 5000 euros to pounds.,openai/gpt-oss-120b,yes
+es,Convierte 5000 euros a libras,I need 5000 euros converted to pounds.,openai/gpt-oss-120b,yes
+es,Calcule 819 por 59,Can you calculate 819 by 59?,openai/gpt-oss-120b,yes
+es,Calcule 819 por 59,Please compute 819 times 59.,openai/gpt-oss-120b,yes
+es,Calcule 819 por 59,What’s 819 multiplied by 59?,openai/gpt-oss-120b,yes
+es,Calcule 819 por 59,"Hey, figure out 819 × 59 for me.",openai/gpt-oss-120b,yes
+en,Weather in London tomorrow?,"Hey, could you tell me the weather forecast for London tomorrow?",openai/gpt-oss-120b,yes
+en,Weather in London tomorrow?,What's the weather looking like in London tomorrow?,openai/gpt-oss-120b,yes
+en,Weather in London tomorrow?,London weather tomorrow?,openai/gpt-oss-120b,yes
+en,"Nairobi weather now, please.","Hey, could you tell me the current weather in Nairobi?",openai/gpt-oss-120b,yes
+en,"Nairobi weather now, please.",What's the weather like in Nairobi right now?,openai/gpt-oss-120b,yes
+en,"Nairobi weather now, please.",Can you give me the present conditions for Nairobi?,openai/gpt-oss-120b,yes
