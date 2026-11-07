@@ -582,6 +582,7 @@ SETTINGS_JS = r"""
       .concat([{type: 'button', label: 'Leave the workspace', action: 'org_leave', text: 'Leave', style: 'danger-ghost'}])});
     if (admin) {
       out.push({title: 'People', rows: [
+        {type: 'button', label: 'Download usage', desc: 'Messages, images and songs per person per day for the last 30 days (a spreadsheet file). Never chats.', action: 'org_usage', text: 'Download'},
         {type: 'input', key: 'org_invite', label: 'Invite by Gink email or phone', placeholder: 'email or +221\u2026', action: 'org_invite', text: 'Invite'},
         {type: 'list', items: (o.members || []).map(function (m) {
           return {t: (m.name || m.label) + (m.role === 'admin' ? ' \u00b7 admin' : '') + (m.status === 'invited' ? ' \u00b7 invited' : ''),

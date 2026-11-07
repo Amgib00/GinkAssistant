@@ -118,3 +118,23 @@ def test_genie_follows_the_workspace_too(srv):
     r = c.post("/genie/projects", headers=nurse, json={"prompt": "Build a page listing patient Mamadou Diallo's results"})
     assert r.status_code == 422 and "healthcare mode" in r.json()["detail"]
     assert c.get("/genie/projects", headers=nurse).json()["projects"] == []        # nothing half-made
+
+
+def test_admins_download_usage_without_chats(srv):
+    b, c, account = srv
+    admin, nurse = setup(b, c, account)
+    b._count_call("awa@hopital.sn", "t1", "free")
+    b._count_call("awa@hopital.sn", "t2", "free")
+    r = c.get("/org/usage.csv", headers=admin)
+    assert r.status_code == 200 and r.headers["content-type"].startswith("text/csv")
+    assert 'filename="gink-H-pital-Principal-usage.csv"' in r.headers["content-disposition"]
+    lines = r.text.strip().splitlines()
+    assert lines[0] == "date,name,account,messages,images,songs"
+    awa = [l for l in lines if "awa@hopital.sn" in l]
+    assert len(awa) == 1 and awa[0].endswith(",2,0,0")
+    assert c.get("/org/usage.csv", headers=nurse).status_code == 403                  # admins only
+
+
+def test_sidebar_waits_before_sliding_open():
+    page = open(os.path.join(os.path.dirname(__file__), "..", "src", "ginkassistant", "ui", "web_chat_view.py"), encoding="utf-8").read()
+    assert "var PEEK_DELAY = 300;" in page and "setTimeout(function () { if (!hoverBlocked) document.body.classList.add('peek'); }, PEEK_DELAY)" in page

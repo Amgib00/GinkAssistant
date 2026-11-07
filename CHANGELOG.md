@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.117 (November 2026)
+
+- Workspaces: admins can download usage for the last 30 days (messages, images and songs per person
+  per day, as a spreadsheet file) -- never chats
+- Calmer sidebar: moving the mouse past the left edge to the icons no longer slides the sidebar over
+  them; it opens when you rest on the edge for a moment
+
 ## 0.1.116 (November 2026)
 
 - For the owner: no more "Potential merge conflicts detected" in PyCharm. After publishing, your project

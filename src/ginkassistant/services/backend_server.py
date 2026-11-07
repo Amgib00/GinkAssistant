@@ -4524,6 +4524,39 @@ def org_make_admin(request: Request, data: dict = Body(...)):
     return org_get(request)
 
 
+@app.get("/org/usage.csv")
+def org_usage_csv(request: Request, days: int = 30):
+    """Admins: messages, images and songs per person per day (no chats, no prompts) -- for the
+    workspace's own reports. Settings > Workspace > Download usage."""
+    import csv
+    import io
+    from fastapi.responses import Response
+    email = _email_from_auth(request)
+    org = _org_admin(email)
+    days = max(1, min(int(days or 30), 366))
+    members = _org_db(lambda con: con.execute("SELECT email FROM org_members WHERE org_id=? AND status='active' ORDER BY email",
+                                              (org["id"],)).fetchall())
+    first = time.strftime("%Y-%m-%d", time.gmtime(time.time() - (days - 1) * 86400))
+    names = {e: (_get_user(e) or {}).get("name") or "" for (e,) in members}     # before taking the lock (not re-entrant)
+    out = io.StringIO()
+    w = csv.writer(out)
+    w.writerow(["date", "name", "account", "messages", "images", "songs"])
+    with _db_lock:
+        con = _usage_db()
+        try:
+            cols = {r[1] for r in con.execute("PRAGMA table_info(ai_usage)").fetchall()}
+            for (e,) in members:
+                q = "SELECT day, messages, {}, {} FROM ai_usage WHERE email=? AND day>=? ORDER BY day".format(
+                    "images" if "images" in cols else "0", "songs" if "songs" in cols else "0")
+                for day, msgs, imgs, songs in con.execute(q, (e, first)).fetchall():
+                    w.writerow([day, names[e], _account_label(e), msgs or 0, imgs or 0, songs or 0])
+        finally:
+            con.close()
+    name = re.sub(r"[^A-Za-z0-9-]+", "-", org["name"]).strip("-")[:40] or "workspace"
+    return Response(out.getvalue(), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="gink-{name}-usage.csv"'})
+
+
 @app.put("/org/settings")
 def org_settings(request: Request, data: dict = Body(...)):
     email = _email_from_auth(request)

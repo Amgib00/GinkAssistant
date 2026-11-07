@@ -1002,6 +1002,16 @@
       if (name === "org_leave") return orgCall("POST", "/org/leave", {}, "You left the workspace.");
       if (name === "org_remove") return orgCall("POST", "/org/remove", { email: v.value || "" }, "Removed.");
       if (name === "org_instructions") return orgCall("PUT", "/org/settings", { instructions: String(v.value || "") }, "Saved.");
+      if (name === "org_usage") {                       // a CSV (no chats) for the admin's reports
+        return fetch("/org/usage.csv?days=30", { headers: { Authorization: "Bearer " + W.token } }).then(function (r) {
+          if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.detail || "Couldn\u2019t get the usage."); });
+          return r.blob().then(function (b) {
+            var a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "gink-workspace-usage.csv";
+            document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+            settingsToast("Usage saved as a file.");
+          });
+        }).catch(function (err) { settingsToast(err.message); });
+      }
       if (name === "org_delete") return orgCall("POST", "/org/delete", { confirm: String(v.value || "").trim() }, "Workspace deleted.");
       if (name === "org_set") {
         var os_ = {}; try { os_ = JSON.parse(v.value || "{}"); } catch (e) { return; }

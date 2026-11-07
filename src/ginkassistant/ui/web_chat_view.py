@@ -793,9 +793,13 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
   }
   function peek(on) {
     clearTimeout(peekTimer);
-    if (on) { if (!hoverBlocked) document.body.classList.add('peek'); }
-    else peekTimer = setTimeout(function () { document.body.classList.remove('peek'); }, 260);
+    if (on) {
+      if (hoverBlocked || document.body.classList.contains('peek')) return;   // already open: just don't close it
+      // a moment's rest first: passing the edge on the way to the icon rail no longer slides the sidebar over it
+      peekTimer = setTimeout(function () { if (!hoverBlocked) document.body.classList.add('peek'); }, PEEK_DELAY);
+    } else peekTimer = setTimeout(function () { document.body.classList.remove('peek'); }, 260);
   }
+  var PEEK_DELAY = 300;
   function toggleSidebar() {
     if (sideOpen()) { setPinned(false); hoverBlocked = true; }   // click to close
     else { setPinned(true); }                                     // click to open

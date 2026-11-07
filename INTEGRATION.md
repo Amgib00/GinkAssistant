@@ -2017,3 +2017,13 @@ New services/live_info.py (all free, no API keys):
   and leaves it. tests/test_release_tooling.py covers both.
 - Found while testing it: with `set -euo pipefail`, `git show ... | grep -m1` (and `| head -N`) can SIGPIPE the writer
   -> the script exited 141 silently, right after pushing. All such pipes now read to the end (awk NR<=N, awk END).
+
+## 0.1.117: workspace usage CSV; sidebar hover intent
+- GET /org/usage.csv?days=30 (admins): date, name, account, messages, images, songs from ai_usage (columns checked).
+  DEADLOCK caught by its test: calling _get_user() while holding _db_lock (a plain, NOT re-entrant threading.Lock)
+  hangs that request AND every later database call on the server. Names are read before the lock now.
+  Rule: never call a helper that takes _db_lock (_get_user, _org_db, _family_db, _db-based helpers) inside
+  `with _db_lock:`. Apps: ApiClient.org_usage_csv + data_export.save_with_dialog; web: blob download.
+- The owner's Nov 6 recording "icons morphing on hover" = the sidebar peeking open over the icon rail when the
+  mouse crossed the 14 px #edge zone on its way to the rail. peek(true) now waits PEEK_DELAY (300 ms) of rest; a
+  pending open is cancelled on leave. Checked in Chromium (crossing: closed; resting: open).

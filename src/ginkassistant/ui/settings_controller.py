@@ -570,6 +570,23 @@ class SettingsController:
             return
         await self._org("PUT", "/org/settings", {v.get("key"): v.get("value")}, "Saved.")
 
+    async def _a_org_usage(self, _):
+        """Settings > Workspace > Download usage: a CSV (no chats) saved where the admin chooses."""
+        token = getattr(self.app, "session_token", None)
+        if not token:
+            return
+        try:
+            data = await ApiClient(self.app.state.base_url).org_usage_csv(token, 30)
+        except ApiError as exc:
+            return await self.web.settings_toast(str(exc))
+
+        def write(path):
+            with open(path, "wb") as f:
+                f.write(data)
+        path = await data_export.save_with_dialog(self.app, "gink-workspace-usage.csv", ["csv"], write)
+        if path:
+            await self.web.settings_toast(f"Saved to {path}")
+
     async def _a_org_delete(self, name):
         await self._org("POST", "/org/delete", {"confirm": str(name or "").strip()}, "Workspace deleted.")
 

@@ -169,6 +169,18 @@ class ApiClient:
     async def org(self, token: str) -> dict:
         return await self._authed("GET", "/org", token)
 
+    async def org_usage_csv(self, token: str, days: int = 30) -> bytes:
+        try:
+            async with httpx.AsyncClient(headers=device_headers(), timeout=60) as client:
+                resp = await client.get(f"{self.base_url}/org/usage.csv", params={"days": days},
+                                        headers={"Authorization": f"Bearer {token}"})
+        except httpx.HTTPError as e:
+            raise unreachable(e)
+        if resp.status_code != 200:
+            detail = self._json(resp).get("detail", "Couldn't get the usage.")
+            raise ApiError(detail if isinstance(detail, str) else "Couldn't get the usage.")
+        return resp.content
+
     async def org_call(self, token: str, method: str, path: str, body: dict = None) -> dict:
         return await self._authed(method, path, token, json=body or {})
 

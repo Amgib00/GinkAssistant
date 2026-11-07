@@ -1440,9 +1440,13 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
   }
   function peek(on) {
     clearTimeout(peekTimer);
-    if (on) { if (!hoverBlocked) document.body.classList.add('peek'); }
-    else peekTimer = setTimeout(function () { document.body.classList.remove('peek'); }, 260);
+    if (on) {
+      if (hoverBlocked || document.body.classList.contains('peek')) return;   // already open: just don't close it
+      // a moment's rest first: passing the edge on the way to the icon rail no longer slides the sidebar over it
+      peekTimer = setTimeout(function () { if (!hoverBlocked) document.body.classList.add('peek'); }, PEEK_DELAY);
+    } else peekTimer = setTimeout(function () { document.body.classList.remove('peek'); }, 260);
   }
+  var PEEK_DELAY = 300;
   function toggleSidebar() {
     if (sideOpen()) { setPinned(false); hoverBlocked = true; }   // click to close
     else { setPinned(true); }                                     // click to open
@@ -2494,6 +2498,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
       .concat([{type: 'button', label: 'Leave the workspace', action: 'org_leave', text: 'Leave', style: 'danger-ghost'}])});
     if (admin) {
       out.push({title: 'People', rows: [
+        {type: 'button', label: 'Download usage', desc: 'Messages, images and songs per person per day for the last 30 days (a spreadsheet file). Never chats.', action: 'org_usage', text: 'Download'},
         {type: 'input', key: 'org_invite', label: 'Invite by Gink email or phone', placeholder: 'email or +221\u2026', action: 'org_invite', text: 'Invite'},
         {type: 'list', items: (o.members || []).map(function (m) {
           return {t: (m.name || m.label) + (m.role === 'admin' ? ' \u00b7 admin' : '') + (m.status === 'invited' ? ' \u00b7 invited' : ''),
@@ -4835,6 +4840,16 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
       if (name === "org_leave") return orgCall("POST", "/org/leave", {}, "You left the workspace.");
       if (name === "org_remove") return orgCall("POST", "/org/remove", { email: v.value || "" }, "Removed.");
       if (name === "org_instructions") return orgCall("PUT", "/org/settings", { instructions: String(v.value || "") }, "Saved.");
+      if (name === "org_usage") {                       // a CSV (no chats) for the admin's reports
+        return fetch("/org/usage.csv?days=30", { headers: { Authorization: "Bearer " + W.token } }).then(function (r) {
+          if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.detail || "Couldn\u2019t get the usage."); });
+          return r.blob().then(function (b) {
+            var a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "gink-workspace-usage.csv";
+            document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+            settingsToast("Usage saved as a file.");
+          });
+        }).catch(function (err) { settingsToast(err.message); });
+      }
       if (name === "org_delete") return orgCall("POST", "/org/delete", { confirm: String(v.value || "").trim() }, "Workspace deleted.");
       if (name === "org_set") {
         var os_ = {}; try { os_ = JSON.parse(v.value || "{}"); } catch (e) { return; }
