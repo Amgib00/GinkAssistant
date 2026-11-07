@@ -336,6 +336,7 @@ tests/test_live_info.py
 tests/test_location.py
 tests/test_main_screen.py
 tests/test_media_files_profile.py
+tests/test_media_photo.py
 tests/test_model_upgrade.py
 tests/test_natural_voice.py
 tests/test_no_dead_buttons.py

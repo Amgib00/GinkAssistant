@@ -103,6 +103,13 @@ PAGE = r"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport
   .tile.pending span { position: absolute; left: 0; right: 0; bottom: 16px; text-align: center; font-size: 13px; color: var(--text-muted); z-index: 1; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .empty { text-align: center; color: var(--text-muted); padding: 50px 0; font-size: 14px; }
+  [hidden] { display: none !important; }
+  .photo-row { display: flex; align-items: center; gap: 10px; margin: 8px 0 4px; flex-wrap: wrap; }
+  .photo-row .hint { font-size: 12px; color: var(--text-muted); }
+  .photo { position: relative; display: inline-block; }
+  .photo img { width: 54px; height: 54px; object-fit: cover; border-radius: 12px; border: 1px solid var(--border); display: block; }
+  .photo button { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; border: 0;
+    background: var(--text-main); color: var(--bg); font-size: 13px; line-height: 20px; cursor: pointer; padding: 0; }
   /* Ideas: big rounded cards in a row you can scroll, like a gallery of looks */
   .ideas { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 12px; margin-bottom: 14px; scroll-snap-type: x proximity; }
   .idea { flex: 0 0 132px; height: 176px; border-radius: 22px; border: 0; position: relative; cursor: pointer; overflow: hidden;
@@ -125,6 +132,11 @@ PAGE = r"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport
     <div class="ideas" id="ideas" role="list"></div>
     <div class="create">
       <textarea id="prompt" placeholder="Describe the image you want \u2014 e.g. a sunset over the Dakar corniche, colourful fishing boats in the foreground"></textarea>
+      <div class="photo-row">
+        <button class="chip" id="add-photo" type="button">&#128247; Use a photo</button>
+        <span class="photo" id="photo" hidden><img id="photo-img" alt="Your photo"><button type="button" id="photo-x" aria-label="Remove the photo">&times;</button></span>
+        <span class="hint" id="photo-hint">Start from a photo (or paste / drop one here): use photos of yourself, or of people who agreed.</span>
+      </div>
       <div class="label">Style</div><div class="chips" id="styles"></div>
       <div class="label">Shape</div><div class="chips" id="aspects"></div>
       <div class="row"><div class="left" id="usage"></div><button class="btn primary" id="create">Create image</button></div>
@@ -155,6 +167,16 @@ PAGE = r"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport
       return '<button class="idea" role="listitem" data-idea="' + it[0] + '" style="background:linear-gradient(160deg,' + c[0] + ',' + c[1] + ')">' +
         '<span class="sym" aria-hidden="true">' + it[7] + '</span><span class="nm">' + esc(it[1]) + '</span></button>'; }).join('');
   }
+  function setPhoto(src) {                     // Python (or a pasted / dropped file) gives the thumbnail
+    $('photo').hidden = !src; $('photo-img').src = src || ''; $('add-photo').hidden = !!src;
+  }
+  function readPhoto(file) {
+    if (!file || !/^image\/(jpeg|png|webp)$/.test(file.type)) { setMsg('Use a JPEG, PNG or WebP photo.', 'err'); return; }
+    if (file.size > 12000000) { setMsg('That photo is too big (over 12 MB).', 'err'); return; }
+    var r = new FileReader();
+    r.onload = function () { setPhoto(r.result); ginkEmit('photo', {data: String(r.result).split(',')[1], mime: file.type}); };
+    r.readAsDataURL(file);
+  }
   function setGallery(items) {
     var g = $('gallery'), pending = g.querySelector('.pending');
     if (!items.length) { g.innerHTML = '<div class="empty" style="grid-column:1/-1">Your images will appear here.</div>'; if (pending) g.insertBefore(pending, g.firstChild); return; }
@@ -176,6 +198,16 @@ PAGE = r"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport
     chips();
     $('back').addEventListener('click', function () { ginkEmit('back'); });
     ideas();
+    $('add-photo').addEventListener('click', function () { ginkEmit('pick_photo'); });
+    $('photo-x').addEventListener('click', function () { setPhoto(''); ginkEmit('photo', null); });
+    document.addEventListener('paste', function (e) {
+      var f = Array.prototype.filter.call((e.clipboardData || {}).files || [], function (x) { return /^image\//.test(x.type); })[0];
+      if (f) { e.preventDefault(); readPhoto(f); }
+    });
+    document.addEventListener('dragover', function (e) { e.preventDefault(); });
+    document.addEventListener('drop', function (e) {
+      var f = ((e.dataTransfer || {}).files || [])[0]; if (f) { e.preventDefault(); readPhoto(f); }
+    });
     $('ideas').addEventListener('click', function (e) {
       var c = e.target.closest('[data-idea]'); if (!c) return;
       var it = IDEAS.filter(function (x) { return x[0] === c.getAttribute('data-idea'); })[0]; if (!it) return;
@@ -216,6 +248,7 @@ class MediaStudio:
     def __init__(self, app, on_back):
         self.app = app
         self.on_back = on_back
+        self.photo = None                              # bytes of the photo to start from (never uploaded on its own)
         self.images = getattr(app, "image_service", None) or ImageService(
             str(data_dir(app) / "files"), lambda: app.state.base_url, lambda: getattr(app, "session_token", None))
         page = (PAGE.replace("__THEME__", css_vars())
@@ -290,9 +323,23 @@ class MediaStudio:
         elif kind == "back":
             self.app._media_studio_token = None
             self.on_back()
+        elif kind == "pick_photo":
+            await self.pick_photo()
+        elif kind == "photo":                          # pasted / dropped in the page, or removed (None)
+            if isinstance(value, dict) and value.get("data"):
+                import base64
+                from ..services.image_service import shrink_photo
+                try:
+                    self.photo = shrink_photo(base64.b64decode(value["data"]))
+                except Exception:
+                    self.photo = None
+                    await self.call("setMsg", "That photo couldn't be read.", "err")
+            else:
+                self.photo = None
         elif kind == "create" and isinstance(value, dict):
             try:
-                await self.images.create(value.get("prompt", ""), value.get("aspect", "1:1"), value.get("style", ""))
+                await self.images.create(value.get("prompt", ""), value.get("aspect", "1:1"), value.get("style", ""),
+                                         self.photo)
                 await self.call("setBusy", False)
                 await self.call("setMsg", "Done \u2014 saved to your gallery.", "ok")
                 await self.refresh_gallery()
@@ -310,6 +357,33 @@ class MediaStudio:
         elif kind == "delete" and value:
             self.images.delete(str(value))
             await self.refresh_gallery()
+
+
+async def _pick_photo(studio):
+    """The system's file picker (the WebView's own <input type=file> isn't available in every app)."""
+    import base64
+    import toga
+    from ..services.image_service import shrink_photo
+    exts = ["jpg", "jpeg", "png", "webp", "heic"]
+    try:
+        path = await studio.app.main_window.dialog(toga.OpenFileDialog("Choose a photo", file_types=exts))
+    except AttributeError:
+        path = await studio.app.main_window.open_file_dialog("Choose a photo", file_types=exts)
+    except NotImplementedError:
+        return await studio.call("setMsg", "Choosing a photo isn't supported here yet \u2014 paste or drop one instead.", "err")
+    except Exception as exc:
+        return await studio.call("setMsg", f"Couldn't open the photo picker ({exc.__class__.__name__}).", "err")
+    if not path:
+        return
+    try:
+        with open(str(path), "rb") as f:
+            studio.photo = shrink_photo(f.read())
+    except OSError:
+        return await studio.call("setMsg", "That photo couldn't be read.", "err")
+    await studio.call("setPhoto", "data:image/jpeg;base64," + base64.b64encode(studio.photo).decode("ascii"))
+
+
+MediaStudio.pick_photo = lambda self: _pick_photo(self)
 
 
 def build_media_studio_screen(app, on_back):

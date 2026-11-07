@@ -31,6 +31,25 @@ STYLES = {
 }
 
 
+def shrink_photo(raw: bytes, longest: int = 1536) -> bytes:
+    """A photo to start from, as a JPEG no bigger than needed (phones' photos are often 5-12 MB)."""
+    try:
+        import io
+        from PIL import Image, ImageOps
+        try:                                            # iPhone photos (HEIC), where pillow-heif is installed
+            import pillow_heif
+            pillow_heif.register_heif_opener()
+        except Exception:
+            pass
+        im = ImageOps.exif_transpose(Image.open(io.BytesIO(raw))).convert("RGB")
+        im.thumbnail((longest, longest))
+        out = io.BytesIO()
+        im.save(out, "JPEG", quality=88)
+        return out.getvalue()
+    except Exception:
+        return raw
+
+
 class ImageService:
     def __init__(self, files_dir: str, base_url_fn, token_fn):
         self.files_dir = files_dir
@@ -51,13 +70,13 @@ class ImageService:
         with open(self.index_path, "w", encoding="utf-8") as f:
             json.dump(items[-500:], f, ensure_ascii=False)
 
-    async def create(self, prompt: str, aspect_ratio: str = "1:1", style: str = "") -> MadeFile:
+    async def create(self, prompt: str, aspect_ratio: str = "1:1", style: str = "", photo: bytes = None) -> MadeFile:
         token = self.token_fn()
         if not token:
             raise ApiError("Sign in again to create images.")
         style_text = STYLES.get(style, "")
         data = await ApiClient(self.base_url_fn()).generate_image(
-            token, prompt, aspect_ratio if aspect_ratio in ASPECTS else "1:1", style_text)
+            token, prompt, aspect_ratio if aspect_ratio in ASPECTS else "1:1", style_text, photo)
         raw = base64.b64decode(data["image_b64"])
         made = save_image(self.files_dir, " ".join(prompt.split()[:6]) or "Gink image", raw, data.get("mime_type", "image/png"))
         items = self._index()

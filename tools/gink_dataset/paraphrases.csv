@@ -8473,3 +8473,34 @@ en,"Hey, just a heads‑up: my best friend's birthday is on April 4.","FYI, my b
 en,"Start a 30 minutes timer for the rice, please.","Could you set a 30 minutes timer for the rice, please?",openai/gpt-oss-120b,yes
 en,"Start a 30 minutes timer for the rice, please.","Hey, please start a timer for the rice for 30 minutes.",openai/gpt-oss-120b,yes
 en,"Start a 30 minutes timer for the rice, please.","Timer 30 minutes for rice, thanks.",openai/gpt-oss-120b,yes
+ar,احسب 650 في 55,Can you calculate 650 times 55 for me?,openai/gpt-oss-120b,yes
+ar,احسب 650 في 55,What's 650 × 55?,openai/gpt-oss-120b,yes
+ar,احسب 650 في 55,Please compute 650 multiplied by 55.,openai/gpt-oss-120b,yes
+ar,احسب 650 في 55,"Hey, do the math: 650 * 55.",openai/gpt-oss-120b,yes
+en,"Could you give me the rate for 50 pounds in euros, thanks?","Hey, can you tell me the exchange rate for 50 pounds in euros?",openai/gpt-oss-120b,yes
+en,"Could you give me the rate for 50 pounds in euros, thanks?",Could you please provide the rate for 50 pounds to euros? Thanks!,openai/gpt-oss-120b,yes
+en,"Could you give me the rate for 50 pounds in euros, thanks?","Give me the conversion rate for 50 pounds into euros, please.",openai/gpt-oss-120b,yes
+en,Please set a reminder for me to call mum at 8 pm today.,Set a reminder for me to call mum at 8 pm today.,openai/gpt-oss-120b,yes
+en,Please set a reminder for me to call mum at 8 pm today.,Could you please remind me to call mum at 8 pm today?,openai/gpt-oss-120b,yes
+en,Please set a reminder for me to call mum at 8 pm today.,"Hey, remind me to call mum at 8 pm today.",openai/gpt-oss-120b,yes
+en,Please set a reminder for me to call mum at 8 pm today.,I need a reminder: call mum at 8 pm today.,openai/gpt-oss-120b,yes
+en,Remind me: pick up the kids at 9 pm today.,"Hey, can you set a reminder for me to pick up the kids at 9 pm today?",openai/gpt-oss-120b,yes
+en,Remind me: pick up the kids at 9 pm today.,Please remind me: pick up the kids at 9 pm today.,openai/gpt-oss-120b,yes
+en,Remind me: pick up the kids at 9 pm today.,"Remind me to pick up the kids at 9 pm today, thanks.",openai/gpt-oss-120b,yes
+en,Remind me: pick up the kids at 9 pm today.,Reminder: pick up the kids at 9 pm today.,openai/gpt-oss-120b,yes
+fr,"Hey, tu peux faire le calcul 498 fois 55 ?","Salut, pourrais-tu calculer 498 fois 55 ?",openai/gpt-oss-120b,yes
+fr,"Hey, tu peux faire le calcul 498 fois 55 ?","Hey, fais le calcul 498×55 s'il te plaît.",openai/gpt-oss-120b,yes
+fr,"Hey, tu peux faire le calcul 498 fois 55 ?","Bonjour, pourriez-vous me dire le résultat de 498 multiplié par 55 ?",openai/gpt-oss-120b,yes
+en,Alarm 08:00.,Set an alarm for 08:00.,openai/gpt-oss-120b,yes
+en,Alarm 08:00.,"Hey, I need an alarm for 08:00.",openai/gpt-oss-120b,yes
+es,¿Cuánto es 160 por 47?,"Hey, can you tell me what 160 multiplied by 47 is?",openai/gpt-oss-120b,yes
+es,¿Cuánto es 160 por 47?,Could you please calculate 160 × 47 for me?,openai/gpt-oss-120b,yes
+es,¿Cuánto es 160 por 47?,What's 160 times 47?,openai/gpt-oss-120b,yes
+es,¿Cuánto es 160 por 47?,"I need the result of 160 * 47, thanks.",openai/gpt-oss-120b,yes
+de,Wie viel ist 526 mal 24?,What is 526 times 24?,openai/gpt-oss-120b,yes
+de,Wie viel ist 526 mal 24?,"Hey, can you tell me how much 526 multiplied by 24 is?",openai/gpt-oss-120b,yes
+de,Wie viel ist 526 mal 24?,"Could you calculate 526 × 24 for me, please?",openai/gpt-oss-120b,yes
+en,"I need a Word document listing fish, onions, milk, sugar for my shopping list.","Hey, can you create a Word doc for me with a shopping list that includes fish, onions, milk, and sugar?",openai/gpt-oss-120b,yes
+en,"I need a Word document listing fish, onions, milk, sugar for my shopping list.","Please make a Word document listing fish, onions, milk, and sugar for my grocery list.",openai/gpt-oss-120b,yes
+en,"I need a Word document listing fish, onions, milk, sugar for my shopping list.","I need a Word file that has fish, onions, milk, and sugar on it for my shopping list.",openai/gpt-oss-120b,yes
+en,"I need a Word document listing fish, onions, milk, sugar for my shopping list.","Could you put fish, onions, milk, and sugar into a Word document for my shopping list, thanks?",openai/gpt-oss-120b,yes

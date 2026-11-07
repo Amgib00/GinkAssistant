@@ -1984,3 +1984,12 @@ New services/live_info.py (all free, no API keys):
   The regexes are a guard, not a guarantee: the panel and the rules say not to type patient details at all.
 - Settings > Workspace (workspaceSections; org_* actions in settings_controller._org and bridge.js orgCall);
   the instructions textarea is seeded from info into S.values once.
+
+## 0.1.114: Media Studio "Use a photo"
+- Gemini Interactions input accepts {"type": "image", "data": b64, "mime_type"} next to the text (Google's Nano Banana
+  docs, image editing). /media/image: optional photo_b64 (magic bytes JPEG/PNG/WebP, IMAGE_PHOTO_MAX 6 MB, rejected
+  before the daily count), PHOTO_INSTRUCTION prefix ("keep them recognisable"); passed through, never stored.
+- App: image_service.shrink_photo (EXIF rotation, longest side 1536, JPEG 88; registers pillow-heif for HEIC when
+  present); ApiClient.generate_image(photo=); MediaStudio.photo set by the system picker (toga OpenFileDialog, like
+  the chat's attach) or a pasted/dropped file (FileReader -> 'photo' event); x removes it. Page needs
+  [hidden] {display:none !important} (chip/inline-block styles beat the hidden attribute).

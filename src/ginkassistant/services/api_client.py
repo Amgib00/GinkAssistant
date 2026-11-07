@@ -411,13 +411,15 @@ class ApiClient:
         await self._authed("POST", "/feedback", token,
                            json={"rating": rating, "reason": reason, "model": model, "chars": chars})
 
-    async def generate_image(self, token: str, prompt: str, aspect_ratio: str = "1:1", style: str = "") -> dict:
+    async def generate_image(self, token: str, prompt: str, aspect_ratio: str = "1:1", style: str = "",
+                             photo: bytes = None) -> dict:
         """Gink Cloud image creation. Raises ApiError with a friendly message
         (daily limit, refused prompt, not set up...)."""
         try:
             async with httpx.AsyncClient(headers=device_headers(), timeout=200) as client:
                 resp = await client.post(f"{self.base_url}/media/image", headers={"Authorization": f"Bearer {token}"},
-                                         json={"prompt": prompt, "aspect_ratio": aspect_ratio, "style": style})
+                                         json=dict({"prompt": prompt, "aspect_ratio": aspect_ratio, "style": style},
+                                                   **({"photo_b64": base64.b64encode(photo).decode("ascii")} if photo else {})))
         except httpx.HTTPError as e:
             raise unreachable(e)
         data = self._json(resp)

@@ -2786,6 +2786,9 @@ def feedback_summary(request: Request):
 # Images cost money per picture, so they have their own daily limits:
 # GINK_FREE_IMAGES (3) and GINK_PRO_IMAGES (50).
 # =====================================================================
+IMAGE_PHOTO_MAX = 6_000_000            # a photo to start from (Media Studio "Use my photo"); never stored
+PHOTO_INSTRUCTION = ("Use the person (or subject) in the attached photo, keeping them recognisable -- face, skin tone, "
+                     "hair -- and follow this: ")
 IMAGE_ASPECTS = {"1:1", "3:2", "2:3", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"}
 GEMINI_INTERACTIONS = "https://generativelanguage.googleapis.com/v1beta/interactions"
 
@@ -2907,6 +2910,17 @@ async def media_image(request: Request):
     if aspect not in IMAGE_ASPECTS:
         aspect = "1:1"
     style = str(data.get("style") or "")[:200]
+    photo = None                                      # optional: the person's own photo to start from
+    if data.get("photo_b64"):
+        try:
+            raw_photo = base64.b64decode(str(data["photo_b64"]), validate=True)
+        except Exception:
+            return _ai_error(422, "That photo couldn't be read.", "bad_request")
+        kind = ("image/jpeg" if raw_photo[:3] == b"\xff\xd8\xff" else "image/png" if raw_photo[:8] == b"\x89PNG\r\n\x1a\n"
+                else "image/webp" if raw_photo[:4] == b"RIFF" and raw_photo[8:12] == b"WEBP" else "")
+        if not kind or len(raw_photo) > IMAGE_PHOTO_MAX:
+            return _ai_error(422, "Use a JPEG, PNG or WebP photo under 6 MB.", "bad_request")
+        photo = {"type": "image", "data": base64.b64encode(raw_photo).decode("ascii"), "mime_type": kind}
     plan = _plan_status(email)["plan"]
     day, limit = _today(), _image_limit(plan)
     with _db_lock:
@@ -2929,7 +2943,8 @@ async def media_image(request: Request):
         finally:
             con.close()
     body = {"model": _env("GINK_IMAGE_MODEL") or "gemini-nano-banana-2.1",
-            "input": [{"type": "text", "text": (f"{prompt}. Style: {style}" if style else prompt)}],
+            "input": [{"type": "text", "text": ((PHOTO_INSTRUCTION if photo else "") + (f"{prompt}. Style: {style}" if style else prompt))}]
+                     + ([photo] if photo else []),
             "response_format": {"type": "image", "mime_type": "image/png", "aspect_ratio": aspect, "image_size": "1K"}}
     import httpx
 

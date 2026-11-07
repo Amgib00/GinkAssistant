@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.114 (November 2026)
+
+- Media Studio: "Use a photo" -- start from your own photo (choose one, paste it or drop it in) with an
+  idea like Statue, Elven or Football figurine, and Gink keeps the person recognisable. Photos are made
+  smaller first and are never kept on the server. Use photos of yourself, or of people who agreed
+
 ## 0.1.113 (November 2026)
 
 - Workspaces, for hospitals, schools and businesses (Settings > Workspace): invite your team by their
