@@ -1,5 +1,7 @@
 """Playing a specific song, and recognising play / close requests."""
-import asyncio, os, sys
+import asyncio
+import os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from ginkassistant.services.actions.device import DeviceActions, ActionResult
 from ginkassistant.services.actions.agent import looks_like_action

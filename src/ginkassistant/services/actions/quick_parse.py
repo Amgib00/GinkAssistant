@@ -105,7 +105,7 @@ def parse(text: str, now: Optional[datetime] = None) -> Optional[Tuple[str, dict
     if m and not re.search(r"https?://|\.\w{2,}/", m.group(1)):
         return "open_app", {"name": m.group(1).strip()}
 
-    # --- "call +221..." 
+    # --- "call +221..."
     m = re.match(r"(?:call|dial|phone)\s+(\+?[\d\s\-]{6,})$", t)
     if m:
         return "make_call", {"number": m.group(1)}

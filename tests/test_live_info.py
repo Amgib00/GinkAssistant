@@ -1,5 +1,7 @@
 """Live information tools against realistic copies of each free API's responses."""
-import asyncio, os, sys
+import asyncio
+import os
+import sys
 from datetime import date, datetime, timedelta
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import httpx

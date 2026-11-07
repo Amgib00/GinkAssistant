@@ -1,5 +1,7 @@
 """New abilities: money book, invoices, loans, bill splitting, units, passwords, random choices, QR codes."""
-import os, string, sys, time
+import os
+import string
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest
 from ginkassistant.services import everyday as E
@@ -62,7 +64,7 @@ def test_money_book(tmp_path):
     with pytest.raises(ValueError):
         book.add("expense", "lots", "XOF")
     assert book.undo_last() and "SLE" not in book.summary("all")["currencies"]
-    old = book.add("expense", 1000, "XOF", "rent", when="2020-01-15")
+    book.add("expense", 1000, "XOF", "rent", when="2020-01-15")
     assert book.summary("month")["currencies"]["XOF"]["expense"] == 15000      # not in this month
     assert book.summary("all")["currencies"]["XOF"]["expense"] == 16000
 

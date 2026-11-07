@@ -1,10 +1,13 @@
 """Gink's actions in many languages (tools/gink_dataset/translate.py): only translations that can't
 change the action; drafts for languages that need a native speaker; training examples only."""
-import csv, json, os, subprocess, sys
+import csv
+import json
+import os
+import subprocess
+import sys
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 DS = os.path.join(ROOT, "tools", "gink_dataset")
 sys.path.insert(0, DS)
-import pytest
 import translate as tr
 
 

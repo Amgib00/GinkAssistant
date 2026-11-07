@@ -1,9 +1,11 @@
 """Help improve Gink (Settings > Privacy): Genie sessions become training data only for adults who
 switched it on; keys and private files are removed; they can stop and delete; only the owner exports."""
-import json, os, sys, time
+import json
+import os
+import sys
+import time
 sys.path.insert(0, os.path.dirname(__file__))
-import pytest
-from test_genie import srv, SCRIPT, call, build      # noqa: F401  (the same simulated AI and server)
+from test_genie import SCRIPT, call, build      # the simulated AI (genie_srv: conftest.py)
 
 Y = time.gmtime().tm_year
 
@@ -12,8 +14,8 @@ def stored(b):
     return b._training_db(lambda con: [json.loads(r) for (r,) in con.execute("SELECT record FROM genie_training").fetchall()])
 
 
-def test_off_by_default_and_adults_only(srv):
-    b, c, h = srv
+def test_off_by_default_and_adults_only(genie_srv):
+    b, c, h = genie_srv
     t = c.get("/account/training", headers=h).json()
     assert t["genie"] is False and t["can"] is False and "birth year" in t["why"]
     assert c.put("/account/training", headers=h, json={"genie": True}).status_code == 403
@@ -25,8 +27,8 @@ def test_off_by_default_and_adults_only(srv):
     assert stored(b) == []
 
 
-def test_shared_sessions_are_scrubbed(srv):
-    b, c, h = srv
+def test_shared_sessions_are_scrubbed(genie_srv):
+    b, c, h = genie_srv
     b._set_birth_year("ib@example.com", Y - 30)
     assert c.put("/account/training", headers=h, json={"genie": True}).json()["genie"] is True
     key = "gsk_" + "A" * 40
@@ -46,8 +48,8 @@ def test_shared_sessions_are_scrubbed(srv):
     assert c.get("/account/training", headers=h).json()["shared"] == 1
 
 
-def test_stop_keeps_delete_removes(srv):
-    b, c, h = srv
+def test_stop_keeps_delete_removes(genie_srv):
+    b, c, h = genie_srv
     b._set_birth_year("ib@example.com", Y - 30)
     c.put("/account/training", headers=h, json={"genie": True})
     build(c, h)
@@ -59,8 +61,8 @@ def test_stop_keeps_delete_removes(srv):
     assert stored(b) == []
 
 
-def test_limits(srv, monkeypatch):
-    b, c, h = srv
+def test_limits(genie_srv, monkeypatch):
+    b, c, h = genie_srv
     b._set_birth_year("ib@example.com", Y - 30)
     c.put("/account/training", headers=h, json={"genie": True})
     monkeypatch.setattr(b, "TRAINING_PERSON_MAX", 10)
@@ -68,8 +70,8 @@ def test_limits(srv, monkeypatch):
     assert stored(b) == []
 
 
-def test_owner_export_and_account_deletion(srv, monkeypatch):
-    b, c, h = srv
+def test_owner_export_and_account_deletion(genie_srv, monkeypatch):
+    b, c, h = genie_srv
     monkeypatch.setenv("GINK_ADMIN_KEY", "k" * 32)
     b._admin_failures.clear()
     b._set_birth_year("ib@example.com", Y - 30)

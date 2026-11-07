@@ -1,8 +1,10 @@
 """Settings on every device: the same synced list everywhere; the server merges; prefs.save notifies."""
-import os, re, sys, types
+import os
+import re
+import sys
+import types
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, os.path.join(ROOT, "src"))
-import pytest
 
 
 def test_the_three_lists_are_the_same():

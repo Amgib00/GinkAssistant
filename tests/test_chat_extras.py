@@ -1,5 +1,8 @@
 """Spinner labels, chat rename/pin (+sync), feedback (no message text stored)."""
-import asyncio, json, os, sys
+import asyncio
+import json
+import os
+import sys
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 sys.path.insert(0, os.path.dirname(__file__))
@@ -41,7 +44,7 @@ def test_rename_and_pin_survive_new_messages_and_sync(tmp_path):
 
 
 def test_agent_answer_shows_spinner_steps_and_events(tmp_path, monkeypatch):
-    from test_main_screen import GinkAssistantApp, main_screen, ActionResult
+    from test_main_screen import GinkAssistantApp, main_screen
     import ginkassistant.app as app_mod
     from ginkassistant.ui import web_chat_view
     from ginkassistant.services import api_client

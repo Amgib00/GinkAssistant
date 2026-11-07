@@ -1,7 +1,9 @@
 """Builds the real main screen (Toga dummy backend) and drives it:
 an alarm request through the input box, Enter-to-send, Tasks screen,
 and the single-save fix for chat history."""
-import asyncio, os, sys
+import asyncio
+import os
+import sys
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 os.environ.pop("GROQ_API_KEY", None)
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
@@ -98,7 +100,8 @@ def test_song_recognition_degrades_gracefully():
 
 
 def test_attach_photo_and_briefing_through_main_screen(tmp_path, monkeypatch):
-    import base64, io, json as _json
+    import base64
+    import io
     from PIL import Image
     import ginkassistant.app as app_mod
     monkeypatch.setattr(app_mod, "is_desktop", lambda: False)

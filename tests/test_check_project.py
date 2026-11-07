@@ -1,6 +1,8 @@
 import pytest
 """tools/check_project.py: finds and safely repairs the layout problems that put builds/icons in the wrong place."""
-import os, shutil, sys
+import os
+import shutil
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "tools"))
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 
@@ -85,7 +87,8 @@ def test_one_folder_counted_once_when_names_ignore_case(tmp_path, monkeypatch):
 
 
 def _fake_env(monkeypatch, cp, env_version, cmd_path, cmd_version):
-    import importlib.metadata as md, subprocess
+    import importlib.metadata as md
+    import subprocess
     monkeypatch.setattr(md, "version", lambda name: env_version if env_version else (_ for _ in ()).throw(md.PackageNotFoundError()))
     monkeypatch.setattr(cp.shutil, "which", lambda name: cmd_path)
     class R: stdout = cmd_version

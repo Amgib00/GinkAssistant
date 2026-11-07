@@ -1,5 +1,6 @@
 """Question cards, recalled memories and Genie's narration."""
-import os, sys
+import os
+import sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, os.path.join(ROOT, "src"))
 read = lambda *p: open(os.path.join(ROOT, *p), encoding="utf-8").read()

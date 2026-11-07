@@ -1,6 +1,9 @@
 """Problems are found without anyone reporting them: the apps, the web app and the server send what
 broke (never chats), grouped on the owner dashboard; people can switch it off."""
-import asyncio, os, sys, types
+import asyncio
+import os
+import sys
+import types
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest
 

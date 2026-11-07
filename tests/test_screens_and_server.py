@@ -1,6 +1,8 @@
 """Every screen builds with the new theme; server address saving;
 login-server health route."""
-import asyncio, os, sys
+import asyncio
+import os
+import sys
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import toga
@@ -260,7 +262,8 @@ def test_social_sign_in_survives_a_slow_browser(tmp_path, monkeypatch):
     """Regression: the app used to poll before the browser reached /start,
     got 404 and showed "Sign-in expired". Here the browser only shows up
     after several polls."""
-    import threading, time as _t
+    import threading
+    import time as _t
     monkeypatch.setenv("GINK_DB_PATH", str(tmp_path / "users.db"))
     monkeypatch.setenv("GOOGLE_CLIENT_ID", "cid")
     monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "secret")
@@ -323,7 +326,8 @@ def test_online_servers_get_time_to_wake_up():
 
 
 def test_check_server_explains_a_timeout(monkeypatch):
-    import asyncio, httpx
+    import asyncio
+    import httpx
     from ginkassistant.services import server_config as sc
     class Slow:
         def __init__(self, *a, **k): pass

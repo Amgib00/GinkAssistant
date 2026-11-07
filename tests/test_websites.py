@@ -1,7 +1,10 @@
 """Websites: create / edit / list / delete, cleaned pages, sandboxed public links, limits, takedown."""
-import json, os, sys
+import json
+import os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-import httpx, pytest
+import httpx
+import pytest
 
 PAGE = """Here you go!
 ```html

@@ -1,5 +1,6 @@
 """Shared chat links: a read-only snapshot at /c/<id>, safe to show to anyone."""
-import os, sys
+import os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest
 

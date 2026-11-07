@@ -1,5 +1,9 @@
 """Natural voices: sentence streaming, fallbacks, stop, and the server's Gemini TTS call."""
-import asyncio, base64, json, os, sys
+import asyncio
+import base64
+import json
+import os
+import sys
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import httpx
@@ -117,7 +121,6 @@ def test_server_tts_request_voices_and_allowance(tts):
     assert calls[-1]["body"]["generation_config"]["speech_config"] == [{"voice": "voice_ng_conversational_f1"}]
     # failures are refunded; the daily allowance is enforced
     mode["v"] = "down"
-    used_before = c.get("/ai/usage", headers=h).status_code
     assert c.post("/voice/speak", json={"text": "x" * 20, "persona": "abeo"}, headers=h).status_code == 502
     mode["v"] = "ok"
     r = c.post("/voice/speak", json={"text": "y" * 80, "persona": "abeo"}, headers=h)
@@ -189,7 +192,6 @@ def test_google_free_tier_limit_pauses_calls(tts, monkeypatch):
 
 
 def test_app_waits_as_long_as_google_says(monkeypatch):
-    import time as _t
     from ginkassistant.services import voice_bridge as vb
     import httpx as _h
     real = _h.AsyncClient

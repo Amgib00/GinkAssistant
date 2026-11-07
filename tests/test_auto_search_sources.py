@@ -1,5 +1,7 @@
 """Gink searches by itself when an answer needs the web; official sources first; the Sources button."""
-import json, os, sys
+import json
+import os
+import sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, os.path.join(ROOT, "src"))
 import httpx
@@ -110,7 +112,8 @@ def test_streamed_searches_say_searching_first(tmp_path, monkeypatch):
 def test_the_apps_brain_shows_searching_and_still_answers(tmp_path):
     """Runs the real GroqBrain.ask (cloud path): a status piece first, then the answer.
     (on_status once reached the stream reader without being passed in: every app answer would have crashed.)"""
-    import asyncio, types
+    import asyncio
+    import types
     os.environ.setdefault("TOGA_BACKEND", "toga_dummy")
     from groq.types.chat import ChatCompletionChunk
     from ginkassistant.services import groq_worker

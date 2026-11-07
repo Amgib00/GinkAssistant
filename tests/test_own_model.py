@@ -1,8 +1,10 @@
 """Gink's own fine-tuned model (tools/gink_model) served from any OpenAI-style provider: off until set
 up, only for testers while testing, never silently replaced by another model."""
-import os, sys
+import os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-import httpx, pytest
+import httpx
+import pytest
 
 
 @pytest.fixture

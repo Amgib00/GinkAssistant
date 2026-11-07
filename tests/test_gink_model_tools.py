@@ -1,5 +1,8 @@
 """tools/gink_model: the fine-tuning pipeline's pieces that run without a GPU."""
-import json, os, subprocess, sys
+import json
+import os
+import subprocess
+import sys
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, os.path.join(ROOT, "tools", "gink_model"))
 sys.path.insert(0, os.path.join(ROOT, "tools", "gink_dataset"))
@@ -126,7 +129,7 @@ def test_build_mix_keeps_each_lines_tools_and_caps_genie(data, tmp_path):
     assert 0 < len(genie_rows) <= len(rows) * 0.26                               # capped at a quarter
     assert all("tools" in r and r["tools"] for r in rows)
     assert (mix / "eval.jsonl").exists() and (mix / "tools.json").exists()
-    totals = ph.main(["--data", str(mix), "--out", str(tmp_path / "hosted")])
+    ph.main(["--data", str(mix), "--out", str(tmp_path / "hosted")])
     first_g = next(json.loads(l) for l in open(tmp_path / "hosted" / "hosted_train.jsonl", encoding="utf-8")
                    if "write_file" in l and "Build page" in l)
     assert first_g["tools"] == genie_tools                                       # kept its own tools

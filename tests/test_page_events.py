@@ -1,7 +1,11 @@
 """Page -> Python events are handled exactly once, even when a slow phone answers late or twice
 (ui/page_events.py). Before: an answer that came after Python stopped waiting was lost (a sent
 message vanished), and nothing stopped the same event being handled twice."""
-import asyncio, json, os, re, sys
+import asyncio
+import json
+import os
+import re
+import sys
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 os.environ.pop("GROQ_API_KEY", None)
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))

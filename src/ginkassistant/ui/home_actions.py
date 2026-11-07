@@ -17,11 +17,11 @@ from datetime import datetime
 
 import toga
 from toga.style import Pack
-from toga.style.pack import COLUMN, ROW, CENTER
+from toga.style.pack import COLUMN
 
 from ..services.actions import TaskStore
 
-from .theme import ACCENT, BG_ELEVATED, BG_MAIN, BG_SURFACE, DANGER, ON_ACCENT, TEXT_MAIN, TEXT_MUTED
+from .theme import ACCENT, BG_SURFACE, TEXT_MAIN, TEXT_MUTED
 
 MUTED = TEXT_MUTED
 

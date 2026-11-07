@@ -1,5 +1,8 @@
 """Video search (API / YouTube page / DuckDuckGo), video cards, viewer, Live TV."""
-import asyncio, json, os, sys
+import asyncio
+import json
+import os
+import sys
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import httpx

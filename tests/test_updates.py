@@ -1,8 +1,11 @@
 """'A newer Gink is out': version comparison, the right installer per device, daily checks, Later, server endpoint."""
-import asyncio, os, sys
+import asyncio
+import os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 os.environ.setdefault("TOGA_BACKEND", "toga_dummy")
-import httpx, pytest
+import httpx
+import pytest
 from ginkassistant.services import updates
 
 ASSETS = {n: "https://dl.example.com/" + n for n in ("Gink-mac-arm64.dmg", "Gink-mac-x86_64.dmg", "Gink-windows-x64.msi",

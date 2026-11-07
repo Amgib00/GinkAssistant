@@ -1,6 +1,12 @@
 """Phone sign-in in the apps' sign-in screen (the web page had it; the apps didn't): number -> SMS code
 -> a name for a new number -> signed in; next time straight in. Real server, SMS simulated."""
-import asyncio, os, re, sys, threading, time, types
+import asyncio
+import os
+import re
+import sys
+import threading
+import time
+import types
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import httpx
 

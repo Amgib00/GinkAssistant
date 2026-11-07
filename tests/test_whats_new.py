@@ -1,5 +1,6 @@
 """What's new after an update."""
-import os, sys
+import os
+import sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, os.path.join(ROOT, "src"))
 from ginkassistant.services import whats_new as w

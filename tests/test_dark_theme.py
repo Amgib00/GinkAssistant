@@ -1,5 +1,9 @@
 """Dark theme regressions: the whole window goes dark, and switches show on/off."""
-import os, re, subprocess, sys, json, shutil
+import os
+import re
+import subprocess
+import sys
+import shutil
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest

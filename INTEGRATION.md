@@ -1993,3 +1993,16 @@ New services/live_info.py (all free, no API keys):
   present); ApiClient.generate_image(photo=); MediaStudio.photo set by the system picker (toga OpenFileDialog, like
   the chat's attach) or a pasted/dropped file (FileReader -> 'photo' event); x removes it. Page needs
   [hidden] {display:none !important} (chip/inline-block styles beat the hidden attribute).
+
+## 0.1.115: PyCharm warnings (Ruff F + E9), a lint job on GitHub
+- Ruff (pyflakes rules) found 104: 66 unused imports, 22 "redefined while unused" (test files importing the Genie `srv`
+  fixture from test_genie), 12 unused variables, 2 f-strings without placeholders, and a REAL break: tools/build_website.py
+  had a backslash inside an f-string expression -- a SyntaxError on Python 3.11 (the Catalina env). All fixed; the
+  website output is byte-identical.
+- Genie's test server: test_genie.genie_server() (a generator) + conftest.py fixture `genie_srv`; other files take
+  genie_srv instead of importing srv (PyCharm: "shadows name", Ruff F811).
+- Unclosed files at import time in 4 tests -> _read_text helpers. Remaining test warnings are third-party
+  (pygame pkg_resources, speech_recognition aifc/audioop, Starlette's httpx notice) or open() inside test bodies.
+- [tool.ruff] in pyproject (target py311, select F + E9, line-length 120 for editors); tests.yml job `lint` runs
+  `ruff check src tools tests cli` (ruff pinned). Long lines (1,800+) and other style choices deliberately not mass-
+  reformatted.

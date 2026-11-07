@@ -1,6 +1,8 @@
 """Workspaces for hospitals, schools and businesses: invite and accept, admins see members and counts
 (never chats), shared instructions, and healthcare mode that keeps patient data out of every AI feature."""
-import os, sys, time
+import os
+import sys
+import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest
 from fastapi import HTTPException

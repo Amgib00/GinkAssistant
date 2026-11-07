@@ -1,5 +1,7 @@
 """Real-time information through the server (developer API, web app): date always; live data when asked."""
-import json, os, sys
+import json
+import os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import httpx
 

@@ -1,5 +1,9 @@
 """Settings window behaviour, account deletion, export, payment history."""
-import asyncio, json, os, sys, time
+import asyncio
+import json
+import os
+import sys
+import time
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest

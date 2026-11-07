@@ -1,5 +1,8 @@
 """Gink Genie as its own app (src/ginkgenie) and its builds."""
-import glob, os, re, sys
+import glob
+import os
+import re
+import sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, os.path.join(ROOT, "src"))
 os.environ.setdefault("TOGA_BACKEND", "toga_dummy")

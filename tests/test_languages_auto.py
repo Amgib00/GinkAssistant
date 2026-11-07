@@ -1,7 +1,10 @@
 """Automatic language: replies in the user's language; voice in any language via Whisper on the server."""
-import base64, json, os, sys
+import base64
+import os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-import httpx, pytest
+import httpx
+import pytest
 
 
 def test_same_as_my_message_is_an_explicit_instruction():

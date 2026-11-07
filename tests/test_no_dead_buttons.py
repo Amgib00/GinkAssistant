@@ -1,5 +1,6 @@
 """Every button does something, on every platform (Upgrade in the apps and Delete account on the web did nothing)."""
-import os, re
+import os
+import re
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 read = lambda *p: open(os.path.join(ROOT, *p), encoding="utf-8").read()
 

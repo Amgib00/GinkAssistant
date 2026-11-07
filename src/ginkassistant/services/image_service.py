@@ -102,7 +102,8 @@ class ImageService:
         try:
             from PIL import Image
         except ImportError:                     # 32-bit Android edition: the image itself, no preview
-            import base64, mimetypes
+            import base64
+            import mimetypes
             mime = mimetypes.guess_type(path)[0] or "image/png"
             with open(path, "rb") as f:
                 return f"data:{mime};base64," + base64.b64encode(f.read()).decode()

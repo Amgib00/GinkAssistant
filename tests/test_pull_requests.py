@@ -1,8 +1,16 @@
 """Pull requests: only collaborators; labels, assignee, milestone, reviews (CODEOWNERS)."""
-import os, subprocess
+import os
+import subprocess
 import yaml
+
+
+def _read_text(path):
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+
+
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-WF = yaml.safe_load(open(os.path.join(ROOT, ".github", "workflows", "pull-requests.yml")))
+WF = yaml.safe_load(_read_text(os.path.join(ROOT, ".github", "workflows", "pull-requests.yml")))
 
 
 def _gate(tmp_path, author, permission):
@@ -38,11 +46,11 @@ def test_the_workflow_never_runs_the_pull_requests_code():
 
 def test_reviews_labels_and_dependabot():
     assert "* @Amgib00" in open(os.path.join(ROOT, ".github", "CODEOWNERS")).read()            # review requested
-    labels = yaml.safe_load(open(os.path.join(ROOT, ".github", "labeler.yml")))
+    labels = yaml.safe_load(_read_text(os.path.join(ROOT, ".github", "labeler.yml")))
     assert {"app", "server", "web", "genie", "tests", "docs", "ci", "website", "dependencies"} <= set(labels)
     created = WF["jobs"]["triage"]["steps"][0]["run"]
     assert all(f"\n{name}|" in "\n" + created.split("<< 'LABELS'")[1] for name in labels)  # every label is created
-    dep = yaml.safe_load(open(os.path.join(ROOT, ".github", "dependabot.yml")))
+    dep = yaml.safe_load(_read_text(os.path.join(ROOT, ".github", "dependabot.yml")))
     pip = dep["updates"][0]
     assert pip["labels"] == ["dependencies"] and pip["assignees"] == ["Amgib00"]
     ignored = {i["dependency-name"] for i in pip["ignore"]}
@@ -50,7 +58,8 @@ def test_reviews_labels_and_dependabot():
 
 
 def test_tidy_tool_previews_then_fixes_open_and_closed_pull_requests(tmp_path):
-    import json, sys
+    import json
+    import sys
     prs = [{"number": 24, "title": "Bump the python-dependencies group", "state": "OPEN", "labels": [], "assignees": [], "milestone": None},
            {"number": 5, "title": "Docs", "state": "MERGED", "labels": [{"name": "docs"}], "assignees": [{"login": "Amgib00"}], "milestone": None},
            {"number": 6, "title": "Server fix", "state": "CLOSED", "labels": [], "assignees": [], "milestone": None}]
@@ -61,6 +70,7 @@ def test_tidy_tool_previews_then_fixes_open_and_closed_pull_requests(tmp_path):
     (tmp_path / "prs.json").write_text(json.dumps(prs)); (tmp_path / "files.json").write_text(json.dumps(files))
     fake.write_text("#!" + sys.executable + """
 import json, sys
+
 d = %r
 a = sys.argv[1:]
 open(d + "/gh.log", "a").write(" ".join(a) + "\\n")

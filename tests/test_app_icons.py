@@ -6,8 +6,13 @@ except ImportError:            # Python 3.10
     import tomli as tomllib
 from PIL import Image
 
+def _read_text(path):
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+
+
 ROOT = os.path.join(os.path.dirname(__file__), "..")
-PREFIX = os.path.join(ROOT, tomllib.load(open(os.path.join(ROOT, "pyproject.toml"), "rb"))
+PREFIX = os.path.join(ROOT, tomllib.loads(_read_text(os.path.join(ROOT, "pyproject.toml")))
                       ["tool"]["briefcase"]["app"]["ginkassistant"]["icon"])
 # the exact files Briefcase asks for (BeeWare tutorial: "Customizing icons")
 LINUX = [16, 32, 64, 128, 256, 512]

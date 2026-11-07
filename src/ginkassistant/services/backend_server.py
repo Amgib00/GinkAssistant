@@ -54,7 +54,6 @@ the following existed before:
 """
 
 import os
-import random
 import re
 import asyncio
 import secrets
@@ -4984,7 +4983,8 @@ def account_twofa_setup(request: Request):
     uri = (f"otpauth://totp/Gink:{urllib.parse.quote(email)}?secret={secret}&issuer=Gink&digits=6&period=30")
     qr = ""
     try:
-        import io, segno
+        import io
+        import segno
         buf = io.BytesIO()
         segno.make(uri, error="m").save(buf, kind="svg", scale=5, border=2, xmldecl=False, svgns=True,
                                         dark="#151D23", light="#FFFFFF")

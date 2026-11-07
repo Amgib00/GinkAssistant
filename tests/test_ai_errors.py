@@ -1,7 +1,9 @@
 """When the AI provider refuses: the app says why; the server logs why (never the messages)."""
-import os, sys, json
+import os
+import sys
+import json
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-import httpx, pytest
+import httpx
 
 
 def _err(status, body):

@@ -1,5 +1,8 @@
 """Archived chats (synced), Settings > Storage, and usage-limit reset times."""
-import os, sys, time, types
+import os
+import sys
+import time
+import types
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 os.environ.setdefault("TOGA_BACKEND", "toga_dummy")
 import pytest
@@ -21,7 +24,6 @@ def test_archive_hides_syncs_and_unarchives(tmp_path, monkeypatch):
     assert meta["a"]["archived"] and not meta["b"]["archived"]
     sent = {d["id"]: d for d in h.changes_since(t0)}
     assert sent["a"]["payload"]["archived"] is True                                     # goes to other devices
-    other = store(tmp_path / "other", monkeypatch) if False else None
     (tmp_path / "phone").mkdir()
     from ginkassistant.services import history
     monkeypatch.setattr(history, "data_dir", lambda app: tmp_path / "phone")

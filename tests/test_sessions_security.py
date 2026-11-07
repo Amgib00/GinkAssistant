@@ -1,7 +1,11 @@
 """Signed-in devices, signing out a device / all others / this one, HSTS, and the ID-token issuer check."""
-import os, sys, time
+import os
+import sys
+import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-import httpx, jwt, pytest
+import httpx
+import jwt
+import pytest
 
 CHROME_ANDROID = "Mozilla/5.0 (Linux; Android 12; TECNO BF6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Mobile Safari/537.36"
 

@@ -1,5 +1,6 @@
 """The prompt library (the "/" menu): the apps' store and the page wiring."""
-import os, sys
+import os
+import sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, os.path.join(ROOT, "src"))
 import pytest

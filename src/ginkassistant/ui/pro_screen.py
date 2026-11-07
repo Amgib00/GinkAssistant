@@ -20,7 +20,7 @@ from toga.style.pack import CENTER, COLUMN, ROW
 
 from ..services.api_client import ApiClient, ApiError
 from ..services.device_region import region_locale, timezone_name
-from .theme import (ACCENT, ACCENT_SOFT, BG_ELEVATED, BG_MAIN, BG_SURFACE, DANGER, ON_ACCENT,
+from .theme import (ACCENT, BG_ELEVATED, BG_SURFACE, DANGER, ON_ACCENT,
                     TEXT_MAIN, TEXT_MUTED)
 
 BENEFITS = [

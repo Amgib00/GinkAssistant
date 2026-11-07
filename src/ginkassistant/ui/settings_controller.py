@@ -5,7 +5,6 @@ account, ...). Everything a switch says is something Gink actually does.
 """
 
 import asyncio
-import os
 import time
 from datetime import datetime
 
@@ -348,7 +347,8 @@ class SettingsController:
     wake_android = False               # Android: on-device wording + "Keep listening in the background"
 
     async def _a_set_photo(self, data_url):
-        import base64, re as _re
+        import base64
+        import re as _re
         m = _re.match(r"data:image/(png|jpe?g|webp);base64,(.+)", str(data_url or ""), _re.S)
         if not m:
             return await self.web.settings_toast("Use a PNG, JPEG or WebP photo.", "err")

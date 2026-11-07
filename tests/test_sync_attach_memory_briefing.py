@@ -1,7 +1,11 @@
 """Sync between two devices, attachments, vision requests, memory, briefing."""
-import asyncio, base64, io, json, os, sys, zipfile
+import asyncio
+import base64
+import io
+import os
+import sys
+import zipfile
 from datetime import datetime, timedelta
-from pathlib import Path
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import httpx

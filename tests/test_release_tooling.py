@@ -2,7 +2,9 @@
 - Pasting the whole update block must work: the publish script may not ask questions by default
   (a question swallowed the next pasted line -> "Nothing pushed." -> Release ran on old code).
 - Release must accept no version (use pyproject.toml) and explain a stale version clearly."""
-import os, shutil, subprocess, sys
+import os
+import shutil
+import subprocess
 import pytest
 yaml = pytest.importorskip("yaml")
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")

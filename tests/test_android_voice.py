@@ -1,7 +1,13 @@
 """Android voice (services/android_voice.py) on a simulated Android: listening, permission, speaking, "Hey Gink"."""
-import asyncio, base64, os, subprocess, sys, textwrap
+import asyncio
+import base64
+import os
+import subprocess
+import sys
+import textwrap
 sys.path.insert(0, os.path.dirname(__file__)); sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-import httpx, pytest
+import httpx
+import pytest
 import fake_android
 sys.modules["java"] = fake_android.java
 from ginkassistant.services import android_voice as av

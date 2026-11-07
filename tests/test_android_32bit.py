@@ -1,5 +1,8 @@
 """The 32-bit Android edition has no Pillow, psutil or fpdf2: Gink must still work."""
-import base64, io, os, sys
+import base64
+import io
+import os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest
 

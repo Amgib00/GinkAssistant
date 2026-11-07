@@ -1,5 +1,9 @@
 """Two-step sign-in (TOTP): standard-correct codes, encrypted secret, every sign-in gated, recovery codes, limits."""
-import base64, os, sqlite3, sys, time
+import base64
+import os
+import sqlite3
+import sys
+import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest
 
@@ -91,7 +95,10 @@ def test_turning_it_off_needs_a_code(srv):
 
 def test_app_sign_in_screen_asks_for_the_code(tmp_path, monkeypatch):
     """The app's sign-in logic against a real server: password -> code step -> signed in; same via Google."""
-    import asyncio, threading, types, uvicorn
+    import asyncio
+    import threading
+    import types
+    import uvicorn
     monkeypatch.setenv("GINK_DB_PATH", str(tmp_path / "app.db"))
     from ginkassistant.services import backend_server as b
     from ginkassistant.ui.login_screen import LoginController

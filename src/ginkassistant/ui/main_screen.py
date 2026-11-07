@@ -94,7 +94,7 @@ from typing import Optional
 
 import toga
 from toga.style import Pack
-from toga.style.pack import CENTER, COLUMN, ROW
+from toga.style.pack import ROW
 
 from ..services import skills, voice_bridge
 from ..services.voice_bridge import VOICES
@@ -125,8 +125,7 @@ from .web_chat_view import WebChatFeed
 # by eye, since one's Python/Pack and the other's an embedded stylesheet;
 # there's no single source both read from.
 from .theme import (
-    ACCENT, BG_ELEVATED, BG_MAIN, BG_SURFACE, COLOR_PRIMARY, ON_ACCENT, TEXT_MAIN,
-    TEXT_MUTED, VOICE_ACTIVE_COLOR,
+    BG_SURFACE,
 )
 
 NEWS_TRIGGERS = ("news", "what's going on", "whats going on", "what's happening", "whats happening")
@@ -328,7 +327,6 @@ def build_main_screen(app: toga.App, email: str):
         p = prefs.load(app)
         chats, files, writer = None, None, None
         if p.get("briefing_projects", True):
-            import time as _t
             meta = brain.history.get_meta()
             recent = []
             for sid, sess in brain.history.get_all_sessions().items():
@@ -1296,7 +1294,7 @@ def build_main_screen(app: toga.App, email: str):
             return True
         return False
 
-    cloud_ai = connect_cloud_ai()
+    connect_cloud_ai()
     # natural voices (Google Gemini TTS) come from your server, like the AI itself
     voice_bridge.cloud["base_url_fn"] = lambda: app.state.base_url
     voice_bridge.cloud["token_fn"] = lambda: getattr(app, "session_token", None)
@@ -1375,7 +1373,8 @@ def build_main_screen(app: toga.App, email: str):
 
     def open_local_file(path: str) -> bool:
         """Open a file in its normal app (Preview, Word, Excel...)."""
-        import subprocess, sys as _sys
+        import subprocess
+        import sys as _sys
         try:
             if _sys.platform == "darwin":
                 subprocess.Popen(["open", path])
@@ -1598,7 +1597,8 @@ def build_main_screen(app: toga.App, email: str):
             pass
 
     def play_chime():
-        import subprocess, sys as _sys
+        import subprocess
+        import sys as _sys
         try:
             if _sys.platform == "darwin" and os.path.exists("/System/Library/Sounds/Tink.aiff"):
                 subprocess.Popen(["afplay", "/System/Library/Sounds/Tink.aiff"])

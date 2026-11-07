@@ -5,7 +5,10 @@ no iOS build (numpy, psutil, pydantic-core, shazamio, PyAudio, primp/duckduckgo-
 vosk...) and the desktop voice tools aren't in the iOS requirements, so importing them
 must never be needed to start the app.
 """
-import os, subprocess, sys, textwrap
+import os
+import subprocess
+import sys
+import textwrap
 
 NOT_ON_IOS = ["pygame", "edge_tts", "speech_recognition", "pyaudio", "sounddevice", "llama_cpp", "librosa", "scipy",
               "numba", "pyttsx3", "fastapi", "uvicorn", "google.genai", "pydantic_core", "numpy", "psutil", "shazamio",

@@ -10,7 +10,7 @@ import os
 
 import re
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from .device import DeviceActions, _dur
 from .task_store import TaskStore, from_iso

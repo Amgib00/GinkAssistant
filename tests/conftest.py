@@ -8,3 +8,14 @@ import dotenv.main
 _no_dotenv = lambda *a, **k: False
 dotenv.load_dotenv = _no_dotenv
 dotenv.main.load_dotenv = _no_dotenv
+
+
+
+import pytest  # noqa: E402  (after the .env guard above, on purpose)
+
+
+@pytest.fixture
+def genie_srv(tmp_path, monkeypatch):
+    """Gink Genie's simulated server and AI (tests/test_genie.py), for the other Genie test files."""
+    import test_genie
+    yield from test_genie.genie_server(tmp_path, monkeypatch)

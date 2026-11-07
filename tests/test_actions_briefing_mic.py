@@ -1,5 +1,8 @@
 """Mic handover (AUHAL fix), more computer actions, app matching, smarter briefing, safe links."""
-import asyncio, os, sys, time
+import asyncio
+import os
+import sys
+import time
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 sys.path.insert(0, os.path.dirname(__file__))

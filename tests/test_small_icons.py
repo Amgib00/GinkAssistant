@@ -1,6 +1,7 @@
 """Tiny icons (32 px and under) use a simpler, bolder snowflake: the full artwork blurred at 20 px."""
-import os, sys
-from PIL import Image, ImageChops, IcnsImagePlugin
+import os
+import sys
+from PIL import Image, IcnsImagePlugin
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 import make_icons as m

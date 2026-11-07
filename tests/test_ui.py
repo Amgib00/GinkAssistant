@@ -1,4 +1,7 @@
-import os, sys, tempfile, asyncio
+import os
+import sys
+import tempfile
+import asyncio
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import toga

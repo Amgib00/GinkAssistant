@@ -5,7 +5,10 @@ libraries (not in the Android requirements) can't be imported. Then every
 Gink module is imported in a fresh interpreter. Before the fix this failed
 with: ModuleNotFoundError: No module named 'pygame' (voice_bridge.py).
 """
-import os, subprocess, sys, textwrap
+import os
+import subprocess
+import sys
+import textwrap
 
 # Everything NOT in pyproject's Android requirements (universal + android sections)
 DESKTOP_ONLY = ["pygame", "edge_tts", "speech_recognition", "pyaudio", "sounddevice", "llama_cpp",

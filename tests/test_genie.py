@@ -1,7 +1,13 @@
 """Gink Genie: AI-built multi-file projects (the AI is simulated as scripted tool calls)."""
-import base64, io, json, os, sys, zipfile
+import base64
+import io
+import json
+import os
+import sys
+import zipfile
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-import httpx, pytest
+import httpx
+import pytest
 
 SCRIPT, SEEN = [], []
 
@@ -18,8 +24,9 @@ def groq(request):
     return httpx.Response(200, json={"choices": [{"message": {"role": "assistant", **step}}]})
 
 
-@pytest.fixture
-def srv(tmp_path, monkeypatch):
+def genie_server(tmp_path, monkeypatch):
+    """The simulated Genie server and AI (a generator: yields (backend, client, headers), then cleans up).
+    Other test files use it through the genie_srv fixture in conftest.py."""
     SCRIPT.clear(); SEEN.clear()
     monkeypatch.setenv("GINK_DB_PATH", str(tmp_path / "g.db")); monkeypatch.setenv("GROQ_API_KEY", "g")
     real = httpx.AsyncClient
@@ -34,6 +41,11 @@ def srv(tmp_path, monkeypatch):
     c = TestClient(b.app)
     yield b, c, {"Authorization": "Bearer " + b._token_response("ib@example.com", "Ibrahim")["token"]}
     b._groq_models.update(ids=set(), at=0.0)                    # don't leave our simulated model list behind
+
+
+@pytest.fixture
+def srv(tmp_path, monkeypatch):
+    yield from genie_server(tmp_path, monkeypatch)
 
 
 def build(c, h, prompt="Build a school app with students and grades"):

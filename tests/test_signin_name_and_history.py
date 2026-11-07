@@ -1,5 +1,8 @@
 """Sign-in name -> profile (per account), and automatic history (save on send, titles, drafts)."""
-import asyncio, json, os, sys
+import asyncio
+import json
+import os
+import sys
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 sys.path.insert(0, os.path.dirname(__file__))
@@ -72,7 +75,6 @@ def test_history_saves_on_send_once_titles_and_drafts(tmp_path, monkeypatch):
     async def rec(self, script): js.append(script)
     monkeypatch.setattr(web_chat_view.WebChatFeed, "_js", rec)
     seen = {}
-    real_cloud = groq_worker.GroqBrain.ask
 
     async def slow_ask(self, query, on_token=None, save_user=True, **k):
         seen["mid_answer"] = [m["content"] for p in HistoryStore(app).get_all_sessions().values() for m in p["messages"]]

@@ -1,7 +1,11 @@
 """Phone sign-in (openspec/changes/add-phone-signin) with the SMS providers simulated."""
-import os, re, sys, time, urllib.parse
+import os
+import re
+import sys
+import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-import httpx, pytest
+import httpx
+import pytest
 
 SENT = []
 

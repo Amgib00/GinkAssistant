@@ -38,7 +38,7 @@ from .style_utils import pack
 # Matches ui/main_screen.py's palette (duplicated, not imported, to avoid
 # a circular import -- main_screen.py imports build_history_panel from
 # this file).
-from .theme import ACCENT, BG_ELEVATED, BG_HOVER, BG_SIDEBAR, BG_SURFACE, DANGER, ON_ACCENT, TEXT_MAIN, TEXT_MUTED
+from .theme import ACCENT, BG_ELEVATED, BG_HOVER, BG_SIDEBAR, DANGER, ON_ACCENT, TEXT_MAIN, TEXT_MUTED
 
 BG_SELECTED = BG_ELEVATED
 BG_FLASH = BG_HOVER

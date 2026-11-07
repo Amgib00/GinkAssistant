@@ -1,5 +1,6 @@
 """Computer control: exact commands, safe handling of user text, routing, and voice/wake fixes."""
-import os, sys
+import os
+import sys
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest

@@ -1,6 +1,9 @@
 """The desktop apps' offline model: the server can name a different one (e.g. Gink's own GGUF); it's
 downloaded once and replaces the old one; answers use the model's own chat template."""
-import asyncio, json, os, sys, types
+import asyncio
+import json
+import os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest
 

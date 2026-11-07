@@ -1,10 +1,13 @@
 """Gink Genie review fixes: age and parental controls apply in Genie too; when the AI stops answering
 partway, the changes made so far are kept and reported; version history doesn't fill the disk; a
 refused new project doesn't leave an empty one behind."""
-import json, os, sys, time
+import json
+import os
+import sys
+import time
 sys.path.insert(0, os.path.dirname(__file__))
-import httpx, pytest
-from test_genie import srv, SCRIPT, SEEN, call, build      # noqa: F401  (the same simulated AI and server)
+import httpx
+from test_genie import SEEN, call, build      # the simulated AI (genie_srv: conftest.py)
 
 Y = time.gmtime().tm_year
 
@@ -22,16 +25,16 @@ def teen_setup(b, c, h, controls=None):
     return mum
 
 
-def test_parent_can_switch_genie_off(srv):
-    b, c, h = srv
+def test_parent_can_switch_genie_off(genie_srv):
+    b, c, h = genie_srv
     teen_setup(b, c, h, {"genie": False})
     r = c.post("/genie/projects", headers=h, json={"prompt": "Build a quiz game"})
     assert r.status_code == 403 and "Gink Genie is turned off" in r.json()["detail"]
     assert c.get("/genie/projects", headers=h).json()["projects"] == []         # nothing half-made
 
 
-def test_quiet_hours_and_daily_limit_in_genie(srv):
-    b, c, h = srv
+def test_quiet_hours_and_daily_limit_in_genie(genie_srv):
+    b, c, h = genie_srv
     now = time.gmtime()
     mum = teen_setup(b, c, h, {"quiet": True, "quiet_from": f"{now.tm_hour:02d}:00",
                                "quiet_to": f"{(now.tm_hour + 2) % 24:02d}:00", "tz": "UTC"})
@@ -44,8 +47,8 @@ def test_quiet_hours_and_daily_limit_in_genie(srv):
     assert r.status_code == 429 and "parental controls" in r.json()["detail"]
 
 
-def test_teens_get_stricter_safety_and_notices_in_genie(srv, monkeypatch):
-    b, c, h = srv
+def test_teens_get_stricter_safety_and_notices_in_genie(genie_srv, monkeypatch):
+    b, c, h = genie_srv
     teen_setup(b, c, h)
     checked = []
     monkeypatch.setattr(b, "_start_safety_check", lambda teen, parent, text: checked.append((teen, parent, text)))
@@ -54,21 +57,21 @@ def test_teens_get_stricter_safety_and_notices_in_genie(srv, monkeypatch):
     assert checked == [("ib@example.com", "mum@x.co", "Build a diary app")]
 
 
-def test_adults_unchanged(srv):
-    b, c, h = srv
+def test_adults_unchanged(genie_srv):
+    b, c, h = genie_srv
     build(c, h)
     assert not any(m.get("content") == b.TEEN_SAFETY for m in SEEN[0]["messages"])
 
 
-def test_under_13_blocked(srv):
-    b, c, h = srv
+def test_under_13_blocked(genie_srv):
+    b, c, h = genie_srv
     b._set_birth_year("ib@example.com", Y - 11)
     r = c.post("/genie/projects", headers=h, json={"prompt": "Build a game"})
     assert r.status_code == 403 and r.json()["detail"] == b.UNDER_13_MSG
 
 
-def test_ai_stops_partway_changes_kept_and_reported(srv, monkeypatch):
-    b, c, h = srv
+def test_ai_stops_partway_changes_kept_and_reported(genie_srv, monkeypatch):
+    b, c, h = genie_srv
     from httpx import _client
     real = _client.AsyncClient                                  # the real one (the fixture's mock would override us)
     state = {"n": 0}
@@ -97,8 +100,8 @@ def test_ai_stops_partway_changes_kept_and_reported(srv, monkeypatch):
     assert r2.status_code == 502 and "busy right now" in r2.json()["detail"]
 
 
-def test_version_history_without_duplicates_and_within_budget(srv, monkeypatch):
-    b, c, h = srv
+def test_version_history_without_duplicates_and_within_budget(genie_srv, monkeypatch):
+    b, c, h = genie_srv
     pid = build(c, h)["project"]["id"]
     count = lambda: b._genie_db(lambda con: con.execute("SELECT COUNT(*) FROM genie_snapshots WHERE project_id=?", (pid,)).fetchone()[0])
     before = count()

@@ -60,7 +60,6 @@ on_navigation_starting API itself was, so it's worth actually testing
 link clicks after this change rather than assuming.
 """
 
-import asyncio
 import json
 
 import toga
@@ -68,7 +67,7 @@ from toga.style import Pack
 
 from .branding import LOGO_DATA_URI, LOGO_SPINNER_DATA_URI
 from .theme import css_vars
-from ..services.markdown_render import PYGMENTS_CSS, escape_for_plain_text, render_markdown_body
+from ..services.markdown_render import PYGMENTS_CSS, render_markdown_body
 
 _PAGE_TEMPLATE = """<!DOCTYPE html>
 <html>

@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import os
 import shutil
-import sys
 import webbrowser
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -127,7 +126,7 @@ class DeviceActions:
         url = (url or "").strip()
         if not url:
             return ActionResult(False, "No link given.")
-        if "://" not in url and not url.split(":", 1)[0] in {"mailto", "tel", "sms", "smsto"}:
+        if "://" not in url and url.split(":", 1)[0] not in {"mailto", "tel", "sms", "smsto"}:
             url = "https://" + url
         try:
             if self.platform == "android":

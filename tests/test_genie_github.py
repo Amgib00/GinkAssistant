@@ -1,7 +1,12 @@
 """Gink Genie -> GitHub: connect (repo permission), push projects as commits, revoke. GitHub is simulated."""
-import json, os, sqlite3, sys, urllib.parse
+import json
+import os
+import sqlite3
+import sys
+import urllib.parse
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-import httpx, pytest
+import httpx
+import pytest
 
 GH = {}
 
@@ -88,7 +93,7 @@ def test_connect_push_and_push_again(srv):
     assert GH["created"]["private"] is True and GH["created"]["auto_init"] is True
     assert sorted(t["path"] for t in GH["tree"]) == ["index.html", "js/app.js", "old.txt"] and GH["commits"][0]["parents"] == ["init0"]
     c.delete(f"/genie/projects/{pid}/file", headers=h, params={"path": "old.txt"})
-    r2 = c.post(f"/genie/projects/{pid}/github", headers=h, json={"repo": "school-app"}).json()
+    c.post(f"/genie/projects/{pid}/github", headers=h, json={"repo": "school-app"})
     assert GH["commits"][1]["parents"] == ["commit1"] and GH["head"] == "commit2"                # on top of the first
     assert sorted(t["path"] for t in GH["tree"]) == ["index.html", "js/app.js"]                     # deleted file is gone
     assert GH["calls"].count(("POST", "/user/repos")) == 1                                        # created once, then reused

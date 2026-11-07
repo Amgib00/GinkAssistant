@@ -1,6 +1,7 @@
 """The "Official" badge on sources: governments, international public bodies and the organisation's own
 site -- not universities or news; and in the app only Gink's own marker earns it."""
-import os, sys
+import os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from ginkassistant.services import backend_server as b
 

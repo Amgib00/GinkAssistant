@@ -386,7 +386,8 @@ else:
     def _mac_voices():
         """[(name, locale)] from `say -v ?` (cached)."""
         if not _mac_voices_cache:
-            import re as _r, subprocess as _sp
+            import re as _r
+            import subprocess as _sp
             try:
                 out = _sp.run(["say", "-v", "?"], capture_output=True, text=True, timeout=10).stdout
             except Exception:

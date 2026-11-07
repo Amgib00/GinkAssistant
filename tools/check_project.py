@@ -125,7 +125,6 @@ def check_briefcase(out):
         out(f"  \u2713 Briefcase {env_v} in this environment (builds into build/"
             + (f"; apps open on this Mac, macOS {old_mac})" if old_mac else ")"))
     if cmd and os.path.dirname(os.path.realpath(cmd)) != os.path.realpath(env_bin):
-        tv = _version_tuple(cmd_v)
         out(f"  ! Typing `briefcase` runs {cmd} (version {cmd_v or 'unknown'}), NOT the one in this environment.")
         out("      use  python -m briefcase ...  instead (or remove the other copy)")
         problems += 1
@@ -241,7 +240,7 @@ def check(root, fix=False, out=print, briefcase_check=True):
                     out("  ! the app's icon is older than icons/ -- run: briefcase update macOS --update-resources")
                     problems += 1
         else:
-            out(f"  ! built app has no icon in Contents/Resources -- run: briefcase update macOS --update-resources")
+            out("  ! built app has no icon in Contents/Resources -- run: briefcase update macOS --update-resources")
             problems += 1
     else:
         out(f"  \u00b7 no Mac app built yet (expected at build/{app_name}/macos/app/{formal}.app)")

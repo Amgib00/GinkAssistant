@@ -1,5 +1,9 @@
 """Agent mode: multi-step tasks with a live checklist, and approvals before sensitive actions."""
-import asyncio, json, os, sys, types
+import asyncio
+import json
+import os
+import sys
+import types
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from ginkassistant.services.actions import agent as ag
 

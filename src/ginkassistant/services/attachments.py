@@ -19,7 +19,7 @@ import io
 import os
 import re
 import zipfile
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 MAX_FILE_BYTES = 20 * 1024 * 1024

@@ -1,5 +1,9 @@
 """The Gink dataset: generated examples pass the validator, and the validator catches mistakes."""
-import copy, json, os, subprocess, sys
+import copy
+import json
+import os
+import subprocess
+import sys
 HERE = os.path.dirname(__file__)
 DS = os.path.join(HERE, "..", "tools", "gink_dataset")
 sys.path.insert(0, DS); sys.path.insert(0, os.path.join(HERE, "..", "src"))

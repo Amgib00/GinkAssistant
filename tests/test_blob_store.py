@@ -1,10 +1,12 @@
 """Big files leave the database: content-addressed blobs on disk or in object storage (S3-compatible),
 with versions and copies costing almost nothing, and unused blobs cleaned up."""
-import base64, json, os, sys, types
+import base64
+import os
+import sys
+import types
 sys.path.insert(0, os.path.dirname(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest
-from test_genie import srv, SCRIPT, call, build      # noqa: F401
 from ginkassistant.services import blob_store
 
 
@@ -19,8 +21,8 @@ def raw(b, pid):
     return dict(b._genie_db(lambda con: con.execute("SELECT path, content FROM genie_files WHERE project_id=?", (pid,)).fetchall()))
 
 
-def test_big_files_live_in_the_blob_store(srv):
-    b, c, h = srv
+def test_big_files_live_in_the_blob_store(genie_srv):
+    b, c, h = genie_srv
     pid = c.post("/genie/projects", headers=h, json={"name": "big"}).json()["project"]["id"]
     big = "x = 1\n" * 5000                                                       # 30 KB
     b._genie_write(pid, "big.py", big)
@@ -34,8 +36,8 @@ def test_big_files_live_in_the_blob_store(srv):
     assert os.path.exists(os.path.join(b._blob_root(), key[:2], key[2:4], key))  # on disk, next to the database
 
 
-def test_versions_copies_and_undo_with_blobs(srv):
-    b, c, h = srv
+def test_versions_copies_and_undo_with_blobs(genie_srv):
+    b, c, h = genie_srv
     pid = c.post("/genie/projects", headers=h, json={"name": "v"}).json()["project"]["id"]
     one, two = "a = 1\n" * 3000, "a = 2\n" * 3000
     b._genie_write(pid, "app.py", one)
@@ -49,8 +51,8 @@ def test_versions_copies_and_undo_with_blobs(srv):
     assert b._genie_files(dup)["app.py"] == one and raw(b, dup)["app.py"] == raw(b, pid)["app.py"]   # shared blob
 
 
-def test_pictures_too(srv):
-    b, c, h = srv
+def test_pictures_too(genie_srv):
+    b, c, h = genie_srv
     pid = c.post("/genie/projects", headers=h, json={"name": "p"}).json()["project"]["id"]
     png = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==")
     b._genie_write(pid, "logo.png", "", picture=png + b"\0" * 9000)
@@ -59,8 +61,8 @@ def test_pictures_too(srv):
     assert entry["picture"] is True and entry["size"] == len(png) + 9000
 
 
-def test_unused_blobs_are_cleaned_up(srv):
-    b, c, h = srv
+def test_unused_blobs_are_cleaned_up(genie_srv):
+    b, c, h = genie_srv
     pid = c.post("/genie/projects", headers=h, json={"name": "g"}).json()["project"]["id"]
     b._genie_write(pid, "keep.py", "k = 1\n" * 3000)
     b._genie_write(pid, "gone.py", "g = 1\n" * 3000)

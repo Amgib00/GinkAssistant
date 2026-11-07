@@ -1,9 +1,11 @@
 """SMS codes go through a provider that actually reaches the number: Africa's Talking doesn't cover
 Senegal or Sierra Leone (its own country list), so those go through Twilio, or are refused clearly."""
-import os, sys
+import os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 sys.path.insert(0, os.path.dirname(__file__))
-import httpx, pytest
+import httpx
+import pytest
 from test_phone_signin import fake_post, SENT
 
 

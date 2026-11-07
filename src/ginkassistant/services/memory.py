@@ -16,7 +16,7 @@ import sqlite3
 import threading
 import time
 import uuid
-from typing import List, Optional
+from typing import List
 
 MAX_MEMORIES_IN_PROMPT = 60
 

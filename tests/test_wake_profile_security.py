@@ -1,5 +1,8 @@
 """Hey Gink everywhere, the profile synced to the web, Python 3.11+, and the security fixes."""
-import io, os, pickle, sys
+import io
+import os
+import pickle
+import sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, os.path.join(ROOT, "src"))
 

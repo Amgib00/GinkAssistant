@@ -1,6 +1,10 @@
 """Growing the Gink dataset: GPT-OSS rewrites that can't change the answer, people's examples, and a
 held-out set that stays the same."""
-import csv, json, os, subprocess, sys
+import csv
+import json
+import os
+import subprocess
+import sys
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 DS = os.path.join(ROOT, "tools", "gink_dataset")
 sys.path.insert(0, DS)
@@ -111,7 +115,8 @@ def test_placeholder_keys_and_certificates(monkeypatch):
     import evaluate
     for mod in (pp, evaluate):
         assert mod.real_key("...") == "" and mod.real_key("<your key>") == "" and mod.real_key("gsk_abc") == "gsk_abc"
-        import certifi, ssl
+        import certifi
+        import ssl
         seen = {}
         real = ssl.create_default_context
         monkeypatch.setattr(ssl, "create_default_context", lambda cafile=None: seen.update(cafile=cafile) or real(cafile=cafile))
@@ -154,7 +159,9 @@ def test_ask_key_ignores_the_terminals_key(tmp_path, monkeypatch, capsys):
 
 def test_requests_have_our_own_user_agent(monkeypatch):
     """Cloudflare (in front of Groq) answers Python's default "Python-urllib/3.x" with 403 error 1010."""
-    import evaluate, io as _io, urllib.request
+    import evaluate
+    import io as _io
+    import urllib.request
     sent = []
 
     class Resp(_io.BytesIO):
@@ -171,7 +178,8 @@ def test_requests_have_our_own_user_agent(monkeypatch):
 
 
 def test_cloudflare_refusal_text_is_shown():
-    import io as _io, urllib.error
+    import io as _io
+    import urllib.error
     exc = urllib.error.HTTPError("https://api.groq.com", 403, "Forbidden", {}, _io.BytesIO(b"error code: 1010"))
     assert pp.provider_message(exc) == "error code: 1010"
 

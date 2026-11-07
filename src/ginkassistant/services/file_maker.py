@@ -22,7 +22,6 @@ Open and Save as...
 
 import csv
 import html as _html
-import io
 import os
 import re
 import time
@@ -130,7 +129,8 @@ def _find_font() -> Optional[str]:
 def _simple_pdf(path: str, title: str, md: str) -> None:
     """A plain PDF without fpdf2 (the 32-bit Android edition): title, headings, bullets,
     wrapped text and page breaks, in the built-in Helvetica fonts (Latin-1 text)."""
-    import re, textwrap
+    import re
+    import textwrap
     W, H, M = 595, 842, 56                                     # A4 in points, margins
     lines = []                                                  # (font, size, text)
     if title:

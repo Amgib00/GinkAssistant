@@ -1,7 +1,10 @@
 """When the server can't be reached, the app says why and what to do (plus a short detail)."""
-import asyncio, os, sys
+import asyncio
+import os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-import httpx, pytest
+import httpx
+import pytest
 from ginkassistant.services.api_client import unreachable, ApiClient, ApiError
 
 

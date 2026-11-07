@@ -1,6 +1,9 @@
 """Age (13+, birth year at sign-up) and parental controls: linking, server-enforced controls, stricter
 safety for teens, and safety notices that never include what was said."""
-import asyncio, os, sys, time
+import asyncio
+import os
+import sys
+import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest
 from fastapi import HTTPException

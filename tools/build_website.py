@@ -125,8 +125,9 @@ def build():
         slug = name[:-5]
         title = meta.get("title", SITE_NAME)
         full_title = f"{SITE_NAME} \u2014 {title}" if slug != "index" else f"{SITE_NAME} \u2014 {title}"
+        current = ' aria-current="page"'                 # (no backslashes inside f-strings: Python 3.11 can't)
         nav = "\n".join(
-            f'      <a href="{href}"{" aria-current=\"page\"" if href == name else ""}>{label}</a>' for href, label in NAV)
+            f'      <a href="{href}"{current if href == name else ""}>{label}</a>' for href, label in NAV)
         footer = "\n".join(
             f'    <div class="footer-col"><h2>{head}</h2><ul>'
             + "".join(f'<li><a href="{h}">{l}</a></li>' for h, l in links) + "</ul></div>" for head, links in FOOTER)

@@ -1,5 +1,8 @@
 """Settings -> Location: city, approximate location, and the 'Use location in answers' switch."""
-import asyncio, os, sys, types
+import asyncio
+import os
+import sys
+import types
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 os.environ.setdefault("TOGA_BACKEND", "toga_dummy")
 import pytest

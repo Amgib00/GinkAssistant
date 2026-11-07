@@ -1,4 +1,8 @@
-import asyncio, json, os, sys, tempfile
+import asyncio
+import json
+import os
+import sys
+import tempfile
 from datetime import datetime, timedelta
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
@@ -77,8 +81,8 @@ def test_tools_and_store():
 def test_scheduler_fires_only_in_app_items():
     s = store(); fired = []
     past = datetime.now() - timedelta(seconds=5)
-    a = s.add("reminder", "in-app", due=past)
-    b = s.add("alarm", "os-handled", due=past, system_scheduled=True)
+    s.add("reminder", "in-app", due=past)
+    s.add("alarm", "os-handled", due=past, system_scheduled=True)
     s.add("reminder", "future", due=datetime.now() + timedelta(hours=1))
     async def on_due(item): fired.append(item.title)
     sch = ReminderScheduler(s, on_due)

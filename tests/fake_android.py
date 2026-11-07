@@ -1,5 +1,6 @@
 """A stand-in for Chaquopy's `java` module: enough Android to test services/android_voice.py off a phone."""
-import asyncio, types
+import asyncio
+import types
 
 STATE = {"granted": True, "grant_on_request": False, "requested": 0, "recognizers": [], "script": [],
          "tts_spoken": [], "played": [], "available": True}

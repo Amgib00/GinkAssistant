@@ -1,5 +1,8 @@
 """'Hey Gink': phrase matching, the listener (pause = mic released), engines, and a full wake turn."""
-import asyncio, os, sys, threading, time
+import asyncio
+import os
+import sys
+import time
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 sys.path.insert(0, os.path.dirname(__file__))

@@ -101,7 +101,7 @@ class SyncService:
             if any(counts.values()):
                 self.on_remote_change(counts)
             return True
-        except Exception as exc:
+        except Exception:
             self.last_error = "Offline \u2014 will sync later"
             self.on_status(self.last_error)
             return False

@@ -23,7 +23,6 @@ fall back further, same as "no Groq key" already does.
 """
 
 import asyncio
-from typing import Optional
 
 import httpx
 import toga

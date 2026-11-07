@@ -1,6 +1,12 @@
 """Parental controls in the apps: Settings actions against a real server, the sign-up birth year,
 and voice switched off on the device when a parent turns it off."""
-import asyncio, json, os, sys, threading, time, types
+import asyncio
+import json
+import os
+import sys
+import threading
+import time
+import types
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest

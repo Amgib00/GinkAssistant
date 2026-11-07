@@ -128,7 +128,7 @@ def main():
     tools = json.load(open(os.path.join(a.data, "tools.json"), encoding="utf-8"))
     print(f"Training on {len(train_rows)} examples, scoring on {len(eval_rows)} held-out ones.")
 
-    from unsloth import FastLanguageModel                      # noqa: imported here: GPU machines only
+    from unsloth import FastLanguageModel                      # imported here: GPU machines only
     model, tokenizer = FastLanguageModel.from_pretrained(model_name=a.base, max_seq_length=a.max_len,
                                                          load_in_4bit=False, dtype=None)
     model = FastLanguageModel.get_peft_model(

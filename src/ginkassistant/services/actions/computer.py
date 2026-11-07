@@ -108,9 +108,9 @@ class ComputerControl:
             try:
                 from PIL import ImageGrab
                 ImageGrab.grab().save(path)
-                ok, out = True, ""
-            except Exception as exc:
-                ok, out = False, str(exc)
+                ok = True
+            except Exception:
+                ok = False
         else:
             return _no("I can't take screenshots on this computer yet.")
         if not ok or not os.path.exists(path):

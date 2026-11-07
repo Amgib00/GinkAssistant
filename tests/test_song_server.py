@@ -1,5 +1,11 @@
 """Song recognition for phones: the app records ~8 s, the server asks Shazam (POST /media/song)."""
-import asyncio, io, os, struct, sys, types, wave
+import asyncio
+import io
+import os
+import struct
+import sys
+import types
+import wave
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 sys.path.insert(0, os.path.dirname(__file__))

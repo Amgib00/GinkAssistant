@@ -1,10 +1,20 @@
 """The Catalina Mac build (.github/workflows/macos-catalina.yml): the recipe that makes an app for
 macOS 10.15 on GitHub's Mac. Its inline scripts are run here on a copy of the project."""
-import os, re, shutil, subprocess, sys, tomllib
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tomllib
 import yaml
 
+def _read_text(path):
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+
+
 ROOT = os.path.join(os.path.dirname(__file__), "..")
-WF = yaml.safe_load(open(os.path.join(ROOT, ".github", "workflows", "macos-catalina.yml"), encoding="utf-8"))
+WF = yaml.safe_load(_read_text(os.path.join(ROOT, ".github", "workflows", "macos-catalina.yml")))
 JOB = WF["jobs"]["catalina"]
 STEPS = {s.get("name", s.get("uses")): s for s in JOB["steps"]}
 
@@ -48,8 +58,8 @@ def test_requirements_script(tmp_path):
 def test_only_gink_is_built(tmp_path):
     shutil.copy(os.path.join(ROOT, "pyproject.toml"), tmp_path / "pyproject.toml")
     subprocess.run([sys.executable, "-c", inline_python(step("Only the Gink app")["run"])], cwd=tmp_path, check=True)
-    after = tomllib.load(open(tmp_path / "pyproject.toml", "rb"))
-    before = tomllib.load(open(os.path.join(ROOT, "pyproject.toml"), "rb"))
+    after = tomllib.loads(_read_text(tmp_path / "pyproject.toml"))
+    before = tomllib.loads(_read_text(os.path.join(ROOT, "pyproject.toml")))
     assert list(after["tool"]["briefcase"]["app"]) == ["ginkassistant"]
     assert after["tool"]["briefcase"]["app"]["ginkassistant"] == before["tool"]["briefcase"]["app"]["ginkassistant"]
     assert after["project"] == before["project"]

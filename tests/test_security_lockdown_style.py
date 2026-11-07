@@ -1,7 +1,10 @@
 """Security history, Lockdown mode (server-enforced) and Personalization."""
-import json, os, sys, time
+import os
+import sys
+import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-import httpx, pytest
+import httpx
+import pytest
 
 
 @pytest.fixture

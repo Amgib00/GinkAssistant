@@ -1,6 +1,8 @@
 """Groq retired llama-3.3-70b-versatile and llama-3.1-8b-instant (16 Aug 2026). Old app builds still ask
 for them: the server swaps in current models; GPT-OSS gets room to reason on short answers."""
-import asyncio, os, sys
+import asyncio
+import os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest
 

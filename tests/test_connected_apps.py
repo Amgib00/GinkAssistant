@@ -1,7 +1,13 @@
 """Connected Apps (openspec/changes/add-connected-apps): Google Calendar, Gmail and Drive, with Google simulated."""
-import base64, json, os, sqlite3, sys, time, urllib.parse
+import base64
+import json
+import os
+import sqlite3
+import sys
+import urllib.parse
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-import httpx, pytest
+import httpx
+import pytest
 
 STATE = {}
 
@@ -145,7 +151,8 @@ def test_refresh_revoked_at_google_disconnect_and_account_deletion(srv):
 
 
 def test_agent_actions_and_must_ask():
-    import asyncio, types
+    import asyncio
+    import types
     from ginkassistant.services.actions import agent as ag
     from ginkassistant.services.actions.tools import ToolRunner, TOOL_SPECS
     names = {t["function"]["name"] for t in TOOL_SPECS}

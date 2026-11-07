@@ -1,8 +1,11 @@
 """Claude's native Messages API with prompt caching: OpenAI <-> Claude translation (requests,
 answers, tool calls, streaming) and the full path through the server."""
-import json, os, sys
+import json
+import os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-import httpx, pytest
+import httpx
+import pytest
 from ginkassistant.services import backend_server as b
 
 AGENT_TOOLS = [{"type": "function", "function": {"name": "set_alarm", "description": "Set an alarm",

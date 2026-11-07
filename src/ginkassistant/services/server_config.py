@@ -17,7 +17,6 @@ network only) or a hosted backend (see deploy/README.md).
 
 import json
 import os
-import sys
 from typing import Optional, Tuple
 
 import httpx

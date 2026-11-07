@@ -1,7 +1,11 @@
 """Web search: GPT-OSS + Groq's browser_search; clean answers with sources; daily allowance."""
-import asyncio, json, os, sys
+import asyncio
+import json
+import os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-import httpx, pytest
+import httpx
+import pytest
 
 ANSWER = "Senegal's new bridge opened on 12 October 2026 【1†L3-L5】. It links Dakar and Thiès 【2†L1-L2】."
 TOOLS_RAN = [{"type": "search", "search_results": {"results": [

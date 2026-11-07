@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.115 (November 2026)
+
+- Code clean-up: the warnings PyCharm showed that were real problems are fixed (unused imports and
+  variables, a test helper borrowed the wrong way), and the website builder works with Python 3.11 again.
+  GitHub now checks this on every push, so new ones are caught straight away
+
 ## 0.1.114 (November 2026)
 
 - Media Studio: "Use a photo" -- start from your own photo (choose one, paste it or drop it in) with an

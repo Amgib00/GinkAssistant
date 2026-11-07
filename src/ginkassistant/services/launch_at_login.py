@@ -16,7 +16,6 @@ real yet.
 """
 
 import logging
-import os
 import plistlib
 import subprocess
 import sys

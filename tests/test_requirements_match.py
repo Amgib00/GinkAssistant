@@ -1,7 +1,8 @@
 """requirements.txt (running Gink with `python -m ginkassistant`) must install exactly what
 pyproject.toml gives the built desktop apps, on every desktop platform. It had drifted: Apple Silicon
 Macs got a different numba/llvmlite and cryptography, and three minimum versions disagreed."""
-import os, tomllib
+import os
+import tomllib
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
 

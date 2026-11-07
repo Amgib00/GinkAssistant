@@ -133,7 +133,7 @@ def progress(rows) -> list:
     for r in rows:
         if r.get("translation"):
             others[r.get("language")] = others.get(r.get("language"), 0) + 1
-    return [f"Toward the first real training run (tools/gink_model/PLAN.md):",
+    return ["Toward the first real training run (tools/gink_model/PLAN.md):",
             f"  examples                    {len(rows):>5} / {TARGETS['examples']}   ({rewrites} are rewrites from paraphrases.csv)",
             "  " + ", ".join(f"{k} {v}" for k, v in langs.items()) + f"   (aim: {TARGETS['language rows (each of wolof, krio, pidgin)']} each)",
             f"  general / safety / honesty  {general:>5} / {TARGETS['general / safety / honesty']}",

@@ -1,5 +1,6 @@
 """Owner dashboard: auto-refresh that never logs out on hiccups; server health without anyone's messages."""
-import os, sys
+import os
+import sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
@@ -29,7 +30,7 @@ def test_dashboard_refreshes_by_itself_and_keeps_you_signed_in():
 
 
 def test_right_now_counts_anonymously_and_forgets_after_an_hour(monkeypatch):
-    import json, time as _t
+    import json
     from ginkassistant.services import backend_server as b
     b._activity.clear(); b._models_used.clear()
     clock = {"t": 1_000_000.0}

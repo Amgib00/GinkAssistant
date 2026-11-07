@@ -1,5 +1,6 @@
 """Gink on the web: the built page is current, /app is served safely, /render is protected and safe."""
-import os, sys
+import os
+import sys
 os.environ.setdefault("TOGA_BACKEND", "toga_dummy")
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, os.path.join(ROOT, "src")); sys.path.insert(0, os.path.join(ROOT, "tools"))
@@ -9,7 +10,8 @@ import pytest
 def test_built_web_app_is_up_to_date():
     """Fails if webapp/* or the chat page changed without rebuilding. Code-highlight colours
     come from the installed pygments version, so those lines are ignored in the comparison."""
-    import re, build_web_app
+    import re
+    import build_web_app
     strip = lambda h: re.sub(r"^\.codehilite[^\n]*\n", "", h, flags=re.M)
     built = open(build_web_app.OUT, encoding="utf-8").read()
     assert strip(built) == strip(build_web_app.build_html()), "run: python tools/build_web_app.py"
@@ -110,7 +112,8 @@ def test_the_shadow_check_itself_catches_the_old_bug():
 def test_no_server_function_is_defined_twice():
     """A second `_check_code` (phone) silently replaced the email one and froze email sign-up: Python
     keeps the last definition, and pyflakes stays quiet when the first one is used."""
-    import ast, collections
+    import ast
+    import collections
     tree = ast.parse(open(os.path.join(ROOT, "src", "ginkassistant", "services", "backend_server.py"), encoding="utf-8").read())
     names = collections.Counter(n.name for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)))
     assert [n for n, c in names.items() if c > 1] == []
@@ -129,7 +132,7 @@ def test_old_chats_show_answers_without_waiting_for_the_server():
 
 def test_website_follow_ups_change_that_website():
     """'good add more to it' after building a website went to the plain chat, which said it couldn't edit."""
-    import re, json as _j
+    import re
     bridge = open(os.path.join(ROOT, "webapp", "bridge.js"), encoding="utf-8").read()
     hint = re.search(r"var SITE_HINT_RE = /(.*)/i;", bridge).group(1).replace("\\\\", "\\")
     not_edit = re.search(r"var NOT_EDIT_RE = /(.*)/i;", bridge).group(1).replace("\\\\", "\\")
@@ -144,7 +147,8 @@ def test_website_follow_ups_change_that_website():
 
 def test_no_javascript_escapes_inside_html():
     """'\\u2026' in an HTML attribute shows literally ("explain app.js\\u2026") -- only JavaScript decodes it."""
-    import re, glob
+    import re
+    import glob
     for path in glob.glob(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "*.html")):
         if path.endswith("index.html"):
             continue                                     # built from webapp/, checked there
@@ -168,7 +172,8 @@ def test_docker_image_has_every_module_the_server_imports():
 def test_every_css_variable_used_in_the_ui_is_defined():
     """The temporary-chat notice used var(--text), which doesn't exist (the page's is --text-main): white text
     on a white pill. Every var(--x) without a fallback must be defined somewhere in the UI."""
-    import re, glob
+    import re
+    import glob
     texts = [open(f, encoding="utf-8").read() for f in glob.glob(os.path.join(ROOT, "src", "ginkassistant", "ui", "*.py"))]
     defined = set()
     for t in texts:

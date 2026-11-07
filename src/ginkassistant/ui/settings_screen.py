@@ -27,7 +27,7 @@ from ..services.groq_worker import DEFAULT_FALLBACKS, PREFERRED_CASCADE
 from ..services.voice_bridge import VOICES
 
 from ..services import server_config
-from .theme import ACCENT, BG_ELEVATED, BG_SURFACE, COLOR_PRIMARY, DANGER, ON_ACCENT, TEXT_MAIN, TEXT_MUTED
+from .theme import ACCENT, BG_ELEVATED, BG_SURFACE, DANGER, ON_ACCENT, TEXT_MAIN, TEXT_MUTED
 
 BG_MAIN = BG_SURFACE
 

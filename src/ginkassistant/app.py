@@ -30,7 +30,6 @@ broke on Android before this was fixed.
 
 import os
 import socket
-import sys
 import threading
 import time
 from pathlib import Path

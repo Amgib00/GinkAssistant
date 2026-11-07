@@ -1,7 +1,16 @@
 """Hey Gink in the background on Android (services/android_fgs.py): a foreground service of type
 "microphone", started while Gink is on screen, that never lets an error crash the app."""
-import importlib, os, sys, tomllib, types
+import importlib
+import os
+import sys
+import tomllib
+import types
 import pytest
+
+def _read_text(path):
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 
@@ -175,7 +184,7 @@ def test_a_build_without_the_service_falls_back(fgs):
 
 
 def test_manifest_and_static_proxy_match_the_class():
-    app = tomllib.load(open(os.path.join(ROOT, "pyproject.toml"), "rb"))["tool"]["briefcase"]["app"]["ginkassistant"]["android"]
+    app = tomllib.loads(_read_text(os.path.join(ROOT, "pyproject.toml")))["tool"]["briefcase"]["app"]["ginkassistant"]["android"]
     assert 'android:name="ginkassistant.services.android_fgs.HeyGinkService"' in app["android_manifest_application_extra_content"]
     assert 'android:foregroundServiceType="microphone"' in app["android_manifest_application_extra_content"]
     assert 'android:stopWithTask="true"' in app["android_manifest_application_extra_content"]

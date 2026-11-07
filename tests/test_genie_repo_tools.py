@@ -1,9 +1,11 @@
 """Genie on real repositories: edit part of a file, find files by name, read long files in numbered
 parts, search with regular expressions, and open a GitHub repository."""
-import io, json, os, sys, zipfile
+import io
+import os
+import sys
+import zipfile
 sys.path.insert(0, os.path.dirname(__file__))
-import httpx, pytest
-from test_genie import srv, SCRIPT, call, build      # noqa: F401
+import httpx
 
 
 def project(b, c, h, files):
@@ -13,8 +15,8 @@ def project(b, c, h, files):
     return pid
 
 
-def test_edit_file_changes_exactly_one_place(srv):
-    b, c, h = srv
+def test_edit_file_changes_exactly_one_place(genie_srv):
+    b, c, h = genie_srv
     pid = project(b, c, h, {"src/app.py": "def total(xs):\n    return sum(xs)\n\nprint(total([1, 2]))\n"})
     changes = []
     out = b._genie_tool(pid, "edit_file", {"path": "src/app.py", "old_text": "return sum(xs)",
@@ -27,8 +29,8 @@ def test_edit_file_changes_exactly_one_place(srv):
     assert "No text file" in b._genie_tool(pid, "edit_file", {"path": "missing.py", "old_text": "a", "new_text": "b"}, [])
 
 
-def test_find_files_and_regex_search(srv):
-    b, c, h = srv
+def test_find_files_and_regex_search(genie_srv):
+    b, c, h = genie_srv
     pid = project(b, c, h, {"README.md": "# Repo", "src/app.py": "import os\nTOKEN = os.environ['X']\n",
                             "src/util/helpers.py": "def helper():\n    pass\n", "tests/test_app.py": "def test_ok():\n    assert True\n",
                             "web/[id].tsx": "export default 1"})
@@ -42,8 +44,8 @@ def test_find_files_and_regex_search(srv):
     assert "doesn't work" in b._genie_tool(pid, "search_files", {"text": "(", "regex": True}, [])
 
 
-def test_long_files_read_in_numbered_parts(srv):
-    b, c, h = srv
+def test_long_files_read_in_numbered_parts(genie_srv):
+    b, c, h = genie_srv
     pid = project(b, c, h, {"big.py": "\n".join(f"line {i}" for i in range(1, 1001))})
     first = b._genie_tool(pid, "read_file", {"path": "big.py"}, [])
     assert first.startswith("  1| line 1") and "[lines 1-400 of 1000" in first
@@ -59,8 +61,8 @@ def zipball(files):
     return buf.getvalue()
 
 
-def test_open_a_github_repository(srv, monkeypatch):
-    b, c, h = srv
+def test_open_a_github_repository(genie_srv, monkeypatch):
+    b, c, h = genie_srv
     from httpx import _client
     seen = []
     data = zipball({"README.md": "# Hello", "src/main.py": "print('hi')", "node_modules/x/index.js": "skip me"})

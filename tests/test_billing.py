@@ -1,5 +1,11 @@
 """Billing: country detection, local methods, and money-safety rules."""
-import asyncio, hashlib, hmac, json, os, sys, time
+import asyncio
+import hashlib
+import hmac
+import json
+import os
+import sys
+import time
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest

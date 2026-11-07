@@ -1,7 +1,10 @@
 """Email: Brevo's HTTPS API (works on Render's free plan), Gmail SMTP, clear reasons, owner test email."""
-import json, os, smtplib, sys
+import os
+import smtplib
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-import httpx, pytest
+import httpx
+import pytest
 from ginkassistant.services import backend_server as b
 
 

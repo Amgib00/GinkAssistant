@@ -1,8 +1,15 @@
 """Media Studio "Use a photo": the photo goes to the image service with the idea, is never stored by the
 server, and only real JPEG/PNG/WebP under 6 MB is accepted."""
-import asyncio, base64, io, json, os, sys, types
+import asyncio
+import base64
+import io
+import json
+import os
+import sys
+import types
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-import httpx, pytest
+import httpx
+import pytest
 from PIL import Image
 
 
@@ -57,7 +64,7 @@ def test_only_real_photos(srv):
 
 
 def test_app_shrinks_and_sends_the_photo(monkeypatch):
-    from ginkassistant.services import image_service as isv, api_client
+    from ginkassistant.services import image_service as isv
     big = jpeg((4000, 3000))
     small = isv.shrink_photo(big)
     assert max(Image.open(io.BytesIO(small)).size) == 1536 and len(small) < len(big)

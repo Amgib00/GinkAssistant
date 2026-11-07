@@ -1,5 +1,10 @@
 """Image creation (server), file creation, profile + instructions, languages."""
-import asyncio, base64, io, json, os, sys
+import asyncio
+import base64
+import io
+import json
+import os
+import sys
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 sys.path.insert(0, os.path.dirname(__file__))

@@ -1,5 +1,7 @@
 """tools/check_mac_min_os.py reads the minimum macOS from real Mach-O load commands."""
-import os, struct, sys
+import os
+import struct
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "tools"))
 import check_mac_min_os as c
 

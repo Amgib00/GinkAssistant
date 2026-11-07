@@ -1,5 +1,8 @@
 """Temporary chats: kept only in memory -- never in the database, Recents, sync or export."""
-import os, sqlite3, sys, types
+import os
+import sqlite3
+import sys
+import types
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 os.environ.setdefault("TOGA_BACKEND", "toga_dummy")
 

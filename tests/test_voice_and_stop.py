@@ -1,5 +1,7 @@
 """Voice never breaks a reply; videos stop without about:blank."""
-import asyncio, os, sys
+import asyncio
+import os
+import sys
 os.environ["TOGA_BACKEND"] = "toga_dummy"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import toga

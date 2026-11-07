@@ -1,5 +1,7 @@
 """SECURITY: text shown in Gink's window (AI answers, web content, synced chats) must not run code."""
-import os, re, sys
+import os
+import re
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from ginkassistant.services.markdown_render import render_markdown_body as render
 

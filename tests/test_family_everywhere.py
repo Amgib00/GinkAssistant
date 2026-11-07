@@ -1,9 +1,10 @@
 """Age and parental controls reach every AI feature, not just chat (Genie missed them until 0.1.101;
 websites, images and search missed quiet hours and the teen limit/safety until 0.1.102)."""
-import os, sys, time
+import os
+import sys
+import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest
-from fastapi import HTTPException
 
 Y = time.gmtime().tm_year
 # every endpoint that makes something with AI (or listens/speaks): method, path, body

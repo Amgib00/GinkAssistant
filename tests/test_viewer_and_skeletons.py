@@ -1,5 +1,6 @@
 """The in-app viewer always shows its close button; skeletons while things load."""
-import os, sys
+import os
+import sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, os.path.join(ROOT, "src"))
 os.environ.setdefault("TOGA_BACKEND", "toga_dummy")
