@@ -61,11 +61,13 @@ def test_release_check_step(tmp_path):
         return r.returncode, r.stdout + r.stderr, out.read_text().strip()
     assert run("")[0] == 0 and run("")[2] == "version=v1.2.3"                      # no version: pyproject.toml's
     assert run("v1.2.3")[2] == "version=v1.2.3"
-    code, log, _ = run("v1.2.2")                                                     # an old command
+    code, log, out = run("v1.2.2")                                                   # an old command: the newer code
+    assert code == 0 and out == "version=v1.2.3" and "includes v1.2.2" in log
+    code, log, _ = run("v1.2.4")                                                     # newer than the code: not published
     assert code == 1 and "wasn't published yet" in log and "publish_to_github.sh" in log
     (tmp_path / "pyproject.toml").write_text('[project]\nversion = "1.2.2"\n')
-    code, log, _ = run("")
-    assert code == 1 and "already released" in log
+    code, log, out = run("")
+    assert code == 0 and out == "version=" and "already released" in log           # nothing to do: not a failure
 
 
 def test_releases_are_test_builds_unless_for_users():
@@ -120,3 +122,33 @@ def test_publish_leaves_a_folder_with_its_own_commits_alone(tmp_path):
     r = sh("bash tools/publish_to_github.sh", work, **env)
     assert "own commits that aren't on GitHub" in r.stdout, r.stdout[-1200:] + r.stderr[-600:]
     assert sh("git rev-parse HEAD", work).stdout.strip() == mine
+
+
+def test_release_check_is_forgiving_where_safe(tmp_path):
+    """Runs #158/#159 failed in seconds: an older version was asked for after newer code was published. Now an
+    older request releases the current code, 'already released' skips quietly, a newer one still stops."""
+    wf = yaml.safe_load(open(os.path.join(ROOT, ".github", "workflows", "release.yml")))
+    script = wf["jobs"]["check"]["steps"][1]["run"]
+
+    def run(asked, code, released):
+        t = tmp_path / f"{asked}-{code}-{released}"
+        (t / "bin").mkdir(parents=True)
+        (t / "pyproject.toml").write_text(f'[project]\nversion = "{code}"\n')
+        (t / "CHANGELOG.md").write_text(f"## {code} (x)\n")
+        (t / "bin" / "gh").write_text("#!/bin/bash\nexit %d\n" % (0 if released else 1)); (t / "bin" / "gh").chmod(0o755)
+        out = t / "out"
+        r = subprocess.run(["bash", "-e", "-c", script], cwd=t, capture_output=True, text=True,
+                           env=dict(os.environ, VERSION=asked, GITHUB_OUTPUT=str(out), GITHUB_REPOSITORY="a/b",
+                                    PATH=f"{t / 'bin'}:{os.environ['PATH']}"))
+        return r.returncode, out.read_text().strip() if out.exists() else ""
+    assert run("v0.1.124", "0.1.126", False) == (0, "version=v0.1.126")
+    assert run("v0.1.126", "0.1.126", True) == (0, "version=")
+    assert run("v0.1.127", "0.1.126", False)[0] == 1
+    assert run("v0.1.99", "0.1.100", False) == (0, "version=v0.1.100")
+    for job in ("mac", "android", "windows", "linux", "genie"):
+        assert wf["jobs"][job]["if"] == "needs.check.outputs.version != ''"
+
+
+def test_npm_first_publish_is_explained():
+    text = open(os.path.join(ROOT, ".github", "workflows", "sdk-js.yml"), encoding="utf-8").read()
+    assert "NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}" in text and "npm only trusts this workflow for a package that already exists" in text

@@ -2135,3 +2135,13 @@ New services/live_info.py (all free, no API keys):
   --aspect --photo, `gink ideas`. Python SDK image(prompt, idea, subject, style, aspect_ratio, photo bytes|path),
   image_ideas(); JS SDK image(prompt, {idea, subject, style, aspect_ratio, photo}), imageIdeas() (+ types, tsc-checked).
 - Rule saved with the owner: every feature lands in apps, web app, Genie, API/agents, CLI and both SDKs.
+
+## 0.1.128: Release + npm failures from the owner's Actions screenshot
+- Release #158/#159 failed in 8-11 s: the check job refused a version that didn't match pyproject (GitHub has tags
+  v0.1.123 and v0.1.126, none for .124/.125). Now: asked < code version -> warn and release the code's version;
+  asked > code -> error (not published); already released -> ::notice:: + empty version output, exit 0, and every
+  build job has `if: needs.check.outputs.version != ''` (publish skips because its needs skipped).
+- JavaScript SDK #1 failed: npm trusted publishing can't be configured for a package that doesn't exist yet, so the
+  first publish needs `npm login && npm publish` or an NPM_TOKEN (granular, can create packages). sdk-js.yml passes
+  NODE_AUTH_TOKEN from secrets.NPM_TOKEN and explains the first publish if neither exists. My 0.1.124 note to the
+  owner ("add a Trusted Publisher first") was wrong on this point.

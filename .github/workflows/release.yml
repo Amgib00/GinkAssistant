@@ -52,33 +52,46 @@ jobs:
           if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Version must look like v0.1.0 (got: $VERSION)"; exit 1
           fi
-          # the apps compare their own version with the release's: they must match
+          # the apps compare their own version with the release's, so the release is always the code's version.
+          # Asked for an OLDER version (e.g. an earlier command run again)? The newer code includes it: release that.
           if [ "v$IN_PYPROJECT" != "$VERSION" ]; then
-            echo "::error::The code on GitHub is version $IN_PYPROJECT, but you asked to release $VERSION. Usually the new code wasn't published yet: run 'bash tools/publish_to_github.sh' and check it says 'GitHub now has version ${VERSION#v}', then run Release again (the version can be left out)."
-            exit 1
+            NEWER=$(printf '%s\n%s\n' "${VERSION#v}" "$IN_PYPROJECT" | sort -V | tail -1)
+            if [ "$NEWER" = "$IN_PYPROJECT" ]; then
+              echo "::warning::You asked for $VERSION, but the code on GitHub is already v$IN_PYPROJECT (it includes $VERSION's changes): releasing v$IN_PYPROJECT."
+              VERSION="v$IN_PYPROJECT"
+            else
+              echo "::error::The code on GitHub is version $IN_PYPROJECT, but you asked to release $VERSION. Usually the new code wasn't published yet: run 'bash tools/publish_to_github.sh' and check it says 'GitHub now has version ${VERSION#v}', then run Release again (the version can be left out)."
+              exit 1
+            fi
           fi
-          # stop now, not after 30 minutes of building
+          # already released (the command run twice, or an older version asked for): nothing to do -- not a failure
           if gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "::error::$VERSION is already released. Use a new version number (bump pyproject.toml and CHANGELOG.md first)."
-            exit 1
+            echo "::notice::$VERSION is already released: nothing to build. (A new version needs pyproject.toml and CHANGELOG.md bumped first.)"
+            echo "version=" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
           grep -q "^## ${VERSION#v} " CHANGELOG.md || echo "::warning::CHANGELOG.md has no '## ${VERSION#v}' section yet."
           echo "OK: releasing $VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
   mac:
     needs: check
+    if: needs.check.outputs.version != ''          # empty = already released: skip quietly
     uses: ./.github/workflows/macos.yml
   android:
     needs: check
+    if: needs.check.outputs.version != ''          # empty = already released: skip quietly
     uses: ./.github/workflows/android.yml
   windows:
     needs: check
+    if: needs.check.outputs.version != ''          # empty = already released: skip quietly
     uses: ./.github/workflows/windows.yml
   linux:
     needs: check
+    if: needs.check.outputs.version != ''          # empty = already released: skip quietly
     uses: ./.github/workflows/linux.yml
   genie:                                    # Gink Genie, the coding workspace app
     needs: check
+    if: needs.check.outputs.version != ''          # empty = already released: skip quietly
     uses: ./.github/workflows/genie.yml
   publish:
     needs: [check, mac, android, windows, linux, genie]      # check: for its version output

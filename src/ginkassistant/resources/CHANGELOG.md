@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.128 (November 2026)
+
+- For the owner, GitHub: running Release with an older version number now releases the newer code
+  (it includes the older changes) instead of failing; running it twice is no longer a red failure
+- The JavaScript SDK's npm publishing explains the one-time first publish (npm only trusts a workflow
+  for a package that already exists) and accepts an NPM_TOKEN for it
+
 ## 0.1.127 (November 2026)
 
 - Media Studio's looks everywhere: the same Ideas (Statue, Chibi keychain, Football figurine...) and styles

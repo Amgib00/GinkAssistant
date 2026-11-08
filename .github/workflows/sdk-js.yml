@@ -1,6 +1,11 @@
 # Publishes the JavaScript SDK (sdk/js) to npm, so anyone can: npm install gink-ai
-# One-time setup on npmjs.com: create the package's "Trusted Publisher" -> GitHub Actions, organisation/user
-# Amgib00, repository GinkAssistant, workflow sdk-js.yml (no token to store: npm trusts this workflow).
+#
+# FIRST TIME ONLY (npm can't trust a workflow for a package that doesn't exist yet), either:
+#   a) on your Mac:  cd sdk/js && npm login && npm publish --access public
+#   b) or: npmjs.com -> Access Tokens -> Generate New Token (Granular; packages: read and write; it can create new
+#      packages), then GitHub -> Settings -> Secrets and variables -> Actions -> New secret NPM_TOKEN, then run this.
+# THEN, once: npmjs.com -> the gink-ai package -> Settings -> Trusted Publisher -> GitHub Actions: Amgib00 /
+#   GinkAssistant / sdk-js.yml. From then on no token is needed (you can delete NPM_TOKEN).
 # Run it: gh workflow run sdk-js.yml -R Amgib00/GinkAssistant
 name: JavaScript SDK
 
@@ -26,8 +31,16 @@ jobs:
       - name: Check it loads
         run: node --check index.js && node -e "import('./index.js').then(m => { if (!m.Gink) process.exit(1) })"
       - name: Publish (skipped if this version is already on npm)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           V=$(node -p "require('./package.json').version")
-          if npm view "gink-ai@$V" version >/dev/null 2>&1; then echo "gink-ai $V is already on npm."; exit 0; fi
-          npm install -g npm@latest
+          if npm view "gink-ai@$V" version >/dev/null 2>&1; then echo "gink-ai $V is already on npm: nothing to do."; exit 0; fi
+          if ! npm view gink-ai name >/dev/null 2>&1 && [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "::error::gink-ai isn't on npm yet, and npm only trusts this workflow for a package that already exists."
+            echo "::error::Publish the first version once -- on your Mac: cd sdk/js && npm login && npm publish --access public"
+            echo "::error::(or add an NPM_TOKEN secret and run this again). Then add the Trusted Publisher on npmjs.com (see the top of sdk-js.yml)."
+            exit 1
+          fi
+          npm install -g npm@latest      # trusted publishing needs npm 11.5.1 or newer
           npm publish --access public --provenance
