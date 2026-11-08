@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.121 (November 2026)
+
+- Managed agents in the Gink API: one request runs Gink's agent in its own workspace -- it plans,
+  searches the web, reads and writes files, and the workspace keeps its files for next time. Continue a
+  task later, run long ones in the background, and open the same files in Gink Genie. Guide:
+  /developers/agents; in the terminal: gink agent "task"
+
 ## 0.1.120 (November 2026)
 
 - Fixed: since 0.1.111 the online server couldn't load its new file-storage part, so its health check

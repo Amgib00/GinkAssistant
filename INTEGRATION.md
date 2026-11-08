@@ -2054,3 +2054,18 @@ New services/live_info.py (all free, no API keys):
   .github/workflows/security.yml: Hadolint (SARIF -> Security tab, no-fail) + pip-audit (server requirements; fails on
   a known vulnerability). tools/close_scanner_prs.sh (dry run, --close) closes those PRs and deletes their branches.
   Stale code-scanning configurations (Codacy, PSScriptAnalyzer) are removed in the Security tab by the owner.
+
+## 0.1.121: managed agents (/v1/interactions, /v1/environments)
+- Owner's reference: Google's "Managed Agents in Gemini API" page (one call, environment="remote", persistent stateful
+  environments). Gink's version reuses Genie: environment = genie_projects row; tools = GENIE_TOOLS minus run_command
+  (_agent_file_tools(), looked up at run time: GENIE_TOOLS is defined later in the file) + web_search (_search_core,
+  factored out of /web/search). No server-side code execution (no sandbox on Render) -- AGENT_SYSTEM says so.
+- agent_interactions(id int_*, email, key_id, env_id, status running|completed|incomplete|failed|cancelled, input,
+  output_text, steps JSON (tool, path/query, changed, result[:300]), messages JSON (for previous_interaction_id), ...).
+  _agent_loop: checkpoint first; per step _count_call(email, iid) (one message per interaction); Groq gpt-oss-120b;
+  cancel flag in _agent_tasks; saves progress each step; max_steps cap -> "incomplete". background: asyncio task
+  (kept in _safety_tasks); _agents_after_restart() marks leftovers failed at startup.
+- Gates: _genie_family_gate + _org_guard on the input (patient data -> 422), web_search tool respects family "web"
+  switch/quiet hours and lockdown. Account deletion removes interactions (the projects go with Genie's data).
+- /developers/agents (web_app/agents.html, Gink's own design/text), console Docs link, CLI `gink agent` (background +
+  polling, steps on stderr, --env, --continue, --max-steps).

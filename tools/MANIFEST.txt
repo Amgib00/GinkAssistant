@@ -132,6 +132,9 @@ openspec/changes/add-connected-apps/design.md
 openspec/changes/add-connected-apps/proposal.md
 openspec/changes/add-connected-apps/specs/connected-apps/spec.md
 openspec/changes/add-connected-apps/tasks.md
+openspec/changes/add-managed-agents/proposal.md
+openspec/changes/add-managed-agents/specs/developer-api/spec.md
+openspec/changes/add-managed-agents/tasks.md
 openspec/changes/add-own-model/proposal.md
 openspec/changes/add-own-model/specs/own-model/spec.md
 openspec/changes/add-own-model/tasks.md
@@ -249,6 +252,7 @@ src/ginkassistant/services/voice_profiles.py
 src/ginkassistant/services/wake_status.py
 src/ginkassistant/services/wake_word.py
 src/ginkassistant/services/web_app/admin.html
+src/ginkassistant/services/web_app/agents.html
 src/ginkassistant/services/web_app/auth.html
 src/ginkassistant/services/web_app/console.html
 src/ginkassistant/services/web_app/device.html
@@ -337,6 +341,7 @@ tests/test_live_answers.py
 tests/test_live_info.py
 tests/test_location.py
 tests/test_main_screen.py
+tests/test_managed_agents.py
 tests/test_media_files_profile.py
 tests/test_media_photo.py
 tests/test_model_upgrade.py

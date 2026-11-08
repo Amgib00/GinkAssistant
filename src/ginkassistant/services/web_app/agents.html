@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Managed agents · Gink API</title>
+<style>
+  :root { --bg:#0E1418; --card:#151E24; --text:#E9EFEA; --muted:#9AABA3; --line:rgba(233,239,234,.12); --accent:#A8F03C;
+          --accent2:#3F7D12; --code:#0B1115; --glow:rgba(168,240,60,.28); }
+  @media (prefers-color-scheme: light) { :root { --bg:#F6F7F4; --card:#FFFFFF; --text:#151D23; --muted:#5D6B64;
+          --line:#E1E5E0; --accent:#3F7D12; --accent2:#3F7D12; --code:#F1F3EF; --glow:rgba(63,125,18,.18); } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  a { color:var(--accent); }
+  header { position:sticky; top:0; z-index:5; display:flex; align-items:center; gap:22px; padding:14px 28px;
+           background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  header .brand { font-weight:800; font-size:18px; color:var(--text); text-decoration:none; display:flex; gap:8px; align-items:center; }
+  header .brand i { width:24px; height:24px; border-radius:7px; background:#151D23; display:grid; place-items:center; color:#A8F03C;
+                    font-style:normal; font-size:14px; }
+  header nav { display:flex; gap:18px; flex:1; } header nav a { color:var(--muted); text-decoration:none; font-size:14.5px; }
+  header nav a:hover { color:var(--text); }
+  .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:999px; font-weight:600; font-size:14.5px;
+         text-decoration:none; border:1px solid var(--line); color:var(--text); background:var(--card); }
+  .btn.primary { background:var(--accent); color:#0E1418; border-color:var(--accent); }
+  main { max-width:1120px; margin:0 auto; padding:0 24px 80px; }
+  .hero { min-height:72vh; display:grid; place-items:center; text-align:center; position:relative; overflow:hidden; }
+  .orb { position:absolute; width:min(560px, 90vw); aspect-ratio:1; border-radius:50%; left:50%; top:46%; transform:translate(-50%, -50%);
+         background:radial-gradient(circle at 35% 30%, var(--glow), transparent 62%), conic-gradient(from 210deg, #3F7D12, #A8F03C, #2F6FB3, #3F7D12);
+         filter:blur(2px); opacity:.35; animation:turn 24s linear infinite; }
+  @keyframes turn { to { transform:translate(-50%, -50%) rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .orb, .layers span, .tilt { animation:none !important; } }
+  .hero h1 { font-size:clamp(34px, 6vw, 60px); line-height:1.05; margin:0 0 14px; letter-spacing:-.02em; position:relative; }
+  .hero p { color:var(--muted); font-size:19px; margin:0 auto 26px; max-width:620px; position:relative; }
+  .hero .actions { display:flex; gap:10px; justify-content:center; position:relative; }
+  .features { display:grid; grid-template-columns:1fr 1.1fr; gap:48px; align-items:start; margin:40px 0 90px; }
+  .flist { position:sticky; top:100px; display:flex; flex-direction:column; gap:22px; }
+  .f { padding:4px 0 4px 18px; border-left:3px solid var(--line); cursor:pointer; opacity:.55; transition:opacity .2s, border-color .2s; }
+  .f.on { opacity:1; border-color:var(--accent); }
+  .f h3 { margin:0 0 6px; font-size:24px; letter-spacing:-.01em; } .f p { margin:0; color:var(--muted); }
+  .stage { background:var(--card); border:1px solid var(--line); border-radius:24px; min-height:420px; display:grid; place-items:center;
+           overflow:hidden; position:relative; perspective:900px; }
+  .scene { display:none; width:100%; height:100%; place-items:center; } .scene.on { display:grid; }
+  .tilt { font:600 15px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; background:var(--code); border:1px solid var(--line);
+          border-radius:16px; padding:20px 24px; transform:rotateX(18deg) rotateZ(-14deg); box-shadow:0 30px 60px rgba(0,0,0,.35);
+          animation:float 6s ease-in-out infinite; white-space:pre; color:var(--text); }
+  .tilt b { color:var(--accent); font-weight:700; }
+  @keyframes float { 50% { transform:rotateX(14deg) rotateZ(-12deg) translateY(-8px); } }
+  .layers { position:relative; width:200px; height:220px; }
+  .layers span { position:absolute; left:0; right:0; height:120px; border-radius:22px; transform:rotateX(60deg) rotateZ(45deg);
+                 background:linear-gradient(135deg, var(--accent), #2F6FB3); box-shadow:0 0 40px var(--glow); opacity:.85;
+                 animation:stack 4s ease-in-out infinite; }
+  .layers span:nth-child(1) { top:0; } .layers span:nth-child(2) { top:40px; opacity:.6; animation-delay:.2s; }
+  .layers span:nth-child(3) { top:80px; opacity:.4; animation-delay:.4s; }
+  @keyframes stack { 50% { transform:rotateX(60deg) rotateZ(45deg) translateY(-6px); } }
+  .ring { width:220px; height:220px; border-radius:50%; display:grid; place-items:center; font-size:84px;
+          background:radial-gradient(circle, var(--card) 58%, transparent 60%), conic-gradient(#A8F03C, #2F6FB3, #F59E0B, #A8F03C);
+          box-shadow:0 0 70px var(--glow); }
+  section.block { margin:80px 0; } section.block h2 { font-size:34px; margin:0 0 8px; letter-spacing:-.01em; }
+  .sub { color:var(--muted); margin:0 0 22px; }
+  .quick { display:grid; grid-template-columns:280px 1fr; gap:24px; background:var(--card); border:1px solid var(--line);
+           border-radius:22px; padding:24px; }
+  .tabs { display:flex; gap:4px; margin-bottom:10px; } .tabs button { border:0; background:none; color:var(--muted); font:inherit;
+          font-size:14px; padding:6px 12px; border-radius:8px; cursor:pointer; } .tabs button.on { color:var(--text); background:var(--code); }
+  pre { margin:0; background:var(--code); border:1px solid var(--line); border-radius:14px; padding:16px; overflow-x:auto;
+        font:13.5px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .cards { display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px; }
+  .card h3 { margin:0 0 6px; font-size:17px; } .card p { margin:0; color:var(--muted); font-size:14.5px; }
+  table { width:100%; border-collapse:collapse; font-size:14.5px; } td, th { text-align:left; padding:10px; border-bottom:1px solid var(--line);
+          vertical-align:top; } th { color:var(--muted); font-weight:600; } code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.92em; }
+  .tablewrap { overflow-x:auto; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:6px 10px; }
+  footer { border-top:1px solid var(--line); padding:30px 24px; text-align:center; color:var(--muted); font-size:14px; }
+  .features > *, .quick > * { min-width:0; }        /* long code scrolls inside its box, not the page */
+  @media (max-width: 860px) { .tilt { font-size:11px; padding:14px 16px; } .features, .quick { grid-template-columns:1fr; } .flist { position:static; } .cards { grid-template-columns:1fr; }
+    header nav { display:none; } }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/developers"><i>&#10052;</i>Gink API</a>
+  <nav><a href="#how">How it works</a><a href="#quickstart">Quickstart</a><a href="#reference">Reference</a><a href="/developers">Console</a></nav>
+  <a class="btn primary" href="/developers#keys">Get an API key</a>
+</header>
+<main>
+  <section class="hero">
+    <div class="orb" aria-hidden="true"></div>
+    <div>
+      <h1>Managed agents<br>in the Gink API</h1>
+      <p>Send one request. Gink&rsquo;s agent plans, searches the web, reads and writes files in its own workspace &mdash; and
+         the workspace is still there next time.</p>
+      <div class="actions"><a class="btn primary" href="/developers#keys">Get started</a><a class="btn" href="#quickstart">Quickstart</a></div>
+    </div>
+  </section>
+
+  <section class="features" id="how" aria-label="How it works">
+    <div class="flist" role="tablist">
+      <div class="f on" data-s="1" role="tab" tabindex="0" aria-selected="true">
+        <h3>One call, a whole agent</h3>
+        <p>No servers, queues or agent loop to build. Give the agent a task and an environment; it does the steps and
+           returns what it did, the files it changed and its answer.</p></div>
+      <div class="f" data-s="2" role="tab" tabindex="0" aria-selected="false">
+        <h3>Workspaces that remember</h3>
+        <p>Each environment keeps its files between calls. Upload data once, continue a task later with
+           <code>previous_interaction_id</code>, and open the same files in Gink Genie.</p></div>
+      <div class="f" data-s="3" role="tab" tabindex="0" aria-selected="false">
+        <h3>Gink Genie&rsquo;s agent inside</h3>
+        <p>The same file tools Gink Genie uses &mdash; find, search, read, edit, write &mdash; plus web search with
+           sources. Every call saves a version first, so changes can be undone.</p></div>
+    </div>
+    <div class="stage" aria-hidden="true">
+      <div class="scene on" data-s="1"><div class="tilt">client.interactions.create(
+  agent=<b>"gink-agent"</b>,
+  input="Compare solar growth in West Africa",
+  environment=<b>"remote"</b>,
+)</div></div>
+      <div class="scene" data-s="2"><div class="layers"><span></span><span></span><span></span></div></div>
+      <div class="scene" data-s="3"><div class="ring">&#10052;</div></div>
+    </div>
+  </section>
+
+  <section class="block" id="quickstart">
+    <h2>Quickstart</h2>
+    <p class="sub">Create an API key in the console, then make your first request.</p>
+    <div class="quick">
+      <div>
+        <p>1. <a href="/developers#keys">Create an API key</a>.</p>
+        <p>2. Send a task with <code>environment: "remote"</code> for a new workspace.</p>
+        <p>3. Read <code>output_text</code>, and the files under <code>environment</code>.</p>
+        <p class="sub" style="margin-top:16px">Long tasks: add <code>"background": true</code> and check
+           <code>GET /v1/interactions/{id}</code>.</p>
+      </div>
+      <div>
+        <div class="tabs" role="tablist"><button class="on" data-t="py">Python</button><button data-t="js">JavaScript</button><button data-t="curl">curl</button></div>
+        <pre data-t="py">import os, httpx
+
+GINK = "https://gink-server.onrender.com/v1"
+headers = {"Authorization": f"Bearer {os.environ['GINK_API_KEY']}"}
+
+interaction = httpx.post(f"{GINK}/interactions", headers=headers, timeout=600, json={
+    "agent": "gink-agent",
+    "input": "Plot solar energy growth in Senegal since 2015 and write slides in HTML",
+    "environment": "remote",
+}).json()
+
+print(interaction["output_text"])
+print("Files:", interaction["files_changed"], "in", interaction["environment"])</pre>
+        <pre data-t="js" hidden>const GINK = "https://gink-server.onrender.com/v1";
+const res = await fetch(`${GINK}/interactions`, {
+  method: "POST",
+  headers: { Authorization: `Bearer ${process.env.GINK_API_KEY}`, "Content-Type": "application/json" },
+  body: JSON.stringify({
+    agent: "gink-agent",
+    input: "Plot solar energy growth in Senegal since 2015 and write slides in HTML",
+    environment: "remote",
+  }),
+});
+const interaction = await res.json();
+console.log(interaction.output_text, interaction.files_changed);</pre>
+        <pre data-t="curl" hidden>curl https://gink-server.onrender.com/v1/interactions \
+  -H "Authorization: Bearer $GINK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"agent": "gink-agent", "input": "Summarise the latest AI news as notes.md", "environment": "remote"}'</pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>What people build with it</h2>
+    <p class="sub">Tasks that take several steps and leave something behind.</p>
+    <div class="cards">
+      <div class="card"><h3>Research briefs</h3><p>Search the web, compare sources and write a report with links into the workspace.</p></div>
+      <div class="card"><h3>Working on files</h3><p>Upload a project or a dataset; ask for changes, summaries or translations, file by file.</p></div>
+      <div class="card"><h3>Ongoing assistants</h3><p>Keep one environment per customer or project and continue where the last call stopped.</p></div>
+    </div>
+  </section>
+
+  <section class="block" id="reference">
+    <h2>Reference</h2>
+    <p class="sub">Every request uses your API key: <code>Authorization: Bearer gink_&hellip;</code>.</p>
+    <div class="tablewrap"><table>
+      <tr><th>Request</th><th>What it does</th></tr>
+      <tr><td><code>POST /v1/interactions</code></td><td><code>{"agent": "gink-agent", "input", "environment": "remote" | id,
+        "previous_interaction_id", "background", "max_steps" (1&ndash;30, default 15), "tools": ["files", "web_search"]}</code>
+        &rarr; an interaction: <code>id</code>, <code>status</code> (running, completed, incomplete, failed, cancelled),
+        <code>output_text</code>, <code>steps</code>, <code>files_changed</code>, <code>environment</code>.</td></tr>
+      <tr><td><code>GET /v1/interactions/{id}</code></td><td>The interaction now (for background ones).</td></tr>
+      <tr><td><code>POST /v1/interactions/{id}/cancel</code></td><td>Stops before its next step.</td></tr>
+      <tr><td><code>POST /v1/environments</code></td><td><code>{"name"}</code> &rarr; a new, empty environment.</td></tr>
+      <tr><td><code>GET /v1/environments</code>, <code>GET /v1/environments/{id}</code></td><td>Your environments and their files.</td></tr>
+      <tr><td><code>PUT /v1/environments/{id}/files/{path}</code></td><td>Upload a file (the request body is its content).</td></tr>
+      <tr><td><code>GET /v1/environments/{id}/files/{path}</code></td><td>Download a file.</td></tr>
+      <tr><td><code>DELETE /v1/environments/{id}</code></td><td>Delete an environment and its files.</td></tr>
+    </table></div>
+    <p class="sub" style="margin-top:16px">Good to know: an interaction counts as one message toward your daily allowance.
+      Environments are Gink Genie projects (same limits). The agent doesn&rsquo;t run code on the server &mdash; it writes
+      the code and tells you how to run it. Age, parental-control and workspace rules apply, as everywhere in Gink.</p>
+  </section>
+</main>
+<footer>Gink API &middot; <a href="/developers">Console</a> &middot; <a href="/developers#docs">All docs</a></footer>
+<script>
+  (function () {
+    function pick(n) {
+      document.querySelectorAll('.f').forEach(function (f) { var on = f.getAttribute('data-s') === n;
+        f.classList.toggle('on', on); f.setAttribute('aria-selected', on ? 'true' : 'false'); });
+      document.querySelectorAll('.scene').forEach(function (s) { s.classList.toggle('on', s.getAttribute('data-s') === n); });
+    }
+    document.querySelectorAll('.f').forEach(function (f) {
+      f.addEventListener('click', function () { pick(f.getAttribute('data-s')); });
+      f.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(f.getAttribute('data-s')); } });
+    });
+    var n = 1; setInterval(function () { if (document.hidden) return; n = n % 3 + 1; pick(String(n)); }, 6000);
+    document.querySelectorAll('.tabs button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        document.querySelectorAll('.tabs button').forEach(function (x) { x.classList.toggle('on', x === b); });
+        document.querySelectorAll('pre[data-t]').forEach(function (p) { p.hidden = p.getAttribute('data-t') !== b.getAttribute('data-t'); });
+      });
+    });
+  })();
+</script>
+</body>
+</html>

@@ -83,6 +83,7 @@ async def _lifespan(_app):
     """Startup work (FastAPI's current way; @app.on_event is being removed): check where accounts are
     stored, then resume unfinished batches."""
     _check_storage_at_startup()
+    _agents_after_restart()                         # managed agents that were running when the server stopped
     gc_task = asyncio.get_running_loop().create_task(_blob_gc_daily())   # unused big files (services/blob_store.py)
     await _resume_batches()
     yield
@@ -2710,6 +2711,8 @@ def delete_account(request: Request, data: dict = Body(...)):
             for t in ORG_TABLES:
                 con.execute(t)
             con.execute("DELETE FROM org_members WHERE email=?", (email,))
+            con.execute(AGENT_TABLE)
+            con.execute("DELETE FROM agent_interactions WHERE email=?", (email,))
             for t in TRAINING_TABLES:
                 con.execute(t)
             con.execute("DELETE FROM training_optin WHERE email=?", (email,))
@@ -4590,6 +4593,360 @@ def org_delete(request: Request, data: dict = Body(default={})):
                          con.execute("DELETE FROM orgs WHERE id=?", (org["id"],))))
     return {"org": None}
 
+# =====================================================================
+# Managed agents (Gink Developer API): ONE API call runs Gink's agent in a hosted, persistent environment.
+#   POST /v1/interactions {"agent": "gink-agent", "input": "...", "environment": "remote" | "<id>",
+#                          "previous_interaction_id", "background", "max_steps", "tools": ["files", "web_search"]}
+#   GET  /v1/interactions/{id}     POST /v1/interactions/{id}/cancel
+#   POST/GET /v1/environments      GET /v1/environments/{id}   GET /v1/environments/{id}/files/{path}
+#   PUT  /v1/environments/{id}/files/{path}   DELETE /v1/environments/{id}
+# An environment is a Gink Genie project (open it in Gink Genie to see, change or download its files); files
+# persist across interactions. Every interaction saves a version first, so Genie's Undo works for agents too.
+# The agent can read, write, edit, find and search files and search the web. It does NOT run code on the
+# server (that needs a sandboxed computer per environment -- not this server): it says so when asked to.
+# Limits: each interaction counts as one message toward the key owner's daily allowance (with its tool steps
+# as calls); max_steps 1-30 (default 15). Age, parental, workspace and lockdown rules apply as everywhere.
+# =====================================================================
+AGENT_NAMES = {"gink-agent"}
+AGENT_TABLE = ("CREATE TABLE IF NOT EXISTS agent_interactions (id TEXT PRIMARY KEY, email TEXT, key_id INTEGER, env_id TEXT, "
+               "status TEXT, input TEXT, output_text TEXT, steps TEXT, messages TEXT, previous_id TEXT, error TEXT, "
+               "created REAL, finished REAL)")
+AGENT_SYSTEM = (
+    "You are Gink's managed agent, working for a developer through the Gink API. You have a persistent environment: "
+    "a folder of files that is still there next time. Plan briefly, then act with your tools: look before you change "
+    "(list_files, find_files, search_files, read_file), change existing files with edit_file and create files with "
+    "write_file, and use web_search for facts you don't know or that may have changed. You can't run code or "
+    "commands here: if a task needs that, write the code and say how to run it. Finish with a clear, complete answer "
+    "that says what you did and which files you created or changed.")
+def _agent_file_tools() -> list:
+    """Genie's file tools without run_command (GENIE_TOOLS is defined further down this file)."""
+    return [t for t in GENIE_TOOLS if t["function"]["name"] != "run_command"]
+
+
+AGENT_SEARCH_TOOL = {"type": "function", "function": {"name": "web_search", "description": (
+    "Search the web; returns a short answer with its sources."), "parameters": {"type": "object", "properties": {
+        "query": {"type": "string"}}, "required": ["query"]}}}
+_agent_tasks = {}
+
+
+def _agent_db(fn):
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(AGENT_TABLE)
+            out = fn(con)
+            con.commit()
+            return out
+        finally:
+            con.close()
+
+
+def _agent_public(row) -> dict:
+    keys = ("id", "email", "key_id", "env_id", "status", "input", "output_text", "steps", "messages", "previous_id",
+            "error", "created", "finished")
+    r = dict(zip(keys, row))
+    steps = _json.loads(r["steps"] or "[]")
+    out = {"id": r["id"], "object": "interaction", "agent": "gink-agent", "status": r["status"], "environment": r["env_id"],
+           "output_text": r["output_text"] or "", "steps": steps, "files_changed": sorted({s["path"] for s in steps if s.get("path")
+                                                                                           and s.get("changed")}),
+           "previous_interaction_id": r["previous_id"], "created": int(r["created"] or 0),
+           "finished": int(r["finished"]) if r["finished"] else None, "usage": {"steps": len(steps)}}
+    if r["error"]:
+        out["error"] = {"message": r["error"]}
+    return out
+
+
+def _agent_get(email: str, iid: str):
+    row = _agent_db(lambda con: con.execute("SELECT * FROM agent_interactions WHERE id=? AND email=?", (iid, email)).fetchone())
+    return row
+
+
+def _agent_save(iid: str, **fields):
+    cols = ", ".join(f"{k}=?" for k in fields)
+    _agent_db(lambda con: con.execute(f"UPDATE agent_interactions SET {cols} WHERE id=?", (*fields.values(), iid)))
+
+
+def _env_for(email: str, env: str, name_hint: str = "") -> str:
+    """'remote' (or nothing) = a new environment; otherwise one of this person's environments (Genie projects)."""
+    env = str(env or "remote").strip()
+    if env in ("remote", "new"):
+        n = _genie_db(lambda con: con.execute("SELECT COUNT(*) FROM genie_projects WHERE email=?", (email,)).fetchone()[0])
+        if n >= GENIE_MAX_PROJECTS:
+            raise HTTPException(status_code=409, detail=f"You have {GENIE_MAX_PROJECTS} environments (Genie projects): delete one first.")
+        pid, now = "gp_" + secrets.token_hex(6), time.time()
+        name = " ".join((name_hint or "Agent environment").split())[:60] or "Agent environment"
+        _genie_db(lambda con: con.execute("INSERT INTO genie_projects (id, email, name, preview_key, created, updated) "
+                                          "VALUES (?, ?, ?, ?, ?, ?)", (pid, email, name, secrets.token_urlsafe(16), now, now)))
+        return pid
+    try:
+        _genie_project(email, env)
+    except HTTPException:
+        raise HTTPException(status_code=404, detail="No environment with that id (create one with environment=\"remote\").")
+    return env
+
+
+async def _agent_loop(iid: str, email: str, env_id: str, messages: list, tools_allowed: set, max_steps: int, org_text: str,
+                      teen: bool):
+    """Runs the agent to the end, saving progress (steps, status, output) as it goes."""
+    import httpx
+    tools = (_agent_file_tools() if "files" in tools_allowed else []) + ([AGENT_SEARCH_TOOL] if "web_search" in tools_allowed else [])
+    system = [{"role": "system", "content": AGENT_SYSTEM}] + ([{"role": "system", "content": TEEN_SAFETY}] if teen else []) \
+        + ([{"role": "system", "content": org_text}] if org_text else [])
+    steps, changes = [], []
+    plan = _plan_status(email)["plan"]
+    try:
+        _genie_checkpoint(env_id, "Before agent interaction " + iid)
+        for _ in range(max_steps):
+            if _agent_tasks.get(iid) == "cancel":
+                return _agent_save(iid, status="cancelled", steps=_json.dumps(steps), finished=time.time())
+            blocked = _count_call(email, iid, plan)
+            if blocked is not None:
+                msg = _json.loads(bytes(blocked.body))["error"]["message"]
+                return _agent_save(iid, status="failed", error=msg, steps=_json.dumps(steps), finished=time.time())
+            body = {"model": await _current_model("openai/gpt-oss-120b"), "messages": system + messages,
+                    "temperature": 0.3, "reasoning_effort": "medium"}
+            if tools:
+                body.update(tools=tools, tool_choice="auto")
+            async with httpx.AsyncClient(timeout=httpx.Timeout(180, connect=15)) as client:
+                r = await client.post(f"{GROQ_BASE}/chat/completions", json=body,
+                                      headers={"Authorization": f"Bearer {_env('GROQ_API_KEY')}"})
+            if r.status_code != 200:
+                why = "The AI service is busy right now." if r.status_code == 429 else "The AI service had a problem."
+                return _agent_save(iid, status="failed", error=why + " What was done so far is kept.", steps=_json.dumps(steps),
+                                   messages=_json.dumps(messages), finished=time.time())
+            msg = (r.json().get("choices") or [{}])[0].get("message") or {}
+            calls = msg.get("tool_calls") or []
+            if not calls:
+                text = (msg.get("content") or "").strip()
+                messages.append({"role": "assistant", "content": text})
+                return _agent_save(iid, status="completed", output_text=text, steps=_json.dumps(steps),
+                                   messages=_json.dumps(messages), finished=time.time())
+            messages.append({"role": "assistant", "content": msg.get("content") or "", "tool_calls": calls})
+            for call in calls[:8]:
+                name = call.get("function", {}).get("name", "")
+                try:
+                    args = _json.loads(call.get("function", {}).get("arguments") or "{}")
+                except ValueError:
+                    args = {}
+                if name == "web_search" and "web_search" in tools_allowed:
+                    why = _family_refusal(email, "web", quiet=True) or (LOCKDOWN_MSG.format(what="web search") if _lockdown(email) else "")
+                    if why:
+                        result = why
+                    else:
+                        found = await _search_core(email, str(args.get("query") or "")[:400])
+                        result = found if isinstance(found, str) else (found["answer"] + "\n\nSources:\n" +
+                                 "\n".join(f"- {x.get('title') or x.get('url')}: {x.get('url')}" for x in found["sources"]))
+                    step = {"tool": "web_search", "query": str(args.get("query") or "")[:200]}
+                elif name in {t["function"]["name"] for t in _agent_file_tools()} and "files" in tools_allowed:
+                    before = len(changes)
+                    result = _genie_tool(env_id, name, args, changes)
+                    step = {"tool": name, "path": args.get("path") or args.get("pattern") or args.get("text") or "",
+                            "changed": len(changes) > before}
+                else:
+                    result, step = f"Unknown tool {name}.", {"tool": name}
+                step["result"] = str(result)[:300]
+                steps.append(step)
+                messages.append({"role": "tool", "tool_call_id": call.get("id"), "content": str(result)[:20000]})
+            _agent_save(iid, steps=_json.dumps(steps))
+        _agent_save(iid, status="incomplete", error=f"Stopped after {max_steps} steps. Continue it with "
+                    f"previous_interaction_id=\"{iid}\".", steps=_json.dumps(steps), messages=_json.dumps(messages),
+                    finished=time.time())
+    except Exception as exc:
+        _agent_save(iid, status="failed", error=f"Something went wrong ({type(exc).__name__}). What was done so far is kept.",
+                    steps=_json.dumps(steps), finished=time.time())
+    finally:
+        _agent_tasks.pop(iid, None)
+
+
+@app.post("/v1/interactions")
+async def api_interaction(request: Request, data: dict = Body(...)):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    email, key_id = owner
+    if str(data.get("agent") or "gink-agent") not in AGENT_NAMES:
+        return _api_error(400, "Unknown agent. Use \"gink-agent\".", "invalid_agent")
+    text = str(data.get("input") or "").strip()
+    if not text:
+        return _api_error(400, "Give the agent an input.", "missing_input")
+    if not _env("GROQ_API_KEY"):
+        return _api_error(503, "Agents aren't set up on this server yet.", "not_configured")
+    try:
+        family, _controls = _genie_family_gate(email)
+        org_text, org_refusal = _org_guard(email, text)
+    except HTTPException as exc:
+        return _api_error(exc.status_code, str(exc.detail), "not_allowed")
+    if org_refusal:
+        return _api_error(422, org_refusal, "patient_data")
+    try:
+        max_steps = max(1, min(int(data.get("max_steps") or 15), 30))
+    except (TypeError, ValueError):
+        return _api_error(400, "max_steps must be a number from 1 to 30.", "invalid_max_steps")
+    tools = set(data.get("tools") or ["files", "web_search"]) & {"files", "web_search"}
+    history, env_hint = [], data.get("environment")
+    prev = str(data.get("previous_interaction_id") or "")
+    if prev:
+        row = _agent_get(email, prev)
+        if not row:
+            return _api_error(404, "No interaction with that previous_interaction_id.", "not_found")
+        p = _agent_public(row)
+        if p["status"] == "running":
+            return _api_error(409, "That interaction is still running.", "still_running")
+        history = _json.loads(row[8] or "[]")
+        env_hint = env_hint or p["environment"]
+    try:
+        env_id = _env_for(email, env_hint or "remote", text[:50])
+    except HTTPException as exc:
+        return _api_error(exc.status_code, str(exc.detail), "environment")
+    iid = "int_" + secrets.token_hex(10)
+    messages = history + [{"role": "user", "content": text[:20000]}]
+    _agent_db(lambda con: con.execute("INSERT INTO agent_interactions (id, email, key_id, env_id, status, input, steps, messages, "
+                                      "previous_id, created) VALUES (?, ?, ?, ?, 'running', ?, '[]', ?, ?, ?)",
+                                      (iid, email, key_id, env_id, text[:20000], _json.dumps(messages), prev or None, time.time())))
+    _agent_tasks[iid] = "running"
+    run = _agent_loop(iid, email, env_id, messages, tools, max_steps, org_text, bool(family))
+    if data.get("background"):
+        task = asyncio.get_running_loop().create_task(run)
+        _safety_tasks.add(task)
+        task.add_done_callback(_safety_tasks.discard)
+    else:
+        await run
+    return _agent_public(_agent_get(email, iid))
+
+
+@app.get("/v1/interactions/{iid}")
+def api_interaction_get(iid: str, request: Request):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    row = _agent_get(owner[0], iid)
+    return _agent_public(row) if row else _api_error(404, "No interaction with that id.", "not_found")
+
+
+@app.post("/v1/interactions/{iid}/cancel")
+def api_interaction_cancel(iid: str, request: Request):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    row = _agent_get(owner[0], iid)
+    if not row:
+        return _api_error(404, "No interaction with that id.", "not_found")
+    if iid in _agent_tasks:
+        _agent_tasks[iid] = "cancel"                       # stops before its next step
+    return _agent_public(row)
+
+
+def _env_public(request: Request, email: str, pid: str) -> dict:
+    p = _genie_project(email, pid)
+    files = _genie_summary(pid)
+    return {"id": pid, "object": "environment", "name": p["name"], "created": int(p["created"]), "updated": int(p["updated"]),
+            "files": [{"path": f["path"], "size": f["size"]} for f in files], "preview_url": _genie_public(request, p)["preview_url"]}
+
+
+@app.post("/v1/environments")
+def api_env_create(request: Request, data: dict = Body(default={})):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    try:
+        _genie_family_gate(owner[0])
+        pid = _env_for(owner[0], "remote", str((data or {}).get("name") or "Agent environment"))
+    except HTTPException as exc:
+        return _api_error(exc.status_code, str(exc.detail), "environment")
+    return _env_public(request, owner[0], pid)
+
+
+@app.get("/v1/environments")
+def api_env_list(request: Request):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    rows = _genie_db(lambda con: con.execute("SELECT id FROM genie_projects WHERE email=? ORDER BY updated DESC", (owner[0],)).fetchall())
+    return {"object": "list", "data": [_env_public(request, owner[0], r[0]) for r in rows]}
+
+
+@app.get("/v1/environments/{pid}")
+def api_env_get(pid: str, request: Request):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    try:
+        return _env_public(request, owner[0], pid)
+    except HTTPException:
+        return _api_error(404, "No environment with that id.", "not_found")
+
+
+@app.get("/v1/environments/{pid}/files/{path:path}")
+def api_env_file(pid: str, path: str, request: Request):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    try:
+        _genie_project(owner[0], pid)
+    except HTTPException:
+        return _api_error(404, "No environment with that id.", "not_found")
+    content = _genie_files(pid).get(_genie_path(path)) if path else None
+    if content is None:
+        return _api_error(404, "No file with that path.", "not_found")
+    if content.startswith(GENIE_PIC):
+        from fastapi.responses import Response
+        return Response(base64.b64decode(content[len(GENIE_PIC):].split(",", 1)[-1]), media_type="application/octet-stream")
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(content)
+
+
+@app.put("/v1/environments/{pid}/files/{path:path}")
+async def api_env_put(pid: str, path: str, request: Request):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    try:
+        _genie_project(owner[0], pid)
+        raw = await request.body()
+        try:
+            text = raw.decode("utf-8")
+            _genie_write(pid, _genie_path(path), text)
+        except UnicodeDecodeError:
+            _genie_write(pid, _genie_path(path), "", picture=raw)
+    except HTTPException:
+        return _api_error(404, "No environment with that id.", "not_found")
+    except ValueError as exc:
+        return _api_error(400, str(exc), "invalid_file")
+    return _env_public(request, owner[0], pid)
+
+
+@app.delete("/v1/environments/{pid}")
+def api_env_delete(pid: str, request: Request):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    try:
+        _genie_project(owner[0], pid)
+    except HTTPException:
+        return _api_error(404, "No environment with that id.", "not_found")
+    _genie_db(lambda con: (con.execute("DELETE FROM genie_files WHERE project_id=?", (pid,)),
+                           con.execute("DELETE FROM genie_snapshots WHERE project_id=?", (pid,)),
+                           con.execute("DELETE FROM genie_chat WHERE project_id=?", (pid,)),
+                           con.execute("DELETE FROM genie_projects WHERE id=?", (pid,))))
+    return {"id": pid, "object": "environment", "deleted": True}
+
+
+def _agents_after_restart():
+    """Interactions that were running when the server stopped can't finish: say so."""
+    try:
+        _agent_db(lambda con: con.execute("UPDATE agent_interactions SET status='failed', error=?, finished=? WHERE status='running'",
+                                          ("Interrupted by a server restart. What was done so far is kept; run it again "
+                                           "with previous_interaction_id to continue.", time.time())))
+    except Exception:
+        pass
+
+
+@app.get("/developers/agents", response_class=HTMLResponse)
+def agents_page():
+    """Managed agents: what they are, a quickstart and the reference (web_app/agents.html)."""
+    with open(os.path.join(WEB_APP_DIR, "agents.html"), encoding="utf-8") as f:
+        return HTMLResponse(f.read(), headers=_WEB_HEADERS)
+
 # ---- Owner only: download a copy of the whole database (accounts, chats sync, payments...).
 #   GET /admin/backup  header x-admin-key: <GINK_ADMIN_KEY>  -> gink-backup-<date>.db
 # Uses SQLite's own backup, so the copy is consistent even while people are using Gink.
@@ -4667,6 +5024,14 @@ async def web_search(request: Request, data: dict = Body(...)):
     blocked = _count_search(email, plan, request.headers.get("x-gink-turn", ""))
     if blocked is not None:
         return blocked
+    found = await _search_core(email, query)
+    if isinstance(found, str):
+        return _ai_error(502, found, "upstream")
+    return found
+
+
+async def _search_core(email: str, query: str):
+    """{"answer", "sources"} for a query, or a message saying why not (used by /web/search and managed agents)."""
     body = {"model": await _current_model(SEARCH_MODEL), "messages": [
         {"role": "system", "content": "Search the web and answer the question accurately and concisely, with the most "
                                       "important facts and dates. Say so if you can't find reliable information."},
@@ -4679,9 +5044,9 @@ async def web_search(request: Request, data: dict = Body(...)):
             r = await client.post(f"{GROQ_BASE}/chat/completions", json=body,
                                   headers={"Authorization": f"Bearer {_env('GROQ_API_KEY')}"})
     except Exception:
-        return _ai_error(502, "The web search service didn't answer. Please try again.", "upstream")
+        return "The web search service didn't answer. Please try again."
     if r.status_code != 200:
-        return _ai_error(502, "The web search service had a problem. Please try again.", "upstream")
+        return "The web search service had a problem. Please try again."
     data = r.json()
     msg = ((data.get("choices") or [{}])[0]).get("message") or {}
     return {"answer": _clean_cites(msg.get("content") or "").strip(),

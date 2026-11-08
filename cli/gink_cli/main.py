@@ -6,6 +6,7 @@ gink -- Gink in your terminal (the Gink Developer API, OpenAI-compatible).
     cat file | gink "summarise"     send a file's text with the question
     gink -s "question"              search the web (answers list their sources)
     gink --image "prompt" -o x.png  make an image
+    gink agent "task"               a managed agent does it in a workspace that persists (--env ID, --continue)
     gink login                      sign in through your browser (or: gink login --key to paste a key)
     gink logout | models | version
 """
@@ -164,6 +165,48 @@ def make_image(key: str, base: str, prompt: str, path: str) -> str:
     return path
 
 
+def run_agent(key: str, base: str, task: str, env: str = "remote", previous: str = "", max_steps: int = 15) -> dict:
+    """A managed agent (POST /v1/interactions): runs in the background while we show its steps."""
+    need_key(key)
+    import httpx
+    body = {"agent": "gink-agent", "input": task, "environment": env or "remote", "background": True, "max_steps": max_steps}
+    if previous:
+        body["previous_interaction_id"] = previous
+        body.pop("environment")
+    try:
+        with _client(key, 60) as c:
+            r = c.post(base + "/interactions", json=body)
+            if r.status_code != 200:
+                raise _explain(r)
+            it, shown = r.json(), 0
+            while it["status"] == "running":
+                time.sleep(1.5)
+                r = c.get(f"{base}/interactions/{it['id']}")
+                if r.status_code != 200:
+                    raise _explain(r)
+                it = r.json()
+                for step in it.get("steps", [])[shown:]:
+                    what = step.get("query") or step.get("path") or ""
+                    print(f"  \u2022 {step.get('tool')} {what}".rstrip(), file=sys.stderr)
+                shown = len(it.get("steps", []))
+    except httpx.HTTPError as exc:
+        raise _network(exc)
+    return it
+
+
+def show_agent_result(it: dict) -> int:
+    if it.get("output_text"):
+        print(it["output_text"])
+    if it.get("files_changed"):
+        print(f"\nFiles changed: {', '.join(it['files_changed'])}", file=sys.stderr)
+    print(f"Environment: {it.get('environment')}   Interaction: {it.get('id')}   "
+          f"(continue with: gink agent --continue {it.get('id')} \"...\")", file=sys.stderr)
+    if it.get("status") not in ("completed",):
+        print(f"gink: {it.get('status')}: {(it.get('error') or {}).get('message', '')}", file=sys.stderr)
+        return 1
+    return 0
+
+
 # ---------------------------------------------------------------- the commands
 def with_piped_text(question: str, piped: str) -> str:
     if not piped:
@@ -300,12 +343,20 @@ def main(argv=None) -> int:
         if argv[:1] == ["models"]:
             print("\n".join(list_models(key, base)))
             return 0
+        if argv[:1] == ["agent"]:
+            ag = argparse.ArgumentParser(prog="gink agent", description="A managed agent with a workspace that persists.")
+            ag.add_argument("task", nargs="+", help="what the agent should do")
+            ag.add_argument("--env", default="remote", help="an environment id (default: a new one)")
+            ag.add_argument("--continue", dest="previous", default="", help="an interaction id to continue")
+            ag.add_argument("--max-steps", type=int, default=15)
+            b = ag.parse_args(argv[1:])
+            return show_agent_result(run_agent(key, base, " ".join(b.task), b.env, b.previous, b.max_steps))
         if argv[:1] in (["version"], ["--version"]):
             print(f"gink {__version__}")
             return 0
 
         ap = argparse.ArgumentParser(prog="gink", description="Gink in your terminal.",
-                                     epilog="Also: gink login | logout | models | version")
+                                     epilog="Also: gink agent \"task\" | login | logout | models | version")
         ap.add_argument("question", nargs="*", help="what to ask (leave out for a chat)")
         ap.add_argument("-m", "--model", default="", help="a model from 'gink models' (default: your account's)")
         ap.add_argument("-s", "--search", action="store_true", help="search the web; answers list their sources")
