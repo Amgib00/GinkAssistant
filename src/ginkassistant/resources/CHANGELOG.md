@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.119 (November 2026)
+
+- Turning on object storage keeps everything: big Gink Genie files saved on the server's disk before
+  are found there and moved into object storage the first time they're opened
+
 ## 0.1.118 (November 2026)
 
 - Behind the scenes: a safety check now runs with every test, so the kind of server freeze caught last

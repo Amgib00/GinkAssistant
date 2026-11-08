@@ -115,3 +115,25 @@ def test_broken_object_storage_falls_back_to_disk(monkeypatch, tmp_path):
         monkeypatch.setenv(k, "x")
     s = blob_store.store(str(tmp_path))
     assert s.kind == "disk" and "isn't working" in blob_store._store["problem"]
+
+
+def test_files_from_the_disk_move_to_object_storage_when_read(monkeypatch, tmp_path):
+    """Switching object storage on later must not lose the big files already kept on the server's disk."""
+    disk = blob_store.LocalStore(str(tmp_path))
+    key = blob_store.key_for(b"an old big file")
+    disk.put(key, b"an old big file")
+    objects = {}
+
+    class Client:
+        def put_object(self, Bucket, Key, Body): objects[Key] = Body
+        def get_object(self, Bucket, Key):
+            if Key not in objects:
+                raise KeyError(Key)
+            return {"Body": types.SimpleNamespace(read=lambda: objects[Key])}
+    monkeypatch.setitem(sys.modules, "boto3", types.SimpleNamespace(client=lambda service, **kw: Client()))
+    monkeypatch.setitem(sys.modules, "botocore", types.ModuleType("botocore"))
+    monkeypatch.setitem(sys.modules, "botocore.config", types.SimpleNamespace(Config=lambda **kw: kw))
+    for k, v in {"GINK_S3_BUCKET": "b", "GINK_S3_KEY": "k", "GINK_S3_SECRET": "s"}.items():
+        monkeypatch.setenv(k, v)
+    assert blob_store.get(key, str(tmp_path)) == b"an old big file"
+    assert objects["gink/" + key] == b"an old big file"                          # now in object storage too

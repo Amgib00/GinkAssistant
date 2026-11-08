@@ -2035,3 +2035,8 @@ New services/live_info.py (all free, no API keys):
 - Access audit (one-off): every POST/PUT/DELETE route either authenticates (_email_from_auth / _require_owner /
   _session_email / _api_key_owner / _device_entry) or is public by design (sign-in flows, /errors with a rate
   limit, payment callbacks: Paystack HMAC-checked; CinetPay only triggers _settle, which verifies the payment).
+
+## 0.1.119: switching to object storage later keeps the disk's blobs
+- blob_store.get(): with S3 active and the key missing there, look in the LocalStore (GINK_BLOB_DIR / next to the DB)
+  and copy it up (lazy migration). Without this, setting GINK_S3_* after 0.1.111 made every big Genie file read ""
+  ("content is missing"). GC only lists S3, so not-yet-moved disk blobs are never deleted by it.

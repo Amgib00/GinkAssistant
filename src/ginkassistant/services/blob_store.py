@@ -130,7 +130,16 @@ def get(key: str, default_root: str = ""):
         if key in _cache:
             _cache.move_to_end(key)
             return _cache[key]
-    data = store(default_root).get(key)
+    s = store(default_root)
+    data = s.get(key)
+    if data is None and s.kind == "object storage":       # stored on the disk before object storage was set up:
+        disk = LocalStore(os.environ.get("GINK_BLOB_DIR") or default_root or "blobs")
+        data = disk.get(key)
+        if data is not None:
+            try:
+                s.put(key, data)                          # moved across the first time it's read
+            except Exception:
+                pass
     if data is not None:
         _remember(key, data)
     return data
