@@ -1781,3 +1781,481 @@ Gink: Mail abierto.",openai/gpt-oss-120b,yes
 es,Please calculate 10% of 1200.,,,openai/gpt-oss-120b,no
 es,What's the current weather like in Abidjan?,¿Qué tiempo hace ahora en Abidjan?,"Abidjan ahora: lluvia ligera, alrededor de 23°C.",openai/gpt-oss-120b,yes
 es,احسب 457 مرة 7,Calcula 457 por 7,"El resultado es 3,199.",openai/gpt-oss-120b,yes
+es,¿Qué tiempo hace en Abidjan en este momento?,,,openai/gpt-oss-120b,no
+es,Peux-tu lancer Calendar ?,¿Puedes lanzar Calendar?,Calendar está abierto.,openai/gpt-oss-120b,yes
+es,"Hey, what's it looking like outside in Dakar today?","Persona: Oye, ¿cómo está el clima afuera en Dakar hoy?","Gink: Dakar hoy: soleado, alrededor de 21°C.",openai/gpt-oss-120b,yes
+es,¿Cuál es el 5% de 15000?,,,openai/gpt-oss-120b,no
+es,Clima Abidjan amanhã,Persona: Clima Abidjan mañana,"Abidjan mañana: nublado, alrededor de 18°C.",openai/gpt-oss-120b,yes
+es,Can you tell me the conversion of 10000 CFA francs to pounds?,,,openai/gpt-oss-120b,no
+es,Il fait quel temps à London demain ?,¿Qué tiempo hará en London mañana?,"En London mañana: soleado, alrededor de 29 °C.",openai/gpt-oss-120b,yes
+es,Please convert 100 naira to leones.,"Por favor, convierta 100 naira a leones.",100 naira son aproximadamente 1.48 leones al tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,"Bonjour, pourriez‑vous m'indiquer le montant en dollars correspondant à 20 leones, s'il vous plaît ?","Hola, ¿podría indicarme el monto en dólares correspondiente a 20 leones, por favor?","20 leones son aproximadamente 0.88 dólares, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,"Hey, can you tell me the weather in Abidjan right now?",,,openai/gpt-oss-120b,no
+es,الشخص: الأغنية التالية,Persona: la canción siguiente,Gink: listo.,openai/gpt-oss-120b,yes
+es,احسب 825 مرة 3,Calcula 825 por 3,"El resultado es 2,475.",openai/gpt-oss-120b,yes
+es,"Hey, can you tell me the weather in Thiès today?","Oye, ¿me puedes decir el clima en Thiès hoy?","Thiès hoy: lluvia ligera, alrededor de 31°C.",openai/gpt-oss-120b,yes
+es,"Quel temps fait‑il à Accra maintenant, s’il te plaît ?","¿Qué tiempo hace en Accra ahora, por favor?","En Accra en este momento: ligera lluvia, alrededor de 31 °C.",openai/gpt-oss-120b,yes
+es,I need the conversion of 20 euros into naira.,,,openai/gpt-oss-120b,no
+es,Person: Convert 5000 euros to pounds,Persona: Convierte 5000 euros a libras,"Gink: 5000 euros son aproximadamente 4,239.13 libras al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,"Hey, can you tell me the current weather in Nairobi?",,,openai/gpt-oss-120b,no
+es,Ajusta el volumen a 20,,,openai/gpt-oss-120b,no
+es,Quanto é 20% de 15000?,Persona: ¿Cuánto es el 20% de 15000?,Gink: Son 3.000.,openai/gpt-oss-120b,yes
+es,"Hey, transforme 1000 dollars en nairas s'il te plaît.","Oye, transforma 1000 dólares en nairas, por favor.","1000 dólares equivalen a aproximadamente 1,530,000.00 nairas, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,Person: Convert 250 euros to naira,Persona: Convertir 250 euros a naira,"Gink: 250 euros son aproximadamente 415,760.87 naira al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,Person: ¿Cuánto es el 5 % de 5000?,,,openai/gpt-oss-120b,no
+es,"Person: Lance Chrome
+Gink: Chrome est ouvert.",,,openai/gpt-oss-120b,no
+es,Pessoa: Qual é 965 vezes 15?,Persona: ¿Cuál es 965 veces 15?,"Gink: Eso es 14,475.",openai/gpt-oss-120b,yes
+es,Lance Safari s'il te plaît.,"Abre Safari, por favor.",Safari está abierto.,openai/gpt-oss-120b,yes
+es,Please begin a timer for 3 minutes.,"Por favor, inicia un temporizador de 3 minutos.",Tu temporizador de 3 minutos está en marcha.,openai/gpt-oss-120b,yes
+es,¿Qué tiempo hace en Conakry en este momento?,Person: ¿Qué tiempo hace en Conakry en este momento?,"Gink: En Conakry en este momento: ligera lluvia, alrededor de 29 °C.",openai/gpt-oss-120b,yes
+es,Can you tell me the weather in Dakar today?,¿Puedes decirme el tiempo en Dakar hoy?,"Dakar hoy: soleado, alrededor de 21°C.",openai/gpt-oss-120b,yes
+es,Defina o volume para 70,Establezca el volumen a 70,Volumen ajustado a 70.,openai/gpt-oss-120b,yes
+es,"Could you give me the present weather conditions for Abidjan, please?","¿Podrías darme las condiciones meteorológicas actuales para Abidjan, por favor?","Abidjan ahora: soleado, alrededor de 34°C.",openai/gpt-oss-120b,yes
+es,اضبط الصوت على 20,Ajusta el volumen a 20,Volumen a 20.,openai/gpt-oss-120b,yes
+es,Abre Safari,"Person: Abre Safari
+Gink: Safari está abierto.","Persona: Abre Safari
+Gink: Safari está abierto.",openai/gpt-oss-120b,yes
+es,"Hey, could you please convert 50 pounds to cedis?","Oye, ¿podrías convertir 50 pounds a cedis, por favor?",50 pounds son aproximadamente 987.18 cedis al tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,Can you get the Calculator up?,,,openai/gpt-oss-120b,no
+es,Peux‑tu ouvrir WhatsApp ?,¿Puedes abrir WhatsApp?,WhatsApp está abierto.,openai/gpt-oss-120b,yes
+es,Converta 1000 leões em dólares,Convierta 1000 leões a dólares,"1000 leões equivalen a aproximadamente 44,25 dólares, con la tasa actual.",openai/gpt-oss-120b,yes
+es,منبه على الساعة 5:45 من فضلك,"Alarma a las 5:45, por favor",Hecho: te despertaré a las 5:45.,openai/gpt-oss-120b,yes
+es,Que tempo está fazendo em London agora?,¿Qué tiempo hace en London ahora?,"En London ahora: nublado, alrededor de 29 °C.",openai/gpt-oss-120b,yes
+es,احسب 555 مرة 15,Calcula 555 por 15,"El resultado es 8,325.",openai/gpt-oss-120b,yes
+es,احسب 133 × 23,Calcula 133 × 23,"El resultado es 3,059.",openai/gpt-oss-120b,yes
+es,"Hey, can you tell me the weather in Conakry for tomorrow?","Oye, ¿me puedes decir el clima en Conakry para mañana?","Conakry mañana: soleado, alrededor de 30 °C.",openai/gpt-oss-120b,yes
+es,"20% of 250000, please.","20% de 250000, por favor.","Eso es 50,000.",openai/gpt-oss-120b,yes
+es,Please calculate 15% of 250000 for me.,,,openai/gpt-oss-120b,no
+es,¿Cuánto son 100 libras esterlinas en francos CFA?,,,openai/gpt-oss-120b,no
+es,I need to know how much 20 Kenyan shillings is in naira.,Necesito saber cuánto son 20 Kenyan shillings en naira.,20 Kenyan shillings son aproximadamente 237.21 naira al tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,I need the conversion of 5000 naira into Kenyan shillings.,Necesito la conversión de 5000 naira a chelines kenianos.,5000 naira son aproximadamente 421.57 chelines kenianos al tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,Persona: alarma a las 08:30,,,openai/gpt-oss-120b,no
+es,"Open Chrome, thanks!","Persona: ¡Abre Chrome, gracias!",Gink: Chrome abierto.,openai/gpt-oss-120b,yes
+es,Peux‑tu mettre le volume à 20 ?,¿Puedes poner el volumen a 20?,Volumen a 20.,openai/gpt-oss-120b,yes
+es,Peux-tu me remettre la chanson précédente ?,¿Puedes volver a poner la canción anterior?,Listo.,openai/gpt-oss-120b,yes
+es,"Hey, what's 20% of 80000?","Oye, ¿cuál es el 20 % de 80000?","Eso es 16,000.",openai/gpt-oss-120b,yes
+es,Can you get WhatsApp up on my screen?,¿Puedes abrir WhatsApp en mi pantalla?,WhatsApp abierto.,openai/gpt-oss-120b,yes
+es,Person: 250 CFA francs in kenianische Schilling umrechnen,Persona: Convertir 250 CFA francos a chelines kenianos,Gink: 250 CFA francos equivalen a aproximadamente 53.31 chelines kenianos al tipo de cambio actual.,openai/gpt-oss-120b,yes
+es,"Hey, can you tell me the weather in London today?",,,openai/gpt-oss-120b,no
+es,Persona: Convert 10 pounds a naira,,,openai/gpt-oss-120b,no
+es,"Ouvre Calculator, s'il te plaît.","Abre Calculator, por favor.",Calculator está abierto.,openai/gpt-oss-120b,yes
+es,¿Cuánto son 1000 Kenyan shillings en francos CFA?,,,openai/gpt-oss-120b,no
+es,Calcule 672 vezes 42,Person: Calcula 672 veces 42,Gink: Son 28.224.,openai/gpt-oss-120b,yes
+es,Peux-tu lancer Calculator ?,¿Puedes abrir Calculator?,Calculator está abierto.,openai/gpt-oss-120b,yes
+es,"Translate this conversation between a person and the phone assistant Gink into Portuguese. Write it the way a native speaker would naturally say it. Keep every number, time, amount, currency code, place name and app name exactly as written. Answer with JSON only: {""user"": ""..."", ""reply"": ""...""}
+
+Person: Lance Calculator
+Gink: Calculator est ouvert.",,,openai/gpt-oss-120b,no
+es,Please convert 20 euros to naira.,"Por favor, convierta 20 euros a naira.","20 euros son aproximadamente 33,260.87 naira al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,Persona: Convierte 20 Kenyan shillings a naira,Persona: Convierte 20 chelines kenianos a naira,Gink: 20 chelines kenianos equivalen a aproximadamente 237.21 nairas al tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,"Person: Wake me up at 9 am
+Gink: Done, I'll wake you at 9 am.",Persona: Despiértame a las 9 am,"Gink: Listo, te despertaré a las 9 am.
+Gink: Persona: Despiértame a las 9 am
+Gink: Listo, te despertaré a las 9 am.",openai/gpt-oss-120b,yes
+es,Abrir Notes,"Person: Abrir Notes
+Gink: Notas abiertas.","Persona: Abrir Notes
+Gink: Notas abiertas.",openai/gpt-oss-120b,yes
+es,Pode me acordar às 7:15 da manhã?,¿Puedes despertarme a las 7:15 de la mañana?,"Hecho, te despertaré a las 7:15 de la mañana.",openai/gpt-oss-120b,yes
+es,ضبط منبه على الساعة 9:30,Pon una alarma a las 9:30,Hecho: te despertaré a las 9:30.,openai/gpt-oss-120b,yes
+es,"Hey, can you tell me what 15% of 15000 is?","Oye, ¿me puedes decir cuál es el 15% de 15000?","Eso es 2,250.",openai/gpt-oss-120b,yes
+es,Tocar música,Reproducir música,Hecho.,openai/gpt-oss-120b,yes
+es,"Bonjour, pourriez-vous me dire combien font 1000 dollars en nairas ?","Hola, ¿podrías decirme cuánto son 1000 dólares en nairas?","1000 dólares son aproximadamente 1,530,000.00 nairas, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,Open Spotify.,"Person: Open Spotify.
+Gink: Opened Spotify.","Persona: Abre Spotify.
+Gink: Spotify abierto.",openai/gpt-oss-120b,yes
+es,"5 % de 250000, ça fait combien ?","¿5 % de 250000, cuánto da?","Da 12,500.",openai/gpt-oss-120b,yes
+es,Persona: Abre Notes,"Persona: Abre Notes
+Gink: Gink: Notes está abierta.","Persona: Abre Notes
+Gink: Notes está abierta.",openai/gpt-oss-120b,yes
+es,"Person: Start a 10 minutes timer
+Gink: Your 10 minutes timer is running.","Person: Start a 10 minutes timer
+Gink: Your 10 minutes timer is running.","Persona: Inicia un temporizador de 10 minutos
+Gink: Tu temporizador de 10 minutos está en marcha.",openai/gpt-oss-120b,yes
+es,Você pode abrir o Chrome?,¿Puedes abrir Chrome?,Chrome abierto.,openai/gpt-oss-120b,yes
+es,"Hey, règle le son à 20.","Oye, pon el sonido a 20.",Volumen a 20.,openai/gpt-oss-120b,yes
+es,"Hey, c’est quoi 25 % de 1200 ?","Hey, ¿cuánto es el 25 % de 1200?",Son 300.,openai/gpt-oss-120b,yes
+es,احسب 579 مرة 48,Calcula 579 por 48,"El resultado es 27,792",openai/gpt-oss-120b,yes
+es,"I need the conversion for 10000 cedis into pounds, thanks.","Necesito la conversión de 10000 cedis a libras, gracias.",10000 cedis son aproximadamente 506.49 libras al tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,Você pode abrir o Safari?,¿Puedes abrir Safari?,Safari abierto.,openai/gpt-oss-120b,yes
+es,"Person: Timer 30 minutes
+Gink: Your 30 minutes timer is running.","Person: Timer 30 minutes
+Gink: Your 30 minutes timer is running.
+Gink: Pessoa: Timer 30 minutes
+Gink: Seu timer de 30 minutos está em execução.","Persona: Temporizador 30 minutos
+Gink: Tu temporizador de 30 minutos está en marcha.
+Gink: Persona: Temporizador 30 minutos
+Gink: Tu temporizador de 30 minutos está en ejecución.",openai/gpt-oss-120b,yes
+es,Sube el volumen,Person: Sube el volumen,Gink: Listo.,openai/gpt-oss-120b,yes
+es,Set an alarm for 08:30.,Pon una alarma para las 08:30.,"Listo, te despertaré a las 8:30 a.m.",openai/gpt-oss-120b,yes
+es,Quanto são 5000 cedis em euros?,¿Cuántos son 5000 cedis en euros?,"5000 cedis son aproximadamente 298,70 euros al tipo de hoy.",openai/gpt-oss-120b,yes
+es,كم 25 % من 1200؟,¿Cuánto es el 25 % de 1200?,El resultado es 300.,openai/gpt-oss-120b,yes
+es,"Hey, can you set the volume to 70?","Oye, ¿puedes subir el volumen a 70?",Volumen ajustado a 70.,openai/gpt-oss-120b,yes
+es,Pessoa: Converte 100000 leões em xelins quenianos,Persona: Convierte 100000 leões en xelins quenianos,"100000 leões corresponden a aproximadamente 570,796.46 xelins quenianos, a la tasa actual.",openai/gpt-oss-120b,yes
+es,Tempo Paris agora,,,openai/gpt-oss-120b,no
+es,Clima Abidjan hoy,,,openai/gpt-oss-120b,no
+es,"Can you launch Chrome, please?","¿Puedes abrir Chrome, por favor?",Chrome abierto.,openai/gpt-oss-120b,yes
+es,ضبط الصوت إلى 30,Ajusta el volumen a 30,El volumen se ha ajustado a 30.,openai/gpt-oss-120b,yes
+es,"Open Spotify, thanks.","Abre Spotify, gracias.",Spotify abierto.,openai/gpt-oss-120b,yes
+es,ما هو 10% من 1200؟,¿Cuál es el 10% de 1200?,El resultado es 120.,openai/gpt-oss-120b,yes
+es,Quanto são 100 euros em francos CFA?,Persona: ¿Cuántos son 100 euros en francos CFA?,"Gink: 100 euros son aproximadamente 65,760.87 francos CFA al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,"Bonjour, pourriez-vous me préciser les prévisions météo pour Conakry demain, s'il vous plaît ?","Hola, ¿podría indicarme el pronóstico del tiempo para Conakry mañana, por favor?","En Conakry mañana: soleado, alrededor de 19 °C.",openai/gpt-oss-120b,yes
+es,"Salut, pourrais-tu convertir 100000 leones en shillings kényans ?","Hola, ¿podrías convertir 100000 leones a chelines kenianos?","100000 leones son aproximadamente 570,796.46 chelines kenianos, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,Could you convert 100000 CFA francs into leones for me?,¿Podrías convertir 100000 CFA francos a leones para mí?,"100000 CFA francos son aproximadamente 3,735.54 leones al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,¿Qué tiempo hará en Conakry mañana?,Person: ¿Qué tiempo hará en Conakry mañana?,"Gink: En Conakry mañana: soleado, alrededor de 19 °C.",openai/gpt-oss-120b,yes
+es,¿Cuánto son 10000 francos CFA en libras?,,,openai/gpt-oss-120b,no
+es,Pessoa: Abrir Chrome,Persona: Abrir Chrome,Gink: Chrome abierto.,openai/gpt-oss-120b,yes
+es,"Hey, can you wake me up at 5:30 am?","Oye, ¿puedes despertarme a las 5:30 a.m.?","Listo, te despertaré a las 5:30 a.m.",openai/gpt-oss-120b,yes
+es,حوّل 250 CFA francs إلى pounds,Convierte 250 CFA francs a pounds,250 CFA francs equivale a aproximadamente 0.32 pounds según el tipo de cambio de hoy,openai/gpt-oss-120b,yes
+es,Dis-moi la météo de London aujourd'hui.,Dime el clima de London hoy.,"En London hoy: ligera lluvia, alrededor de 30 °C.",openai/gpt-oss-120b,yes
+es,What's the current rate for 10000 dollars in naira?,Persona: ¿Cuál es la tasa actual para 10000 dólares en naira?,"Gink: 10000 dólares son aproximadamente 15,300,000.00 naira con la tasa de hoy.",openai/gpt-oss-120b,yes
+es,Ouvre Safari s'il te plaît,"Abre Safari, por favor",Safari está abierto.,openai/gpt-oss-120b,yes
+es,¿Cuánto son 5000 naira en dólares?,Person: ¿Cuánto son 5000 naira en dólares?,Gink: 5000 naira son aproximadamente 3.27 dólares al tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,Please convert 250 CFA francs to Kenyan shillings.,,,openai/gpt-oss-120b,no
+es,Merci de lancer Safari maintenant.,Gracias por abrir Safari ahora.,Safari está abierto.,openai/gpt-oss-120b,yes
+es,Calcule 498 vezes 55,Persona: Calcula 498 veces 55,Gink: Son 27.390.,openai/gpt-oss-120b,yes
+es,"Hey, fais le calcul de 579 multiplié par 48.","Hey, haz el cálculo de 579 multiplicado por 48.","Da 27,792.",openai/gpt-oss-120b,yes
+es,"Hey, what's the weather like in Abidjan tomorrow?","Oye, ¿cómo estará el tiempo en Abidjan mañana?","Abidjan mañana: nublado, alrededor de 18°C.",openai/gpt-oss-120b,yes
+es,Que tempo está fazendo em Kumasi hoje?,¿Qué tiempo hace en Kumasi hoy?,"En Kumasi hoy: nublado, alrededor de 36 °C.",openai/gpt-oss-120b,yes
+es,"Hey, can you tell me the conversion for 20 CFA francs to euros?","Oye, ¿me puedes decir la conversión de 20 francos CFA a euros?",20 francos CFA son aproximadamente 0.03 euros al tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,¿Cuánto son 50 libras en dólares?,,,openai/gpt-oss-120b,no
+es,مؤقت 30 دقيقة,Temporizador 30 minutos,El temporizador de 30 minutos está funcionando ahora.,openai/gpt-oss-120b,yes
+es,Retourne à la dernière chanson.,Persona: Vuelve a la canción anterior.,Gink: Hecho.,openai/gpt-oss-120b,yes
+es,Do the math: 15% of 250000.,,,openai/gpt-oss-120b,no
+es,¿Qué tiempo hace en Nairobi hoy?,Person: ¿Qué tiempo hace en Nairobi hoy?,"Gink: En Nairobi hoy: nublado, alrededor de 28 °C.",openai/gpt-oss-120b,yes
+es,"Hey, could you set a timer for 3 minutes?","Oye, ¿puedes poner un temporizador de 3 minutos?",Tu temporizador de 3 minutos está en marcha.,openai/gpt-oss-120b,yes
+es,Peux-tu régler l'alarme à 5h45 ?,¿Puedes programar la alarma a 5h45?,Hecho: te despertaré a 5h45.,openai/gpt-oss-120b,yes
+es,Coloque o volume em 50,Pon el volumen al 50,Volumen al 50.,openai/gpt-oss-120b,yes
+es,كم 20٪ من 15000؟,¿Cuánto es el 20 % de 15000?,"El resultado es 3,000.",openai/gpt-oss-120b,yes
+es,Toque a música,Pon música,Hecho.,openai/gpt-oss-120b,yes
+es,Calcule 555 fois 15 s'il te plaît.,"Persona: Calcula 555 por 15, por favor.","Eso da 8,325.",openai/gpt-oss-120b,yes
+es,Aumente o som,Suba el volumen,Hecho.,openai/gpt-oss-120b,yes
+es,"Pouvez-vous calculer 58 × 49, s'il vous plaît ?","¿Puedes calcular 58 × 49, por favor?","Da 2,842.",openai/gpt-oss-120b,yes
+es,¿Cuánto son 100000 francos CFA en leones?,Person: ¿Cuánto son 100000 francos CFA en leones?,"Gink: 100000 francos CFA son aproximadamente 3,735.54 leones al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,Quanto são 100000 francos CFA em leões?,Person: ¿Cuánto son 100000 francos CFA en leones?,"Gink: 100000 francos CFA son aproximadamente 3,735.54 leones al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,Convierte 100000 leones a chelines kenianos,Persona: Convierte 100000 leones a chelines kenianos,"Gink: 100000 leones equivalen a aproximadamente 570,796.46 chelines kenianos, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,Pessoa: O que é 635 vezes 24?,Persona: ¿Qué es 635 veces 24?,"Gink: Son 15,240.",openai/gpt-oss-120b,yes
+es,Could you please calculate 15% of 80000 for me?,"¿Podrías calcularme el 15 % de 80000, por favor?","Eso es 12,000.",openai/gpt-oss-120b,yes
+es,Quanto é 5 % de 250000 ?,¿Cuánto es el 5 % de 250000?,"Son 12,500.",openai/gpt-oss-120b,yes
+es,264 times 7 = ?,Persona: 264 veces 7 = ?,"Gink: Eso es 1,848.",openai/gpt-oss-120b,yes
+es,Could you please let me know what the weather will be like in Dakar tomorrow?,"¿Podrías decirme cómo estará el tiempo en Dakar mañana, por favor?","Dakar mañana: lluvia ligera, alrededor de 30 °C.",openai/gpt-oss-120b,yes
+es,Could you please let me know what's the weather like in Freetown right now?,¿Podrías decirme cómo está el tiempo en Freetown ahora?,"Freetown ahora: nublado, alrededor de 34°C.",openai/gpt-oss-120b,yes
+es,Acorda-me às 6h,Despiértame a las 6h,Hecho: te despertaré a las 6h.,openai/gpt-oss-120b,yes
+es,Calcule 133 por 23,Persona: Calcule 133 por 23,"Gink: Da 3,059.",openai/gpt-oss-120b,yes
+es,¿Cuánto son 10000 shillings kényans en nairas?,Person: ¿Cuánto son 10000 shillings kényans en nairas?,"Gink: 10000 shillings kényans son aproximadamente 118,604.65 nairas, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,كم يساوي 250 فرنك سيفا بالجنيه الإسترليني؟,¿Cuánto equivale 250 francos suizos en libras esterlinas?,"250 francos suizos equivalen a aproximadamente 0.32 libras esterlinas, según el tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,كم يساوي 20 ليونًا بالدولار؟,Persona: ¿Cuánto equivale 20 leones en dólares?,"Gink: 20 leones equivalen aproximadamente a 0.88 dólares, según el tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,Abra Calendar,Abrir Calendar,Calendar está abierto.,openai/gpt-oss-120b,yes
+es,"Hey, could you tell me what 50 pounds equals in dollars?",,,openai/gpt-oss-120b,no
+es,"Hey, can you tell me the conversion for 100000 CFA francs to naira?",,,openai/gpt-oss-120b,no
+es,"Bonjour, pourriez-vous me dire la météo à Kumasi pour aujourd'hui, s'il vous plaît ?","Person: Hola, ¿podría decirme el tiempo en Kumasi para hoy, por favor?","Gink: En Kumasi hoy: nublado, alrededor de 36 °C.",openai/gpt-oss-120b,yes
+es,"Open Notes, thanks.",,,openai/gpt-oss-120b,no
+es,"Hey, can you tell me what 15% of 250000 is?","Persona: Oye, ¿puedes decirme cuánto es el 15% de 250000?","Gink: Eso es 37,500.",openai/gpt-oss-120b,yes
+es,Converta 250 francos CFA para libras,Persona: Convierta 250 francos CFA a libras,"250 francos CFA son aproximadamente 0,32 libras al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,"Person: Launch Calculator
+Gink: Opened Calculator",,,openai/gpt-oss-120b,no
+es,Merci de mettre Mail en route.,Gracias por abrir Mail.,Mail está abierto.,openai/gpt-oss-120b,yes
+es,"Hey, can you tell me what 264 times 7 equals?","Oye, ¿me puedes decir cuánto es 264 por 7?","Son 1,848.",openai/gpt-oss-120b,yes
+es,"Hey, augmente le son à 40, merci.","Oye, sube el volumen a 40, gracias.",Volumen a 40.,openai/gpt-oss-120b,yes
+es,Clima Abidjan agora,Persona: Clima Abidjan ahora,"Abidjan ahora: soleado, alrededor de 34°C.",openai/gpt-oss-120b,yes
+es,¿Cuánto son 20 euros en leones?,,,openai/gpt-oss-120b,no
+es,"Salut, tu peux convertir 25000 euros en dollars ?","Hola, ¿puedes convertir 25000 euros a dólares?","25000 euros son aproximadamente 27,173.91 dólares, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,Can you tell me the weather in Dakar for tomorrow?,¿Puedes decirme el tiempo en Dakar para mañana?,"Dakar mañana: lluvia ligera, alrededor de 31°C.",openai/gpt-oss-120b,yes
+es,"Salut, pourrais-tu convertir 10000 shillings kényans en francs CFA ?","Hola, ¿podrías convertir 10000 shillings kenianos a francos CFA?","10000 shillings kenianos equivalen a aproximadamente 46,899.22 francos CFA, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,Timer de 1 hora e 30 minutos,Temporizador de 1 hora y 30 minutos,Tu temporizador de 1 hora y 30 minutos está en marcha.,openai/gpt-oss-120b,yes
+es,¿Cuánto es 248 por 44?,,,openai/gpt-oss-120b,no
+es,"Hey, what's the product of 222 and 56?",,,openai/gpt-oss-120b,no
+es,Can you make sure I'm up by 5:45 am?,¿Puedes asegurarte de que me levante a las 5:45 a.m.?,"Listo, te despertaré a las 5:45 a.m.",openai/gpt-oss-120b,yes
+es,Please give me the weather for Nairobi right now.,"Por favor, dame el clima de Nairobi ahora mismo.","Nairobi ahora: lluvia ligera, alrededor de 30°C.",openai/gpt-oss-120b,yes
+es,Calcule 825 vezes 3,Persona: Calcule 825 veces 3,"Son 2,475.",openai/gpt-oss-120b,yes
+es,"Hey, can you convert 20 euros to naira for me?","Oye, ¿puedes convertir 20 euros a naira para mí?","20 euros son aproximadamente 33,260.87 naira al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,"Hey, could you please open Chrome for me?","Oye, ¿podrías abrir Chrome para mí?",Chrome abierto.,openai/gpt-oss-120b,yes
+es,"Peux-tu mettre le volume à 70, s'il te plaît ?","¿Puedes subir el volumen a 70, por favor?",Volumen a 70.,openai/gpt-oss-120b,yes
+es,¿Cuál es el 20% de 250000?,Person: ¿Cuál es el 20% de 250000?,"Gink: Eso es 50,000.",openai/gpt-oss-120b,yes
+es,I need to know how much 100 leones is in Kenyan shillings.,Necesito saber cuánto son 100 leones en chelines kenianos.,"100 leones son aproximadamente 570,80 chelines kenianos al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,Qual é a previsão do tempo em Thiès hoje?,¿Cuál es el pronóstico del tiempo en Thiès hoy?,"Thiès hoy: lluvia ligera, alrededor de 31°C.",openai/gpt-oss-120b,yes
+es,"Hey, lance un minuteur de 30 minutes dès maintenant.","Oye, pon un temporizador de 30 minutos ahora mismo.",Temporizador de 30 minutos iniciado.,openai/gpt-oss-120b,yes
+es,Persona: ¿Cuántos leones son 1000 en chelines kenianos?,,,openai/gpt-oss-120b,no
+es,Me acorde às 6 am,Despiértame a las 6 am,"Hecho, te despertaré a las 6 am.",openai/gpt-oss-120b,yes
+es,¿Cuánto es 675 por 25?,,,openai/gpt-oss-120b,no
+es,Je voudrais connaître les conditions météo à Conakry à l'instant.,Quisiera saber las condiciones meteorológicas en Conakry en este momento.,"En Conakry en este momento: ligera lluvia, alrededor de 29 °C.",openai/gpt-oss-120b,yes
+es,"Yo, open Chrome.","Person: Yo, open Chrome.
+Gink: Opened Chrome.","Persona: Oye, abre Chrome.
+Gink: Chrome abierto.",openai/gpt-oss-120b,yes
+es,"Hey, can you tell me the current weather in Dakar?",,,openai/gpt-oss-120b,no
+es,"Hey, could you please convert 10000 cedis to pounds?","Oye, ¿podrías convertir 10000 cedis a libras, por favor?",10000 cedis son aproximadamente 506.49 libras al tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,"Hey, can you tell me what 635 × 24 equals?",,,openai/gpt-oss-120b,no
+es,Weck mich um 9 Uhr auf,"Person: Weck mich um 9 Uhr auf
+Gink: Erledigt, ich wecke dich um 9 Uhr.","Persona: Despiértame a las 9 en punto
+Gink: Hecho, te despertaré a las 9.",openai/gpt-oss-120b,yes
+es,"Salut, tu sais quel temps il fait à Kumasi aujourd'hui ?","Persona: Hola, ¿sabes qué tiempo hace en Kumasi hoy?","Gink: En Kumasi hoy: nublado, alrededor de 36 °C.",openai/gpt-oss-120b,yes
+es,Peux-tu lancer Notes ?,¿Puedes abrir Notes?,Notes está abierto.,openai/gpt-oss-120b,yes
+es,¿Cuál es el 5% de 5000?,,,openai/gpt-oss-120b,no
+es,Quanto são 10 francos CFA em libras?,Persona: ¿Cuánto son 10 francos CFA en libras?,"10 francos CFA equivalen a aproximadamente 0,01 libras con la tasa de hoy.",openai/gpt-oss-120b,yes
+es,What's the current weather for London?,,,openai/gpt-oss-120b,no
+es,"Person: Can you open Spotify?
+Gink: Opened Spotify.",Persona: ¿Puedes abrir Spotify?,Gink: Spotify abierto.,openai/gpt-oss-120b,yes
+es,Pouvez‑vous me dire rapidement le montant en nairas pour 100000 leones ?,¿Puedes decirme rápidamente el monto en nairas para 100000 leones?,"100000 leones son aproximadamente 6,769,911.50 nairas, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,Que tempo vai fazer em London amanhã?,¿Qué tiempo hará en London mañana?,"En London mañana: ligera lluvia, alrededor de 30 °C.",openai/gpt-oss-120b,yes
+es,Ajuste o volume para 30,"Persona: Ajuste el volumen a 30
+Gink: Volumen ajustado a 30.","Persona: Ajuste el volumen a 30
+Gink: Volumen ajustado a 30.",openai/gpt-oss-120b,yes
+es,كيف يُحوَّل 1000 شلن كيني إلى فرنك سيفي؟,Persona: ¿Cómo se convierten 1000 chelines kenianos a francos suizos?,"Gink: 1000 chelines kenianos equivalen aproximadamente a 4,689.92 francos suizos según el tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,احسب 672 ضرب 42,Calcula 672 por 42,"El resultado es 28,224.",openai/gpt-oss-120b,yes
+es,Please convert 250 euros to naira.,"Por favor, convierta 250 euros a naira.","250 euros son aproximadamente 415,760.87 naira al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,"Hey, can you tell me the current weather in Freetown?","Oye, ¿me puedes decir el clima actual en Freetown?","Freetown ahora: lluvia ligera, alrededor de 34°C.",openai/gpt-oss-120b,yes
+es,Abaixe o volume,Baje el volumen,Hecho.,openai/gpt-oss-120b,yes
+es,Pessoa: Qual é 18% de 80000?,Persona: ¿Cuál es el 18% de 80000?,"Gink: Son 14,400.",openai/gpt-oss-120b,yes
+es,What's 248 multiplied by 44?,¿Cuánto es 248 multiplicado por 44?,"Son 10,912.",openai/gpt-oss-120b,yes
+es,"Salut, quelle est la météo à Accra en ce moment ?","Hola, ¿qué tiempo hace en Accra ahora?","En Accra ahora: ligera lluvia, alrededor de 31 °C.",openai/gpt-oss-120b,yes
+es,I need to know how many dollars 5000 naira is.,Necesito saber cuántos dólares son 5000 naira.,5000 naira son aproximadamente 3.27 dólares al tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,"Hey, can you tell me the weather in Kumasi tomorrow?","Oye, ¿puedes decirme el clima en Kumasi mañana?","Kumasi mañana: soleado, alrededor de 30°C.",openai/gpt-oss-120b,yes
+es,ضع الموسيقى في وضع الإيقاف المؤقت,Pon la música en pausa,Hecho,openai/gpt-oss-120b,yes
+es,حوّل 20 cedis إلى dollars,Convierte 20 cedis a dollars,20 cedis equivale a aproximadamente 1.30 dollars según el tipo de cambio de hoy,openai/gpt-oss-120b,yes
+es,Quanto é 445 vezes 17?,¿Cuánto es 445 por 17?,"Es 7,565.",openai/gpt-oss-120b,yes
+es,Qual é 15% de 80000?,¿Cuál es el 15% de 80000?,Es 12.000.,openai/gpt-oss-120b,yes
+es,Temporizador 1 hora 30 minutos,,,openai/gpt-oss-120b,no
+es,Peux‑tu ouvrir Safari ?,¿Puedes abrir Safari?,Safari está abierto.,openai/gpt-oss-120b,yes
+es,ما هو 18٪ من 80000؟,¿Cuál es el 18 % de 80000?,"El resultado es 14,400.",openai/gpt-oss-120b,yes
+es,حوّل 20 شلن كيني إلى النيرة,Convierte 20 chelines kenianos a la lira,20 chelines kenianos equivalen a aproximadamente 237.21 liras según el tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,Person: كم يساوي 10000 شيلينغ كيني في النايرا؟,Persona: ¿Cuánto equivale 10000 chelines kenianos en naira?,"Gink: 10000 chelines kenianos equivalen a aproximadamente 118,604.65 naira, según el tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,Dreh die Lautstärke hoch.,Sube el volumen.,Hecho.,openai/gpt-oss-120b,yes
+es,"Open Calculator, please.",,,openai/gpt-oss-120b,no
+es,¿Qué tiempo hace en Lagos hoy?,Person: ¿Qué tiempo hace en Lagos hoy?,"Gink: En Lagos hoy: nublado, alrededor de 23 °C.",openai/gpt-oss-120b,yes
+es,"Hey, could you please open Safari for me?","Oye, ¿podrías abrir Safari para mí?",Safari abierto.,openai/gpt-oss-120b,yes
+es,Please let me know the conversion rate for 25000 naira to Kenyan shillings.,"Persona: Por favor, indícame la tasa de conversión de 25000 naira a chelines kenianos.","Gink: 25000 naira son aproximadamente 2,107.84 chelines kenianos al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,ضبط مؤقت لمدة 30 دقيقة,Configura un temporizador de 30 minutos,Temporizador de 30 minutos activado,openai/gpt-oss-120b,yes
+es,"Salut, j'ai besoin que tu changes 1000 leones en dollars.","Persona: Hola, necesito que cambies 1000 leones a dólares.","Gink: 1000 leones son aproximadamente 44.25 dólares, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,Can you launch the Notes app?,¿Puedes abrir la app Notes?,Notas abiertas.,openai/gpt-oss-120b,yes
+es,What's 635 multiplied by 24?,Persona: ¿Cuánto es 635 multiplicado por 24?,"Gink: Eso es 15,240.",openai/gpt-oss-120b,yes
+es,"Volume 20, s’il te plaît.","Volumen 20, por favor.",Volumen a 20.,openai/gpt-oss-120b,yes
+es,What’s the product of 35 and 29?,¿Cuál es el producto de 35 y 29?,"Eso es 1,015.",openai/gpt-oss-120b,yes
+es,"Hey, can you tell me what 25% of 250000 is?",,,openai/gpt-oss-120b,no
+es,ابدأ مؤقتًا لمدة 10 دقائق,Inicia un temporizador de 10 minutos,El temporizador de 10 minutos está activo ahora.,openai/gpt-oss-120b,yes
+es,"Person: Launch Spotify
+Gink: Opened Spotify.","Person: Person: Launch Spotify
+Gink: Opened Spotify.
+Gink: Persona: Inicia Spotify
+Gink: Spotify abierto.","Persona: Lanzar Spotify
+Gink: Spotify abierto.
+Gink: Persona: Inicia Spotify
+Gink: Spotify abierto.",openai/gpt-oss-120b,yes
+es,Quanto é 25% de 1200?,¿Cuánto es el 25% de 1200?,Son 300.,openai/gpt-oss-120b,yes
+es,¿Qué tiempo hace en Accra ahora?,Person: ¿Qué tiempo hace en Accra ahora?,"Gink: En Accra ahora: ligera lluvia, alrededor de 31 °C.",openai/gpt-oss-120b,yes
+es,"Bonjour, pourriez-vous calculer 25 % de 1200, s'il vous plaît ?","Hola, ¿podrías calcular el 25 % de 1200, por favor?",Son 300.,openai/gpt-oss-120b,yes
+es,"Wake me at 5:45 am, thanks!","¡Despiértame a las 5:45 a.m., gracias!","Listo, te despertaré a las 5:45 a.m.",openai/gpt-oss-120b,yes
+es,Clima em Freetown agora,Clima en Freetown ahora,"Freetown ahora: lluvia ligera, alrededor de 25°C.",openai/gpt-oss-120b,yes
+es,Start Calculator now.,"Person: Start Calculator now.
+Gink: Opened Calculator.","Persona: Inicia la Calculadora ahora.
+Gink: Calculadora abierta.",openai/gpt-oss-120b,yes
+es,¿Cuánto son 250 francos CFA en libras esterlinas?,Person: ¿Cuánto son 250 francos CFA en libras esterlinas?,"Gink: 250 francos CFA son aproximadamente 0.32 libras esterlinas, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,299 multiplied by 23 = ?,¿299 multiplicado por 23 = ?,"Eso es 6,877.",openai/gpt-oss-120b,yes
+es,"5% of 80000, please?","5% de 80000, por favor?","Eso es 4,000.",openai/gpt-oss-120b,yes
+es,Pon el volumen a 50,,,openai/gpt-oss-120b,no
+es,Please let me know the conversion rate for 1000 CFA francs to pounds.,"Por favor, infórmame del tipo de cambio de 1000 CFA francs a pounds.",1000 CFA francs equivale a aproximadamente 1.29 pounds al tipo de hoy.,openai/gpt-oss-120b,yes
+es,"Hey, c’est quoi la météo à London en ce moment ?","Hey, ¿qué tiempo hace en London en este momento?","En London ahora: nublado, alrededor de 29 °C.",openai/gpt-oss-120b,yes
+es,¿Cuánto son 20 francos CFA en euros?,,,openai/gpt-oss-120b,no
+es,Do you know the 5% of 15000?,,,openai/gpt-oss-120b,no
+es,"Convertis 5000 leones en dollars, s'il te plaît.","Convierte 5000 leones a dólares, por favor.","5000 leones son aproximadamente 221.24 dólares, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,Despiértame a las 6:15,Person: Despiértame a las 6:15,Gink: Listo: te despertaré a las 6:15.,openai/gpt-oss-120b,yes
+es,Wie viel sind 20 % von 15000?,Persona: ¿Cuánto es el 20 % de 15000?,"Gink: Son 3,000.",openai/gpt-oss-120b,yes
+es,ضبط منبه على الساعة 08:30,Configura una alarma a las 08:30,"Listo, te despertaré a las 8:30 a. m.",openai/gpt-oss-120b,yes
+es,I need to know what 100 dollars is in cedis.,,,openai/gpt-oss-120b,no
+es,Weck mich um 6:30 am auf.,"Person: Weck mich um 6:30 am auf.
+Gink: Erledigt, ich wecke dich um 6:30 am.","Persona: Despiértame a las 6:30 am.
+Gink: Listo, te despertaré a las 6:30 am.",openai/gpt-oss-120b,yes
+es,ما هو 506 مضروبًا في 7؟,¿Cuál es 506 multiplicado por 7?,"Eso es 3,542.",openai/gpt-oss-120b,yes
+es,Persona: ¿Cuánto es el 5 % de 1200?,,,openai/gpt-oss-120b,no
+es,"Calcule 457 × 7, s'il te plaît.","Persona: Calcula 457 × 7, por favor.","Eso da 3,199.",openai/gpt-oss-120b,yes
+es,Pessoa: Calcule 457 vezes 7,Persona: Calcule 457 vezes 7,Gink: Son 3.199.,openai/gpt-oss-120b,yes
+es,¿Qué tiempo hace en Bamako hoy?,,,openai/gpt-oss-120b,no
+es,Quanto são 5% de 5000?,,,openai/gpt-oss-120b,no
+es,¿Cuál es el 10% de 1200?,Person: ¿Cuál es el 10% de 1200?,Gink: Eso es 120.,openai/gpt-oss-120b,yes
+es,Coloque o volume em 40,Ponga el volumen a 40,Volumen a 40.,openai/gpt-oss-120b,yes
+es,Qual é o tempo em Abidjan hoje?,¿Qué tiempo hace hoy en Abidjan?,"En Abidjan hoy: nublado, alrededor de 37 °C.",openai/gpt-oss-120b,yes
+es,Pessoa: Converta 10 pounds para naira,Persona: Convierte 10 pounds a naira,"10 pounds son aproximadamente 19,615.38 naira al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,"Alarm 9:45 am, thanks.","Alarma a las 9:45 a.m., gracias.","Listo, te despertaré a las 9:45 a.m.",openai/gpt-oss-120b,yes
+es,Despiértame a las 6 a.m.,,,openai/gpt-oss-120b,no
+es,"Convert 100 dollars to cedis, thanks!","Convierte 100 dólares a cedis, ¡gracias!","100 dólares son aproximadamente 1,540.00 cedis al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,Persona: Clima en Kumasi mañana,,,openai/gpt-oss-120b,no
+es,"10% of 15000, please.","Persona: 10% de 15000, por favor.","Gink: Son 1,500.",openai/gpt-oss-120b,yes
+es,"Hey, can you tell me what 852 multiplied by 26 is?","Oye, ¿me puedes decir cuánto es 852 multiplicado por 26?","Eso es 22,152.",openai/gpt-oss-120b,yes
+es,احسب 149 × 51,Calcula 149 × 51,"El resultado es 7,599.",openai/gpt-oss-120b,yes
+es,Please convert 100 dollars to cedis.,"Por favor, convierta 100 dólares a cedis.","100 dólares son aproximadamente 1,540.00 cedis al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,Give me the product of 852 and 26.,,,openai/gpt-oss-120b,no
+es,What's the forecast for London tomorrow?,,,openai/gpt-oss-120b,no
+es,Would you mind starting WhatsApp now?,¿Te importaría abrir WhatsApp ahora?,WhatsApp abierto.,openai/gpt-oss-120b,yes
+es,Pessoa: Quanto são 50 francos CFA em cedis?,Persona: ¿Cuánto son 50 francos CFA en cedis?,"Gink: 50 francos CFA equivalen a cerca de 1,27 cedis en la tasa de hoy.",openai/gpt-oss-120b,yes
+es,Persona: Clima en Freetown ahora,,,openai/gpt-oss-120b,no
+es,¿Cuánto son 5000 cedis en euros?,Person: ¿Cuánto son 5000 cedis en euros?,"Gink: 5000 cedis son aproximadamente 298,70 euros al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,Set volume at 70.,Pon el volumen a 70.,Volumen ajustado a 70.,openai/gpt-oss-120b,yes
+es,Can you tell me what 222 times 56 equals?,¿Puedes decirme cuánto es 222 por 56?,"Eso es 12,432.",openai/gpt-oss-120b,yes
+es,"Hey, calcule 650 fois 55 pour moi.","Hey, calcula 650 por 55 para mí.","Eso da 35,750.",openai/gpt-oss-120b,yes
+es,Quantos são 250 francos CFA em libras esterlinas?,¿Cuántos son 250 francos CFA en libras esterlinas?,"250 francos CFA equivalen a cerca de 0,32 libras esterlinas, según la tasa actual.",openai/gpt-oss-120b,yes
+es,Peux-tu me dire la météo à Nairobi aujourd'hui ?,¿Puedes decirme el tiempo en Nairobi hoy?,"En Nairobi hoy: nublado, alrededor de 28 °C.",openai/gpt-oss-120b,yes
+es,Converte 10000 euros em libras esterlinas,Convierte 10000 euros a libras esterlinas,"10000 euros equivalen a cerca de 8,478.26 libras esterlinas, con la tasa actual.",openai/gpt-oss-120b,yes
+es,¿Cuánto son 10000 dólares en naira?,,,openai/gpt-oss-120b,no
+es,اضبط الصوت على 60,Pon el volumen a 60,Volumen a 60.,openai/gpt-oss-120b,yes
+es,Could you tell me what 10000 Kenyan shillings is in pounds?,Persona: ¿Podrías decirme cuánto son 10000 Kenyan shillings en libras?,Gink: 10000 Kenyan shillings son aproximadamente 60.47 libras al tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,Ajuste o volume para 50,Person: Ajuste o volume para 50,Gink: Volume ajustado para 50.,openai/gpt-oss-120b,yes
+es,Peux‑tu calculer 149 × 51 s’il te plaît ?,"¿Puedes calcular 149 × 51, por favor?","Da 7,599.",openai/gpt-oss-120b,yes
+es,"Hey, could you set an alarm for 5:45 am?","Oye, ¿puedes programar una alarma para las 5:45 a.m.?","Listo, te despertaré a las 5:45 a.m.",openai/gpt-oss-120b,yes
+es,"Persona: Launch Chrome
+Gink: Opened Chrome.",,,openai/gpt-oss-120b,no
+es,"Lagos weather now, please.","Clima de Lagos ahora, por favor.","Lagos ahora: lluvia ligera, alrededor de 37°C.",openai/gpt-oss-120b,yes
+es,Qual é o tempo em Accra agora?,¿Cuál es el tiempo en Accra ahora?,"Accra ahora: nublado, alrededor de 31°C.",openai/gpt-oss-120b,yes
+es,"Person: Lance Mail
+Gink: Mail est ouvert.","Person: Person: Lance Mail
+Gink: Mail est ouvert.
+Gink: Persona: Lance Mail
+Gink: El correo está abierto.","Persona: Lance Mail
+Gink: El correo está abierto.
+Gink: Persona: Lance Mail
+Gink: El correo está abierto.",openai/gpt-oss-120b,yes
+es,"Hey, fais le calcul 819*59 rapidement.","Hey, haz el cálculo 819*59 rápidamente.","Da 48,321.",openai/gpt-oss-120b,yes
+es,Merci de me donner le résultat de 819 multiplié par 59.,"Dame el resultado de 819 multiplicado por 59, por favor.","Da 48,321.",openai/gpt-oss-120b,yes
+es,"15 % de 15000, c’est combien ?","15 % de 15000, ¿cuánto es?","Da 2,250.",openai/gpt-oss-120b,yes
+es,"Hey, can you tell me what 15% of 80000 is?","Oye, ¿me puedes decir cuál es el 15% de 80000?","Eso es 12,000.",openai/gpt-oss-120b,yes
+es,Wie viel sind 15 % von 250000?,,,openai/gpt-oss-120b,no
+es,Peux-tu ouvrir Chrome ?,¿Puedes abrir Chrome?,Chrome está abierto.,openai/gpt-oss-120b,yes
+es,Alarma a las 08:00,,,openai/gpt-oss-120b,no
+es,Quel temps fera-t-il à Lagos demain ?,¿Qué tiempo hará en Lagos mañana?,"En Lagos mañana: soleado, alrededor de 22 °C.",openai/gpt-oss-120b,yes
+es,Convierte 10000 Kenyan shillings a pounds,Person: Convierte 10000 Kenyan shillings a pounds,Gink: 10000 Kenyan shillings son aproximadamente 60.47 pounds al tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,Wie viel sind 18% von 250000?,¿Cuánto es el 18 % de 250000?,"Son 45,000.",openai/gpt-oss-120b,yes
+es,ضع مؤقتًا لمدة 5 دقائق,Pon un temporizador de 5 minutos,Se ha activado un temporizador de 5 minutos,openai/gpt-oss-120b,yes
+es,"Salut, tu sais combien font 10 nairas en francs CFA ?","Persona: Hola, ¿sabes cuántos francos CFA son 10 nairas?","Gink: 10 nairas son aproximadamente 3.95 francos CFA, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,Converte 100 dólares em francos CFA,Convierte 100 dólares en francos CFA,"100 dólares equivalen a cerca de 60,500.00 francos CFA, en la tasa actual.",openai/gpt-oss-120b,yes
+es,"Hey, could you tell me how much 100 euros equals in CFA francs?",,,openai/gpt-oss-120b,no
+es,"Hey, can you tell me what 10% of 80000 is?",,,openai/gpt-oss-120b,no
+es,Please check the weather in Thiès tomorrow.,"Por favor, revisa el tiempo en Thiès mañana.","Thiès mañana: nublado, alrededor de 21°C.",openai/gpt-oss-120b,yes
+es,"Hey, what's the weather like in Dakar tomorrow?","Oye, ¿cómo estará el clima en Dakar mañana?","Dakar mañana: lluvia ligera, alrededor de 31°C.",openai/gpt-oss-120b,yes
+es,Please check the weather in Dakar right now.,"Por favor, revisa el tiempo en Dakar ahora.","Dakar ahora: nublado, alrededor de 23°C.",openai/gpt-oss-120b,yes
+es,"Hey, fais-moi le produit de 133 et 23.","Hey, hazme el producto de 133 y 23.","Eso da 3,059.",openai/gpt-oss-120b,yes
+es,ما هو 5٪ من 5000؟,¿Cuál es el 5 % de 5000?,Eso equivale a 250.,openai/gpt-oss-120b,yes
+es,Que tempo está fazendo em London hoje?,¿Qué tiempo hace en London hoy?,"En London hoy: soleado, alrededor de 21 °C.",openai/gpt-oss-120b,yes
+es,ما هو 299 ضرب 23؟,¿Cuál es 299 multiplicado por 23?,"El resultado es 6,877.",openai/gpt-oss-120b,yes
+es,Please calculate 722 × 22 for me.,"Por favor, calcula 722 × 22 para mí.","Eso es 15,884.",openai/gpt-oss-120b,yes
+es,Please let me know the conversion for 1000 pounds to cedis.,"Por favor, indícame la conversión de 1000 pounds a cedis.","1000 pounds son aproximadamente 19,743.59 cedis al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,"I need the result of 18% of 250000, thanks.","Persona: Necesito el resultado del 18% de 250000, gracias.","Eso es 45,000.",openai/gpt-oss-120b,yes
+es,"Pouvez-vous me dire ce que ça donne, 15 % de 15000 ?","¿Puedes decirme qué da, el 15 % de 15000?","Da 2,250.",openai/gpt-oss-120b,yes
+es,Person: حوّل 250 ليون إلى دولارات,Person: Convierte 250 leones a dólares,"Gink: 250 leones equivalen aproximadamente a 11.06 dólares, según el tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,اضبط مؤقتًا لمدة 30 دقيقة,Pon un temporizador de 30 minutos,Temporizador de 30 minutos activado.,openai/gpt-oss-120b,yes
+es,Acorda-me às 6h15,Despiértame a las 6:15,Hecho: te despertaré a las 6:15.,openai/gpt-oss-120b,yes
+es,Defina o volume para 80,Pon el volumen a 80,Volumen establecido en 80.,openai/gpt-oss-120b,yes
+es,Convierte 100000 francos CFA a cedis,Person: Convierte 100000 francos CFA a cedis,"Gink: 100000 francos CFA son aproximadamente 2,545.45 cedis al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,Despiértame a las 5:30 a.m.,,,openai/gpt-oss-120b,no
+es,"Bonjour, pourriez-vous me dire la météo actuelle à London, s'il vous plaît ?","Persona: Hola, ¿podrías decirme el tiempo actual en London, por favor?","En London ahora: nublado, alrededor de 29 °C.",openai/gpt-oss-120b,yes
+es,¿Cuál es el 18 % de 80000?,,,openai/gpt-oss-120b,no
+es,¿Cuánto es el 25 % de 80000?,Person: ¿Cuánto es el 25 % de 80000?,"Gink: Son 20,000.",openai/gpt-oss-120b,yes
+es,Pon un temporizador de 30 minutos,"Person: Pon un temporizador de 30 minutos
+Gink: Temporizador de 30 minutos iniciado.","Persona: Pon un temporizador de 30 minutos
+Gink: Temporizador de 30 minutos iniciado.",openai/gpt-oss-120b,yes
+es,"Hey, can you tell me the weather in Lagos right now?",,,openai/gpt-oss-120b,no
+es,"Hey, change the volume to 60.","Oye, pon el volumen a 60.",Volumen configurado en 60.,openai/gpt-oss-120b,yes
+es,Abrir Mail,"Person: Abrir Mail
+Gink: Mail está aberto.","Persona: Abrir Mail
+Gink: Mail está abierto.",openai/gpt-oss-120b,yes
+es,كم يساوي 250 ليون في النايرا؟,Persona: ¿Cuánto equivale 250 ليون en النايرا?,"Gink: 250 ليون equivale a aproximadamente 16,924.78 نايرا, según el tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,Stelle die Lautstärke auf 70 ein,Ajusta el volumen a 70,Volumen ajustado a 70,openai/gpt-oss-120b,yes
+es,Persona: ¿Cuánto son 25000 naira en chelines kenianos?,,,openai/gpt-oss-120b,no
+es,Persona: Weather Thiès right now,,,openai/gpt-oss-120b,no
+es,Quanto são 50 libras em dólares?,¿Cuánto son 50 libras en dólares?,"50 libras son aproximadamente 64,10 dólares a la tasa de hoy.",openai/gpt-oss-120b,yes
+es,"Person: Lance Notes
+Gink: Notes est ouvert.","Person: Person: Lance Notes
+Gink: Notes est ouvert.
+Gink: Persona: Lance Notes
+Gink: Notes está abierto.","Persona: Lance Notes
+Gink: Notes está abierto.
+Gink: Persona: Lance Notes
+Gink: Notes está abierto.",openai/gpt-oss-120b,yes
+es,¿Cuánto son 10 francos CFA en libras?,Person: ¿Cuánto son 10 francos CFA en libras?,Gink: 10 francos CFA son aproximadamente 0.01 libras al tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,Pouvez-vous faire le calcul 650 fois 55 ?,¿Puedes hacer el cálculo 650 por 55?,"Da 35,750.",openai/gpt-oss-120b,yes
+es,Wetter Bamako heute,Clima Bamako hoy,"Bamako hoy: nublado, alrededor de 35°C.",openai/gpt-oss-120b,yes
+es,Peux-tu mettre le volume à 50 ?,¿Puedes poner el volumen a 50?,Volumen a 50.,openai/gpt-oss-120b,yes
+es,"Timer 3 minutes, please.","Persona: Temporizador de 3 minutos, por favor.",Tu temporizador de 3 minutos está en marcha.,openai/gpt-oss-120b,yes
+es,احسب 58 × 49,Calcula 58 × 49,"El resultado es 2,842.",openai/gpt-oss-120b,yes
+es,Ajuste o volume para 60,Ajusta el volumen a 60,Volumen a 60,openai/gpt-oss-120b,yes
+es,Can you tell me how many pounds 250 CFA francs equals?,¿Puedes decirme a cuántas libras equivale 250 francos CFA?,250 francos CFA son aproximadamente 0.32 libras al tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,¿Cuál es el 15 % de 80000?,Person: ¿Cuál es el 15 % de 80000?,"Gink: Eso es 12,000.",openai/gpt-oss-120b,yes
+es,Could you calculate 264 × 7 for me?,,,openai/gpt-oss-120b,no
+es,كم يساوي 50 جنيهًا إسترلينيًا باليورو؟,¿Cuánto equivale 50 libras esterlinas en euros?,"50 libras esterlinas equivalen a aproximadamente 58,97 euros según el tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,Alarme às 09:30,Alarma a las 09:30,"Hecho, te despertaré a las 9:30 de la mañana.",openai/gpt-oss-120b,yes
+es,"I need the product of 803 and 45, thanks.","Necesito el producto de 803 y 45, gracias.","Eso es 36,135.",openai/gpt-oss-120b,yes
+es,Baja el sonido,"Person: Baja el sonido
+Gink: Hecho.","Persona: Baja el sonido
+Gink: Hecho.",openai/gpt-oss-120b,yes
+es,Qual é 18% de 250000?,¿Cuál es el 18% de 250000?,"Son 45,000.",openai/gpt-oss-120b,yes
+es,افتح Chrome,Abre Chrome,Chrome abierto.,openai/gpt-oss-120b,yes
+es,What’s the Weather Nairobi tomorrow?,¿Qué tiempo hará en Nairobi mañana?,"Nairobi mañana: soleado, alrededor de 32°C.",openai/gpt-oss-120b,yes
+es,¿Cuál es el 15% de 15000?,,,openai/gpt-oss-120b,no
+es,"Bonjour, pourriez‑vous me dire la conversion de 10000 shillings kényans en nairas, s’il vous plaît ?","Hola, ¿podrías decirme la conversión de 10000 shillings kényans a nairas, por favor?","10000 shillings kényans son aproximadamente 118,604.65 nairas, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,What's the product of 160 and 47?,¿Cuál es el producto de 160 y 47?,"Eso es 7,520.",openai/gpt-oss-120b,yes
+es,ما هو 15% من 80000؟,¿Cuál es el 15% de 80000?,"Eso es 12,000.",openai/gpt-oss-120b,yes
+es,"Hey, can you tell me what 506 times 7 is?",,,openai/gpt-oss-120b,no
+es,"Hey, can you tell me the weather in Freetown today?",,,openai/gpt-oss-120b,no
+es,Set an alarm for 08:00.,Configura una alarma para 08:00.,"Listo, te despertaré a 8 am.",openai/gpt-oss-120b,yes
+es,Weather in London today?,,,openai/gpt-oss-120b,no
+es,"Person: Launch Notes
+Gink: Opened Notes.","Person: Person: Launch Notes
+Gink: Opened Notes.
+Gink: Pessoa: Abrir Notas
+Gink: Notas abertas.","Persona: Lanzar Notas
+Gink: Notas abiertas.
+Gink: Persona: Abrir Notas
+Gink: Notas abiertas.",openai/gpt-oss-120b,yes
+es,"Hey, could you convert 100 naira to leones for me?","Oye, ¿podrías convertir 100 naira a leones para mí?",100 naira son aproximadamente 1.48 leones al tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,Reproduce la música,"Person: Reproduce la música
+Gink: Listo.","Person: Reproduce la música
+Gink: Listo.",openai/gpt-oss-120b,yes
+es,أيقظني في الساعة 6:15 ص,Despiértame a las 6:15 a.m.,"Listo, te despertaré a las 6:15 a.m.",openai/gpt-oss-120b,yes
+es,"Quel temps fait-il à Nairobi aujourd'hui, s'il te plaît ?","¿Qué tiempo hace en Nairobi hoy, por favor?","En Nairobi hoy: nublado, alrededor de 28 °C.",openai/gpt-oss-120b,yes
+es,What’s the amount in cedis for 1000 pounds?,¿Cuál es la cantidad en cedis para 1000 pounds?,"1000 pounds son aproximadamente 19,743.59 cedis al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,Converta 5000 euros para pounds,Convierte 5000 euros a libras,"5000 euros son aproximadamente 4,239.13 libras al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,What's the product of 722 and 22?,Person: ¿Cuál es el producto de 722 y 22?,"Gink: Eso es 15,884.",openai/gpt-oss-120b,yes
+es,Merci de me donner le résultat de 579 fois 48.,"Persona: Por favor, dame el resultado de 579 por 48.","Gink: Son 27,792.",openai/gpt-oss-120b,yes
+es,Peux-tu calculer 819 × 59 s'il te plaît ?,¿Puedes calcular 819 × 59 por favor?,"Da 48,321.",openai/gpt-oss-120b,yes
+es,ما هو 15٪ من 250000؟,¿Cuál es el 15 % de 250000?,"Eso es 37,500.",openai/gpt-oss-120b,yes
+es,Que tempo está fazendo em Accra agora?,¿Qué tiempo hace en Accra ahora?,"En Accra ahora: llovizna ligera, alrededor de 31 °C.",openai/gpt-oss-120b,yes
+es,"Yo, what's 15% of 80000?","Persona: Oye, ¿cuánto es el 15% de 80000?","Gink: Son 12,000.",openai/gpt-oss-120b,yes
+es,"Person: Ouvre Calculator
+Gink: Calculator est ouvert.","Person: Ouvre Calculator
+Gink: Calculator est ouvert.
+Gink: Pessoa: Abra Calculator
+Gink: Calculator está aberto.","Persona: Abre Calculator
+Gink: Calculator está abierto.
+Gink: Persona: Abra Calculator
+Gink: Calculator está abierto.",openai/gpt-oss-120b,yes
+es,حوّل 250 فرنك سيفي إلى شلن كيني,Convierte 250 francos suizos a chelines kenianos,250 francos suizos equivalen aproximadamente a 53.31 chelines kenianos según el tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,"Timer 30 minutes, thanks.","Persona: Temporizador 30 minutos, gracias.",Gink: Tu temporizador de 30 minutos está en marcha.,openai/gpt-oss-120b,yes
+es,"Excusez‑moi, pourriez‑vous me dire le taux de change de 20 leones en dollars ?","Disculpe, ¿podría decirme el tipo de cambio de 20 leones a dólares?","20 leones hacen aproximadamente 0.88 dólares, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,Persona: ¿Cuánto son 50 CFA francos en cedis?,,,openai/gpt-oss-120b,no
+es,Pouvez-vous me dire le temps à Lagos aujourd'hui ?,¿Puedes decirme el tiempo en Lagos hoy?,"En Lagos hoy: nublado, alrededor de 23 °C.",openai/gpt-oss-120b,yes
+es,Convierte 50 pounds a cedis,Persona: Convierte 50 pounds a cedis,Gink: 50 pounds son aproximadamente 987.18 cedis al tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,"Hey, could you please convert 20 cedis to dollars for me?",,,openai/gpt-oss-120b,no
+es,"35 multiplied by 29, what's that?","¿35 multiplicado por 29, cuánto es?","Eso es 1,015.",openai/gpt-oss-120b,yes
+es,"Lance Notes, s'il te plaît.","Abre Notes, por favor.",Notes está abierto.,openai/gpt-oss-120b,yes
+es,"Hey, what's the forecast for London today?",,,openai/gpt-oss-120b,no
+es,"Bonjour, pourriez-vous s'il vous plaît calculer 5 % de 1200 pour moi ?","Hola, ¿podría calcularme el 5 % de 1200, por favor?",Son 60.,openai/gpt-oss-120b,yes
+es,Converte 5000 leões em dólares,Convierte 5000 leões en dólares,"5000 leões equivalen a cerca de 221,24 dólares, en la tasa actual.",openai/gpt-oss-120b,yes
+es,Que tempo está fazendo em Abidjan neste momento?,¿Qué tiempo hace en Abidjan en este momento?,"En Abidjan ahora: lluvia ligera, alrededor de 25 °C.",openai/gpt-oss-120b,yes
+es,كم يساوي 100000 ليون في النيرا؟,Persona: ¿Cuánto equivale 100000 ليون en نيرا?,"Gink: 100000 ليون equivale aproximadamente a 6,769,911.50 نيرا, según el precio actual.",openai/gpt-oss-120b,yes
+es,Tell me the 20% of 80000.,Persona: Dime el 20% de 80000.,"Gink: Eso es 16,000.",openai/gpt-oss-120b,yes
+es,Alarme às 07:15,Alarma a las 07:15,"Hecho, te despertaré a las 7:15 de la mañana.",openai/gpt-oss-120b,yes
+es,"Hey, je veux savoir la conversion de 25000 euros en dollars.","Hey, quiero saber la conversión de 25000 euros a dólares.","25000 euros son aproximadamente 27,173.91 dólares, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,What's 675×25?,,,openai/gpt-oss-120b,no
+es,"Hey, tu peux me dire combien font 5 % de 5000 ?","Hey, ¿puedes decirme cuánto es el 5 % de 5000?",Son 250.,openai/gpt-oss-120b,yes
+es,Set a timer for 1 hour and 30 minutes.,Configura un temporizador de 1 hora y 30 minutos.,Tu temporizador de 1 hora 30 minutos está en marcha.,openai/gpt-oss-120b,yes
+es,"Hey, j'aimerais savoir combien font 5000 leones en dollars.","Hey, me gustaría saber cuánto son 5000 leones en dólares.","5000 leones son aproximadamente 221.24 dólares, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,كم يساوي 5٪ من 5000؟,¿Cuánto es el 5 % de 5000?,El resultado es 250.,openai/gpt-oss-120b,yes
+es,What's 803 times 45?,,,openai/gpt-oss-120b,no
+es,"Hey, can you tell me what 18% of 250000 is?",,,openai/gpt-oss-120b,no
+es,¿Puedes abrir Chrome?,"Person: ¿Puedes abrir Chrome?
+Gink: Chrome abierto.","Persona: ¿Puedes abrir Chrome?
+Gink: Chrome abierto.",openai/gpt-oss-120b,yes
+es,"Hey, c’est quoi 5 % de 1200 ?","Hey, ¿qué es el 5 % de 1200?",Son 60.,openai/gpt-oss-120b,yes
+es,Could you please calculate 10% of 15000 for me?,"¿Podrías calcular el 10 % de 15000 para mí, por favor?","Eso es 1,500.",openai/gpt-oss-120b,yes
+es,حوّل 100 نيرا إلى ليونز,Convierte 100 Nira a Leones,100 Nira equivalen a aproximadamente 1.48 Leones según el tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,Persona: ¿Cuál es el 20 % de 80000?,,,openai/gpt-oss-120b,no
+es,"Salut, tu sais combien font 100000 leones en nairas ?","Hola, ¿sabes cuánto son 100000 leones en nairas?","100000 leones son aproximadamente 6,769,911.50 nairas, al tipo de cambio actual.",openai/gpt-oss-120b,yes
+es,What's 10000 euros in Kenyan shillings?,Persona: ¿Cuántos 10000 euros son en chelines kenianos?,"10000 euros son aproximadamente 1,402,173.91 chelines kenianos al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
+es,Persona: Calcula 149 por 51,,,openai/gpt-oss-120b,no
