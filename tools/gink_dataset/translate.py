@@ -157,12 +157,16 @@ def main(argv=None, ask_fn=ask):
     ap.add_argument("--languages", default="es,pt,ar,sw", help="codes (es,pt,ar...), or all")
     ap.add_argument("--train", default=os.path.join(HERE, "out", "train.jsonl"))
     ap.add_argument("--base-url", default=os.environ.get("GINK_PARA_BASE", "https://api.groq.com/openai/v1"))
-    ap.add_argument("--model", default=os.environ.get("GINK_PARA_MODEL", "openai/gpt-oss-120b"))
+    ap.add_argument("--model", default=os.environ.get("GINK_PARA_MODEL", "openai/gpt-oss-120b"),
+                    help="the model that does the work (asked for by name)")
+    ap.add_argument("--label", default=os.environ.get("GINK_PARA_LABEL", ""),
+                    help='what the "model" column says (default: "Gink (via <model>)" -- branding plus an honest record)')
     ap.add_argument("--limit", type=int, default=0, help="only this many requests per language (to try it)")
     ap.add_argument("--csv", default=CSV_PATH)
     ap.add_argument("--key", default="")
     ap.add_argument("--ask-key", action="store_true")
     a = ap.parse_args(argv)
+    label = a.label or f"Gink (via {a.model})"
     known = dict(WELL_SUPPORTED, **NEEDS_REVIEW)
     langs = list(known) if a.languages.strip() == "all" else [x.strip() for x in a.languages.split(",") if x.strip()]
     unknown = [x for x in langs if x not in known]
@@ -210,7 +214,7 @@ def main(argv=None, ask_fn=ask):
                 dropped += not ok
                 approved = ("yes" if lang in WELL_SUPPORTED else "") if ok else "no"
                 w.writerow({"language": lang, "original": user, "user": t_user if ok else "", "reply": t_reply if ok else "",
-                            "model": a.model, "approved": approved})
+                            "model": label, "approved": approved})
                 f.flush()
     print(f"Done: {kept} translations kept, {dropped} dropped by the checks -> {a.csv}")
     drafts = [x for x in langs if x in NEEDS_REVIEW]

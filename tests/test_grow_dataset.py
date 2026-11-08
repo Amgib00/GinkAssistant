@@ -247,3 +247,31 @@ def test_world_examples_leave_the_originals_alone(tmp_path):
     finally:
         import shutil
         shutil.rmtree(out, ignore_errors=True)
+
+
+def test_rows_are_labelled_gink_via_the_real_model(tmp_path):
+    """The owner relabelled rows to "Gink (via openai/gpt-oss-120b)": branding plus an honest record. New rows
+    get it automatically; --label (or GINK_PARA_LABEL) sets another; --model still picks the model that works."""
+    import translate as tr
+    train = tmp_path / "train.jsonl"
+    rows = [{"category": "action", "language": "en", "messages": [{"role": "system", "content": "s"},
+             {"role": "user", "content": "Wake me up at 6:30 am"}]}]
+    train.write_text(json.dumps(rows[0]), encoding="utf-8")
+    out = tmp_path / "p.csv"
+    pp.main(["--train", str(train), "--csv", str(out), "--key", "gsk_test_key_123456"],
+            ask_fn=lambda *a: ["Get me up at 6:30 am please"])
+    assert [r["model"] for r in csv.DictReader(open(out, encoding="utf-8"))] == ["Gink (via openai/gpt-oss-120b)"]
+    out2 = tmp_path / "p2.csv"
+    pp.main(["--train", str(train), "--csv", str(out2), "--key", "gsk_test_key_123456", "--label", "Gink"],
+            ask_fn=lambda *a: ["Get me up at 6:30 am please"])
+    assert [r["model"] for r in csv.DictReader(open(out2, encoding="utf-8"))] == ["Gink"]
+    weather = {"category": "action", "language": "en", "messages": [
+        {"role": "system", "content": "s"}, {"role": "user", "content": "What's the weather in Lima today?"},
+        {"role": "assistant", "content": "", "tool_calls": [{"id": "c", "type": "function", "function": {
+            "name": "get_weather", "arguments": json.dumps({"place": "Lima", "day": "today"})}}]},
+        {"role": "tool", "tool_call_id": "c", "content": "ok"}, {"role": "assistant", "content": "22°C in Lima."}]}
+    train.write_text(json.dumps(weather), encoding="utf-8")
+    out3 = tmp_path / "t.csv"
+    tr.main(["--languages", "es", "--train", str(train), "--csv", str(out3), "--key", "gsk_test_key_123456"],
+            ask_fn=lambda *a: ("¿Qué tiempo hace hoy en Lima?", "22°C en Lima."))
+    assert [r["model"] for r in csv.DictReader(open(out3, encoding="utf-8"))] == ["Gink (via openai/gpt-oss-120b)"]

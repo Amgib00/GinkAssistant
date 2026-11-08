@@ -2160,3 +2160,8 @@ New services/live_info.py (all free, no API keys):
   generator WORLD_PER_TOOL times (env GINK_DATA_WORLD_PER_TOOL, default 60), restores, tags world=True. Runs after the
   originals: the original requests (paraphrases.csv / translations.csv keys) and the original held-out examples are
   identical (test). 683 -> 1,343 examples; held-out 32 -> 63 (the 32 kept). paraphrase.py resumes on new requests only.
+
+## 0.1.131: dataset row labels
+- paraphrase.py / translate.py: --label (env GINK_PARA_LABEL), default f"Gink (via {model})", written to the CSVs'
+  "model" column; --model still selects the API model. The owner relabelled existing rows the same way (Gink branding
+  + provenance: GPT-OSS is Apache-2.0; accurate records help with training-data questions, e.g. EU GPAI summaries).

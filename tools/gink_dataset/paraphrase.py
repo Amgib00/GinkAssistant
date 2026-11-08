@@ -228,7 +228,10 @@ def main(argv=None, ask_fn=ask):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--train", default=os.path.join(HERE, "out", "train.jsonl"))
     ap.add_argument("--base-url", default=os.environ.get("GINK_PARA_BASE", "https://api.groq.com/openai/v1"))
-    ap.add_argument("--model", default=os.environ.get("GINK_PARA_MODEL", "openai/gpt-oss-120b"))
+    ap.add_argument("--model", default=os.environ.get("GINK_PARA_MODEL", "openai/gpt-oss-120b"),
+                    help="the model that does the work (asked for by name)")
+    ap.add_argument("--label", default=os.environ.get("GINK_PARA_LABEL", ""),
+                    help='what the "model" column says (default: "Gink (via <model>)" -- branding plus an honest record)')
     ap.add_argument("--per-request", type=int, default=4)
     ap.add_argument("--limit", type=int, default=0, help="only this many requests (to try it)")
     ap.add_argument("--csv", default=CSV_PATH)
@@ -236,6 +239,7 @@ def main(argv=None, ask_fn=ask):
     ap.add_argument("--ask-key", action="store_true", help="ignore GROQ_API_KEY and ask for the key (hidden)")
     ap.add_argument("--recheck", action="store_true", help="run today's checks on paraphrases.csv again (no AI calls)")
     a = ap.parse_args(argv)
+    label = a.label or f"Gink (via {a.model})"
     if a.recheck:
         return recheck(a.csv)
     if not os.path.exists(a.train):
@@ -292,11 +296,11 @@ def main(argv=None, ask_fn=ask):
                 if why:
                     dropped += 1
                     continue
-                w.writerow({"language": lang, "original": text, "paraphrase": v, "model": a.model, "approved": "yes"})
+                w.writerow({"language": lang, "original": text, "paraphrase": v, "model": label, "approved": "yes"})
                 kept += 1
                 ok_any = True
             if not ok_any:                              # remember it was tried, so a re-run moves on
-                w.writerow({"language": lang, "original": text, "paraphrase": "", "model": a.model, "approved": "no"})
+                w.writerow({"language": lang, "original": text, "paraphrase": "", "model": label, "approved": "no"})
             f.flush()
             if i % 10 == 0:
                 print(f"  {i}/{len(todo)} requests: {kept} rewrites kept, {dropped} dropped")

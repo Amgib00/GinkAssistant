@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.131 (November 2026)
+
+- For the owner: paraphrase.py and translate.py label new rows "Gink (via openai/gpt-oss-120b)" -- Gink's
+  name plus an honest record of which model wrote them; --label sets another label
+
 ## 0.1.130 (November 2026)
 
 - For the owner, Gink's own model: the training data now covers the whole world -- the same actions with

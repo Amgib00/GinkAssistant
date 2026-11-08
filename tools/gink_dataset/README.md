@@ -45,6 +45,11 @@ still match), then the same actions with places, money, time zones and names fro
 Paulo, Mumbai, Cairo, yen, rupees, reais... (`GINK_DATA_WORLD_PER_TOOL`, default 60 per tool). Run
 `paraphrase.py` again: it only rewrites the new requests.
 
+### The "model" column
+New rows say **Gink (via openai/gpt-oss-120b)**: Gink's name, and an honest record of the model that wrote the
+row (GPT-OSS, Apache-2.0 -- useful if anyone ever asks what Gink was trained on). `--label "..."` (or
+`GINK_PARA_LABEL`) writes something else; `--model` still chooses which model does the work.
+
 ### Many languages: `translate.py`
 GPT-OSS translates action examples, and Gink's short reply, into other languages:
 `--languages es,pt,ar` or `--languages all` (22 widely used languages plus 15 African languages). Only
