@@ -2145,3 +2145,11 @@ New services/live_info.py (all free, no API keys):
   first publish needs `npm login && npm publish` or an NPM_TOKEN (granular, can create packages). sdk-js.yml passes
   NODE_AUTH_TOKEN from secrets.NPM_TOKEN and explains the first publish if neither exists. My 0.1.124 note to the
   owner ("add a Trusted Publisher first") was wrong on this point.
+
+## 0.1.129: npm staged publishing (gink-ai 0.3.2 is live)
+- What happened: run 42527762356 (NPM_TOKEN) STAGED gink-ai -> registry showed the placeholder 0.0.0-stage; the owner
+  enabled 2FA and approved 0.3.2 in npmjs.com -> Staged Packages; latest = 0.3.2; token deleted.
+- sdk-js.yml now always `npm stage publish --access public` (npm@latest; trusted publisher or optional NPM_TOKEN), skips
+  if the version exists, fails if package.json has any dependencies (the owner ran `npm install gink-ai` inside sdk/js,
+  which adds a self-dependency). package.json repository.url in npm's "git+https://....git" form (no publish warning).
+  .gitignore: sdk/js/node_modules, sdk/js/package-lock.json. Tests: staged flow + clean package.

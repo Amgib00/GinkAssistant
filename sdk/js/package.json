@@ -5,11 +5,32 @@
   "type": "module",
   "main": "./index.js",
   "types": "./index.d.ts",
-  "exports": { ".": { "types": "./index.d.ts", "default": "./index.js" } },
-  "files": ["index.js", "index.d.ts", "README.md"],
-  "engines": { "node": ">=18" },
-  "keywords": ["gink", "ai", "agents", "sdk", "api"],
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "gink",
+    "ai",
+    "agents",
+    "sdk",
+    "api"
+  ],
   "license": "MIT",
   "homepage": "https://gink-server.onrender.com/developers/agents",
-  "repository": { "type": "git", "url": "https://github.com/Amgib00/GinkAssistant", "directory": "sdk/js" }
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Amgib00/GinkAssistant.git",
+    "directory": "sdk/js"
+  }
 }

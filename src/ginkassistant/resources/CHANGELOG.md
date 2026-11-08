@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.129 (November 2026)
+
+- The JavaScript SDK is on npm: `npm install gink-ai` (0.3.2). New versions are now staged by GitHub and
+  go live when you approve them on npmjs.com with your phone, so nobody can publish Gink's SDK without you
+- Small fixes: no more package.json warning when publishing; the SDK can't accidentally depend on itself
+
 ## 0.1.128 (November 2026)
 
 - For the owner, GitHub: running Release with an older version number now releases the newer code

@@ -149,6 +149,19 @@ def test_release_check_is_forgiving_where_safe(tmp_path):
         assert wf["jobs"][job]["if"] == "needs.check.outputs.version != ''"
 
 
-def test_npm_first_publish_is_explained():
+def test_npm_publishing_is_staged_for_the_owner_to_approve():
+    """npm's staged publishing: the workflow stages, the owner approves with 2FA (what made 0.3.2 live)."""
     text = open(os.path.join(ROOT, ".github", "workflows", "sdk-js.yml"), encoding="utf-8").read()
-    assert "NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}" in text and "npm only trusts this workflow for a package that already exists" in text
+    assert "npm stage publish --access public" in text and "Staged Packages" in text and "npm install -g npm@latest" in text
+    assert "already on npm" in text and "depends on nothing" in text
+
+
+def test_js_sdk_package_is_clean():
+    """The owner once ran `npm install gink-ai` inside sdk/js: the package must never depend on itself (or
+    anything: it only uses fetch), and npm's own repository URL form avoids the publish warning."""
+    import json
+    sdk = os.path.join(ROOT, "sdk", "js")
+    pkg = json.load(open(os.path.join(sdk, "package.json"), encoding="utf-8"))
+    assert not pkg.get("dependencies") and not pkg.get("peerDependencies")
+    assert pkg["repository"]["url"] == "git+https://github.com/Amgib00/GinkAssistant.git"
+    assert set(pkg["files"]) == {"index.js", "index.d.ts", "README.md"}

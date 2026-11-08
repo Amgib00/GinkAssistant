@@ -59,3 +59,7 @@ tools/gink_model/out/
 gink-backup-*.db
 # shared Genie sessions for training (tools/gink_model/export_genie_data.py): private, never publish
 genie_training.jsonl
+
+# the JavaScript SDK: never commit installs made while trying it
+sdk/js/node_modules/
+sdk/js/package-lock.json

@@ -1,11 +1,12 @@
 # Publishes the JavaScript SDK (sdk/js) to npm, so anyone can: npm install gink-ai
 #
-# FIRST TIME ONLY (npm can't trust a workflow for a package that doesn't exist yet), either:
-#   a) on your Mac:  cd sdk/js && npm login && npm publish --access public
-#   b) or: npmjs.com -> Access Tokens -> Generate New Token (Granular; packages: read and write; it can create new
-#      packages), then GitHub -> Settings -> Secrets and variables -> Actions -> New secret NPM_TOKEN, then run this.
-# THEN, once: npmjs.com -> the gink-ai package -> Settings -> Trusted Publisher -> GitHub Actions: Amgib00 /
-#   GinkAssistant / sdk-js.yml. From then on no token is needed (you can delete NPM_TOKEN).
+# How it works now (npm's staged publishing): this workflow STAGES the new version -- no token needed once the
+# Trusted Publisher is set -- and you approve it with your phone (2FA) on npmjs.com -> Staged Packages -> Approve.
+# Nobody can publish Gink's SDK without you.
+#   Trusted Publisher (once): npmjs.com/package/gink-ai -> Settings -> Trusted Publisher -> GitHub Actions:
+#   Amgib00 / GinkAssistant / sdk-js.yml
+#   (Optional) an NPM_TOKEN secret also works, e.g. a stage-only granular token.
+# Bump sdk/js/package.json (and cli/pyproject.toml: the two SDKs move together) before running it.
 # Run it: gh workflow run sdk-js.yml -R Amgib00/GinkAssistant
 name: JavaScript SDK
 
@@ -28,19 +29,19 @@ jobs:
         with:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
-      - name: Check it loads
-        run: node --check index.js && node -e "import('./index.js').then(m => { if (!m.Gink) process.exit(1) })"
-      - name: Publish (skipped if this version is already on npm)
+      - name: Check it loads, and that it depends on nothing (not even itself)
+        run: |
+          node --check index.js && node -e "import('./index.js').then(m => { if (!m.Gink) process.exit(1) })"
+          node -e "const p = require('./package.json'); const d = Object.keys({...p.dependencies, ...p.peerDependencies}); if (d.length) { console.error('::error::package.json has dependencies: ' + d.join(', ') + ' (the SDK uses only fetch)'); process.exit(1) }"
+      - name: Stage the new version (you approve it on npmjs.com)
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           V=$(node -p "require('./package.json').version")
-          if npm view "gink-ai@$V" version >/dev/null 2>&1; then echo "gink-ai $V is already on npm: nothing to do."; exit 0; fi
-          if ! npm view gink-ai name >/dev/null 2>&1 && [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "::error::gink-ai isn't on npm yet, and npm only trusts this workflow for a package that already exists."
-            echo "::error::Publish the first version once -- on your Mac: cd sdk/js && npm login && npm publish --access public"
-            echo "::error::(or add an NPM_TOKEN secret and run this again). Then add the Trusted Publisher on npmjs.com (see the top of sdk-js.yml)."
-            exit 1
+          if npm view "gink-ai@$V" version >/dev/null 2>&1; then
+            echo "::notice::gink-ai $V is already on npm. To publish changes, bump the version in sdk/js/package.json first."
+            exit 0
           fi
-          npm install -g npm@latest      # trusted publishing needs npm 11.5.1 or newer
-          npm publish --access public --provenance
+          npm install -g npm@latest      # staged publishing and trusted publishing need a recent npm (11.15+)
+          npm stage publish --access public
+          echo "::notice::gink-ai $V is staged. Approve it: npmjs.com -> Staged Packages -> gink-ai $V -> Approve (2FA with your phone)."
