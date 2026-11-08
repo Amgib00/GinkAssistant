@@ -20,6 +20,7 @@ for await (const event of gink.interactions.stream({ input: "Add this year's num
 const env = await gink.environments.get(it.environment);
 console.log(await env.text("slides.html"));
 console.log(await gink.chat("What's the weather where I am right now?"));
+const png = await gink.image("my dog", { idea: "statue", photo: dogPhotoBytes });   // see gink.imageIdeas()
 ```
 
 Keep your API key on your server: never in a web page anyone can open.

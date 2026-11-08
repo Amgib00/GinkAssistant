@@ -107,10 +107,28 @@ class Client:
         """An answer from the web, with its sources listed."""
         return self.chat(question, model="gink-search")
 
-    def image(self, prompt: str) -> bytes:
+    def image(self, prompt: str = "", idea: str = "", subject: str = "", style: str = "", aspect_ratio: str = "",
+              photo=None) -> bytes:
+        """An image (PNG/JPEG bytes). idea: a ready-made look (see image_ideas()), its subject = subject or prompt;
+        style: "3d", "photo"... or your own words; aspect_ratio: "1:1", "16:9", "9:16", "4:3", "3:4";
+        photo: bytes or a file path, to start from someone's own photo (use photos of people who agreed)."""
         import base64
-        data = self.request("POST", "/images/generations", json={"prompt": prompt}).json()
+        body = {"prompt": prompt}
+        if idea:
+            body.update(idea=idea, subject=subject or prompt)
+        if style:
+            body["style"] = style
+        if aspect_ratio:
+            body["aspect_ratio"] = aspect_ratio
+        if photo is not None:
+            raw = photo if isinstance(photo, (bytes, bytearray)) else open(photo, "rb").read()
+            body["photo"] = base64.b64encode(bytes(raw)).decode("ascii")
+        data = self.request("POST", "/images/generations", json=body).json()
         return base64.b64decode(data["data"][0]["b64_json"])
+
+    def image_ideas(self) -> dict:
+        """{"styles": [...], "ideas": [{"id": "statue", "title", "example_subject", ...}]} -- Media Studio's looks."""
+        return self.request("GET", "/images/ideas").json()
 
     def models(self) -> list:
         return [m["id"] for m in self.request("GET", "/models").json().get("data", [])]

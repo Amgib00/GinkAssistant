@@ -4259,7 +4259,7 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     var job = !atts.length && siteFollowUp(s, text) ? makeSite(text, aid, true, s.site, s)
             : SITE_EDIT_RE.test(text) && !atts.length ? makeSite(text, aid, true, null, s)
             : SITE_RE.test(text) && !atts.length ? makeSite(text, aid, false, null, s)
-            : IMAGE_RE.test(text) && !atts.length ? makeImage(text, aid) : chat(s, aid, { voice: opts.voice, last: content, web: web });
+            : IMAGE_RE.test(text) && (!atts.length || photoOf(atts)) ? makeImage(text, aid, photoOf(atts)) : chat(s, aid, { voice: opts.voice, last: content, web: web });
     return job.then(function (reply) {
       if (reply) { s.messages.push({ role: "assistant", content: reply, ts: stamp() }); touch(s.id); }
       W.busy = null; setComposerBusy(false); refreshSidebar(); sync();
@@ -4359,10 +4359,19 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     }).catch(function (e) { setPlainText(aid, (e && e.message && e.message !== "signed out") ? e.message : "Can't reach the Gink server."); return ""; });
   }
 
-  function makeImage(prompt, aid) {
+  // An image request with one photo attached starts from that photo (like Media Studio's "Use a photo")
+  function photoOf(atts) {
+    if (!atts || atts.length !== 1) return "";
+    var a = atts[0], url = String(a.data_url || a.dataUrl || a.url || "");
+    var m = /^data:image\/(jpeg|png|webp);base64,(.+)$/.exec(url);
+    return m ? m[2] : "";
+  }
+  function makeImage(prompt, aid, photo) {
     W.busy = { abort: function () {} };
-    setSpinLabel(aid, "Creating your image\u2026");
-    return api("/media/image", { prompt: prompt, aspect_ratio: "1:1" }).then(function (r) {
+    setSpinLabel(aid, photo ? "Creating your image from the photo\u2026" : "Creating your image\u2026");
+    var body = { prompt: prompt, aspect_ratio: photo ? "3:4" : "1:1" };
+    if (photo) body.photo_b64 = photo;
+    return api("/media/image", body).then(function (r) {
       if (!r.ok) return errorText(r).then(function (t) { setPlainText(aid, t); return ""; });
       return r.json().then(function (j) {
         var src = "data:" + (j.mime_type || "image/png") + ";base64," + j.image_b64;

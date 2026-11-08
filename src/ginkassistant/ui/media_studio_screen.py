@@ -24,34 +24,9 @@ from toga.style.pack import COLUMN
 
 from ..services.api_client import ApiClient, ApiError
 from ..services.image_service import ASPECTS, STYLES, ImageService
+from ..services.image_ideas import IDEAS
 from ..services.paths import data_dir
 from .theme import css_vars
-
-# Ideas: (id, title, prompt with {subject}, default subject, style, aspect, card colours, symbol)
-IDEAS = [
-    ("zen", "Zen", "{subject} floating peacefully in deep meditation, soft morning light, calm and minimal, gentle film photograph",
-     "a person", "photo", "3:4", "#9FB4C7,#E8EEF2", "\U0001F9D8"),
-    ("claw", "Claw machine", "a cute plush toy of {subject} inside a colourful claw machine full of plushies, neon arcade lights",
-     "a smiling student", "3d", "3:4", "#F472B6,#8B5CF6", "\U0001F9F8"),
-    ("chibi", "Chibi keychain", "a tiny chibi keychain charm of {subject}, glossy acrylic, held up in front of a soft blurred background",
-     "a girl with round glasses", "3d", "3:4", "#FBCFE8,#FDE68A", "\U0001F511"),
-    ("elven", "Elven", "{subject} as an elven archer in a sunlit enchanted forest, fantasy film still, golden light",
-     "a young woman", "photo", "3:4", "#65A30D,#FACC15", "\U0001F3F9"),
-    ("sitcom", "Sitcom", "{subject} as the guest star of a bright 90s TV sitcom, colourful retro kitchen set, title card that says GUEST STAR",
-     "a cheerful man in a colourful jacket", "photo", "3:4", "#F59E0B,#10B981", "\U0001F4FA"),
-    ("8bit", "8-bit game", "{subject} as characters in a joyful 8-bit pixel-art video game scene, bright pixel sky, a heart above them",
-     "two friends and their cat", "illustration", "1:1", "#F97316,#DC2626", "\U0001F47E"),
-    ("figurine", "Football figurine", "a collectible action figure of {subject} as a footballer in a clear blister pack, with ball, boots and cones",
-     "a smiling young man", "3d", "3:4", "#1E3A8A,#FACC15", "\u26BD"),
-    ("landscape", "Landscape", "a wide, moody landscape photograph of {subject}, golden hour, high detail",
-     "a rugged coastline at dawn", "photo", "16:9", "#475569,#CBD5E1", "\U0001F3DE\uFE0F"),
-    ("statue", "Statue", "{subject} as a white marble statue in a grand classical museum hall, soft daylight",
-     "a woman holding a basket of fruit", "photo", "3:4", "#A8A29E,#F5F5F4", "\U0001F3DB\uFE0F"),
-    ("underwater", "Underwater", "an underwater portrait of {subject}, sunlight rippling through the water, tiny bubbles, dreamy",
-     "a young woman", "photo", "3:4", "#0E7490,#67E8F9", "\U0001F30A"),
-    ("room", "Cozy room", "a cozy reading nook for my room: {subject}, warm fairy lights, records on the wall, soft blankets, sunset window",
-     "a small bedroom", "photo", "4:3", "#7C2D12,#FDBA74", "\U0001F6CB\uFE0F"),
-]
 
 STYLE_LABELS = {"": "None", "photo": "Photo", "illustration": "Illustration", "3d": "3D", "sticker": "Sticker",
                 "poster": "Poster", "logo": "Logo", "watercolor": "Watercolour", "anime": "Anime"}

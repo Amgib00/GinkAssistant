@@ -2123,3 +2123,15 @@ New services/live_info.py (all free, no API keys):
   settings city placeholder = the tz city. tests/test_international.py guards USER_FACING files against one-country
   examples. NOT changed on purpose: payment/currency/language support for Senegal (real features), the pricing table,
   and the training-data templates (changing them would orphan the owner's paraphrases.csv rows).
+
+## 0.1.127: image looks across the whole suite (owner: "always build the full suite")
+- services/image_ideas.py: STYLES (moved from image_service) + IDEAS (moved from media_studio_screen) + style_text()
+  (key -> description; other text kept; "" stays ""), idea_prompt(id, subject) -> (prompt, style, aspect), catalog().
+  Imported by Media Studio, image_service and the server (_ideas_module: package or flat; Dockerfile COPY -- the
+  layout test enforces it).
+- media_image (apps, web, and /v1/images/generations which forwards to it): idea + subject, style keys, OpenAI
+  "size" -> aspect (IMAGE_SIZES), "photo" alias of photo_b64. GET /v1/images/ideas and /media/ideas (public list).
+- Web app: an image request with exactly one image attachment sends it as photo_b64 (photoOf). CLI: --idea --style
+  --aspect --photo, `gink ideas`. Python SDK image(prompt, idea, subject, style, aspect_ratio, photo bytes|path),
+  image_ideas(); JS SDK image(prompt, {idea, subject, style, aspect_ratio, photo}), imageIdeas() (+ types, tsc-checked).
+- Rule saved with the owner: every feature lands in apps, web app, Genie, API/agents, CLI and both SDKs.

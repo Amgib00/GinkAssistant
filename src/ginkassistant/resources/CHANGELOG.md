@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.127 (November 2026)
+
+- Media Studio's looks everywhere: the same Ideas (Statue, Chibi keychain, Football figurine...) and styles
+  work in the apps, the web app, the API, the SDKs and the command line
+- Start an image from a photo everywhere: attach one photo in the web app and ask for an image; or use
+  "photo" in the API, photo= in the SDKs, --photo in the command line (use photos of people who agreed)
+- For developers: GET /v1/images/ideas; image requests accept size, aspect_ratio, a style key or your own
+  words, and idea + subject; `gink ideas`; gink-ai 0.3.2
+
 ## 0.1.126 (November 2026)
 
 - Gink is international: answers fit your own country automatically -- your local time, currency, units

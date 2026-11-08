@@ -2259,3 +2259,14 @@ es,Persona: ¿Cuál es el 20 % de 80000?,,,openai/gpt-oss-120b,no
 es,"Salut, tu sais combien font 100000 leones en nairas ?","Hola, ¿sabes cuánto son 100000 leones en nairas?","100000 leones son aproximadamente 6,769,911.50 nairas, al tipo de cambio actual.",openai/gpt-oss-120b,yes
 es,What's 10000 euros in Kenyan shillings?,Persona: ¿Cuántos 10000 euros son en chelines kenianos?,"10000 euros son aproximadamente 1,402,173.91 chelines kenianos al tipo de cambio de hoy.",openai/gpt-oss-120b,yes
 es,Persona: Calcula 149 por 51,,,openai/gpt-oss-120b,no
+es,"Hey, could you please open Spotify for me?","Oye, ¿podrías abrir Spotify para mí?",Spotify abierto.,openai/gpt-oss-120b,yes
+es,Please give me the weather update for Freetown right now.,"Por favor, dame la actualización del tiempo para Freetown ahora mismo.","Freetown ahora: soleado, alrededor de 27°C.",openai/gpt-oss-120b,yes
+es,Peux-tu lancer Notes ?,Person: ¿Puedes lanzar Notes?,Gink: Notes está abierto.,openai/gpt-oss-120b,yes
+es,Convierte 5000 naira a chelines kenianos,Person: Convierte 5000 naira a chelines kenianos,Gink: 5000 naira son aproximadamente 421.57 chelines kenianos al tipo de cambio de hoy.,openai/gpt-oss-120b,yes
+es,Clima em Dakar hoje,Clima en Dakar hoy,"Dakar hoy: soleado, alrededor de 21°C.",openai/gpt-oss-120b,yes
+es,كم يساوي 10000 فرنك سيفا بالجنيه؟,,,openai/gpt-oss-120b,no
+es,Calcule 650 vezes 55,Persona: Calcule 650 veces 55,Son 35.750.,openai/gpt-oss-120b,yes
+es,¿Qué tiempo hace en Abidjan hoy?,Person: ¿Qué tiempo hace en Abidjan hoy?,"Gink: En Abidjan hoy: nublado, alrededor de 37 °C.",openai/gpt-oss-120b,yes
+es,Lanza Spotify,"Person: Lanza Spotify
+Gink: Spotify está abierto.","Persona: Lanza Spotify
+Gink: Spotify está abierto.",openai/gpt-oss-120b,yes

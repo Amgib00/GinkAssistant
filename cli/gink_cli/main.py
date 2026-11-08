@@ -8,6 +8,7 @@ gink -- Gink in your terminal (the Gink Developer API, OpenAI-compatible).
     gink --image "prompt" -o x.png  make an image
     gink agent "task"               a managed agent does it in a workspace that persists (--env ID, --continue)
     gink env list | new NAME | files ID | pull ID [DIR] | push ID DIR | rm ID
+    gink ideas                      ready-made image looks: gink --image "my dog" --idea statue --photo dog.jpg
                                     the agents' workspaces (the same projects as Gink Genie)
     gink login                      sign in through your browser (or: gink login --key to paste a key)
     gink logout | models | version
@@ -156,12 +157,27 @@ def stream_answer(key: str, base: str, messages: list, model: str = "", out=None
     return "".join(text)
 
 
-def make_image(key: str, base: str, prompt: str, path: str) -> str:
+def make_image(key: str, base: str, prompt: str, path: str, idea: str = "", style: str = "", aspect: str = "",
+               photo: str = "") -> str:
+    """An image; optionally a ready-made idea (gink ideas), a style ("3d"...), a shape ("3:4") and a photo to start from."""
     need_key(key)
     import httpx
+    body = {"prompt": prompt}
+    if idea:
+        body.update(idea=idea, subject=prompt)
+    if style:
+        body["style"] = style
+    if aspect:
+        body["aspect_ratio"] = aspect
+    if photo:
+        try:
+            with open(photo, "rb") as f:
+                body["photo"] = base64.b64encode(f.read()).decode("ascii")
+        except OSError:
+            raise GinkError(f"can't read the photo {photo}")
     try:
         with _client(key, 180) as c:
-            r = c.post(base + "/images/generations", json={"prompt": prompt})
+            r = c.post(base + "/images/generations", json=body)
     except httpx.HTTPError as exc:
         raise _network(exc)
     if r.status_code != 200:
@@ -422,6 +438,14 @@ def main(argv=None) -> int:
             ag.add_argument("--max-steps", type=int, default=15)
             b = ag.parse_args(argv[1:])
             return show_agent_result(run_agent(key, base, " ".join(b.task), b.env, b.previous, b.max_steps))
+        if argv[:1] == ["ideas"]:                     # Media Studio's looks, for --image --idea
+            import httpx
+            with httpx.Client(timeout=30) as c:
+                cat = c.get(base + "/images/ideas").json()
+            for i in cat["ideas"]:
+                print(f"{i['id']:<11} {i['title']:<18} e.g. gink --image \"{i['example_subject']}\" --idea {i['id']}")
+            print("styles: " + ", ".join(s["id"] for s in cat["styles"]))
+            return 0
         if argv[:1] == ["env"]:
             return env_command(key, base, argv[1:])
         if argv[:1] in (["version"], ["--version"]):
@@ -436,11 +460,16 @@ def main(argv=None) -> int:
         ap.add_argument("--system", default="", help="instructions for Gink in this conversation")
         ap.add_argument("--image", metavar="PROMPT", help="make an image instead of answering")
         ap.add_argument("-o", "--output", default="", help="where to save the image (default gink-image-<time>.png)")
+        ap.add_argument("--idea", default="", help="with --image: a ready-made look (gink ideas), the prompt is its subject")
+        ap.add_argument("--style", default="", help="with --image: photo, 3d, illustration, sticker, anime... or your own words")
+        ap.add_argument("--aspect", default="", help="with --image: 1:1, 16:9, 9:16, 4:3 or 3:4")
+        ap.add_argument("--photo", default="", help="with --image: start from this photo (JPEG, PNG or WebP)")
         a = ap.parse_args(argv)
         model = "gink-search" if a.search else a.model
 
         if a.image:
-            path = make_image(key, base, a.image, a.output or f"gink-image-{int(time.time())}.png")
+            path = make_image(key, base, a.image, a.output or f"gink-image-{int(time.time())}.png", a.idea, a.style,
+                              a.aspect, a.photo)
             print(f"Saved {path}")
             return 0
         question = " ".join(a.question).strip()

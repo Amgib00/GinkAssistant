@@ -18,17 +18,7 @@ from .api_client import ApiClient, ApiError
 from .file_maker import MadeFile, save_image
 
 ASPECTS = ["1:1", "16:9", "9:16", "4:3", "3:4"]
-STYLES = {
-    "": "No style",
-    "photo": "photorealistic photograph, natural light, high detail",
-    "illustration": "clean digital illustration, vibrant colours",
-    "3d": "3D render, soft studio lighting, tactile materials",
-    "sticker": "die-cut sticker, bold outlines, simple shading, white background",
-    "poster": "bold graphic poster design with strong typography",
-    "logo": "minimal modern logo, flat vector, simple shapes, white background",
-    "watercolor": "soft watercolour painting on textured paper",
-    "anime": "anime style, cel shading, expressive",
-}
+from .image_ideas import STYLES  # noqa: E402,F401  (shared with the server, the API, SDKs and CLI)
 
 
 def shrink_photo(raw: bytes, longest: int = 1536) -> bytes:

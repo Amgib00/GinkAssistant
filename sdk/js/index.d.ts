@@ -66,7 +66,10 @@ export declare class Gink {
   };
   chat(message: string | Array<{ role: string; content: string }>, options?: { model?: string; system?: string }): Promise<string>;
   search(question: string): Promise<string>;
-  image(prompt: string): Promise<Uint8Array>;
+  image(prompt?: string, options?: { idea?: string; subject?: string; style?: string;
+    aspect_ratio?: "1:1" | "16:9" | "9:16" | "4:3" | "3:4"; photo?: Uint8Array | string }): Promise<Uint8Array>;
+  imageIdeas(): Promise<{ styles: Array<{ id: string; description: string }>;
+    ideas: Array<{ id: string; title: string; prompt: string; example_subject: string; style: string; aspect_ratio: string }> }>;
   models(): Promise<string[]>;
 }
 

@@ -231,6 +231,7 @@ src/ginkassistant/services/everyday.py
 src/ginkassistant/services/file_maker.py
 src/ginkassistant/services/groq_worker.py
 src/ginkassistant/services/history.py
+src/ginkassistant/services/image_ideas.py
 src/ginkassistant/services/image_service.py
 src/ginkassistant/services/languages.py
 src/ginkassistant/services/launch_at_login.py
@@ -342,6 +343,7 @@ tests/test_gink_model_tools.py
 tests/test_ginkgenie_app.py
 tests/test_grow_dataset.py
 tests/test_hey_gink.py
+tests/test_image_suite.py
 tests/test_international.py
 tests/test_ios_startup.py
 tests/test_js_sdk.py

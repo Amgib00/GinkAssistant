@@ -64,10 +64,18 @@ export class Gink {
 
   search(question) { return this.chat(question, { model: "gink-search" }); }
 
-  async image(prompt) {
-    const data = await this.request("POST", "/images/generations", { json: { prompt } });
+  // { idea, subject, style, aspect_ratio, photo } -- photo: Uint8Array or base64, to start from someone's own photo
+  async image(prompt = "", { idea, subject, style, aspect_ratio, photo } = {}) {
+    const body = { prompt };
+    if (idea) Object.assign(body, { idea, subject: subject || prompt });
+    if (style) body.style = style;
+    if (aspect_ratio) body.aspect_ratio = aspect_ratio;
+    if (photo) body.photo = typeof photo === "string" ? photo : bytesToBase64(photo);
+    const data = await this.request("POST", "/images/generations", { json: body });
     return base64ToBytes(data.data[0].b64_json);
   }
+
+  imageIdeas() { return this.request("GET", "/images/ideas"); }
 
   async models() { return ((await this.request("GET", "/models")).data || []).map((m) => m.id); }
 }
@@ -81,6 +89,12 @@ async function toError(res) {
     code = e.code || "";
   } catch (e) { /* not JSON */ }
   return new GinkAPIError(String(message), res.status, code);
+}
+
+function bytesToBase64(bytes) {
+  if (typeof Buffer !== "undefined") return Buffer.from(bytes).toString("base64");
+  let bin = ""; for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin);
 }
 
 function base64ToBytes(b64) {

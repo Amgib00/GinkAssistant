@@ -228,6 +228,7 @@
           <tr><td><code>POST /v1/chat/completions</code></td><td>Chat. <code>stream: true</code> for word-by-word answers. Without <code>model</code>: Gink Crystal.</td></tr>
           <tr><td><code>GET /v1/models</code></td><td>Models you can use. <code>gink-search</code> searches the web and lists sources.</td></tr>
           <tr><td><code>POST /v1/images/generations</code></td><td><code>{"prompt"}</code> &rarr; <code>data[0].b64_json</code> (PNG).</td></tr>
+          <tr><td><code>POST /v1/images/generations</code></td><td><code>{"prompt"}</code>, plus <code>"size"</code> or <code>"aspect_ratio"</code>, <code>"style"</code> (<code>3d</code>, <code>photo</code>&hellip; or your words), <code>"idea"</code> + <code>"subject"</code> (Media Studio&rsquo;s looks: <code>GET /v1/images/ideas</code>), <code>"photo"</code> (base64) to start from someone&rsquo;s photo.</td></tr>
           <tr><td><code>POST /v1/interactions</code></td><td>Managed agent: <code>{"agent": "gink-agent", "input", "environment": "remote"}</code> &rarr; <code>output_text</code>, <code>steps</code>, <code>files_changed</code>. Environments: <code>/v1/environments</code>. <a href="/developers/agents">Guide</a>.</td></tr>
           <tr><td><code>POST /v1/batches</code></td><td><code>{"requests": [{"custom_id", "body"}], "name"}</code>, up to 100. Then <code>GET /v1/batches/{id}</code>, <code>/results</code> (JSONL), <code>/cancel</code>.</td></tr>
         </tbody></table></div>

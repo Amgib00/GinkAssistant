@@ -14,6 +14,14 @@ gink models
 Your key can also come from `GINK_API_KEY`; another server from `GINK_BASE_URL`
 (default `https://gink-server.onrender.com/v1`). `gink logout` forgets the saved key.
 
+## Images
+
+```bash
+gink --image "a lighthouse at dawn" --style watercolor --aspect 16:9
+gink ideas                                            # ready-made looks
+gink --image "my dog" --idea statue --photo dog.jpg   # start from your own photo
+```
+
 ## In Python (the SDK)
 
 ```python
@@ -28,6 +36,7 @@ for event in client.interactions.create(input="Update report.md with this year's
     print(event.type, event.data)                    # live: step, status, done
 
 print(client.chat("What's the weather where I am right now?"))    # live information included
+png = client.image("my dog", idea="figurine", photo="dog.jpg")         # Media Studio's looks
 env = client.environments.get(it.environment)
 print(env.download("report.md").decode())
 ```

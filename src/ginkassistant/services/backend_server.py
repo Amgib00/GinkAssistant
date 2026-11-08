@@ -2849,6 +2849,7 @@ def feedback_summary(request: Request):
 # Images cost money per picture, so they have their own daily limits:
 # GINK_FREE_IMAGES (3) and GINK_PRO_IMAGES (50).
 # =====================================================================
+IMAGE_SIZES = {"1024x1024": "1:1", "1792x1024": "16:9", "1024x1792": "9:16", "1536x1024": "4:3", "1024x1536": "3:4"}  # OpenAI-style
 IMAGE_PHOTO_MAX = 6_000_000            # a photo to start from (Media Studio "Use my photo"); never stored
 PHOTO_INSTRUCTION = ("Use the person (or subject) in the attached photo, keeping them recognisable -- face, skin tone, "
                      "hair -- and follow this: ")
@@ -2966,13 +2967,23 @@ async def media_image(request: Request):
         data = await request.json()
     except Exception:
         return _ai_error(400, "Bad request.", "bad_request")
+    ideas = _ideas_module()
     prompt = " ".join(str(data.get("prompt") or "").split())[:4000]
-    aspect = data.get("aspect_ratio") or "1:1"
+    aspect = data.get("aspect_ratio") or IMAGE_SIZES.get(str(data.get("size") or ""), "") or ""
+    style = str(data.get("style") or "")[:200]
+    if data.get("idea"):                               # a ready-made look (Media Studio's Ideas): same everywhere
+        try:
+            idea_text, idea_style, idea_aspect = ideas.idea_prompt(data["idea"], str(data.get("subject") or prompt)[:300])
+        except KeyError:
+            return _ai_error(422, "Unknown idea. See GET /v1/images/ideas.", "bad_request")
+        prompt, style, aspect = idea_text, style or idea_style, aspect or idea_aspect
     if not prompt:
         return _ai_error(422, "Describe the image you want.", "bad_request")
     if aspect not in IMAGE_ASPECTS:
         aspect = "1:1"
-    style = str(data.get("style") or "")[:200]
+    style = ideas.style_text(style)[:200]               # "3d" -> its description; other text as it is
+    if data.get("photo") and not data.get("photo_b64"):
+        data["photo_b64"] = data["photo"]
     photo = None                                      # optional: the person's own photo to start from
     if data.get("photo_b64"):
         try:
@@ -3409,9 +3420,26 @@ async def api_models(request: Request):
     return {"object": "list", "data": [{"id": m, "object": "model", "owned_by": "gink"} for m in chat]}
 
 
+def _ideas_module():
+    try:
+        from . import image_ideas
+    except ImportError:
+        import image_ideas
+    return image_ideas
+
+
+@app.get("/v1/images/ideas")
+@app.get("/media/ideas")
+def image_ideas_catalog():
+    """Media Studio's looks and ideas, for the API, SDKs, CLI and the web app (no sign-in needed: it's a list)."""
+    return _ideas_module().catalog()
+
+
 @app.post("/v1/images/generations")
 async def api_images(request: Request):
-    """OpenAI-style: {"prompt": "..."} -> {"created", "data": [{"b64_json": "..."}]}."""
+    """OpenAI-style: {"prompt": "..."} -> {"created", "data": [{"b64_json": "..."}]}. Also: "size" (1024x1024...),
+    "aspect_ratio", "style" (a key like "3d", or text), "idea" + "subject" (GET /v1/images/ideas), and "photo"
+    (base64 JPEG/PNG/WebP) to start from someone's own photo."""
     owner, err = _api_key_owner(request)
     if err:
         return err
