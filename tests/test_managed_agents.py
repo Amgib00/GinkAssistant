@@ -135,3 +135,84 @@ def test_cli_agent_shows_steps_and_the_answer(monkeypatch, capsys):
     assert sent["url"] == "https://x/v1/interactions" and sent["body"]["environment"] == "remote" and sent["body"]["background"]
     assert "Done: report.md" in out.out and "web_search solar" in out.err and "write_file report.md" in out.err
     assert "gink agent --continue int_1" in out.err
+
+
+def test_live_information_for_agents(api, monkeypatch):
+    b, c, k = api
+    async def facts(text): return ["Weather in Dakar now: 29°C, sunny."] if "weather" in text.lower() else []
+    monkeypatch.setattr(b, "_live_facts", facts)
+    SCRIPT[:] = [{"content": "It's 29°C and sunny in Dakar."}]
+    c.post("/v1/interactions", headers=k, json={"input": "What's the weather in Dakar right now?"})
+    system = " ".join(m["content"] for m in SEEN[-1]["messages"] if m["role"] == "system")
+    assert "Current date and time:" in system and "29°C, sunny" in system and "Live data fetched just now" in system
+
+
+def test_streaming_steps_live(api, monkeypatch):
+    b, c, k = api
+    SCRIPT[:] = [{"content": "", "tool_calls": [call("write_file", path="a.txt", content="hi")]}, {"content": "Wrote a.txt."}]
+    with c.stream("POST", "/v1/interactions", headers=k, json={"input": "Write a.txt", "stream": True}) as r:
+        assert r.headers["content-type"].startswith("text/event-stream")
+        text = "".join(r.iter_text())
+    events = [l[7:] for l in text.splitlines() if l.startswith("event: ")]
+    assert events[0] in ("status", "step") and "step" in events and events[-1] == "done"
+    done = json.loads([l for l in text.splitlines() if l.startswith("data: ")][-1][6:])
+    assert done["status"] == "completed" and done["files_changed"] == ["a.txt"]
+
+
+def test_agent_work_shows_in_genie(api, genie_srv):
+    b, c, k = api
+    _b, _c, session = genie_srv
+    SCRIPT[:] = [{"content": "", "tool_calls": [call("write_file", path="notes.md", content="# Notes")]}, {"content": "Saved notes.md."}]
+    env = c.post("/v1/interactions", headers=k, json={"input": "Start my notes"}).json()["environment"]
+    chat = c.get(f"/genie/projects/{env}/chat", headers=session).json()
+    text = json.dumps(chat)
+    assert "[API agent] Start my notes" in text and "Saved notes.md." in text and "Wrote notes.md" in text
+
+
+def test_genie_searches_the_web_and_knows_the_date(genie_srv, monkeypatch):
+    b, c, h = genie_srv
+    async def search(email, query): return {"answer": "Python 3.14 is the latest.", "sources": [{"title": "python.org", "url": "https://python.org"}]}
+    monkeypatch.setattr(b, "_search_core", search)
+    SCRIPT[:] = [{"content": "", "tool_calls": [call("web_search", query="latest python version")]},
+                 {"content": "", "tool_calls": [call("write_file", path="README.md", content="Needs Python 3.14")]},
+                 {"content": "Done."}]
+    r = c.post("/genie/projects", headers=h, json={"prompt": "Write a README with the latest Python version"}).json()
+    assert "Current date and time:" in SEEN[0]["messages"][0]["content"]
+    assert "web_search" in [t["function"]["name"] for t in SEEN[0]["tools"]]
+    steps = r["result"]["steps"]
+    assert steps[0]["kind"] == "search" and "latest python version" in steps[0]["title"]
+    assert "Python 3.14 is the latest" in json.dumps(SEEN[1]["messages"])                # the result went back to the AI
+
+
+def test_cli_env_commands(monkeypatch, tmp_path, capsys):
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "cli"))
+    from gink_cli import main as m
+    calls = []
+
+    class R:
+        def __init__(self, j=None, content=b""): self.status_code, self._j, self.content = 200, j, content
+        def json(self): return self._j
+
+    def fake(key, base, method, path, **kw):
+        calls.append((method, path, kw.get("content")))
+        if path == "/environments" and method == "GET":
+            return R({"data": [{"id": "gp_1", "name": "notes", "files": [{"path": "a.md", "size": 3}]}]})
+        if path == "/environments" and method == "POST":
+            return R({"id": "gp_2"})
+        if path == "/environments/gp_1" and method == "GET":
+            return R({"files": [{"path": "a.md", "size": 3}, {"path": "../../escape.txt", "size": 1}]})
+        if path.startswith("/environments/gp_1/files/"):
+            return R(content=b"hey")
+        return R({})
+    monkeypatch.setattr(m, "_env_call", fake)
+    monkeypatch.setattr(m, "settings", lambda: ("gink_test", "https://x/v1"))
+    assert m.main(["env", "list"]) == 0 and "gp_1  notes  (1 files)" in capsys.readouterr().out
+    assert m.main(["env", "new", "My", "notes"]) == 0 and capsys.readouterr().out.strip() == "gp_2"
+    out_dir = tmp_path / "pulled"
+    assert m.main(["env", "pull", "gp_1", str(out_dir)]) == 0
+    assert (out_dir / "a.md").read_bytes() == b"hey" and not (tmp_path / "escape.txt").exists()   # stays in the folder
+    src = tmp_path / "src"; (src / "sub").mkdir(parents=True); (src / "sub" / "x.py").write_text("print(1)")
+    (src / ".git").mkdir(); (src / ".git" / "HEAD").write_text("ref")
+    assert m.main(["env", "push", "gp_1", str(src)]) == 0
+    assert ("PUT", "/environments/gp_1/files/sub/x.py", b"print(1)") in calls
+    assert not any(".git" in c[1] for c in calls)

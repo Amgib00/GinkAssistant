@@ -7,4 +7,6 @@
 
 ## 2. Later
 - [ ] 2.1 Code execution in a sandbox per environment (e.g. a hosted sandbox service), behind its own limits
-- [ ] 2.2 Streaming steps (server-sent events) instead of polling
+- [x] 2.2 Streaming steps (server-sent events): stream=true (0.1.122)
+- [x] 2.3 Live information everywhere: date/time + live data for agents, web_search in Genie, date for websites (0.1.122)
+- [x] 2.4 Agent work in the Genie project's conversation; CLI `gink env` (0.1.122)

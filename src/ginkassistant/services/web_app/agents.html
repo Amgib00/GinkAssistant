@@ -183,6 +183,9 @@ console.log(interaction.output_text, interaction.files_changed);</pre>
         "previous_interaction_id", "background", "max_steps" (1&ndash;30, default 15), "tools": ["files", "web_search"]}</code>
         &rarr; an interaction: <code>id</code>, <code>status</code> (running, completed, incomplete, failed, cancelled),
         <code>output_text</code>, <code>steps</code>, <code>files_changed</code>, <code>environment</code>.</td></tr>
+      <tr><td><code>"stream": true</code></td><td>Live: the response is a stream of server-sent events &mdash; <code>step</code>
+        (each step the moment it&rsquo;s done), <code>status</code>, then <code>done</code> with the whole interaction.
+        Try <code>curl -N</code>.</td></tr>
       <tr><td><code>GET /v1/interactions/{id}</code></td><td>The interaction now (for background ones).</td></tr>
       <tr><td><code>POST /v1/interactions/{id}/cancel</code></td><td>Stops before its next step.</td></tr>
       <tr><td><code>POST /v1/environments</code></td><td><code>{"name"}</code> &rarr; a new, empty environment.</td></tr>
@@ -191,7 +194,13 @@ console.log(interaction.output_text, interaction.files_changed);</pre>
       <tr><td><code>GET /v1/environments/{id}/files/{path}</code></td><td>Download a file.</td></tr>
       <tr><td><code>DELETE /v1/environments/{id}</code></td><td>Delete an environment and its files.</td></tr>
     </table></div>
-    <p class="sub" style="margin-top:16px">Good to know: an interaction counts as one message toward your daily allowance.
+    <p class="sub" style="margin-top:16px">Live information: the agent always knows today&rsquo;s date and time, gets
+      live data (weather, exchange rates, prices&hellip;) when your input asks for it, and searches the web for the rest,
+      with sources. Gink Genie uses the same live web search.</p>
+    <p class="sub">In the terminal: <code>gink agent "task"</code> (steps appear live), and <code>gink env list | new |
+      files | pull | push | rm</code> for the workspaces. Each workspace is also a Gink Genie project: what the agent did
+      shows up in its conversation there.</p>
+    <p class="sub">Good to know: an interaction counts as one message toward your daily allowance.
       Environments are Gink Genie projects (same limits). The agent doesn&rsquo;t run code on the server &mdash; it writes
       the code and tells you how to run it. Age, parental-control and workspace rules apply, as everywhere in Gink.</p>
   </section>

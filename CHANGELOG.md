@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.122 (November 2026)
+
+- Live information everywhere: Gink Genie can now search the web (with sources) and knows today's date;
+  API agents know the date and time, get live data (weather, exchange rates, prices) when asked, and
+  search the web; websites use the current year
+- API agents in real time: "stream": true sends each step the moment it's done
+- Agents, Genie and the CLI work together: what an API agent did appears in that project's conversation
+  in Gink Genie, and "gink env" lists, creates, downloads, uploads and deletes the agents' workspaces
+
 ## 0.1.121 (November 2026)
 
 - Managed agents in the Gink API: one request runs Gink's agent in its own workspace -- it plans,

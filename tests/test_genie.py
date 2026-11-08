@@ -313,7 +313,7 @@ def test_plan_mode_looks_but_never_touches(srv):
     assert r["plan"] is True and r["reply"].startswith("1. Add a cart page") and "pending" not in r
     assert c.get(f"/genie/projects/{pid}/all", headers=h).json()["files"] == before                # nothing changed
     names = [t["function"]["name"] for t in SEEN[-2]["tools"]]
-    assert sorted(names) == ["find_files", "list_files", "read_file", "search_files"]             # only looking tools
+    assert sorted(names) == ["find_files", "list_files", "read_file", "search_files", "web_search"]   # only looking tools
     assert "PLAN MODE" in SEEN[-2]["messages"][-1]["content"] or any("PLAN MODE" in m.get("content", "") for m in SEEN[-2]["messages"])
     refused = [m["content"] for m in SEEN[-1]["messages"] if m["role"] == "tool"]
     assert refused.count("Not allowed in plan mode: reply with your plan instead.") == 2

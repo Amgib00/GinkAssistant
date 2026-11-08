@@ -2069,3 +2069,18 @@ New services/live_info.py (all free, no API keys):
   switch/quiet hours and lockdown. Account deletion removes interactions (the projects go with Genie's data).
 - /developers/agents (web_app/agents.html, Gink's own design/text), console Docs link, CLI `gink agent` (background +
   polling, steps on stderr, --env, --continue, --max-steps).
+
+## 0.1.122: live info for agents/Genie/websites; SSE streaming; agents <-> Genie <-> CLI
+- _now_note() (UTC date/time), _live_note(text) (= chat's _live_facts: weather, rates, crypto... when asked),
+  _search_for_agent(email, query) (family "web" + quiet hours + lockdown, then _search_core with sources).
+  Agents: system = AGENT_SYSTEM + now/live note (+ teen, + workspace). Chat and /v1/chat/completions already had live
+  context (ai_chat -> _add_live_context).
+- Genie: AGENT_SEARCH_TOOL appended to its tools (plan mode too: GENIE_READ_ONLY has web_search);
+  _genie_process_queue sets state["search"] and returns; _genie_drive awaits the search, adds the tool result and a
+  "search" step, then continues the queue. GENIE_SYSTEM gets the date + "use web_search for anything current".
+  test_genie's plan-mode tool list updated.
+- Websites: _site_ai appends the date to the first system message (tests expect SITE_SYSTEM first).
+- /v1/interactions stream=true: task in background + _agent_stream (SSE: step / status / done; polls the row every
+  0.4 s, 30 min cap). _agent_to_genie(): completed interactions add "[API agent] <input>" + reply (steps mapped to
+  Genie's kinds, extra.via="api") to genie_chat. CLI: `gink env list|new|files|pull|push|rm` (pull refuses paths
+  outside the folder; push skips .git/node_modules/venvs).

@@ -4596,7 +4596,9 @@ def org_delete(request: Request, data: dict = Body(default={})):
 # =====================================================================
 # Managed agents (Gink Developer API): ONE API call runs Gink's agent in a hosted, persistent environment.
 #   POST /v1/interactions {"agent": "gink-agent", "input": "...", "environment": "remote" | "<id>",
-#                          "previous_interaction_id", "background", "max_steps", "tools": ["files", "web_search"]}
+#                          "previous_interaction_id", "background", "stream", "max_steps", "tools": ["files", "web_search"]}
+#   Live information: today's date and time always; live data (weather, rates, prices...) when the input asks;
+#   web_search for the rest. stream=true sends each step as it happens (server-sent events).
 #   GET  /v1/interactions/{id}     POST /v1/interactions/{id}/cancel
 #   POST/GET /v1/environments      GET /v1/environments/{id}   GET /v1/environments/{id}/files/{path}
 #   PUT  /v1/environments/{id}/files/{path}   DELETE /v1/environments/{id}
@@ -4627,6 +4629,63 @@ AGENT_SEARCH_TOOL = {"type": "function", "function": {"name": "web_search", "des
     "Search the web; returns a short answer with its sources."), "parameters": {"type": "object", "properties": {
         "query": {"type": "string"}}, "required": ["query"]}}}
 _agent_tasks = {}
+
+
+def _now_note() -> str:
+    import datetime as _dtm
+    now = _dtm.datetime.now(_dtm.timezone.utc)
+    return f"Current date and time: {now:%A %d %B %Y, %H:%M} UTC."
+
+
+async def _live_note(text: str) -> str:
+    """Live data for this request (weather, exchange rates, prices... -- the same as chat's), if it asks for any."""
+    try:
+        facts = await _live_facts(text) if text else []
+    except Exception:
+        facts = []
+    return ("\n\nLive data fetched just now for this request (it's current; say so, with the time):\n" + "\n\n".join(facts)) \
+        if facts else ""
+
+
+async def _search_for_agent(email: str, query: str) -> str:
+    """web_search for agents and Genie: the answer with its sources, or why it can't search."""
+    why = _family_refusal(email, "web", quiet=True) or (LOCKDOWN_MSG.format(what="web search") if _lockdown(email) else "")
+    if why:
+        return why
+    if not query:
+        return "Error: say what to search for."
+    found = await _search_core(email, query)
+    if isinstance(found, str):
+        return found
+    return found["answer"] + ("\n\nSources:\n" + "\n".join(f"- {x.get('title') or x.get('url')}: {x.get('url')}"
+                                                       for x in found["sources"]) if found["sources"] else "")
+
+
+AGENT_STEP_KIND = {"write_file": ("write", "Wrote"), "edit_file": ("write", "Changed"), "read_file": ("read", "Read"),
+                   "delete_file": ("delete", "Deleted"), "list_files": ("list", "Looked at the files"),
+                   "find_files": ("search", "Found files"), "search_files": ("search", "Searched the files for"),
+                   "web_search": ("search", "Searched the web:")}
+
+
+def _agent_to_genie(env_id: str, messages: list, steps: list, reply: str) -> None:
+    """The agent's request and answer, with its steps, in the project's conversation: open the environment in
+    Gink Genie and you see what the API agent did (and can carry on from there)."""
+    try:
+        request = next((m["content"] for m in reversed(messages) if m.get("role") == "user"), "")
+        gsteps = []
+        for st in steps:
+            kind, verb = AGENT_STEP_KIND.get(st.get("tool"), ("other", st.get("tool") or "Step"))
+            gsteps.append({"kind": kind, "title": f"{verb} {st.get('path') or st.get('query') or ''}".strip(),
+                           "output": st.get("result")})
+        now = time.time()
+        extra = _json.dumps({"steps": gsteps[-60:], "changes": [], "via": "api"})
+        _genie_db(lambda con: (
+            con.execute("INSERT INTO genie_chat (project_id, role, text, created) VALUES (?, 'user', ?, ?)",
+                        (env_id, ("[API agent] " + str(request))[:6000], now)),
+            con.execute("INSERT INTO genie_chat (project_id, role, text, extra, created) VALUES (?, 'genie', ?, ?, ?)",
+                        (env_id, reply[:20000], extra[:400000], now))))
+    except Exception as exc:
+        print(f"[Gink] agent: not added to the Genie conversation ({type(exc).__name__})", flush=True)
 
 
 def _agent_db(fn):
@@ -4690,7 +4749,8 @@ async def _agent_loop(iid: str, email: str, env_id: str, messages: list, tools_a
     """Runs the agent to the end, saving progress (steps, status, output) as it goes."""
     import httpx
     tools = (_agent_file_tools() if "files" in tools_allowed else []) + ([AGENT_SEARCH_TOOL] if "web_search" in tools_allowed else [])
-    system = [{"role": "system", "content": AGENT_SYSTEM}] + ([{"role": "system", "content": TEEN_SAFETY}] if teen else []) \
+    live = [{"role": "system", "content": _now_note() + await _live_note(_last_user_text(messages))}]
+    system = [{"role": "system", "content": AGENT_SYSTEM}] + live + ([{"role": "system", "content": TEEN_SAFETY}] if teen else []) \
         + ([{"role": "system", "content": org_text}] if org_text else [])
     steps, changes = [], []
     plan = _plan_status(email)["plan"]
@@ -4719,6 +4779,7 @@ async def _agent_loop(iid: str, email: str, env_id: str, messages: list, tools_a
             if not calls:
                 text = (msg.get("content") or "").strip()
                 messages.append({"role": "assistant", "content": text})
+                _agent_to_genie(env_id, messages, steps, text)
                 return _agent_save(iid, status="completed", output_text=text, steps=_json.dumps(steps),
                                    messages=_json.dumps(messages), finished=time.time())
             messages.append({"role": "assistant", "content": msg.get("content") or "", "tool_calls": calls})
@@ -4729,13 +4790,7 @@ async def _agent_loop(iid: str, email: str, env_id: str, messages: list, tools_a
                 except ValueError:
                     args = {}
                 if name == "web_search" and "web_search" in tools_allowed:
-                    why = _family_refusal(email, "web", quiet=True) or (LOCKDOWN_MSG.format(what="web search") if _lockdown(email) else "")
-                    if why:
-                        result = why
-                    else:
-                        found = await _search_core(email, str(args.get("query") or "")[:400])
-                        result = found if isinstance(found, str) else (found["answer"] + "\n\nSources:\n" +
-                                 "\n".join(f"- {x.get('title') or x.get('url')}: {x.get('url')}" for x in found["sources"]))
+                    result = await _search_for_agent(email, str(args.get("query") or "")[:400])
                     step = {"tool": "web_search", "query": str(args.get("query") or "")[:200]}
                 elif name in {t["function"]["name"] for t in _agent_file_tools()} and "files" in tools_allowed:
                     before = len(changes)
@@ -4805,6 +4860,11 @@ async def api_interaction(request: Request, data: dict = Body(...)):
                                       (iid, email, key_id, env_id, text[:20000], _json.dumps(messages), prev or None, time.time())))
     _agent_tasks[iid] = "running"
     run = _agent_loop(iid, email, env_id, messages, tools, max_steps, org_text, bool(family))
+    if data.get("stream"):                          # live: each step as it happens (server-sent events)
+        task = asyncio.get_running_loop().create_task(run)
+        _safety_tasks.add(task)
+        task.add_done_callback(_safety_tasks.discard)
+        return _agent_stream(email, iid)
     if data.get("background"):
         task = asyncio.get_running_loop().create_task(run)
         _safety_tasks.add(task)
@@ -4812,6 +4872,32 @@ async def api_interaction(request: Request, data: dict = Body(...)):
     else:
         await run
     return _agent_public(_agent_get(email, iid))
+
+
+def _agent_stream(email: str, iid: str):
+    """text/event-stream: `event: step` (each step as it's done), `event: status`, then `event: done` with the
+    whole interaction. Works with any SSE client (curl -N, EventSource-style libraries)."""
+    from fastapi.responses import StreamingResponse
+
+    async def events():
+        sent, status = 0, None
+        for _ in range(int(1800 / 0.4)):                  # at most 30 minutes
+            row = _agent_get(email, iid)
+            if not row:
+                break
+            it = _agent_public(row)
+            for st in it["steps"][sent:]:
+                yield f"event: step\ndata: {_json.dumps(st, ensure_ascii=False)}\n\n"
+            sent = len(it["steps"])
+            if it["status"] != status:
+                status = it["status"]
+                yield f"event: status\ndata: {_json.dumps({'id': iid, 'status': status})}\n\n"
+            if status != "running":
+                yield f"event: done\ndata: {_json.dumps(it, ensure_ascii=False)}\n\n"
+                return
+            await asyncio.sleep(0.4)
+    return StreamingResponse(events(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @app.get("/v1/interactions/{iid}")
@@ -5594,6 +5680,12 @@ def _site_clean(text: str):
 
 async def _site_ai(messages: list) -> str:
     import httpx
+    note = _now_note() + " Use this year in copyright lines and dates."
+    messages = [dict(m) for m in messages]
+    if messages and messages[0].get("role") == "system":
+        messages[0]["content"] = str(messages[0]["content"]) + "\n\n" + note
+    else:
+        messages.insert(0, {"role": "system", "content": note})
     body = {"model": await _current_model("openai/gpt-oss-120b"), "messages": messages, "max_tokens": 8192,
             "temperature": 0.6, "reasoning_effort": "low"}
     try:
@@ -7440,7 +7532,7 @@ GENIE_COMMAND_TOOL = {"type": "function", "function": {
 _genie_runs = {}                     # paused requests waiting for a command's output: run_id -> state
 _genie_progress = {}                 # live steps for the page while it waits: progress id -> {email, pid, steps, updated}
 _genie_stops = set()                 # progress ids the person asked to stop
-GENIE_READ_ONLY = {"list_files", "read_file", "search_files", "find_files"}   # plan mode: look, don't touch
+GENIE_READ_ONLY = {"list_files", "read_file", "search_files", "find_files", "web_search"}   # plan mode: look, don't touch
 GENIE_PLAN_NOTE = ("PLAN MODE: do not change anything. Look at the project with list_files, find_files, read_file and search_files, "
                    "then reply with a short numbered plan of what you would build or change (files, steps, how to check it). "
                    "The person will approve it before you build.")
@@ -7522,6 +7614,9 @@ def _genie_process_queue(state: dict):
             state["messages"].append({"role": "tool", "tool_call_id": call.get("id", ""),
                                       "content": "Not allowed in plan mode: reply with your plan instead."})
             continue
+        if name == "web_search":                              # live information: _genie_drive does the search (async)
+            state["search"] = {"id": call.get("id", ""), "query": " ".join(str(args.get("query") or "").split())[:400]}
+            return None
         if name == "run_command":
             command = " ".join(str(args.get("command") or "").split())[:300]
             if not command:
@@ -7550,6 +7645,14 @@ async def _genie_drive(state: dict) -> dict:
             if state.get("progress") and state["progress"] in _genie_stops:
                 return _genie_stopped(state)              # stops between steps, never halfway through one
             pending = _genie_process_queue(state)
+            if state.get("search"):                        # web_search: live facts, with sources
+                s_ = state.pop("search")
+                state["messages"].append({"role": "tool", "tool_call_id": s_["id"],
+                                          "content": await _search_for_agent(state["email"], s_["query"])})
+                state["steps"].append({"kind": "search", "title": f"Searched the web: {s_['query'][:80]}",
+                                       "output": state["messages"][-1]["content"][:600]})
+                _genie_report(state)
+                continue
             if pending:
                 run_id = secrets.token_urlsafe(12)
                 state["created"] = time.time()
@@ -7564,7 +7667,7 @@ async def _genie_drive(state: dict) -> dict:
                 return {"reply": reply, "changes": state["changes"], "steps": state["steps"], "rounds": state["rounds"],
                         "checkpoint": state.get("checkpoint"), "plan": state.get("mode") == "plan"}
             tools = ([t for t in GENIE_TOOLS if t["function"]["name"] in GENIE_READ_ONLY] if state.get("mode") == "plan"
-                     else GENIE_TOOLS + [GENIE_COMMAND_TOOL])
+                     else GENIE_TOOLS + [GENIE_COMMAND_TOOL]) + [AGENT_SEARCH_TOOL]
             body = {"model": state["model"], "messages": state["messages"], "tools": tools,
                     "tool_choice": "auto", "max_tokens": 16000, "temperature": 0.3, "reasoning_effort": "medium"}
             try:
@@ -7605,7 +7708,8 @@ async def _genie_run(email: str, pid: str, instruction: str, progress: str = "",
              "progress": re.sub(r"[^A-Za-z0-9_-]", "", str(progress or ""))[:40],
              "mode": "plan" if mode == "plan" else "auto",
              "pending": None, "model": await _current_model("openai/gpt-oss-120b"),
-             "messages": [{"role": "system", "content": GENIE_SYSTEM}]
+             "messages": [{"role": "system", "content": GENIE_SYSTEM + "\n\n" + _now_note()
+                           + " Use web_search for anything current (versions, prices, news, docs) instead of guessing."}]
                          + ([{"role": "system", "content": TEEN_SAFETY}] if teen else [])
                          + ([{"role": "system", "content": org_text}] if org_text else []) + history +
                          [{"role": "user", "content": f"Project files:\n{listing}\n\nRequest: {instruction}"

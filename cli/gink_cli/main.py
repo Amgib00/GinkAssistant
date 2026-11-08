@@ -7,6 +7,8 @@ gink -- Gink in your terminal (the Gink Developer API, OpenAI-compatible).
     gink -s "question"              search the web (answers list their sources)
     gink --image "prompt" -o x.png  make an image
     gink agent "task"               a managed agent does it in a workspace that persists (--env ID, --continue)
+    gink env list | new NAME | files ID | pull ID [DIR] | push ID DIR | rm ID
+                                    the agents' workspaces (the same projects as Gink Genie)
     gink login                      sign in through your browser (or: gink login --key to paste a key)
     gink logout | models | version
 """
@@ -194,6 +196,70 @@ def run_agent(key: str, base: str, task: str, env: str = "remote", previous: str
     return it
 
 
+def _env_call(key: str, base: str, method: str, path: str, **kw):
+    need_key(key)
+    import httpx
+    try:
+        with _client(key, 120) as c:
+            r = c.request(method, base + path, **kw)
+    except httpx.HTTPError as exc:
+        raise _network(exc)
+    if r.status_code != 200:
+        raise _explain(r)
+    return r
+
+
+def env_command(key: str, base: str, args: list) -> int:
+    """gink env ...: list, create, look into, download, upload, delete environments (Genie projects)."""
+    what = args[0] if args else "list"
+    if what == "list":
+        for e in _env_call(key, base, "GET", "/environments").json()["data"]:
+            print(f"{e['id']}  {e['name']}  ({len(e['files'])} files)")
+        return 0
+    if what == "new":
+        e = _env_call(key, base, "POST", "/environments", json={"name": " ".join(args[1:]) or "Agent environment"}).json()
+        print(e["id"])
+        return 0
+    if len(args) < 2:
+        raise GinkError("say which environment (its id from 'gink env list')")
+    env = args[1]
+    if what == "files":
+        for f in _env_call(key, base, "GET", f"/environments/{env}").json()["files"]:
+            print(f"{f['size']:>9}  {f['path']}")
+        return 0
+    if what == "pull":
+        target = args[2] if len(args) > 2 else env
+        files = _env_call(key, base, "GET", f"/environments/{env}").json()["files"]
+        for f in files:
+            dest = os.path.normpath(os.path.join(target, f["path"]))
+            if not dest.startswith(os.path.normpath(target)):
+                continue                                   # never write outside the folder
+            os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
+            with open(dest, "wb") as out:
+                out.write(_env_call(key, base, "GET", f"/environments/{env}/files/{f['path']}").content)
+        print(f"Downloaded {len(files)} files to {target}/")
+        return 0
+    if what == "push":
+        if len(args) < 3 or not os.path.isdir(args[2]):
+            raise GinkError("gink env push ID FOLDER")
+        n = 0
+        for root, dirs, names in os.walk(args[2]):
+            dirs[:] = [d for d in dirs if d not in (".git", "node_modules", "__pycache__", ".venv", "venv")]
+            for name in names:
+                path = os.path.join(root, name)
+                rel = os.path.relpath(path, args[2]).replace(os.sep, "/")
+                with open(path, "rb") as f:
+                    _env_call(key, base, "PUT", f"/environments/{env}/files/{rel}", content=f.read())
+                n += 1
+        print(f"Uploaded {n} files to {env}")
+        return 0
+    if what == "rm":
+        _env_call(key, base, "DELETE", f"/environments/{env}")
+        print(f"Deleted {env}")
+        return 0
+    raise GinkError("gink env list | new NAME | files ID | pull ID [DIR] | push ID DIR | rm ID")
+
+
 def show_agent_result(it: dict) -> int:
     if it.get("output_text"):
         print(it["output_text"])
@@ -351,12 +417,14 @@ def main(argv=None) -> int:
             ag.add_argument("--max-steps", type=int, default=15)
             b = ag.parse_args(argv[1:])
             return show_agent_result(run_agent(key, base, " ".join(b.task), b.env, b.previous, b.max_steps))
+        if argv[:1] == ["env"]:
+            return env_command(key, base, argv[1:])
         if argv[:1] in (["version"], ["--version"]):
             print(f"gink {__version__}")
             return 0
 
         ap = argparse.ArgumentParser(prog="gink", description="Gink in your terminal.",
-                                     epilog="Also: gink agent \"task\" | login | logout | models | version")
+                                     epilog="Also: gink agent \"task\" | env ... | login | logout | models | version")
         ap.add_argument("question", nargs="*", help="what to ask (leave out for a chat)")
         ap.add_argument("-m", "--model", default="", help="a model from 'gink models' (default: your account's)")
         ap.add_argument("-s", "--search", action="store_true", help="search the web; answers list their sources")
