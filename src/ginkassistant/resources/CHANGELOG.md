@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.126 (November 2026)
+
+- Gink is international: answers fit your own country automatically -- your local time, currency, units
+  and examples -- from your device's time zone and region (no location lookup). "What's the weather?"
+  without a place now means where you are. This works in chat, Gink Genie, agents, the developer
+  console, the command line and the SDKs (gink-ai 0.3.1)
+- Examples and placeholders are no longer about one country (they follow where you are, or are neutral)
+
 ## 0.1.125 (November 2026)
 
 - Developer console > Agents: give Gink's agent a task right in the browser (no API key needed),

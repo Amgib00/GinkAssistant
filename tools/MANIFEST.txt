@@ -342,6 +342,7 @@ tests/test_gink_model_tools.py
 tests/test_ginkgenie_app.py
 tests/test_grow_dataset.py
 tests/test_hey_gink.py
+tests/test_international.py
 tests/test_ios_startup.py
 tests/test_js_sdk.py
 tests/test_languages_auto.py

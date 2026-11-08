@@ -173,8 +173,9 @@ class GroqBrain:
             return False
         try:
             kw = {"http_client": http_client} if http_client is not None else {}
+            from .device_region import place_headers
             self.client = AsyncGroq(api_key=session_token, base_url=server_url.rstrip("/") + "/ai",
-                                    max_retries=1, **kw)
+                                    max_retries=1, default_headers=place_headers(), **kw)
             self.api_key = session_token
             self.cloud = True
             self.active_models = []

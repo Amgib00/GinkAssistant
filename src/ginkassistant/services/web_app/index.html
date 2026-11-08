@@ -2308,7 +2308,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
       {id: 'memory', group: 'Settings', title: 'Memory', sections: [
         {title: 'Instructions for Gink', rows: [
           {type: 'textarea', key: 'instructions', label: 'Gink will keep these in mind in every chat, on all your devices.',
-           placeholder: 'e.g. Keep answers short. When I learn something new, analogies help me. I study medicine in Dakar.',
+           placeholder: 'e.g. Keep answers short. When I learn something new, analogies help me. I study medicine.',
            action: 'save_instructions', text: 'Save'}]},
         {title: 'What Gink remembers', rows: [{apps: true, type: 'list', items: (L.memories || []).map(function (m) {
             return {t: m.text, button: {text: 'Forget', action: 'forget_memory', value: m.uid}}; }),
@@ -2353,7 +2353,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
         {title: 'Your location', rows: [
           {type: 'info', label: 'Your area', value: info.location_text || ''},
           {apps: true, type: 'input', key: 'city', label: 'City', desc: 'Used for weather, air quality, sunrise and sunset, prayer times and your briefing. Leave empty to use an approximate location from your connection.',
-           placeholder: 'e.g. Dakar', action: 'save_city', text: 'Save'},
+           placeholder: LOCAL_CITY ? 'e.g. ' + LOCAL_CITY : 'Your city', action: 'save_city', text: 'Save'},
           {apps: true, type: 'button', label: 'Use my approximate location', desc: 'Estimate your city from your internet connection.', action: 'detect_location', text: 'Detect'},
           {type: 'toggle', key: 'use_location', label: 'Use location in answers', desc: 'When off, Gink doesn\u2019t use your city or estimate where you are \u2014 it asks when it needs a place.'}]},
         {title: 'About this location', rows: [
@@ -2447,7 +2447,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     if (!f.can_be_parent) return [{title: 'Parental controls', rows: [{type: 'note', text: 'Parental controls are for parents (18+).'}]}];
     out.push({title: 'Link a teen', rows: [
       {type: 'note', text: 'Invite your teen (13\u201317) by their Gink email or phone number. Nothing applies until they accept. You never see their chats. ' + FAM_NOTICES},
-      {type: 'input', key: 'family_teen', label: 'Teen\u2019s email or phone', placeholder: 'email or +221\u2026', action: 'family_invite', text: 'Invite'}]});
+      {type: 'input', key: 'family_teen', label: 'Teen\u2019s email or phone', placeholder: 'email, or phone with country code (+\u2026)', action: 'family_invite', text: 'Invite'}]});
     (f.teens || []).forEach(function (t) {
       var who = t.name || t.label, rows;
       if (t.status !== 'active') {
@@ -2473,6 +2473,11 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     return out;
   }
 
+  // The device's time zone names a nearby city ("Europe/Paris" -> "Paris"): local examples, not one country's
+  var LOCAL_CITY = (function () {
+    try { var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+          return /\//.test(tz) && !/^(Etc|UTC|GMT)/.test(tz) ? tz.split('/').pop().replace(/_/g, ' ') : ''; } catch (e) { return ''; }
+  })();
   // Settings > Workspace (server: /org): hospitals, schools, businesses. Admins see members and today's
   // message counts -- never chats -- and set instructions Gink follows for everyone; healthcare mode keeps
   // patient data out (messages that look like a patient's details are refused).
@@ -2480,7 +2485,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     if (!o) return [{title: 'Workspace', rows: [{type: 'list', items: [], empty: err || 'Loading\u2026'}]}];
     if (!o.org) return [{title: 'Create a workspace', rows: [
       {type: 'note', text: 'A workspace is Gink for a team: a hospital, school or business. You invite people by their Gink email or phone; they accept first. Admins see who is in it and how many messages each person sent today \u2014 never their chats \u2014 and can give Gink instructions for everyone.'},
-      {type: 'input', key: 'org_name', label: 'Workspace name', placeholder: 'e.g. Hôpital Principal \u2014 Admin team', action: 'org_create', text: 'Create'}]}];
+      {type: 'input', key: 'org_name', label: 'Workspace name', placeholder: 'e.g. City Hospital \u2014 Admin team', action: 'org_create', text: 'Create'}]}];
     var org = o.org, admin = o.role === 'admin' && o.status === 'active', out = [];
     if (admin && S.values.org_instructions === undefined) S.values.org_instructions = org.instructions || '';
     if (o.status === 'invited') return [{title: 'Invitation', rows: [
@@ -2493,13 +2498,13 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
       .concat(admin ? [
         {type: 'html', label: 'Healthcare mode', desc: 'For hospitals and clinics: Gink won\u2019t diagnose or decide treatment, and refuses messages that look like a patient\u2019s details (name, record number, date of birth, phone).',
          html: '<label class="sw"><input type="checkbox" data-org="healthcare"' + (org.healthcare ? ' checked' : '') + '><i></i></label>'},
-        {type: 'textarea', key: 'org_instructions', label: 'Instructions Gink follows for everyone in the workspace', placeholder: 'e.g. Answer in French. Our hospital is in Dakar. Use our policy names.', action: 'org_instructions', text: 'Save'}] :
+        {type: 'textarea', key: 'org_instructions', label: 'Instructions Gink follows for everyone in the workspace', placeholder: 'e.g. Use plain language. Mention our ward names. Answer in the language staff write in.', action: 'org_instructions', text: 'Save'}] :
         (org.instructions ? [{type: 'note', text: 'Workspace instructions: ' + org.instructions}] : []))
       .concat([{type: 'button', label: 'Leave the workspace', action: 'org_leave', text: 'Leave', style: 'danger-ghost'}])});
     if (admin) {
       out.push({title: 'People', rows: [
         {type: 'button', label: 'Download usage', desc: 'Messages, images and songs per person per day for the last 30 days (a spreadsheet file). Never chats.', action: 'org_usage', text: 'Download'},
-        {type: 'input', key: 'org_invite', label: 'Invite by Gink email or phone', placeholder: 'email or +221\u2026', action: 'org_invite', text: 'Invite'},
+        {type: 'input', key: 'org_invite', label: 'Invite by Gink email or phone', placeholder: 'email, or phone with country code (+\u2026)', action: 'org_invite', text: 'Invite'},
         {type: 'list', items: (o.members || []).map(function (m) {
           return {t: (m.name || m.label) + (m.role === 'admin' ? ' \u00b7 admin' : '') + (m.status === 'invited' ? ' \u00b7 invited' : ''),
                   m: m.status === 'active' ? (m.messages_today || 0) + ' messages today' : 'hasn\u2019t accepted yet',
@@ -2532,7 +2537,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
                            : {type: 'button', label: 'Remove this number', desc: 'You can still sign in with your email.', action: 'phone_remove', text: 'Remove', style: 'danger-ghost'}];
     }
     if (!p.enabled) return [{type: 'note', text: 'Signing in with a phone number isn\u2019t set up on this server yet.'}];
-    var rows = [{type: 'input', key: 'phone_new', label: 'Add a phone number', desc: 'With its country code. We\u2019ll text you a code to confirm it.', placeholder: '+221 77 123 45 67', action: 'phone_send', text: 'Send code'}];
+    var rows = [{type: 'input', key: 'phone_new', label: 'Add a phone number', desc: 'With its country code. We\u2019ll text you a code to confirm it.', placeholder: '+ country code and number', action: 'phone_send', text: 'Send code'}];
     if (p.pending) rows.push({type: 'input', key: 'phone_code', label: 'Code sent to ' + p.pending, placeholder: '123456', action: 'phone_verify', text: 'Confirm'});
     return rows;
   }
@@ -3863,9 +3868,14 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
   var PRICING = "https://amgib00.github.io/GinkAssistant/pricing.html";      // the website's plans page
 
   // ---------------------------------------------------------------- server
+  function placeHeaders(h) {                     // the device's time zone + language: answers fit their own country
+    try { var tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if (tz) h["X-Gink-TZ"] = tz; } catch (e) {}
+    try { var lang = (navigator.languages && navigator.languages[0]) || navigator.language; if (lang) h["X-Gink-Locale"] = lang; } catch (e) {}
+    return h;
+  }
   function api(path, body, opts) {
     opts = opts || {};
-    var h = { "Content-Type": "application/json" };
+    var h = placeHeaders({ "Content-Type": "application/json" });
     if (W.token) h.Authorization = "Bearer " + W.token;
     return fetch(path, { method: body === undefined ? "GET" : "POST", headers: h,
                          body: body === undefined ? undefined : JSON.stringify(body), signal: opts.signal })

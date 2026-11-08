@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gink-ai"
-version = "0.3.0"
+version = "0.3.1"
 description = "Gink in your terminal and in Python: chat, web search, images and managed agents with your Gink API key."
 readme = "README.md"
 requires-python = ">=3.11"

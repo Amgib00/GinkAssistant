@@ -196,7 +196,7 @@
         step as it happens. <a href="/developers/agents">Guide</a></p>
       <div class="card">
         <label for="ag-input"><b>Task</b></label>
-        <textarea id="ag-input" rows="4" placeholder="e.g. Research solar energy growth in Senegal since 2015 and write report.md with sources"></textarea>
+        <textarea id="ag-input" rows="4" placeholder="e.g. Research how solar energy has grown in my country since 2015 and write report.md with sources"></textarea>
         <div class="row" style="margin-top:8px">
           <select id="ag-env" aria-label="Workspace"><option value="remote">New workspace</option></select>
           <label><input type="checkbox" id="ag-web" checked> Web search</label>
@@ -242,7 +242,7 @@
         <h2>In your terminal</h2>
         <pre><code>pip install gink-ai
 gink login
-gink "What's the weather in Dakar?"
+gink "What's the weather where I am?"
 cat notes.txt | gink "summarise this"</code></pre>
         <h2>OpenAPI</h2><p>Machine-readable description: <a href="/v1/openapi.json">/v1/openapi.json</a>.</p>
       </div>
@@ -265,9 +265,14 @@ cat notes.txt | gink "summarise this"</code></pre>
     var s = Date.now() / 1000 - ts;
     return s < 60 ? "just now" : s < 3600 ? Math.round(s / 60) + " min ago" : s < 86400 ? Math.round(s / 3600) + " h ago" : Math.round(s / 86400) + " days ago";
   }
+  function placeHeaders(h) {                     // the device's time zone + language: answers fit their own country
+    try { var tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if (tz) h["X-Gink-TZ"] = tz; } catch (e) {}
+    try { var lang = (navigator.languages && navigator.languages[0]) || navigator.language; if (lang) h["X-Gink-Locale"] = lang; } catch (e) {}
+    return h;
+  }
   function api(path, opts) {
     opts = opts || {};
-    var h = { Authorization: "Bearer " + token };
+    var h = placeHeaders({ Authorization: "Bearer " + token });
     if (opts.body !== undefined) h["Content-Type"] = "application/json";
     return fetch(path, { method: opts.method || (opts.body !== undefined ? "POST" : "GET"), headers: h,
                          body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined }).then(function (r) {
@@ -585,7 +590,7 @@ cat notes.txt | gink "summarise this"</code></pre>
     $("bat-input").value = [
       { custom_id: "greeting-fr", body: { model: "gink-crystal", messages: [{ role: "user", content: "Say good morning in French." }] } },
       { custom_id: "greeting-wo", body: { model: "gink-crystal", messages: [{ role: "user", content: "Say good morning in Wolof." }] } },
-      { custom_id: "haiku", body: { model: "gink-flake", messages: [{ role: "user", content: "Write a haiku about Dakar." }] } }
+      { custom_id: "haiku", body: { model: "gink-flake", messages: [{ role: "user", content: "Write a haiku about the sea." }] } }
     ].map(function (x) { return JSON.stringify(x); }).join("\n");
   };
   $("bat-file").onchange = function () { var f = this.files[0]; if (!f) return; f.text().then(function (t) { $("bat-input").value = t; }); };

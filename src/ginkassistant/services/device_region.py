@@ -41,6 +41,26 @@ def timezone_name() -> str:
         return ""
 
 
+_cache = {}
+
+
+def place_headers() -> dict:
+    """X-Gink-TZ / X-Gink-Locale for the server: answers then fit the user's own country automatically (local
+    time, currency, units, examples) -- wherever they are. Read once per run."""
+    if "h" not in _cache:
+        h = {}
+        try:
+            tz, loc = timezone_name(), region_locale()
+            if tz:
+                h["X-Gink-TZ"] = tz[:64]
+            if loc:
+                h["X-Gink-Locale"] = loc[:20]
+        except Exception:
+            pass
+        _cache["h"] = h
+    return dict(_cache["h"])
+
+
 def region_locale() -> str:
     if _android():
         try:

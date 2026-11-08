@@ -349,7 +349,7 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
       <a class="back" data-go="login">&larr;&nbsp; Back to log in</a>
       <h1>Continue with phone</h1>
       <p class="sub">We&rsquo;ll text you a 6-digit code. Standard SMS rates may apply.</p>
-      <div class="field"><input id="p-phone" type="tel" inputmode="tel" placeholder="+221 77 123 45 67" autocomplete="tel" aria-label="Phone number with country code"></div>
+      <div class="field"><input id="p-phone" type="tel" inputmode="tel" placeholder="+ country code and number" autocomplete="tel" aria-label="Phone number with country code"></div>
       <div class="row-between">
         <label class="check"><input type="checkbox" id="p-remember" checked><span class="box"></span>Remember me</label>
       </div>
@@ -552,7 +552,7 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
       busy(true); ginkEmit('otp_send', {email: e, remember: $('o-remember').checked});
     } else if (current === 'phone') {
       var ph = $('p-phone').value.trim();
-      if (!phoneOk(ph)) return error('Enter your number with its country code, like +221 77 123 45 67.');
+      if (!phoneOk(ph)) return error('Enter your number with its country code \u2014 it starts with + (for example +44, +1, +234).');
       busy(true); ginkEmit('phone_send', {phone: ph, remember: $('p-remember').checked});
     } else if (current === 'name') {
       var nm = $('n-name').value.trim(); if (!nm) return error('Tell us your name.');

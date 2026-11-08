@@ -108,7 +108,7 @@
     <form id="v-phone" novalidate hidden>
       <h1>Continue with phone</h1><p class="sub">We'll text you a 6-digit code. Standard SMS rates may apply.</p>
       <label for="ph-num">Phone number (with country code)</label>
-      <input id="ph-num" type="tel" autocomplete="tel" placeholder="+221 77 123 45 67" required>
+      <input id="ph-num" type="tel" autocomplete="tel" placeholder="+ country code and number" required>
       <button class="go" type="submit">Send the code</button>
       <div class="switch"><button type="button" class="link" data-go="login">Use email instead</button></div>
     </form>
@@ -373,7 +373,7 @@
   $("li-phone").onclick = function () { S.remember = $("li-remember").checked; show("phone"); };
   $("v-phone").onsubmit = function (e) {
     e.preventDefault(); var f = this, num = $("ph-num").value.trim();
-    if (!/^(\+|00)[\d\s().-]{7,}$/.test(num)) return say("Enter your number with its country code, like +221 77 123 45 67.");
+    if (!/^(\+|00)[\d\s().-]{7,}$/.test(num)) return say("Enter your number with its country code \u2014 it starts with + (for example +44, +1, +234).");
     busy(f, true); say("");
     sendCode("phone", num).then(function () { codeScreen("phone", num); }).catch(function (err) { say(err.message); })
       .then(function () { busy(f, false); });

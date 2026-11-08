@@ -69,8 +69,13 @@ def settings():
 # ---------------------------------------------------------------- talking to Gink
 def _client(key: str, timeout: float = 120):
     import httpx
+    try:
+        from gink.client import place_headers           # the computer's time zone + region: local answers
+        place = place_headers()
+    except Exception:
+        place = {}
     return httpx.Client(timeout=httpx.Timeout(timeout, connect=30),
-                        headers={"Authorization": f"Bearer {key}", "User-Agent": f"gink-cli/{__version__}"})
+                        headers=dict({"Authorization": f"Bearer {key}", "User-Agent": f"gink-cli/{__version__}"}, **place))
 
 
 def _explain(r) -> GinkError:

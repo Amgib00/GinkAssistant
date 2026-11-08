@@ -92,7 +92,8 @@ def device_headers() -> dict:
         name = "Gink on iPhone or iPad"
     else:
         name = {"darwin": "Gink for Mac", "win32": "Gink for Windows"}.get(sys.platform, "Gink for Linux")
-    return {"X-Gink-Device": name}
+    from .device_region import place_headers
+    return dict({"X-Gink-Device": name}, **place_headers())
 
 
 class ApiClient:

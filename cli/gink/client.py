@@ -9,6 +9,27 @@ import httpx
 DEFAULT_BASE = "https://gink-server.onrender.com/v1"
 
 
+def place_headers() -> dict:
+    """The computer's time zone and region (no location lookup): answers fit the user's own country."""
+    import locale
+    h, tz = {}, os.environ.get("TZ", "").lstrip(":")
+    if "/" not in tz:
+        try:
+            link = os.path.realpath("/etc/localtime")
+            tz = link.split("zoneinfo/", 1)[1] if "zoneinfo/" in link else ""
+        except OSError:
+            tz = ""
+    if "/" in tz:
+        h["X-Gink-TZ"] = tz[:64]
+    try:
+        loc = locale.getlocale()[0] or os.environ.get("LANG", "").split(".")[0]
+    except ValueError:
+        loc = os.environ.get("LANG", "").split(".")[0]
+    if loc and "_" in loc:
+        h["X-Gink-Locale"] = loc[:20]
+    return h
+
+
 class GinkAPIError(Exception):
     """The API said no; .status and .code say why (e.g. 429 daily_limit, 401 invalid_api_key)."""
 
@@ -57,7 +78,7 @@ class Client:
 
     # ---- plumbing
     def _headers(self) -> dict:
-        return {"Authorization": f"Bearer {self.api_key}", "User-Agent": "gink-python"}
+        return dict({"Authorization": f"Bearer {self.api_key}", "User-Agent": "gink-python"}, **place_headers())
 
     def request(self, method: str, path: str, **kw) -> httpx.Response:
         try:

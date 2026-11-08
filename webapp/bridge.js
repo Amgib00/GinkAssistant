@@ -25,9 +25,14 @@
   var PRICING = "https://amgib00.github.io/GinkAssistant/pricing.html";      // the website's plans page
 
   // ---------------------------------------------------------------- server
+  function placeHeaders(h) {                     // the device's time zone + language: answers fit their own country
+    try { var tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if (tz) h["X-Gink-TZ"] = tz; } catch (e) {}
+    try { var lang = (navigator.languages && navigator.languages[0]) || navigator.language; if (lang) h["X-Gink-Locale"] = lang; } catch (e) {}
+    return h;
+  }
   function api(path, body, opts) {
     opts = opts || {};
-    var h = { "Content-Type": "application/json" };
+    var h = placeHeaders({ "Content-Type": "application/json" });
     if (W.token) h.Authorization = "Bearer " + W.token;
     return fetch(path, { method: body === undefined ? "GET" : "POST", headers: h,
                          body: body === undefined ? undefined : JSON.stringify(body), signal: opts.signal })

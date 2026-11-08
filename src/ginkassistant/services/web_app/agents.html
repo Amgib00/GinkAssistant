@@ -110,7 +110,7 @@
     <div class="stage" aria-hidden="true">
       <div class="scene on" data-s="1"><div class="tilt">client.interactions.create(
   agent=<b>"gink-agent"</b>,
-  input="Compare solar growth in West Africa",
+  input="Compare solar growth in my region",
   environment=<b>"remote"</b>,
 )</div></div>
       <div class="scene" data-s="2"><div class="layers"><span></span><span></span><span></span></div></div>
@@ -137,7 +137,7 @@ from gink import Client
 client = Client()
 interaction = client.interactions.create(
     agent="gink-agent",
-    input="Plot solar energy growth in Senegal since 2015 and write slides in HTML",
+    input="Plot solar energy growth in my country since 2015 and write slides in HTML",
     environment="remote",
 )
 print(interaction.output_text)
@@ -152,7 +152,7 @@ import { Gink } from "gink-ai";
 
 const gink = new Gink();                    // GINK_API_KEY
 const it = await gink.interactions.create({
-  input: "Plot solar energy growth in Senegal since 2015 and write slides in HTML",
+  input: "Plot solar energy growth in my country since 2015 and write slides in HTML",
   environment: "remote",
 });
 console.log(it.output_text, it.files_changed);

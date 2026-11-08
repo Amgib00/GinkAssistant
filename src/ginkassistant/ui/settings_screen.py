@@ -192,7 +192,7 @@ def build_settings_screen(app: toga.App, brain, selected_voice: dict, on_voice_c
                            style=Pack(color=TEXT_MAIN, background_color=BG_MAIN, margin_bottom=8))
     brief_time = toga.TextInput(value=p.get("briefing_time", "07:30"), placeholder="07:30",
                                 style=Pack(width=90, color=TEXT_MAIN, background_color=BG_ELEVATED))
-    city_input = toga.TextInput(value=prefs_svc.city(app), placeholder="e.g. Dakar",
+    city_input = toga.TextInput(value=prefs_svc.city(app), placeholder="Your city",
                                 style=Pack(width=220, color=TEXT_MAIN, background_color=BG_ELEVATED))
     city_status = toga.Label("", style=Pack(font_size=12, color=ACCENT, margin_top=6, background_color=BG_MAIN))
 

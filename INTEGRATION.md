@@ -2109,3 +2109,17 @@ New services/live_info.py (all free, no API keys):
   GET /dev/environments. console.html: Agents view (task, workspace picker, tools, live SSE steps via fetch reader,
   answer, files changed, "Open in Genie"), recent runs table. genie.html: /genie#gp_... opens that project.
 - Checked in Chromium against a real local server (simulated AI): run -> live step -> answer -> recent runs row.
+
+## 0.1.126: international by default (device time zone + region -> local answers)
+- Owner: stop Senegal-only examples; every user should get answers for their own country automatically.
+- Clients send X-Gink-TZ (IANA) + X-Gink-Locale: apps via device_region.place_headers() (cached) in device_headers()
+  AND the AsyncGroq client's default_headers; web app/Genie/console via placeHeaders() (Intl time zone +
+  navigator.language); Python SDK/CLI via gink.client.place_headers() (TZ or /etc/localtime, locale); JS SDK via Intl.
+- Server: _client_place_from(request) (validated: IANA-shaped tz, not Etc/UTC; locale regex) -> _client_place contextvar
+  (set in ai_chat, _genie_ask, /v1 + /dev interactions; copied into background agent tasks). _place_note(): local time,
+  "fit currency/units/date format/examples; don't mention location unless it matters". _add_live_context: a live
+  question with no place uses the tz city ("weather?" -> Nairobi). Skills' weather default: the device tz city, else asks.
+- Examples: placeholders/docs/READMEs/SDK docstrings neutral or "my country"/"where I am" (resolved by the headers);
+  settings city placeholder = the tz city. tests/test_international.py guards USER_FACING files against one-country
+  examples. NOT changed on purpose: payment/currency/language support for Senegal (real features), the pricing table,
+  and the training-data templates (changing them would orphan the owner's paraphrases.csv rows).

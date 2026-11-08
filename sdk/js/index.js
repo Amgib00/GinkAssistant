@@ -2,7 +2,7 @@
 //
 //   import { Gink } from "gink-ai";
 //   const gink = new Gink();                                  // apiKey or process.env.GINK_API_KEY
-//   const it = await gink.interactions.create({ input: "Write report.md on solar in Senegal", environment: "remote" });
+//   const it = await gink.interactions.create({ input: "Write report.md on solar energy in my country", environment: "remote" });
 //   console.log(it.output_text, it.files_changed);
 //   for await (const event of gink.interactions.stream({ input: "Add this year's numbers", previous_interaction_id: it.id }))
 //     console.log(event.type, event.data);                     // live: step, status, done
@@ -20,6 +20,14 @@ export class GinkAPIError extends Error {
   }
 }
 
+// The machine's time zone and language (no location lookup): answers fit the user's own country.
+function placeHeaders() {
+  const h = {};
+  try { const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if (tz) h["X-Gink-TZ"] = tz; } catch (e) { /* none */ }
+  try { const loc = Intl.DateTimeFormat().resolvedOptions().locale; if (loc) h["X-Gink-Locale"] = loc; } catch (e) { /* none */ }
+  return h;
+}
+
 function env(name) {
   try { return (typeof process !== "undefined" && process.env && process.env[name]) || ""; } catch (e) { return ""; }
 }
@@ -35,7 +43,7 @@ export class Gink {
   }
 
   async request(method, path, { json, body, raw } = {}) {
-    const headers = { Authorization: `Bearer ${this.apiKey}` };
+    const headers = { Authorization: `Bearer ${this.apiKey}`, ...placeHeaders() };
     if (json !== undefined) headers["Content-Type"] = "application/json";
     let res;
     try {

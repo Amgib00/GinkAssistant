@@ -6,7 +6,7 @@ Live TV + YouTube, inside Gink.
   that's on air now. (The old version stored fixed video IDs, which break
   every time a channel restarts its stream.)
 * Search box: any YouTube video or live stream ("jollof rice recipe",
-  "Senegal match live"); results appear as buttons, the first one plays.
+  "football match live"); results appear as buttons, the first one plays.
 * "+ Add channel": paste a YouTube channel link or @handle, give it a name;
   saved in prefs so it's there next time.
 * Say "watch Al Jazeera live" / "put on France 24" in the chat to jump here.

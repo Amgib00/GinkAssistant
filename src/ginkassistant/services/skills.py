@@ -249,8 +249,12 @@ async def try_skill(text: str) -> Optional[str]:
     match = re.search(r"\bweather(?:\s+in)?\s+([a-zA-Z\s]+)", lowered)
     if match and match.group(1).strip():
         return await _get_weather(match.group(1).strip())
-    if "weather" in lowered:
-        return await _get_weather("Dakar")
+    if "weather" in lowered:                          # no place named: where the device says it is
+        from .device_region import timezone_name
+        tz = timezone_name()
+        if "/" in tz and not tz.startswith(("Etc/", "UTC")):
+            return await _get_weather(tz.rsplit("/", 1)[-1].replace("_", " "))
+        return "Which city? For example: \u201cweather in Lisbon\u201d."
 
     if "system status" in lowered or "device status" in lowered or "how are you running" in lowered:
         return _system_status()

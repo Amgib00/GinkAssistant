@@ -8,7 +8,7 @@ import { Gink } from "gink-ai";
 
 const gink = new Gink();                    // GINK_API_KEY (create one at https://gink-server.onrender.com/developers)
 const it = await gink.interactions.create({
-  input: "Plot solar energy growth in Senegal since 2015 and write slides in HTML",
+  input: "Plot solar energy growth in my country since 2015 and write slides in HTML",
   environment: "remote",
 });
 console.log(it.output_text, it.files_changed);
@@ -19,7 +19,7 @@ for await (const event of gink.interactions.stream({ input: "Add this year's num
 
 const env = await gink.environments.get(it.environment);
 console.log(await env.text("slides.html"));
-console.log(await gink.chat("What's the weather in Dakar right now?"));
+console.log(await gink.chat("What's the weather where I am right now?"));
 ```
 
 Keep your API key on your server: never in a web page anyone can open.

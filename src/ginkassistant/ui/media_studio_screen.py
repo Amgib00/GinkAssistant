@@ -131,7 +131,7 @@ PAGE = r"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport
     <div class="label" style="margin:0 0 8px">Ideas</div>
     <div class="ideas" id="ideas" role="list"></div>
     <div class="create">
-      <textarea id="prompt" placeholder="Describe the image you want \u2014 e.g. a sunset over the Dakar corniche, colourful fishing boats in the foreground"></textarea>
+      <textarea id="prompt" placeholder="Describe the image you want \u2014 e.g. a sunset over an old harbour, colourful fishing boats in the foreground"></textarea>
       <div class="photo-row">
         <button class="chip" id="add-photo" type="button">&#128247; Use a photo</button>
         <span class="photo" id="photo" hidden><img id="photo-img" alt="Your photo"><button type="button" id="photo-x" aria-label="Remove the photo">&times;</button></span>

@@ -2426,14 +2426,63 @@ async def _live_facts(text: str) -> list:
     return [x for x in await asyncio.gather(*(one(k, a) for k, a in wanted)) if x]
 
 
+_client_place = contextvars.ContextVar("gink_client_place", default=None)
+_TZ_RE = re.compile(r"^[A-Za-z]+(?:/[A-Za-z0-9_+\-]+){1,2}$")
+_LOCALE_RE = re.compile(r"^([a-z]{2,3})(?:[-_]([A-Za-z]{4}))?(?:[-_]([A-Z]{2}|[0-9]{3}))?$", re.I)
+
+
+def _client_place_from(request) -> dict:
+    """The device's time zone and region (X-Gink-TZ, X-Gink-Locale: sent by the apps, the web app, Genie and the
+    console; the SDKs can too). Never a location fix -- the settings the person chose on their device."""
+    out = {}
+    tz = str(request.headers.get("x-gink-tz") or "").strip()
+    if _TZ_RE.match(tz) and not tz.startswith(("Etc/", "UTC", "GMT")):
+        out["tz"] = tz
+        out["city"] = tz.rsplit("/", 1)[-1].replace("_", " ")
+    m = _LOCALE_RE.match(str(request.headers.get("x-gink-locale") or "").strip())
+    if m:
+        out["language"] = m.group(1).lower()
+        if m.group(3) and m.group(3).isalpha():
+            out["region"] = m.group(3).upper()
+    return out
+
+
+def _place_note(place) -> str:
+    """For the AI: where the person probably is, so examples, currency, units and local time fit them."""
+    if not place:
+        return ""
+    import datetime as _dtm
+    bits = []
+    if place.get("tz"):
+        try:
+            from zoneinfo import ZoneInfo
+            local = _dtm.datetime.now(ZoneInfo(place["tz"]))
+            bits.append(f"time zone {place['tz']} (their local time: {local:%A %H:%M})")
+        except Exception:
+            bits.append(f"time zone {place['tz']}")
+    if place.get("region"):
+        bits.append(f"region {place['region']}")
+    if not bits:
+        return ""
+    return ("The person's device is set to " + " and ".join(bits) + ". Unless they say otherwise, fit answers to "
+            "where they are: their local time and date, their currency, units and date format, and local examples. "
+            "Don't mention their location unless it matters.")
+
+
 async def _add_live_context(body: dict) -> None:
     """Today's date/time always; live data when the newest message asks for it (unless gink_live is false)."""
     import datetime as _dtm
     live = body.pop("gink_live", True) is not False
     now = _dtm.datetime.now(_dtm.timezone.utc)
     note = f"Current date and time: {now:%A %d %B %Y, %H:%M} UTC."
+    place = _client_place.get()
+    if _place_note(place):
+        note += " " + _place_note(place)
     text = _last_user_text(body["messages"])
     facts = await _live_facts(text) if live and text else []
+    if live and text and not facts and place and place.get("city") and any(rx.search(text) for _, rx in _LIVE_KINDS) \
+            and not _live_place(text):
+        facts = await _live_facts(f"{text} in {place['city']}")      # "what's the weather?" -> where they are
     if facts:
         note += ("\n\nLive data fetched just now for this message (use it, and say it's current as of "
                  f"{now:%H:%M} UTC; don't claim you can't access real-time information):\n" + "\n\n".join(facts))
@@ -2449,6 +2498,7 @@ async def _add_live_context(body: dict) -> None:
 @app.post("/ai/openai/v1/chat/completions")
 async def ai_chat(request: Request):
     email = _email_from_auth(request)
+    _client_place.set(_client_place_from(request))     # their own country, automatically (time zone + region)
     if not _env("GROQ_API_KEY"):
         return _ai_error(503, "AI isn't set up on this server yet.", "not_configured")
     try:
@@ -4749,7 +4799,9 @@ async def _agent_loop(iid: str, email: str, env_id: str, messages: list, tools_a
     """Runs the agent to the end, saving progress (steps, status, output) as it goes."""
     import httpx
     tools = (_agent_file_tools() if "files" in tools_allowed else []) + ([AGENT_SEARCH_TOOL] if "web_search" in tools_allowed else [])
-    live = [{"role": "system", "content": _now_note() + await _live_note(_last_user_text(messages))}]
+    place = _client_place.get()
+    live = [{"role": "system", "content": " ".join(x for x in (_now_note(), _place_note(place)) if x)
+                                          + await _live_note(_last_user_text(messages))}]
     system = [{"role": "system", "content": AGENT_SYSTEM}] + live + ([{"role": "system", "content": TEEN_SAFETY}] if teen else []) \
         + ([{"role": "system", "content": org_text}] if org_text else [])
     steps, changes = [], []
@@ -4818,10 +4870,10 @@ async def api_interaction(request: Request, data: dict = Body(...)):
     owner, err = _api_owner_or_error(request)
     if err:
         return err
-    return await _interaction_start(owner[0], owner[1], data)
+    return await _interaction_start(owner[0], owner[1], data, _client_place_from(request))
 
 
-async def _interaction_start(email: str, key_id, data: dict):
+async def _interaction_start(email: str, key_id, data: dict, place: dict = None):
     """Start an interaction for this account (an API key's, or the console's signed-in session: key_id None)."""
     if str(data.get("agent") or "gink-agent") not in AGENT_NAMES:
         return _api_error(400, "Unknown agent. Use \"gink-agent\".", "invalid_agent")
@@ -4863,6 +4915,7 @@ async def _interaction_start(email: str, key_id, data: dict):
                                       "previous_id, created) VALUES (?, ?, ?, ?, 'running', ?, '[]', ?, ?, ?)",
                                       (iid, email, key_id, env_id, text[:20000], _json.dumps(messages), prev or None, time.time())))
     _agent_tasks[iid] = "running"
+    _client_place.set(place or {})                     # the background task copies this context
     run = _agent_loop(iid, email, env_id, messages, tools, max_steps, org_text, bool(family))
     if data.get("stream"):                          # live: each step as it happens (server-sent events)
         task = asyncio.get_running_loop().create_task(run)
@@ -5034,7 +5087,7 @@ def _agents_after_restart():
 # ---- the console's Agents page (signed in, no API key needed): run, watch live, see recent runs and workspaces
 @app.post("/dev/interactions")
 async def dev_interaction(request: Request, data: dict = Body(...)):
-    return await _interaction_start(_session_email(request), None, data)
+    return await _interaction_start(_session_email(request), None, data, _client_place_from(request))
 
 
 @app.get("/dev/interactions")
@@ -7760,7 +7813,7 @@ async def _genie_run(email: str, pid: str, instruction: str, progress: str = "",
              "progress": re.sub(r"[^A-Za-z0-9_-]", "", str(progress or ""))[:40],
              "mode": "plan" if mode == "plan" else "auto",
              "pending": None, "model": await _current_model("openai/gpt-oss-120b"),
-             "messages": [{"role": "system", "content": GENIE_SYSTEM + "\n\n" + _now_note()
+             "messages": [{"role": "system", "content": GENIE_SYSTEM + "\n\n" + _now_note() + " " + _place_note(_client_place.get())
                            + " Use web_search for anything current (versions, prices, news, docs) instead of guessing."}]
                          + ([{"role": "system", "content": TEEN_SAFETY}] if teen else [])
                          + ([{"role": "system", "content": org_text}] if org_text else []) + history +
@@ -7788,6 +7841,7 @@ def _genie_remember(state: dict, reply: str):
 
 
 async def _genie_ask(request: Request, email: str, pid: str, instruction: str, progress: str = "", mode: str = "auto") -> dict:
+    _client_place.set(_client_place_from(request))     # their own country (time zone + region)
     instruction = str(instruction or "").strip()[:6000]
     if len(instruction) < 2:
         raise HTTPException(status_code=422, detail="Tell Genie what to build or change.")

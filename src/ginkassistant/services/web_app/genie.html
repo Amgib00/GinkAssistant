@@ -396,9 +396,14 @@
   function openOutside(url) { if (IN_APP) location.href = url; else window.open(url, "_blank", "noopener"); }
 
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function placeHeaders(h) {                     // the device's time zone + language: answers fit their own country
+    try { var tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if (tz) h["X-Gink-TZ"] = tz; } catch (e) {}
+    try { var lang = (navigator.languages && navigator.languages[0]) || navigator.language; if (lang) h["X-Gink-Locale"] = lang; } catch (e) {}
+    return h;
+  }
   function api(path, opts) {
     opts = opts || {};
-    var h = { Authorization: "Bearer " + token };
+    var h = placeHeaders({ Authorization: "Bearer " + token });
     if (opts.body !== undefined) h["Content-Type"] = "application/json";
     return fetch(path, { method: opts.method || (opts.body !== undefined ? "POST" : "GET"), headers: h,
                          body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined }).then(function (r) {
