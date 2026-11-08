@@ -42,7 +42,48 @@ TASKS = [("call mum", "appeler maman"), ("pay the electricity bill", "payer la f
 CURRENCIES = [("CFA francs", "francs CFA", "XOF"), ("naira", "nairas", "NGN"), ("cedis", "cedis", "GHS"),
               ("dollars", "dollars", "USD"), ("euros", "euros", "EUR"), ("leones", "leones", "SLE"),
               ("Kenyan shillings", "shillings kényans", "KES"), ("pounds", "livres sterling", "GBP")]
-RATES_PER_USD = {"XOF": 605.0, "NGN": 1530.0, "GHS": 15.4, "USD": 1.0, "EUR": 0.92, "SLE": 22.6, "KES": 129.0, "GBP": 0.78}
+RATES_PER_USD = {"XOF": 605.0, "NGN": 1530.0, "GHS": 15.4, "USD": 1.0, "EUR": 0.92, "SLE": 22.6, "KES": 129.0, "GBP": 0.78,
+                 "JPY": 152.0, "INR": 84.0, "BRL": 5.6, "MXN": 18.5, "ZAR": 18.2, "EGP": 48.5, "TRY": 34.0, "IDR": 15800.0,
+                 "PHP": 58.0, "CAD": 1.37, "AUD": 1.52, "CNY": 7.2, "KRW": 1380.0, "PKR": 278.0, "BDT": 119.0}
+
+# The world: the same tools with places, money and people from everywhere. Generated AFTER the examples above,
+# with their own random stream, so those stay exactly the same (and keep matching paraphrases.csv/translations.csv).
+WORLD_PER_TOOL = int(os.environ.get("GINK_DATA_WORLD_PER_TOOL", "60"))
+WORLD = {
+    "TIMEZONES": ["Asia/Tokyo", "America/Sao_Paulo", "Europe/Berlin", "America/New_York", "Asia/Kolkata", "Australia/Sydney",
+                  "America/Mexico_City", "Asia/Jakarta", "Africa/Cairo", "Europe/Istanbul", "Asia/Manila", "America/Toronto",
+                  "Africa/Johannesburg", "Asia/Karachi", "Europe/Madrid", "Asia/Seoul"],
+    "CITIES": ["Tokyo", "São Paulo", "Berlin", "New York", "Mumbai", "Sydney", "Mexico City", "Jakarta", "Cairo", "Istanbul",
+               "Manila", "Toronto", "Johannesburg", "Karachi", "Madrid", "Seoul", "Buenos Aires", "Lima", "Dhaka", "Hanoi",
+               "Casablanca", "Addis Ababa", "Kinshasa", "Rome", "Chicago", "Bangkok", "Riyadh", "Warsaw"],
+    "CURRENCIES": [("yen", "yens", "JPY"), ("rupees", "roupies", "INR"), ("reais", "réaux", "BRL"), ("pesos", "pesos", "MXN"),
+                   ("rand", "rands", "ZAR"), ("Egyptian pounds", "livres égyptiennes", "EGP"), ("lira", "livres turques", "TRY"),
+                   ("rupiah", "roupies indonésiennes", "IDR"), ("Philippine pesos", "pesos philippins", "PHP"),
+                   ("Canadian dollars", "dollars canadiens", "CAD"), ("Australian dollars", "dollars australiens", "AUD"),
+                   ("yuan", "yuans", "CNY"), ("won", "wons", "KRW"), ("dollars", "dollars", "USD"), ("euros", "euros", "EUR"),
+                   ("pounds", "livres sterling", "GBP"), ("naira", "nairas", "NGN"), ("Kenyan shillings", "shillings kényans", "KES")],
+    "TASKS": [("call mum", "appeler maman"), ("pay the internet bill", "payer la facture internet"), ("buy milk", "acheter du lait"),
+              ("send the report to Maria", "envoyer le rapport à Maria"), ("take my medicine", "prendre mes médicaments"),
+              ("pick up the kids", "récupérer les enfants"), ("water the plants", "arroser les plantes"),
+              ("revise for the exam", "réviser pour l'examen"), ("call Raj about the project", "appeler Raj pour le projet"),
+              ("renew my passport", "renouveler mon passeport"), ("book the dentist", "prendre rendez-vous chez le dentiste"),
+              ("send flowers to Yuki", "envoyer des fleurs à Yuki")],
+}
+
+
+def world_examples():
+    """The same generators over WORLD's pools, from a separate random stream (the original examples don't move)."""
+    global rnd, TIMEZONES, CITIES, CURRENCIES, TASKS
+    saved = (rnd, TIMEZONES, CITIES, CURRENCIES, TASKS)
+    rnd = random.Random(SEED + 1)
+    TIMEZONES, CITIES, CURRENCIES, TASKS = WORLD["TIMEZONES"], WORLD["CITIES"], WORLD["CURRENCIES"], WORLD["TASKS"]
+    try:
+        out = [g() for g in GENERATORS for _ in range(WORLD_PER_TOOL)]
+    finally:
+        rnd, TIMEZONES, CITIES, CURRENCIES, TASKS = saved
+    for ex in out:
+        ex["world"] = True
+    return out
 SYSTEM_EN = "You are Gink, a warm, capable AI assistant. Use your tools for actions and live information, then answer briefly."
 SYSTEM_FR = "Tu es Gink, un assistant IA chaleureux et compétent. Utilise tes outils pour les actions et les informations en direct, puis réponds brièvement."
 
@@ -373,6 +414,9 @@ def with_translations(train):
 def main():
     os.makedirs(OUT, exist_ok=True)
     data = [g() for g in GENERATORS for _ in range(PER_TOOL)]
+    ids_after_originals = _ids[0]
+    data += world_examples()                      # places, money and people from everywhere (originals unchanged)
+    _ids[0] = max(_ids[0], ids_after_originals)
     data += load_jsonl(os.path.join(HERE, "examples_identity.jsonl"))
     data += load_jsonl(os.path.join(HERE, "examples_voice.jsonl"))
     data += load_language_rows()

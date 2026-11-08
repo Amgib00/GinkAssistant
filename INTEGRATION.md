@@ -2153,3 +2153,10 @@ New services/live_info.py (all free, no API keys):
   if the version exists, fails if package.json has any dependencies (the owner ran `npm install gink-ai` inside sdk/js,
   which adds a self-dependency). package.json repository.url in npm's "git+https://....git" form (no publish warning).
   .gitignore: sdk/js/node_modules, sdk/js/package-lock.json. Tests: staged flow + clean package.
+
+## 0.1.130: worldwide training examples (originals untouched)
+- generate.py: WORLD pools (16 time zones, 28 cities on every continent, 18 currencies + RATES_PER_USD, names like
+  Maria/Raj/Yuki in tasks). world_examples() swaps the module pools and `rnd` for random.Random(SEED + 1), runs every
+  generator WORLD_PER_TOOL times (env GINK_DATA_WORLD_PER_TOOL, default 60), restores, tags world=True. Runs after the
+  originals: the original requests (paraphrases.csv / translations.csv keys) and the original held-out examples are
+  identical (test). 683 -> 1,343 examples; held-out 32 -> 63 (the 32 kept). paraphrase.py resumes on new requests only.

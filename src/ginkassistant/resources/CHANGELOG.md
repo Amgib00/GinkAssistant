@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.130 (November 2026)
+
+- For the owner, Gink's own model: the training data now covers the whole world -- the same actions with
+  places, currencies, time zones and names from every continent (Tokyo, São Paulo, Mumbai, Cairo, yen,
+  rupees, reais...), added alongside the existing examples, which stay exactly the same so your rewrites
+  and translations still match. 1,343 examples (from 683)
+
 ## 0.1.129 (November 2026)
 
 - The JavaScript SDK is on npm: `npm install gink-ai` (0.3.2). New versions are now staged by GitHub and

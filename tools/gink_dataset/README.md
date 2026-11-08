@@ -39,6 +39,12 @@ time, a day, a name or a currency -- or add a number -- are dropped automaticall
 example teaches stays right. Kept rewrites go to `paraphrases.csv`: skim it, set `approved` to `no` for
 anything odd, then run `generate.py` again. Rewrites are used for training only, never the held-out set.
 
+### The whole world, not one country
+`generate.py` makes the action examples twice: the original set (unchanged, so your rewrites and translations
+still match), then the same actions with places, money, time zones and names from everywhere -- Tokyo, São
+Paulo, Mumbai, Cairo, yen, rupees, reais... (`GINK_DATA_WORLD_PER_TOOL`, default 60 per tool). Run
+`paraphrase.py` again: it only rewrites the new requests.
+
 ### Many languages: `translate.py`
 GPT-OSS translates action examples, and Gink's short reply, into other languages:
 `--languages es,pt,ar` or `--languages all` (22 widely used languages plus 15 African languages). Only

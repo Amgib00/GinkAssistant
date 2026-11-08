@@ -220,3 +220,30 @@ def test_recheck_applies_new_checks_to_old_rows(tmp_path):
                     "model": "m", "approved": "yes"})
     assert pp.main(["--recheck", "--csv", str(p)]) == 0
     assert [r["approved"] for r in csv.DictReader(open(p, encoding="utf-8"))] == ["no", "yes"]
+
+
+def test_world_examples_leave_the_originals_alone(tmp_path):
+    """Worldwide places, money and people are ADDED with their own random stream: every original request (which
+    paraphrases.csv and translations.csv are keyed by) and every original held-out example stays the same."""
+    out = os.path.join(DS, "out")
+
+    def gen(n):
+        env = dict(os.environ, GINK_DATA_WORLD_PER_TOOL=str(n), GINK_PARAPHRASES=str(tmp_path / "x.csv"),
+                   GINK_GENERAL_CSV=str(tmp_path / "y.csv"), GINK_TRANSLATIONS=str(tmp_path / "z.csv"))
+        subprocess.run([sys.executable, os.path.join(DS, "generate.py")], check=True, capture_output=True, env=env)
+        rows = {n_: [json.loads(l) for l in open(os.path.join(out, n_), encoding="utf-8")] for n_ in ("train.jsonl", "eval.jsonl")}
+        return rows
+    try:
+        before, after = gen(0), gen(20)
+        key = lambda r: json.dumps(r["messages"], sort_keys=True)
+        assert {key(r) for r in before["train.jsonl"]} <= {key(r) for r in after["train.jsonl"]}
+        assert {key(r) for r in before["eval.jsonl"]} <= {key(r) for r in after["eval.jsonl"]}
+        world = [r for r in after["train.jsonl"] + after["eval.jsonl"] if r.get("world")]
+        text = json.dumps(world, ensure_ascii=False)
+        assert len(world) > 100 and any(c in text for c in ("Tokyo", "Berlin", "Mumbai", "Lima", "Cairo", "Seoul"))
+        assert "Dakar" not in text and "XOF" not in text                                # the world, not one country
+        r = subprocess.run([sys.executable, os.path.join(DS, "validate.py")], capture_output=True, text=True)
+        assert r.returncode == 0, r.stdout[-800:]
+    finally:
+        import shutil
+        shutil.rmtree(out, ignore_errors=True)

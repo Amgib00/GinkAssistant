@@ -43,6 +43,8 @@ Today: about 650 training examples (626 actions in English and French, 23 identi
   into 22 widely used languages (approved automatically when they pass the checks) and 15 African
   languages (drafts until a native speaker approves). Qwen3.5 already understands about 200 languages;
   this teaches it Gink's *actions* in them.
+- The whole world: action examples also come with places, currencies, time zones and names from every
+  continent (added after the originals, so earlier rewrites and translations still match).
 - `validate.py` prints how far you are from these targets every time.
 - Who may write examples: you, testers, native speakers, Gink's templates and Apache-2.0 models.
   Not Claude (Anthropic's terms), so these are tools, not ready-made examples.
