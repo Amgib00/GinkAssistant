@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.123 (November 2026)
+
+- The Gink Python SDK (in gink-ai 0.3.0): `from gink import Client`, then
+  client.interactions.create(input=..., environment="remote") for a managed agent (stream=True for live
+  steps), client.environments for the workspaces, client.chat / search / image. Uses the key from
+  `gink login` or GINK_API_KEY
+
 ## 0.1.122 (November 2026)
 
 - Live information everywhere: Gink Genie can now search the web (with sources) and knows today's date;

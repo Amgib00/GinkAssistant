@@ -123,7 +123,7 @@
     <p class="sub">Create an API key in the console, then make your first request.</p>
     <div class="quick">
       <div>
-        <p>1. <a href="/developers#keys">Create an API key</a>.</p>
+        <p>1. <a href="/developers#keys">Create an API key</a> (or <code>pip install gink-ai</code> and <code>gink login</code>).</p>
         <p>2. Send a task with <code>environment: "remote"</code> for a new workspace.</p>
         <p>3. Read <code>output_text</code>, and the files under <code>environment</code>.</p>
         <p class="sub" style="margin-top:16px">Long tasks: add <code>"background": true</code> and check
@@ -131,19 +131,22 @@
       </div>
       <div>
         <div class="tabs" role="tablist"><button class="on" data-t="py">Python</button><button data-t="js">JavaScript</button><button data-t="curl">curl</button></div>
-        <pre data-t="py">import os, httpx
+        <pre data-t="py"># pip install gink-ai      (then: gink login, or set GINK_API_KEY)
+from gink import Client
 
-GINK = "https://gink-server.onrender.com/v1"
-headers = {"Authorization": f"Bearer {os.environ['GINK_API_KEY']}"}
+client = Client()
+interaction = client.interactions.create(
+    agent="gink-agent",
+    input="Plot solar energy growth in Senegal since 2015 and write slides in HTML",
+    environment="remote",
+)
+print(interaction.output_text)
+print("Files:", interaction.files_changed, "in", interaction.environment)
 
-interaction = httpx.post(f"{GINK}/interactions", headers=headers, timeout=600, json={
-    "agent": "gink-agent",
-    "input": "Plot solar energy growth in Senegal since 2015 and write slides in HTML",
-    "environment": "remote",
-}).json()
-
-print(interaction["output_text"])
-print("Files:", interaction["files_changed"], "in", interaction["environment"])</pre>
+# live, step by step
+for event in client.interactions.create(input="Add this year's numbers",
+                                        previous_interaction_id=interaction.id, stream=True):
+    print(event.type, event.data)</pre>
         <pre data-t="js" hidden>const GINK = "https://gink-server.onrender.com/v1";
 const res = await fetch(`${GINK}/interactions`, {
   method: "POST",

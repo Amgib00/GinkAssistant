@@ -2084,3 +2084,12 @@ New services/live_info.py (all free, no API keys):
   0.4 s, 30 min cap). _agent_to_genie(): completed interactions add "[API agent] <input>" + reply (steps mapped to
   Genie's kinds, extra.via="api") to genie_chat. CLI: `gink env list|new|files|pull|push|rm` (pull refuses paths
   outside the folder; push skips .git/node_modules/venvs).
+
+## 0.1.123: Python SDK (cli/gink, package gink-ai 0.3.0)
+- gink.Client(api_key | GINK_API_KEY | `gink login`'s saved key, base_url | GINK_BASE_URL, http=httpx.Client):
+  interactions.create/get/cancel/wait (stream=True -> iterator of Event(type, data) from the SSE stream; done.data is
+  an Interaction), environments.create/list/get -> Environment(upload, download, refresh, delete), chat/search/image/
+  models. Errors: GinkAPIError(message, status, code). Objects are dicts readable with dots.
+- cli/pyproject: version 0.3.0, packages gink_cli + gink (gink_cli.__version__ and gink.__version__ must match: test).
+  tests/test_python_sdk.py runs it against the real app via TestClient (an httpx.Client) as `http`.
+  Publishing to PyPI: the existing PyPI workflow (pypa/gh-action-pypi-publish) when the owner runs it.

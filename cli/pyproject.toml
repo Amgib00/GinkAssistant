@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gink-ai"
-version = "0.2.1"
-description = "Gink in your terminal: ask, chat, search the web and make images with your Gink API key."
+version = "0.3.0"
+description = "Gink in your terminal and in Python: chat, web search, images and managed agents with your Gink API key."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 authors = [{ name = "Gink AI" }]
 dependencies = ["httpx>=0.25"]
-keywords = ["gink", "ai", "assistant", "cli", "chat"]
+keywords = ["gink", "ai", "assistant", "cli", "chat", "agents", "sdk"]
 classifiers = ["Environment :: Console", "Programming Language :: Python :: 3", "Operating System :: OS Independent"]
 
 [project.urls]
@@ -22,4 +22,4 @@ Source = "https://github.com/Amgib00/GinkAssistant"
 gink = "gink_cli.main:main"
 
 [tool.setuptools]
-packages = ["gink_cli"]
+packages = ["gink_cli", "gink"]

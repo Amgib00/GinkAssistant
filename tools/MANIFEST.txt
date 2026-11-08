@@ -23,6 +23,8 @@ LICENSE
 README.md
 SECURITY.md
 cli/README.md
+cli/gink/__init__.py
+cli/gink/client.py
 cli/gink_cli/__init__.py
 cli/gink_cli/__main__.py
 cli/gink_cli/main.py
@@ -362,6 +364,7 @@ tests/test_phone_signin_app.py
 tests/test_play_music.py
 tests/test_prompts.py
 tests/test_pull_requests.py
+tests/test_python_sdk.py
 tests/test_release_tooling.py
 tests/test_requirements_match.py
 tests/test_screens_and_server.py
