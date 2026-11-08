@@ -11,6 +11,7 @@
 .github/workflows/macos.yml
 .github/workflows/pull-requests.yml
 .github/workflows/release.yml
+.github/workflows/security.yml
 .github/workflows/tests.yml
 .github/workflows/website.yml
 .github/workflows/windows.yml
@@ -360,6 +361,8 @@ tests/test_release_tooling.py
 tests/test_requirements_match.py
 tests/test_screens_and_server.py
 tests/test_security_lockdown_style.py
+tests/test_security_workflows.py
+tests/test_server_image_layout.py
 tests/test_server_storage.py
 tests/test_sessions_security.py
 tests/test_settings_and_account.py
@@ -395,6 +398,7 @@ tools/build_web_app.py
 tools/build_website.py
 tools/check_mac_min_os.py
 tools/check_project.py
+tools/close_scanner_prs.sh
 tools/gink_dataset/README.md
 tools/gink_dataset/evaluate.py
 tools/gink_dataset/examples_identity.jsonl

@@ -1,0 +1,58 @@
+# Security checks that need no paid account or secret, so they don't fail for lack of one:
+#   * Dockerfile best practices: Hadolint on deploy/Dockerfile -> GitHub's Security tab (Code scanning)
+#   * Known vulnerabilities in the server's and the app's Python packages: pip-audit (PyPI's advisory data)
+# Code itself (Python, JavaScript, these workflows): turn on CodeQL's DEFAULT setup in Settings -> Code security ->
+# Code scanning (one click, free for public repositories; GitHub keeps it updated). Don't also add a codeql.yml:
+# an "advanced" CodeQL workflow fails while the default setup is on.
+# Replaced on purpose (each needs a paid account and a token): Checkmarx, Black Duck, Fortify, Snyk, Sysdig,
+# APIsec, Codacy. PSScriptAnalyzer isn't needed: there are no PowerShell scripts here.
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "23 4 * * 1"          # Mondays: new advisories appear even when the code doesn't change
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dockerfile:
+    name: Dockerfile (Hadolint)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write      # to show the findings in the Security tab
+    steps:
+      - uses: actions/checkout@v7
+      - name: Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: deploy/Dockerfile
+          format: sarif
+          output-file: hadolint.sarif
+          no-fail: true               # findings go to the Security tab; the run itself doesn't fail on style
+      - name: Show the results in the Security tab
+        if: always() && hashFiles('hadolint.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
+        continue-on-error: true       # e.g. code scanning switched off for this repository
+        with:
+          sarif_file: hadolint.sarif
+          category: hadolint
+
+  packages:
+    name: Python packages (pip-audit)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Known vulnerabilities in the server's packages
+        run: |
+          python -m pip install --quiet "pip-audit>=2.7"
+          pip-audit -r deploy/requirements-server.txt --progress-spinner off --desc on

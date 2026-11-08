@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.120 (November 2026)
+
+- Fixed: since 0.1.111 the online server couldn't load its new file-storage part, so its health check
+  failed and Render refused every new version. The server now starts again with all the newer features
+- Security checks on GitHub that need no paid account: the server's Dockerfile (Hadolint) and its
+  packages (pip-audit); tools/close_scanner_prs.sh closes the scanner pull requests that can only fail
+
 ## 0.1.119 (November 2026)
 
 - Turning on object storage keeps everything: big Gink Genie files saved on the server's disk before

@@ -294,7 +294,7 @@ async def health():
     check this server is reachable without sending anyone an email.
     "storage" is "disk" (accounts survive restarts), "temporary" (erased on every restart or
     publish) or "local" (a server on someone's own computer). The path itself is never shown."""
-    from . import blob_store
+    blob_store = _blob_module()
     return {"status": "ok", "service": "gink-backend", "storage": _storage_status()["mode"],
             "files": blob_store.store(_blob_root()).kind}
 
@@ -475,9 +475,20 @@ def _storage_status() -> dict:
     return {"mode": "disk", "ok": True, "detail": "Accounts are stored on the disk and survive restarts."}
 
 
+def _blob_module():
+    """services/blob_store.py: a package import in the app and tests, a plain one on the server (deploy/Dockerfile
+    copies the files flat, like billing_catalog.py). Since 0.1.111 only the package form was tried, so on Render
+    /health itself failed -- and with it every deploy."""
+    try:
+        from . import blob_store
+    except ImportError:
+        import blob_store
+    return blob_store
+
+
 def _files_status() -> str:
     """Where big files live (services/blob_store.py), with the reason if object storage fell back to disk."""
-    from . import blob_store
+    blob_store = _blob_module()
     kind = blob_store.store(_blob_root()).kind
     return kind + (f" -- {blob_store._store['problem']}" if blob_store._store["problem"] else "")
 
@@ -6838,7 +6849,7 @@ def _genie_store_content(content: str) -> str:
     """What the database keeps: small content itself, big content as a marker (the blob store has it)."""
     if len(content) < GENIE_BLOB_MIN or content.startswith(GENIE_BLOB):
         return content
-    from . import blob_store
+    blob_store = _blob_module()
     key = blob_store.put(content.encode("utf-8"), _blob_root())
     kind = "p" if content.startswith(GENIE_PIC) else "t"
     return f"{GENIE_BLOB}{key}:{_genie_size(content)}:{kind}"
@@ -6846,7 +6857,7 @@ def _genie_store_content(content: str) -> str:
 
 def _blob_gc() -> int:
     """Delete blobs no file, copy or version refers to any more (once a day, a minute after start)."""
-    from . import blob_store
+    blob_store = _blob_module()
     marker = re.compile(re.escape(GENIE_BLOB) + r"([0-9a-f]{64})")
     marker_json = re.compile(r"\\u0000gink-blob:([0-9a-f]{64})")
     used = set()
@@ -6877,7 +6888,7 @@ async def _blob_gc_daily():
 def _genie_resolve(content: str) -> str:
     if not content.startswith(GENIE_BLOB):
         return content
-    from . import blob_store
+    blob_store = _blob_module()
     data = blob_store.get(content[len(GENIE_BLOB):].split(":", 1)[0], _blob_root())
     if data is None:
         print("[Gink] Genie: a file's content is missing from storage", flush=True)

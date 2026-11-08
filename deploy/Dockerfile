@@ -13,6 +13,8 @@ COPY src/ginkassistant/services/markdown_render.py ./markdown_render.py
 COPY src/ginkassistant/services/attachments.py ./attachments.py
 # real-time information in answers (weather, time, currency...): backend_server._add_live_context
 COPY src/ginkassistant/services/live_info.py ./live_info.py
+# big files on disk or in object storage (Cloudflare R2, Backblaze B2, S3): backend_server._blob_module
+COPY src/ginkassistant/services/blob_store.py ./blob_store.py
 COPY src/ginkassistant/services/web_app ./web_app
 ENV PORT=8000
 EXPOSE 8000

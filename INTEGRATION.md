@@ -2040,3 +2040,17 @@ New services/live_info.py (all free, no API keys):
 - blob_store.get(): with S3 active and the key missing there, look in the LocalStore (GINK_BLOB_DIR / next to the DB)
   and copy it up (lazy migration). Without this, setting GINK_S3_* after 0.1.111 made every big Genie file read ""
   ("content is missing"). GC only lists S3, so not-yet-moved disk blobs are never deleted by it.
+
+## 0.1.120: the server image (deploy/Dockerfile) couldn't run 0.1.111+; free security workflow
+- CRITICAL: deploy/Dockerfile copies backend_server.py and its helpers FLAT into /srv. 0.1.111 added
+  `from . import blob_store` (package-only) in /health, the dashboard and Genie, and didn't COPY blob_store.py ->
+  ImportError -> /health 500 -> Render's health check failed -> every deploy since was rejected (the old version kept
+  running). Now _blob_module() tries both ways and the Dockerfile copies blob_store.py.
+  tests/test_server_image_layout.py: (1) every `from .x` in backend_server has an `except ImportError` fallback,
+  (2) every imported helper is COPYed, (3) the server runs from a flat copy built from the Dockerfile's COPY lines
+  (/health, /info, /app, blob store, /errors). All three fail on 0.1.114.
+- The owner's PRs adding Checkmarx/Black Duck/APIsec/Sysdig/Snyk/Codacy/Fortify need paid accounts + secrets;
+  PSScriptAnalyzer has nothing to scan (no .ps1); an advanced codeql.yml fails while CodeQL's default setup is on.
+  .github/workflows/security.yml: Hadolint (SARIF -> Security tab, no-fail) + pip-audit (server requirements; fails on
+  a known vulnerability). tools/close_scanner_prs.sh (dry run, --close) closes those PRs and deletes their branches.
+  Stale code-scanning configurations (Codacy, PSScriptAnalyzer) are removed in the Security tab by the owner.
