@@ -1,0 +1,15 @@
+{
+  "name": "gink-ai",
+  "version": "0.3.0",
+  "description": "The Gink API for JavaScript and TypeScript: managed agents, live steps, workspaces, chat, web search and images.",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": { ".": { "types": "./index.d.ts", "default": "./index.js" } },
+  "files": ["index.js", "index.d.ts", "README.md"],
+  "engines": { "node": ">=18" },
+  "keywords": ["gink", "ai", "agents", "sdk", "api"],
+  "license": "MIT",
+  "homepage": "https://gink-server.onrender.com/developers/agents",
+  "repository": { "type": "git", "url": "https://github.com/Amgib00/GinkAssistant", "directory": "sdk/js" }
+}

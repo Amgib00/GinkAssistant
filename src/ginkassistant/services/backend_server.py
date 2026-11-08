@@ -4818,7 +4818,11 @@ async def api_interaction(request: Request, data: dict = Body(...)):
     owner, err = _api_owner_or_error(request)
     if err:
         return err
-    email, key_id = owner
+    return await _interaction_start(owner[0], owner[1], data)
+
+
+async def _interaction_start(email: str, key_id, data: dict):
+    """Start an interaction for this account (an API key's, or the console's signed-in session: key_id None)."""
     if str(data.get("agent") or "gink-agent") not in AGENT_NAMES:
         return _api_error(400, "Unknown agent. Use \"gink-agent\".", "invalid_agent")
     text = str(data.get("input") or "").strip()
@@ -5025,6 +5029,54 @@ def _agents_after_restart():
                                            "with previous_interaction_id to continue.", time.time())))
     except Exception:
         pass
+
+
+# ---- the console's Agents page (signed in, no API key needed): run, watch live, see recent runs and workspaces
+@app.post("/dev/interactions")
+async def dev_interaction(request: Request, data: dict = Body(...)):
+    return await _interaction_start(_session_email(request), None, data)
+
+
+@app.get("/dev/interactions")
+def dev_interactions(request: Request):
+    email = _session_email(request)
+    rows = _agent_db(lambda con: con.execute("SELECT * FROM agent_interactions WHERE email=? ORDER BY created DESC LIMIT 50",
+                                             (email,)).fetchall())
+    out = []
+    for r in rows:
+        it = _agent_public(r)
+        it["input"] = (r[5] or "")[:300]
+        it["via"] = "console" if r[2] is None else "API key"
+        out.append(it)
+    return {"data": out}
+
+
+@app.get("/dev/interactions/{iid}")
+def dev_interaction_get(iid: str, request: Request):
+    row = _agent_get(_session_email(request), iid)
+    if not row:
+        raise HTTPException(status_code=404, detail="No interaction with that id.")
+    it = _agent_public(row)
+    it["input"] = row[5] or ""
+    return it
+
+
+@app.post("/dev/interactions/{iid}/cancel")
+def dev_interaction_cancel(iid: str, request: Request):
+    row = _agent_get(_session_email(request), iid)
+    if not row:
+        raise HTTPException(status_code=404, detail="No interaction with that id.")
+    if iid in _agent_tasks:
+        _agent_tasks[iid] = "cancel"
+    return _agent_public(row)
+
+
+@app.get("/dev/environments")
+def dev_environments(request: Request):
+    email = _session_email(request)
+    rows = _genie_db(lambda con: con.execute("SELECT id FROM genie_projects WHERE email=? ORDER BY updated DESC LIMIT 100",
+                                             (email,)).fetchall())
+    return {"data": [_env_public(request, email, r[0]) for r in rows]}
 
 
 @app.get("/developers/agents", response_class=HTMLResponse)

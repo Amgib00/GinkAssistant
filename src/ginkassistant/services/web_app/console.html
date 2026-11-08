@@ -72,6 +72,7 @@
       <a href="#metrics" data-v="metrics">Metrics</a>
       <a href="#logs" data-v="logs">Logs</a>
       <a href="#batches" data-v="batches">Batches</a>
+      <a href="#agents" data-v="agents">Agents</a>
       <span class="grp">Learn</span>
       <a href="#docs" data-v="docs">Docs</a>
       <a href="/v1/openapi.json" target="_blank" rel="noopener">OpenAPI &#8599;</a>
@@ -189,6 +190,33 @@
       <p class="note">With your API key: <code>POST /v1/batches</code>, <code>GET /v1/batches/{id}</code>, <code>GET /v1/batches/{id}/results</code>, <code>POST /v1/batches/{id}/cancel</code>.</p>
     </section>
 
+    <!-- AGENTS: managed agents (POST /dev/interactions with stream=true; the same as /v1/interactions) -->
+    <section data-view="agents" hidden>
+      <h1>Agents</h1><p class="sub">Give Gink&rsquo;s agent a task. It works in a workspace that keeps its files &mdash; watch each
+        step as it happens. <a href="/developers/agents">Guide</a></p>
+      <div class="card">
+        <label for="ag-input"><b>Task</b></label>
+        <textarea id="ag-input" rows="4" placeholder="e.g. Research solar energy growth in Senegal since 2015 and write report.md with sources"></textarea>
+        <div class="row" style="margin-top:8px">
+          <select id="ag-env" aria-label="Workspace"><option value="remote">New workspace</option></select>
+          <label><input type="checkbox" id="ag-web" checked> Web search</label>
+          <label><input type="checkbox" id="ag-files" checked> Files</label>
+          <button id="ag-run">Run agent</button><button class="ghost" id="ag-stop" hidden>Stop</button></div>
+        <p class="err" id="ag-err"></p>
+        <div id="ag-live" hidden>
+          <h2 style="margin-top:14px">Steps <span class="note" id="ag-status"></span></h2>
+          <ol id="ag-steps" class="note" style="padding-left:20px"></ol>
+          <h2>Answer</h2><div id="ag-out" style="white-space:pre-wrap"></div>
+          <p class="note" id="ag-files-note"></p>
+        </div>
+      </div>
+      <h2>Recent runs</h2>
+      <div class="card scroll"><table><thead><tr><th>Task</th><th>Status</th><th>Steps</th><th>Files changed</th><th>Workspace</th><th>When</th></tr></thead>
+        <tbody id="ag-rows"></tbody></table><p class="note" id="ag-empty" hidden>No runs yet.</p></div>
+      <p class="note">With your API key: <code>POST /v1/interactions</code> (<code>"stream": true</code> for live steps), <code>GET /v1/interactions/{id}</code>,
+        <code>/v1/environments</code>. SDKs: <code>pip install gink-ai</code>, <code>npm install gink-ai</code>.</p>
+    </section>
+
     <!-- DOCS -->
     <section data-view="docs" hidden>
       <h1>Docs</h1><p class="sub">Everything to build with Gink. New: <a href="/developers/agents">managed agents</a> &mdash; one call runs Gink&rsquo;s agent in a persistent workspace.</p>
@@ -291,6 +319,7 @@ cat notes.txt | gink "summarise this"</code></pre>
 
   // ---- views
   var VIEWS = {
+    agents: function () { return loadAgents(); },
     dashboard: function () {
       return Promise.all([api("/dev/overview").then(json), api("/dev/metrics?days=14").then(json)]).then(function (r) {
         var o = r[0], m = r[1], host = $("dash-cards"); STATE.overview = o; host.innerHTML = "";
@@ -406,6 +435,73 @@ cat notes.txt | gink "summarise this"</code></pre>
     });
   }
 
+  // ---- agents
+  var AG = { id: "", reader: null };
+  function loadAgents() {
+    return Promise.all([api("/dev/interactions").then(json), api("/dev/environments").then(json)]).then(function (r) {
+      var runs = r[0].data || [], envs = r[1].data || [], sel = $("ag-env"), keep = sel.value;
+      sel.innerHTML = ""; sel.appendChild(new Option("New workspace", "remote"));
+      envs.forEach(function (e) { sel.appendChild(new Option(e.name + " (" + e.files.length + " files)", e.id)); });
+      sel.value = Array.prototype.some.call(sel.options, function (o) { return o.value === keep; }) ? keep : "remote";
+      var tb = $("ag-rows"); tb.innerHTML = ""; $("ag-empty").hidden = runs.length > 0;
+      runs.forEach(function (it) {
+        var tr = el("tr");
+        tr.appendChild(el("td", "", (it.input || "").slice(0, 90)));
+        var st = el("td"); st.appendChild(pill(it.status, it.status === "completed" ? "p-ok" : it.status === "running" ? "" : "p-bad")); tr.appendChild(st);
+        tr.appendChild(el("td", "", String((it.steps || []).length)));
+        tr.appendChild(el("td", "", (it.files_changed || []).join(", ") || "\u2014"));
+        var w = el("td"), a = el("a", "", "Open in Genie"); a.href = "/genie#" + it.environment; w.appendChild(a); tr.appendChild(w);
+        tr.appendChild(el("td", "", ago(it.created)));
+        tr.title = it.output_text || (it.error && it.error.message) || "";
+        tb.appendChild(tr);
+      });
+    });
+  }
+  function agStep(st) {
+    var li = el("li", "", (st.tool || "step") + (st.path ? " " + st.path : st.query ? " \u201c" + st.query + "\u201d" : ""));
+    $("ag-steps").appendChild(li);
+  }
+  function runAgent() {
+    var input = $("ag-input").value.trim(); if (!input) { $("ag-err").textContent = "Write a task first."; return; }
+    var tools = []; if ($("ag-files").checked) tools.push("files"); if ($("ag-web").checked) tools.push("web_search");
+    if (!tools.length) { $("ag-err").textContent = "Choose at least one: files or web search."; return; }
+    $("ag-err").textContent = ""; $("ag-live").hidden = false; $("ag-steps").innerHTML = ""; $("ag-out").textContent = "";
+    $("ag-files-note").textContent = ""; $("ag-status").textContent = "\u00b7 starting\u2026";
+    $("ag-run").disabled = true; $("ag-stop").hidden = false;
+    api("/dev/interactions", { body: { input: input, environment: $("ag-env").value, tools: tools, stream: true } }).then(function (r) {
+      if (!r.ok) return json(r);
+      var reader = r.body.getReader(), dec = new TextDecoder(), buf = "", type = "";
+      AG.reader = reader;
+      function pump() {
+        return reader.read().then(function (x) {
+          if (x.done) return;
+          buf += dec.decode(x.value, { stream: true });
+          var nl;
+          while ((nl = buf.indexOf("\n")) >= 0) {
+            var line = buf.slice(0, nl); buf = buf.slice(nl + 1);
+            if (line.indexOf("event: ") === 0) type = line.slice(7).trim();
+            else if (line.indexOf("data: ") === 0) {
+              var d = JSON.parse(line.slice(6));
+              if (type === "step") agStep(d);
+              else if (type === "status") { AG.id = d.id; $("ag-status").textContent = "\u00b7 " + d.status; }
+              else if (type === "done") {
+                $("ag-status").textContent = "\u00b7 " + d.status;
+                $("ag-out").textContent = d.output_text || (d.error && d.error.message) || "";
+                var link = "/genie#" + d.environment;
+                $("ag-files-note").innerHTML = "";
+                $("ag-files-note").appendChild(document.createTextNode((d.files_changed || []).length ? "Files changed: " + d.files_changed.join(", ") + " \u00b7 " : ""));
+                var a = el("a", "", "Open the workspace in Gink Genie"); a.href = link; $("ag-files-note").appendChild(a);
+              }
+            }
+          }
+          return pump();
+        });
+      }
+      return pump();
+    }).catch(function (e) { if (e.message !== "signed out") $("ag-err").textContent = e.message; })
+      .then(function () { $("ag-run").disabled = false; $("ag-stop").hidden = true; AG.reader = null; loadAgents(); });
+  }
+
   function show(view) {
     if (!VIEWS[view]) view = "dashboard";
     STATE.view = view;
@@ -493,6 +589,11 @@ cat notes.txt | gink "summarise this"</code></pre>
     ].map(function (x) { return JSON.stringify(x); }).join("\n");
   };
   $("bat-file").onchange = function () { var f = this.files[0]; if (!f) return; f.text().then(function (t) { $("bat-input").value = t; }); };
+  $("ag-run").onclick = runAgent;
+  $("ag-stop").onclick = function () {
+    if (AG.id) api("/dev/interactions/" + encodeURIComponent(AG.id) + "/cancel", { body: {} }).catch(function () {});
+    $("ag-status").textContent = "\u00b7 stopping after this step\u2026";
+  };
   $("bat-run").onclick = function () {
     $("bat-err").textContent = ""; var lines = $("bat-input").value.split("\n").map(function (l) { return l.trim(); }).filter(Boolean), reqs = [];
     try { lines.forEach(function (l, i) { try { reqs.push(JSON.parse(l)); } catch (e) { throw new Error("Line " + (i + 1) + " isn't valid JSON."); } }); }

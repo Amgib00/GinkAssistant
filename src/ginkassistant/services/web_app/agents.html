@@ -147,18 +147,20 @@ print("Files:", interaction.files_changed, "in", interaction.environment)
 for event in client.interactions.create(input="Add this year's numbers",
                                         previous_interaction_id=interaction.id, stream=True):
     print(event.type, event.data)</pre>
-        <pre data-t="js" hidden>const GINK = "https://gink-server.onrender.com/v1";
-const res = await fetch(`${GINK}/interactions`, {
-  method: "POST",
-  headers: { Authorization: `Bearer ${process.env.GINK_API_KEY}`, "Content-Type": "application/json" },
-  body: JSON.stringify({
-    agent: "gink-agent",
-    input: "Plot solar energy growth in Senegal since 2015 and write slides in HTML",
-    environment: "remote",
-  }),
+        <pre data-t="js" hidden>// npm install gink-ai      (keep the key on your server, never in a web page)
+import { Gink } from "gink-ai";
+
+const gink = new Gink();                    // GINK_API_KEY
+const it = await gink.interactions.create({
+  input: "Plot solar energy growth in Senegal since 2015 and write slides in HTML",
+  environment: "remote",
 });
-const interaction = await res.json();
-console.log(interaction.output_text, interaction.files_changed);</pre>
+console.log(it.output_text, it.files_changed);
+
+for await (const event of gink.interactions.stream({ input: "Add this year's numbers",
+                                                     previous_interaction_id: it.id })) {
+  console.log(event.type, event.data);     // step, status, done
+}</pre>
         <pre data-t="curl" hidden>curl https://gink-server.onrender.com/v1/interactions \
   -H "Authorization: Bearer $GINK_API_KEY" \
   -H "Content-Type: application/json" \

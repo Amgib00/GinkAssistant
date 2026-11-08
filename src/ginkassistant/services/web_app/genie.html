@@ -418,7 +418,9 @@
       S.projects.forEach(function (p) { var o = el("option", "", p.name + " (" + p.files + (p.files === 1 ? " file)" : " files)")); o.value = p.id; pick.appendChild(o); });
       pick.hidden = !S.projects.length; renderSide();
       if (listOnly && S.project) { pick.value = S.project.id; return; }     // just refresh the list: keep the chat
-      var want = selectId || (S.project && S.project.id) || (S.projects[0] && S.projects[0].id);
+      var linked = (/^#(gp_[a-f0-9]+)$/.exec(location.hash) || [])[1];      // /genie#gp_... (console, API docs)
+      if (linked && !S.projects.some(function (p) { return p.id === linked; })) linked = "";
+      var want = selectId || linked || (S.project && S.project.id) || (S.projects[0] && S.projects[0].id);
       if (want) { pick.value = want; return openProject(want); }
       showStart();
     });

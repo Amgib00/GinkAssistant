@@ -216,3 +216,26 @@ def test_cli_env_commands(monkeypatch, tmp_path, capsys):
     assert m.main(["env", "push", "gp_1", str(src)]) == 0
     assert ("PUT", "/environments/gp_1/files/sub/x.py", b"print(1)") in calls
     assert not any(".git" in c[1] for c in calls)
+
+
+def test_console_endpoints(api, genie_srv):
+    b, c, k = api
+    _b, _c, session = genie_srv
+    SCRIPT[:] = [{"content": "", "tool_calls": [call("write_file", path="x.md", content="x")]}, {"content": "Done from the console."}]
+    it = c.post("/dev/interactions", headers=session, json={"input": "Write x.md", "environment": "remote"}).json()
+    assert it["status"] == "completed" and it["output_text"] == "Done from the console."
+    runs = c.get("/dev/interactions", headers=session).json()["data"]
+    assert runs[0]["id"] == it["id"] and runs[0]["via"] == "console" and runs[0]["input"] == "Write x.md"
+    assert c.get(f"/dev/interactions/{it['id']}", headers=session).json()["input"] == "Write x.md"
+    envs = c.get("/dev/environments", headers=session).json()["data"]
+    assert any(e["id"] == it["environment"] for e in envs)
+    assert c.get("/dev/interactions").status_code == 401                                   # signed in only
+
+
+def test_console_page_and_genie_links():
+    root = os.path.join(os.path.dirname(__file__), "..", "src", "ginkassistant", "services", "web_app")
+    console = open(os.path.join(root, "console.html"), encoding="utf-8").read()
+    genie = open(os.path.join(root, "genie.html"), encoding="utf-8").read()
+    assert 'data-v="agents"' in console and 'data-view="agents"' in console and "agents: function () { return loadAgents(); }" in console
+    assert "stream: true" in console and '"/genie#" + it.environment' in console
+    assert "/^#(gp_[a-f0-9]+)$/.exec(location.hash)" in genie                       # /genie#gp_... opens that project

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.125 (November 2026)
+
+- Developer console > Agents: give Gink's agent a task right in the browser (no API key needed),
+  watch each step live, read the answer, see recent runs -- from the console or your API keys -- and
+  open any workspace in Gink Genie with one click
+
+## 0.1.124 (November 2026)
+
+- The Gink SDK for JavaScript and TypeScript (npm: gink-ai): `import { Gink } from "gink-ai"`, then
+  gink.interactions.create / stream (live steps) for managed agents, gink.environments for the
+  workspaces, gink.chat / search / image -- with full TypeScript types. Works in Node 18+, Deno and Bun
+
 ## 0.1.123 (November 2026)
 
 - The Gink Python SDK (in gink-ai 0.3.0): `from gink import Client`, then

@@ -2093,3 +2093,19 @@ New services/live_info.py (all free, no API keys):
 - cli/pyproject: version 0.3.0, packages gink_cli + gink (gink_cli.__version__ and gink.__version__ must match: test).
   tests/test_python_sdk.py runs it against the real app via TestClient (an httpx.Client) as `http`.
   Publishing to PyPI: the existing PyPI workflow (pypa/gh-action-pypi-publish) when the owner runs it.
+
+## 0.1.124: JavaScript/TypeScript SDK (sdk/js, npm gink-ai 0.3.0)
+- index.js (fetch only; ESM): Gink({apiKey | GINK_API_KEY, baseURL | GINK_BASE_URL, fetch}), interactions.create/
+  stream (async iterator over the SSE body: {type, data})/get/cancel/wait, environments.create/list/get -> Environment
+  (upload, download -> Uint8Array, text, refresh, delete), chat/search/image/models, GinkAPIError(status, code).
+  index.d.ts checked with tsc 5.6 --strict (nodenext). Version moves with the Python SDK (test).
+- tests/test_js_sdk.py: real uvicorn server on port 8823 (Groq simulated), Node runs the SDK end to end.
+- .github/workflows/sdk-js.yml: manual npm publish via trusted publishing (id-token; no token stored), skipped if the
+  version is already on npm. publish_to_github.sh PUBLISH list now includes `sdk` (it wasn't published before).
+
+## 0.1.125: console Agents page
+- api_interaction -> _interaction_start(email, key_id, data) shared with POST /dev/interactions (session auth,
+  key_id NULL = "console"). GET /dev/interactions (50 newest, input[:300], via), /dev/interactions/{id}, /cancel,
+  GET /dev/environments. console.html: Agents view (task, workspace picker, tools, live SSE steps via fetch reader,
+  answer, files changed, "Open in Genie"), recent runs table. genie.html: /genie#gp_... opens that project.
+- Checked in Chromium against a real local server (simulated AI): run -> live step -> answer -> recent runs row.

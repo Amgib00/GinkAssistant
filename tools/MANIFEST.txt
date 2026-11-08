@@ -11,6 +11,7 @@
 .github/workflows/macos.yml
 .github/workflows/pull-requests.yml
 .github/workflows/release.yml
+.github/workflows/sdk-js.yml
 .github/workflows/security.yml
 .github/workflows/tests.yml
 .github/workflows/website.yml
@@ -192,6 +193,10 @@ pyproject.toml
 render.yaml
 requirements-test.txt
 requirements.txt
+sdk/js/README.md
+sdk/js/index.d.ts
+sdk/js/index.js
+sdk/js/package.json
 src/ginkassistant/__init__.py
 src/ginkassistant/__main__.py
 src/ginkassistant/app.py
@@ -338,6 +343,7 @@ tests/test_ginkgenie_app.py
 tests/test_grow_dataset.py
 tests/test_hey_gink.py
 tests/test_ios_startup.py
+tests/test_js_sdk.py
 tests/test_languages_auto.py
 tests/test_live_answers.py
 tests/test_live_info.py

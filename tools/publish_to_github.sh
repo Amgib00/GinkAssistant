@@ -20,7 +20,7 @@ REPO_SLUG=$(echo "$REPO" | sed -E 's#^https://github.com/##; s#\.git$##')
 BRANCH="${GINK_BRANCH:-main}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PUBLISH=(.github .gitignore .env.example README.md SECURITY.md INTEGRATION.md LICENSE CHANGELOG.md AGENTS.md openspec cli pyproject.toml
-         requirements.txt requirements-test.txt render.yaml src tests deploy tools icons website webapp)
+         requirements.txt requirements-test.txt render.yaml src tests deploy tools icons website webapp sdk)
 KEEP_FROM_REPO=(LICENSE .github/ISSUE_TEMPLATE)      # kept as they are on GitHub
 OWNER_DATA=(tools/gink_dataset/paraphrases.csv tools/gink_dataset/translations.csv
             tools/gink_dataset/examples_general.csv tools/gink_dataset/languages)   # yours: from this folder

@@ -1,0 +1,33 @@
+# Publishes the JavaScript SDK (sdk/js) to npm, so anyone can: npm install gink-ai
+# One-time setup on npmjs.com: create the package's "Trusted Publisher" -> GitHub Actions, organisation/user
+# Amgib00, repository GinkAssistant, workflow sdk-js.yml (no token to store: npm trusts this workflow).
+# Run it: gh workflow run sdk-js.yml -R Amgib00/GinkAssistant
+name: JavaScript SDK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write          # npm trusted publishing (and provenance)
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: sdk/js
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+      - name: Check it loads
+        run: node --check index.js && node -e "import('./index.js').then(m => { if (!m.Gink) process.exit(1) })"
+      - name: Publish (skipped if this version is already on npm)
+        run: |
+          V=$(node -p "require('./package.json').version")
+          if npm view "gink-ai@$V" version >/dev/null 2>&1; then echo "gink-ai $V is already on npm."; exit 0; fi
+          npm install -g npm@latest
+          npm publish --access public --provenance
