@@ -2261,3 +2261,9 @@ New services/live_info.py (all free, no API keys):
   (OIDC). Now NPM_TOKEN is read separately and NODE_AUTH_TOKEN exported only when it's non-empty; npm/node versions are
   printed; a failure names the Trusted Publisher settings to check. `npm stage publish` is valid (npm v11 docs).
   If it still fails: `gh run view --log-failed -R Amgib00/GinkAssistant <run id>` and paste the error lines.
+
+## 0.1.144: sdk-js E401 (owner's log, run after 0.1.143)
+- npm 12.2.2 tried OIDC (trusted publishing), it failed silently, then fell back to setup-node's .npmrc
+  (_authToken=${NODE_AUTH_TOKEN} -> placeholder) -> "E401 token seems to be invalid". Now: setup-node without
+  registry-url; ~/.npmrc written only for a real NPM_TOKEN, else removed; `npm stage publish --loglevel verbose | tee`
+  and on failure grep the oidc/trusted/E4xx lines. Next failure shows the real OIDC reason.

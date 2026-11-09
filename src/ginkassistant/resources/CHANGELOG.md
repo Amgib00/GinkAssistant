@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.144 (November 2026)
+
+- For the owner: the JavaScript SDK workflow no longer falls back to a placeholder token (which showed as
+  "E401 token invalid"), and if npm's trusted publishing fails it prints npm's own reason
+
 ## 0.1.143 (November 2026)
 
 - For the owner: the JavaScript SDK's npm workflow no longer blocks npm's trusted publishing (an empty

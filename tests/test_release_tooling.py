@@ -155,7 +155,8 @@ def test_npm_publishing_is_staged_for_the_owner_to_approve():
     assert "npm stage publish --access public" in text and "Staged Packages" in text and "npm install -g npm@latest" in text
     assert "already on npm" in text and "depends on nothing" in text
     assert "NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}" not in text                  # an empty token blocks trusted publishing
-    assert 'if [ -n "$NPM_TOKEN" ]; then export NODE_AUTH_TOKEN="$NPM_TOKEN"; fi' in text
+    assert 'registry-url' not in text.split("steps:", 1)[1].split("run:", 1)[0]        # no placeholder token to fall back to
+    assert 'rm -f "$HOME/.npmrc"' in text and "--loglevel verbose" in text and "grep -iE \"oidc" in text
 
 
 def test_js_sdk_package_is_clean():

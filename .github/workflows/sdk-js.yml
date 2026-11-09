@@ -27,8 +27,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: "22"
-          registry-url: "https://registry.npmjs.org"
+          node-version: "22"            # (no registry setting here: its .npmrc would add a placeholder token npm falls back to)
       - name: Check it loads, and that it depends on nothing (not even itself)
         run: |
           node --check index.js && node -e "import('./index.js').then(m => { if (!m.Gink) process.exit(1) })"
@@ -37,6 +36,7 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
+          set -o pipefail
           V=$(node -p "require('./package.json').version")
           if npm view "gink-ai@$V" version >/dev/null 2>&1; then
             echo "::notice::gink-ai $V is already on npm. To publish changes, bump the version in sdk/js/package.json first."
@@ -44,11 +44,19 @@ jobs:
           fi
           npm install -g npm@latest      # staged publishing and trusted publishing need a recent npm (11.15+)
           echo "npm $(npm --version), node $(node --version)"
-          # Trusted publishing (OIDC) when there's no token. Only a REAL token may be set: an empty NODE_AUTH_TOKEN
-          # (what "${{ secrets.NPM_TOKEN }}" becomes once the secret is deleted) stops npm from using trusted publishing.
-          if [ -n "$NPM_TOKEN" ]; then export NODE_AUTH_TOKEN="$NPM_TOKEN"; fi
-          if ! npm stage publish --access public; then
-            echo "::error::Staging failed. If it says 404/ENEEDAUTH/403: check npmjs.com -> gink-ai -> Settings -> Trusted Publisher is GitHub Actions, Amgib00 / GinkAssistant / sdk-js.yml with NO environment name."
+          # Trusted publishing (OIDC) unless a REAL token is given. A token line is written ONLY for a real token:
+          # otherwise npm falls back to a placeholder and hides the trusted-publishing error behind "E401 token invalid".
+          if [ -n "$NPM_TOKEN" ]; then
+            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > "$HOME/.npmrc"
+            echo "Using the NPM_TOKEN secret."
+          else
+            rm -f "$HOME/.npmrc"
+            echo "Using trusted publishing (no token)."
+          fi
+          if ! npm stage publish --access public --loglevel verbose 2>&1 | tee stage.log; then
+            echo "---- what npm said about trusted publishing (OIDC) ----"
+            grep -iE "oidc|trusted|id-token|provenance|E4[0-9][0-9]|EOTP|ENEEDAUTH" stage.log | grep -v "^npm verb title" | tail -25 || true
+            echo "::error::Staging failed. Check npmjs.com -> gink-ai -> Settings -> Trusted Publisher: GitHub Actions, organization or user Amgib00, repository GinkAssistant, workflow filename sdk-js.yml, environment EMPTY -- and that you clicked Set up connection."
             exit 1
           fi
           echo "::notice::gink-ai $V is staged. Approve it: npmjs.com -> Staged Packages -> gink-ai $V -> Approve (2FA with your phone)."
