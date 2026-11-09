@@ -254,6 +254,7 @@
   <button class="ghost hb ic" id="history" hidden title="Version history" aria-label="Version history"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg></button>
   <button class="ghost hb ic" id="share" hidden title="Share" aria-label="Share"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></button>
   <button class="ghost hb ic" id="github" hidden title="GitHub" aria-label="GitHub"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.08 0 4.41-2.69 5.39-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg></button>
+  <button class="ghost hb ic" id="schedule" hidden title="Run on a schedule" aria-label="Run on a schedule"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg></button>
   <button class="ghost hb dm" id="rename" hidden>Rename</button>
   <button class="ghost hb dm" id="duplicate" hidden>Duplicate</button>
   <button class="danger hb dm" id="del" hidden>Delete</button>
@@ -363,6 +364,21 @@
   <p class="result" id="share-result" aria-live="polite"></p>
   <div class="row"><button class="danger" id="share-stop">Stop sharing</button><div class="grow"></div>
     <button class="ghost" id="share-open">Open</button><button class="ghost" id="share-close">Close</button><button id="share-copy">Copy link</button></div>
+</dialog>
+
+<dialog id="schdlg">
+  <h2>Run on a schedule</h2>
+  <p class="note">Genie&rsquo;s agent does this task in this project on its own &mdash; every hour, day or week at your time. What it did appears here in the conversation.</p>
+  <label for="sch-task">Task</label>
+  <textarea id="sch-task" rows="3" style="width:100%" placeholder="e.g. Update news.md with today&rsquo;s top three tech stories, with links"></textarea>
+  <div class="row" style="margin-top:8px">
+    <select id="sch-every" aria-label="How often"><option value="daily">Every day</option><option value="hourly">Every hour</option><option value="weekly">Every week</option></select>
+    <label>at <input type="time" id="sch-at" value="08:00"></label>
+    <label><input type="checkbox" id="sch-email"> Email me the result</label>
+    <div class="grow"></div><button id="sch-add">Schedule</button></div>
+  <ul id="sch-list" class="note" style="margin:12px 0 0;padding-left:18px"></ul>
+  <p class="result" id="sch-result" aria-live="polite"></p>
+  <div class="row"><div class="grow"></div><button class="ghost" id="sch-close">Close</button></div>
 </dialog>
 
 <dialog id="ghdlg">
@@ -488,14 +504,14 @@
   function showStart() {
     document.body.classList.add("m-start"); setTimeout(renderSide, 0);
     S.project = null; $("start").hidden = false; $("work").hidden = true;
-    ["preview", "download", "del", "github", "rename", "duplicate", "share", "history"].forEach(function (id) { $(id).hidden = true; });
+    ["preview", "download", "del", "github", "rename", "duplicate", "share", "history", "schedule"].forEach(function (id) { $(id).hidden = true; });
   }
   function openProject(id) {
     return api("/genie/projects/" + encodeURIComponent(id)).then(function (j) {
       S.project = j.project; S.files = j.files || []; S.path = ""; S.saved = ""; document.body.classList.remove("m-start");
       renderSide(); dview("chat");
       $("start").hidden = true; $("work").hidden = false;
-      ["preview", "download", "del", "github", "rename", "duplicate", "share", "history"].forEach(function (x) { $(x).hidden = false; });
+      ["preview", "download", "del", "github", "rename", "duplicate", "share", "history", "schedule"].forEach(function (x) { $(x).hidden = false; });
       $("msgs").innerHTML = ""; (S.log[id] || []).forEach(function (m) { draw(m); }); renderTree(); clearEditor();
       api("/genie/projects/" + encodeURIComponent(id) + "/chat").then(function (c) {      // the saved conversation
         if (!S.project || S.project.id !== id || !c.messages.length) return;
@@ -1225,6 +1241,38 @@
   }
   $("history").onclick = function () { if (S.project) openHistory(); };
   $("hist-close").onclick = function () { $("histdlg").close(); };
+  // ---- Run on a schedule (the developer platform's scheduled agents, in this project: /dev/schedules)
+  function loadProjectSchedules() {
+    return api("/dev/schedules").then(function (j) {
+      var mine = (j.data || []).filter(function (x) { return S.project && x.environment === S.project.id; });
+      var ul = $("sch-list"); ul.innerHTML = "";
+      if (!mine.length) { ul.appendChild(el("li", "", "Nothing scheduled for this project yet.")); return; }
+      mine.forEach(function (x) {
+        var li = el("li", "", (x.every === "hourly" ? "Every hour at :" + x.at.slice(3) : (x.every === "weekly" ? "Every week at " : "Every day at ") + x.at) +
+                    " (" + x.timezone + ")" + (x.notify_email ? " \u00b7 emails you" : "") + (x.enabled ? "" : " \u00b7 paused") + " \u2014 " + x.input.slice(0, 70) + " ");
+        [[x.enabled ? "Pause" : "Resume", "PATCH", "", { enabled: !x.enabled }], ["Run now", "POST", "/run", {}], ["Delete", "DELETE", "", undefined]].forEach(function (b) {
+          var btn = el("button", "ghost", b[0]); btn.style.marginLeft = "6px";
+          btn.onclick = function () {
+            api("/dev/schedules/" + encodeURIComponent(x.id) + b[2], { method: b[1], body: b[3] }).then(function () {
+              $("sch-result").textContent = b[0] === "Run now" ? "Started \u2014 it shows up in the conversation when it\u2019s done." : "";
+              return loadProjectSchedules();
+            }).catch(function (e) { $("sch-result").textContent = e.message; });
+          };
+          li.appendChild(btn);
+        });
+        ul.appendChild(li);
+      });
+    }).catch(function (e) { $("sch-result").textContent = e.message; });
+  }
+  $("schedule").onclick = function () { $("sch-result").textContent = ""; $("schdlg").showModal(); loadProjectSchedules(); };
+  $("sch-close").onclick = function () { $("schdlg").close(); };
+  $("sch-add").onclick = function () {
+    var task = $("sch-task").value.trim(); if (!task) { $("sch-result").textContent = "Write the task first."; return; }
+    api("/dev/schedules", { body: { input: task, every: $("sch-every").value, at: $("sch-at").value || "08:00", environment: S.project.id,
+                                    notify_email: $("sch-email").checked } })
+      .then(function () { $("sch-task").value = ""; $("sch-result").textContent = "Scheduled."; return loadProjectSchedules(); })
+      .catch(function (e) { $("sch-result").textContent = e.message; });
+  };
   $("share").onclick = function () { $("share-link").value = S.project.preview_url; $("share-result").textContent = ""; $("sharedlg").showModal(); };
   $("share-close").onclick = function () { $("sharedlg").close(); };
   $("share-open").onclick = function () { openOutside($("share-link").value); };
@@ -1268,6 +1316,27 @@
   window.addEventListener("beforeunload", function (e) { if (dirty()) { e.preventDefault(); e.returnValue = ""; } });
   loadProjects().catch(function () {});
 })();
+
+  // "We've updated our privacy policy and terms" -- once per change (GET /info; remembered in this browser)
+  (function policies() {
+    fetch("/info").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (!j || !j.policies_updated) return;
+      var seen = ""; try { seen = localStorage.getItem("gink_policy_seen") || ""; } catch (e) {}
+      if (j.policies_updated <= seen) return;
+      var bar = document.createElement("div"); bar.id = "policy-note"; bar.setAttribute("role", "status");
+      bar.style.cssText = "position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:80;max-width:min(560px,92vw);background:var(--card,#fff);color:inherit;border:1px solid rgba(127,127,127,.35);border-radius:12px;padding:10px 14px;box-shadow:0 8px 28px rgba(0,0,0,.2);font-size:14px;display:flex;gap:10px;align-items:center";
+      var t = document.createElement("span"); t.style.flex = "1";
+      t.appendChild(document.createTextNode("We\u2019ve updated our "));
+      [["privacy policy", j.privacy_url], [" and ", ""], ["terms", j.terms_url]].forEach(function (x) {
+        if (!x[1]) { t.appendChild(document.createTextNode(x[0])); return; }
+        var a = document.createElement("a"); a.textContent = x[0]; a.href = x[1]; a.target = "_blank"; a.rel = "noopener"; t.appendChild(a);
+      });
+      t.appendChild(document.createTextNode("."));
+      var ok = document.createElement("button"); ok.textContent = "OK";
+      ok.onclick = function () { bar.remove(); try { localStorage.setItem("gink_policy_seen", j.policies_updated); } catch (e) {} };
+      bar.appendChild(t); bar.appendChild(ok); document.body.appendChild(bar);
+    }).catch(function () {});
+  })();
 </script>
 </body>
 </html>

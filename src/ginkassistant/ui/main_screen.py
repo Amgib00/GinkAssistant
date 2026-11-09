@@ -1102,6 +1102,8 @@ def build_main_screen(app: toga.App, email: str):
             await web_chat.set_attachments([a.chip() for a in pending_attachments])
         elif kind == "play_video" and isinstance(value, dict) and value.get("id"):
             viewer.show(watch_url(value["id"]), value.get("title") or "Video")
+        elif kind == "policy_seen" and value:          # the policy notice's OK: don't show it again for this change
+            prefs.save(app, policy_seen=str(value)[:20])
         elif kind == "open_url" and value:
             await open_link(str(value))
         elif kind == "agent_answer" and isinstance(value, dict):          # Allow / Don't allow
@@ -1736,6 +1738,10 @@ def build_main_screen(app: toga.App, email: str):
         om = info.get("offline_model") if isinstance(info, dict) else None
         if isinstance(om, dict):
             local_llm.configure(str(om.get("url") or ""), str(om.get("name") or ""))
+        # the policies changed since this device last said OK: a short notice, once (terms + privacy policy promise it)
+        updated = str((info or {}).get("policies_updated") or "") if isinstance(info, dict) else ""
+        if updated and updated > str(prefs.load(app).get("policy_seen") or ""):
+            await web_chat.policy_notice(updated, str(info.get("privacy_url") or ""), str(info.get("terms_url") or ""))
 
     async def answer_birth_year(year: str):
         from ..services.api_client import ApiClient, ApiError

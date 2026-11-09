@@ -813,6 +813,28 @@
       pushSettings({ connected: j.services || [] }, { connected_configured: j.configured });
     }).catch(function () { pushSettings({ connected: [] }, { connected_error: "Connected apps aren\u2019t available right now." }); });
   }
+  // The policies changed since this browser said OK: the page's notice, once per change
+  function checkPolicies() {
+    fetch("/info").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (!j || !j.policies_updated) return;
+      var seen = ""; try { seen = LS.getItem("gink_policy_seen") || ""; } catch (e) {}
+      if (j.policies_updated > seen && typeof policyNotice === "function") policyNotice(j.policies_updated, j.privacy_url, j.terms_url);
+    }).catch(function () {});
+  }
+  // Settings > Scheduled tasks (server: /dev/schedules)
+  function loadSchedules() {
+    api("/dev/schedules").then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (j) { pushSettings({}, { schedules: j.data || [] }); })
+      .catch(function () { pushSettings({}, { schedules_error: "Scheduled tasks aren\u2019t available right now." }); });
+  }
+  function schCall(method, path, body, done) {
+    return fetch(path, { method: method, headers: placeHeaders({ Authorization: "Bearer " + W.token, "Content-Type": "application/json" }),
+                         body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error(j.detail || "That didn\u2019t work. Please try again.");
+        if (done) settingsToast(done); loadSchedules(); }); })
+      .catch(function (err) { settingsToast(err.message); });
+  }
   // Settings > Workspace (server: /org)
   function loadOrg() {
     api("/org").then(function (r) { return r.ok ? r.json() : Promise.reject(); })
@@ -981,6 +1003,7 @@
     model: function (v, fromSync) { W.model = String(v || ""); LS.setItem("gink_model", W.model); setModels(W.models, W.model);
                                     if (!fromSync && W.model) queuePrefs("model", W.model); },
     feedback: function (v) { if (v && typeof v === "object") api("/feedback", Object.assign({}, v, { model: W.model })).catch(function () {}); },
+    policy_seen: function (d) { try { LS.setItem("gink_policy_seen", String(d || "").slice(0, 20)); } catch (e) {} },
     open_url: function (u) {
       u = String(u || "");
       if (/^https?:\/\//i.test(u)) window.open(u, "_blank", "noopener");
@@ -1008,7 +1031,27 @@
       var name = v && v.name;
       if (name === "refresh") return (v.value === "account" ? loadDevices() : v.value === "connected" ? loadConnected()
                                       : v.value === "privacy" ? loadLockdown() : v.value === "family" ? loadFamily()
-                                      : v.value === "workspace" ? loadOrg() : pushSettings());
+                                      : v.value === "workspace" ? loadOrg() : v.value === "schedules" ? loadSchedules() : pushSettings());
+      if (name === "export_server") {                  // everything on the server, as a ZIP
+        settingsToast("Preparing your data\u2026");
+        return fetch("/account/export.zip", { headers: placeHeaders({ Authorization: "Bearer " + W.token }) }).then(function (r) {
+          if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.detail || "Couldn\u2019t download your data."); });
+          return r.blob().then(function (bl) {
+            var a = document.createElement("a"); a.href = URL.createObjectURL(bl); a.download = "gink-data.zip";
+            document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+            settingsToast("Your data is downloading.");
+          });
+        }).catch(function (err) { settingsToast(err.message); });
+      }
+      if (name === "sch_add") {
+        var sv = {}; try { sv = JSON.parse(v.value || "{}"); } catch (e) { return; }
+        if (!String(sv.input || "").trim()) return settingsToast("Write the task first.");
+        return schCall("POST", "/dev/schedules", { input: sv.input.trim(), every: sv.every || "daily", at: sv.at || "08:00",
+                                                   notify_email: !!sv.notify_email }, "Scheduled.");
+      }
+      if (name === "sch_pause") return schCall("PATCH", "/dev/schedules/" + encodeURIComponent(v.value), { enabled: false }, "Paused.");
+      if (name === "sch_resume") return schCall("PATCH", "/dev/schedules/" + encodeURIComponent(v.value), { enabled: true }, "Resumed.");
+      if (name === "sch_delete") return schCall("DELETE", "/dev/schedules/" + encodeURIComponent(v.value), null, "Deleted.");
       if (name === "org_create") return orgCall("POST", "/org", { name: String(v.value || "").trim() }, "Workspace created.");
       if (name === "org_invite") return orgCall("POST", "/org/invite", { email: String(v.value || "").trim() }, "Invitation sent.");
       if (name === "org_accept") return orgCall("POST", "/org/respond", { accept: true }, "You joined the workspace.");
@@ -1266,6 +1309,7 @@
     }).catch(function () {});
     newChat(); sync();
     checkFamily();
+    checkPolicies();                                 // "we've updated our privacy policy and terms", once per change
     clearInterval(W.timer); W.timer = setInterval(sync, 60000);
   }
   document.addEventListener("DOMContentLoaded", function () {

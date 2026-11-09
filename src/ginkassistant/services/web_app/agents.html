@@ -198,6 +198,8 @@ for await (const event of gink.interactions.stream({ input: "Add this year's num
         "at": "08:00", "timezone", "environment", "tools"}</code> &mdash; each run is an ordinary interaction in that
         workspace. <code>GET /v1/schedules</code>, <code>PATCH /v1/schedules/{id}</code> <code>{"enabled"}</code>,
         <code>POST /v1/schedules/{id}/run</code>, <code>DELETE /v1/schedules/{id}</code>.</td></tr>
+      <tr><td><code>"notify_email": true</code></td><td>On interactions and schedules: when a run ends, Gink emails the account
+        the task, the answer, the files changed and a link to the workspace.</td></tr>
       <tr><td><code>"webhook_url"</code></td><td>On interactions and schedules: when a run ends, Gink POSTs
         <code>{"type": "interaction.completed", "data": &hellip;}</code> there (https, public addresses only), signed in the
         <code>Gink-Signature</code> header with your secret (<code>GET /v1/webhooks/secret</code>). Check it with the SDKs:
@@ -214,6 +216,8 @@ for await (const event of gink.interactions.stream({ input: "Add this year's num
     <p class="sub">In the terminal: <code>gink agent "task"</code> (steps appear live), and <code>gink env list | new |
       files | pull | push | rm</code> for the workspaces. Each workspace is also a Gink Genie project: what the agent did
       shows up in its conversation there.</p>
+    <p class="sub">Up to 3 runs can go at once per account (more are refused with <code>429 too_many_running</code>; a
+      scheduled run that finds you busy tries again 5 minutes later).</p>
     <p class="sub">Good to know: an interaction counts as one message toward your daily allowance.
       Environments are Gink Genie projects (same limits). The agent doesn&rsquo;t run code on the server &mdash; it writes
       the code and tells you how to run it. Age, parental-control and workspace rules apply, as everywhere in Gink.</p>

@@ -10,6 +10,7 @@ gink -- Gink in your terminal (the Gink Developer API, OpenAI-compatible).
     gink env list | new NAME | files ID | pull ID [DIR] | push ID DIR | rm ID
     gink schedule add "task" --every daily --at 08:00 [--env ID] | list | run ID | pause ID | resume ID | rm ID
                                     scheduled agents (the time is your computer's time zone)
+    gink export [FILE]              everything Gink's server keeps for you, as a ZIP
     gink webhook secret             the secret Gink signs webhooks with (schedule add --webhook URL)
     gink ideas                      ready-made image looks: gink --image "my dog" --idea statue --photo dog.jpg
                                     the agents' workspaces (the same projects as Gink Genie)
@@ -294,10 +295,13 @@ def schedule_command(key: str, base: str, args: list) -> int:
         ap.add_argument("--at", default="08:00", help="24-hour time, in your computer's time zone")
         ap.add_argument("--env", default="remote")
         ap.add_argument("--webhook", default="", help="https address Gink notifies after each run (signed)")
+        ap.add_argument("--email", action="store_true", help="email me the result of each run")
         b = ap.parse_args(args[1:])
         body = {"input": " ".join(b.task), "every": b.every, "at": b.at, "environment": b.env}
         if b.webhook:
             body["webhook_url"] = b.webhook
+        if b.email:
+            body["notify_email"] = True
         s = _env_call(key, base, "POST", "/schedules", json=body).json()
         print(f"{s['id']}  {s['every']} at {s['at']} ({s['timezone']})  next: {time.strftime('%a %d %b %H:%M', time.localtime(s['next_run']))}")
         print(f"Workspace: {s['environment']}  (see the results in Gink Genie, or: gink env files {s['environment']})")
@@ -492,6 +496,13 @@ def main(argv=None) -> int:
             for i in cat["ideas"]:
                 print(f"{i['id']:<11} {i['title']:<18} e.g. gink --image \"{i['example_subject']}\" --idea {i['id']}")
             print("styles: " + ", ".join(s["id"] for s in cat["styles"]))
+            return 0
+        if argv[:1] == ["export"]:                      # everything on the server, as a ZIP
+            out = argv[1] if len(argv) > 1 else f"gink-data-{time.strftime('%Y-%m-%d')}.zip"
+            data = _env_call(key, base, "GET", "/account/export.zip").content
+            with open(out, "wb") as f:
+                f.write(data)
+            print(f"Saved {out} ({len(data) // 1024} KB)")
             return 0
         if argv[:2] == ["webhook", "secret"]:           # the secret webhooks are signed with
             print(_env_call(key, base, "GET", "/webhooks/secret").json()["secret"])

@@ -1,5 +1,53 @@
 # Changelog
 
+## 0.1.141 (November 2026)
+
+- When the privacy policy or terms change in an important way, Gink now says so once -- a short notice
+  with both links in the apps, the web app, Gink Genie and the developer console -- as the policies promise
+
+## 0.1.140 (November 2026)
+
+- The terms of use cover today's Gink: Gink isn't medical advice (and healthcare workspaces must not hold
+  patient data); who is responsible in a workspace; rules for developers using the API, agents, scheduled
+  tasks and webhooks (keep keys secret, fair-use limits); and what sharing to "Help improve Gink" allows
+
+## 0.1.139 (November 2026)
+
+- The privacy policy now describes everything Gink does today: error reports, the "Help improve Gink"
+  choice, workspaces and healthcare mode, parental controls, time zone and language, Gink Genie projects,
+  agents and scheduled tasks, result emails, webhooks, phone sign-in, photos in Media Studio, and the
+  complete download and deletion of your data
+
+## 0.1.138 (November 2026)
+
+- Deleting your account removes everything: a final sweep now clears any table that names the account,
+  including ones future features add. Only anonymised payment records (kept for tax) remain
+
+## 0.1.137 (November 2026)
+
+- Download everything on the server (Settings > Privacy): one ZIP with your Gink Genie projects as real
+  files, your websites, agent runs, scheduled tasks and every account record Gink keeps -- never your
+  password, keys or tokens. Also `gink export` and export_account() / exportAccount() in the SDKs (0.3.6)
+
+## 0.1.136 (November 2026)
+
+- Fair use for agents: an account can have up to 3 agent runs going at once (more are refused with a
+  clear message); a scheduled task that finds you busy simply tries again 5 minutes later
+
+## 0.1.135 (November 2026)
+
+- "Email me the result": a scheduled task can email you its answer, the files it changed and a link to
+  open them, as soon as it finishes -- even with Gink closed. In Settings > Scheduled tasks, Gink Genie's
+  "Run on a schedule", the developer console, the API (notify_email), both SDKs (gink-ai 0.3.5) and the
+  command line (--email)
+
+## 0.1.134 (November 2026)
+
+- Scheduled tasks for everyone: Settings > Scheduled tasks in the Gink apps and the web app ("every
+  morning at 8, write today's top news in news.md"), and "Run on a schedule" (the clock button) in any
+  Gink Genie project -- the results show up in the project's conversation. The same schedules as the
+  console, the API, the SDKs and the command line
+
 ## 0.1.133 (November 2026)
 
 - Webhooks for agents: give a run or a schedule a webhook address and Gink tells your server the moment

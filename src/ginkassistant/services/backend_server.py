@@ -2693,10 +2693,16 @@ async def ai_chat(request: Request):
 #                             and everything synced; payment records are kept
 #                             for accounting but no longer linked to the person.
 # =====================================================================
+POLICIES_UPDATED = "2026-11-09"            # bump with an important change to privacy.html / terms.html
+
+
 @app.get("/info")
 def app_info():
-    out = {"support_email": _env("GINK_SUPPORT_EMAIL"), "privacy_url": _env("GINK_PRIVACY_URL"),
-           "terms_url": _env("GINK_TERMS_URL"), "help_url": _env("GINK_HELP_URL")}
+    site = "https://amgib00.github.io/GinkAssistant/"
+    out = {"support_email": _env("GINK_SUPPORT_EMAIL"), "privacy_url": _env("GINK_PRIVACY_URL") or site + "privacy.html",
+           "terms_url": _env("GINK_TERMS_URL") or site + "terms.html", "help_url": _env("GINK_HELP_URL"),
+           # when the privacy policy / terms last changed in an important way: the apps show a notice once
+           "policies_updated": _env("GINK_POLICIES_UPDATED") or POLICIES_UPDATED}
     if _env("GINK_OFFLINE_MODEL_URL"):          # the desktop apps' offline model (services/local_llm.py)
         out["offline_model"] = {"url": _env("GINK_OFFLINE_MODEL_URL"), "name": _env("GINK_OFFLINE_MODEL_NAME") or "Gink offline model"}
     return out
@@ -2715,6 +2721,9 @@ def billing_history(request: Request):
     return {"payments": [{"reference": r[0], "plan": r[1], "method": r[2], "amount": r[3], "currency": r[4],
                           "status": r[5], "created": r[6],
                           "display": catalog.format_price(r[3], r[4])} for r in rows]}
+
+
+ACCOUNT_DELETE_KEEP = {"payments", "deleted_accounts", "orgs"}
 
 
 @app.post("/account/delete")
@@ -2776,6 +2785,16 @@ def delete_account(request: Request, data: dict = Body(...)):
             con.execute("DELETE FROM family_controls WHERE teen=?", (email,))
             con.execute("DELETE FROM family_links WHERE teen=? OR parent=?", (email, email))
             con.execute("DELETE FROM family_notices WHERE teen=? OR parent=?", (email, email))
+            # ...and every other table that names the account (new features add tables: none is forgotten).
+            # Kept on purpose: payments (anonymised just below: tax records), deleted_accounts (the marker),
+            # orgs (a workspace belongs to its members; the person's membership is gone above).
+            for (t,) in con.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall():
+                if t in ACCOUNT_DELETE_KEEP or t.startswith("sqlite_"):
+                    continue
+                cols = {r[1] for r in con.execute(f"PRAGMA table_info({t})").fetchall()}
+                for col in ("email", "owner", "teen", "parent"):
+                    if col in cols:
+                        con.execute(f"DELETE FROM {t} WHERE {col}=?", (email,))
             con.execute("UPDATE payments SET email=? WHERE email=?", (anon, email))
             con.execute("CREATE TABLE IF NOT EXISTS deleted_accounts (email TEXT PRIMARY KEY, at REAL NOT NULL)")
             con.execute("INSERT OR REPLACE INTO deleted_accounts (email, at) VALUES (?, ?)", (email, time.time()))
@@ -4694,6 +4713,7 @@ def org_delete(request: Request, data: dict = Body(default={})):
 # as calls); max_steps 1-30 (default 15). Age, parental, workspace and lockdown rules apply as everywhere.
 # =====================================================================
 AGENT_NAMES = {"gink-agent"}
+AGENT_CONCURRENT_MAX = int(os.environ.get("GINK_AGENT_CONCURRENT") or 3)   # runs going at once, per account
 AGENT_TABLE = ("CREATE TABLE IF NOT EXISTS agent_interactions (id TEXT PRIMARY KEY, email TEXT, key_id INTEGER, env_id TEXT, "
                "status TEXT, input TEXT, output_text TEXT, steps TEXT, messages TEXT, previous_id TEXT, error TEXT, "
                "created REAL, finished REAL)")
@@ -4836,6 +4856,8 @@ async def _agent_notify(iid: str) -> None:
         return
     it = _agent_public(row)
     url = it.pop("webhook_url", "")
+    if it.pop("notify_email", False) and it["status"] != "running":
+        await asyncio.get_running_loop().run_in_executor(None, _agent_email, row[1], dict(it))   # (sending blocks)
     if not url or it["status"] == "running":
         return
     try:
@@ -4853,6 +4875,25 @@ async def _agent_notify(iid: str) -> None:
         except Exception:
             pass
         await asyncio.sleep(2 ** attempt * 5)
+
+
+def _agent_email(email: str, it: dict) -> None:
+    """The result of a run, by email: what was asked, the answer, the files changed and a link to the workspace."""
+    if "@" not in email or email.endswith("@phone.gink.invalid"):
+        return                                              # phone-only accounts have no email address
+    base = (_env("GINK_PUBLIC_URL") or "https://gink-server.onrender.com").rstrip("/")
+    row = _agent_db(lambda con: con.execute("SELECT input FROM agent_interactions WHERE id=?", (it["id"],)).fetchone())
+    task = (row[0] if row else "")[:300]
+    good = it["status"] == "completed"
+    subject = ("Done: " if good else "Didn't finish: ") + (task[:70] + ("\u2026" if len(task) > 70 else ""))
+    lines = [f"Task: {task}", "", (it.get("output_text") or (it.get("error") or {}).get("message") or "")[:4000], ""]
+    if it.get("files_changed"):
+        lines.append("Files changed: " + ", ".join(it["files_changed"]))
+    lines += [f"Open the workspace: {base}/genie#{it['environment']}", "",
+              "You get this because \u201cEmail me the result\u201d is on for this task. Turn it off in Settings > Scheduled tasks."]
+    why = _send_email(email, subject, "\n".join(lines))
+    if why:
+        print(f"[Gink] agent result email not sent ({why})", flush=True)
 
 
 @app.get("/v1/webhooks/secret")
@@ -4886,8 +4927,11 @@ def _agent_db(fn):
         con = _db()
         try:
             con.execute(AGENT_TABLE)
-            if "webhook_url" not in {r[1] for r in con.execute("PRAGMA table_info(agent_interactions)").fetchall()}:
+            cols = {r[1] for r in con.execute("PRAGMA table_info(agent_interactions)").fetchall()}
+            if "webhook_url" not in cols:
                 con.execute("ALTER TABLE agent_interactions ADD COLUMN webhook_url TEXT")
+            if "notify_email" not in cols:
+                con.execute("ALTER TABLE agent_interactions ADD COLUMN notify_email INTEGER")
             out = fn(con)
             con.commit()
             return out
@@ -4897,7 +4941,7 @@ def _agent_db(fn):
 
 def _agent_public(row) -> dict:
     keys = ("id", "email", "key_id", "env_id", "status", "input", "output_text", "steps", "messages", "previous_id",
-            "error", "created", "finished", "webhook_url")
+            "error", "created", "finished", "webhook_url", "notify_email")
     r = dict(zip(keys, row))
     steps = _json.loads(r["steps"] or "[]")
     out = {"id": r["id"], "object": "interaction", "agent": "gink-agent", "status": r["status"], "environment": r["env_id"],
@@ -4909,6 +4953,8 @@ def _agent_public(row) -> dict:
         out["error"] = {"message": r["error"]}
     if r.get("webhook_url"):
         out["webhook_url"] = r["webhook_url"]
+    if r.get("notify_email"):
+        out["notify_email"] = True
     return out
 
 
@@ -5058,6 +5104,11 @@ async def _interaction_start(email: str, key_id, data: dict, place: dict = None)
             return _api_error(409, "That interaction is still running.", "still_running")
         history = _json.loads(row[8] or "[]")
         env_hint = env_hint or p["environment"]
+    running = _agent_db(lambda con: con.execute("SELECT COUNT(*) FROM agent_interactions WHERE email=? AND status='running'",
+                                                (email,)).fetchone()[0])
+    if running >= AGENT_CONCURRENT_MAX:
+        return _api_error(429, f"You already have {running} agent runs going (the most at once is {AGENT_CONCURRENT_MAX}). "
+                               "Wait for one to finish, or cancel one.", "too_many_running")
     try:
         env_id = _env_for(email, env_hint or "remote", text[:50])
     except HTTPException as exc:
@@ -5075,6 +5126,8 @@ async def _interaction_start(email: str, key_id, data: dict, place: dict = None)
                                       (iid, email, key_id, env_id, text[:20000], _json.dumps(messages), prev or None, time.time())))
     if webhook:
         _agent_db(lambda con: con.execute("UPDATE agent_interactions SET webhook_url=? WHERE id=?", (webhook, iid)))
+    if data.get("notify_email"):                    # email the result when it ends (Settings/Genie/console checkbox)
+        _agent_db(lambda con: con.execute("UPDATE agent_interactions SET notify_email=1 WHERE id=?", (iid,)))
     _agent_tasks[iid] = "running"
     _client_place.set(place or {})                     # the background task copies this context
     run = _agent_loop(iid, email, env_id, messages, tools, max_steps, org_text, bool(family))
@@ -5310,8 +5363,11 @@ def _sched_db(fn):
         con = _db()
         try:
             con.execute(SCHEDULE_TABLE)
-            if "webhook_url" not in {r[1] for r in con.execute("PRAGMA table_info(agent_schedules)").fetchall()}:
+            cols = {r[1] for r in con.execute("PRAGMA table_info(agent_schedules)").fetchall()}
+            if "webhook_url" not in cols:
                 con.execute("ALTER TABLE agent_schedules ADD COLUMN webhook_url TEXT")
+            if "notify_email" not in cols:
+                con.execute("ALTER TABLE agent_schedules ADD COLUMN notify_email INTEGER")
             out = fn(con)
             con.commit()
             return out
@@ -5342,13 +5398,14 @@ def _next_run(every: str, at: str, tz: str, after: float) -> float:
 
 def _sched_public(row) -> dict:
     keys = ("id", "email", "key_id", "env_id", "input", "every", "at", "tz", "tools", "enabled", "next_run", "last_run",
-            "last_interaction", "created", "webhook_url")
+            "last_interaction", "created", "webhook_url", "notify_email")
     r = dict(zip(keys, row))
     return {"id": r["id"], "object": "schedule", "input": r["input"], "every": r["every"], "at": r["at"], "timezone": r["tz"],
             "environment": r["env_id"], "tools": _json.loads(r["tools"] or "[]"), "enabled": bool(r["enabled"]),
             "next_run": int(r["next_run"] or 0), "last_run": int(r["last_run"]) if r["last_run"] else None,
             "last_interaction_id": r["last_interaction"], "created": int(r["created"] or 0),
-            **({"webhook_url": r["webhook_url"]} if r.get("webhook_url") else {})}
+            **({"webhook_url": r["webhook_url"]} if r.get("webhook_url") else {}),
+            "notify_email": bool(r.get("notify_email"))}
 
 
 def _sched_create(email: str, key_id, data: dict, place: dict) -> dict:
@@ -5380,10 +5437,10 @@ def _sched_create(email: str, key_id, data: dict, place: dict) -> dict:
     env_id = _env_for(email, data.get("environment") or "remote", text[:50])
     sid, now = "sch_" + secrets.token_hex(8), time.time()
     _sched_db(lambda con: con.execute("INSERT INTO agent_schedules (id, email, key_id, env_id, input, every, at, tz, tools, "
-                                      "enabled, next_run, last_run, last_interaction, created, webhook_url) "
-                                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, NULL, NULL, ?, ?)",
+                                      "enabled, next_run, last_run, last_interaction, created, webhook_url, notify_email) "
+                                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, NULL, NULL, ?, ?, ?)",
                                       (sid, email, key_id, env_id, text[:20000], every, at, tz, _json.dumps(tools),
-                                       _next_run(every, at, tz, now), now, webhook or None)))
+                                       _next_run(every, at, tz, now), now, webhook or None, int(bool(data.get("notify_email"))))))
     return _sched_public(_sched_db(lambda con: con.execute("SELECT * FROM agent_schedules WHERE id=?", (sid,)).fetchone()))
 
 
@@ -5405,11 +5462,16 @@ async def _sched_fire(row) -> dict:
     email, key_id = row[1], row[2]
     try:
         it = await _interaction_start(email, key_id, {"input": r["input"], "environment": r["environment"], "tools": r["tools"],
-                                                      "background": True, "webhook_url": r.get("webhook_url") or ""},
+                                                      "background": True, "webhook_url": r.get("webhook_url") or "",
+                                                      "notify_email": r.get("notify_email")},
                                       {"tz": r["timezone"]})
     except HTTPException as exc:
         it = {"id": None, "error": {"message": str(exc.detail)}}
     if not isinstance(it, dict):                               # an error response from _interaction_start
+        busy = getattr(it, "status_code", 0) == 429 and b"too_many_running" in bytes(getattr(it, "body", b""))
+        if busy:                                               # too many runs going: try again in 5 minutes
+            _sched_db(lambda con: con.execute("UPDATE agent_schedules SET next_run=? WHERE id=?", (time.time() + 300, r["id"])))
+            return {"id": None, "postponed": True}
         it = {"id": None}
     now = time.time()
     after = now + 6 * 86400 if r["every"] == "weekly" else now          # weekly: a week after this run
@@ -5453,6 +5515,8 @@ def _sched_routes(prefix: str, who):
     def patch(sid: str, request: Request, data: dict = Body(...)):
         email = who(request)[0]
         row = _sched_get_row(email, sid)
+        if "notify_email" in data:
+            _sched_db(lambda con: con.execute("UPDATE agent_schedules SET notify_email=? WHERE id=?", (int(bool(data["notify_email"])), sid)))
         if "enabled" in data:
             on = bool(data["enabled"])
             r = _sched_public(row)
@@ -5489,6 +5553,88 @@ def agents_page():
     """Managed agents: what they are, a quickstart and the reference (web_app/agents.html)."""
     with open(os.path.join(WEB_APP_DIR, "agents.html"), encoding="utf-8") as f:
         return HTMLResponse(f.read(), headers=_WEB_HEADERS)
+
+
+# ---- Download my data: EVERYTHING the server keeps about an account, as one ZIP (privacy laws give people this
+# right). Every table with an email/owner column (secrets left out: password hashes, tokens, keys, 2FA, passkeys,
+# sessions), plus readable copies: Genie projects as real files, websites as .html, agent runs and schedules.
+#   GET /account/export.zip (signed in: Settings)   GET /v1/account/export.zip (API key: CLI, SDKs)
+EXPORT_SKIP_TABLES = {"sessions", "passkeys", "twofa", "deleted_accounts", "webhook_secrets", "error_reports"}
+EXPORT_SECRET_COL = re.compile(r"hash|secret|token|password|otp|credential|private|refresh|access|salt|code", re.I)
+EXPORT_EVERY = 600                       # seconds between exports per account (they can be large)
+_export_last = {}
+
+
+def _export_zip(email: str) -> str:
+    """Build the ZIP in a temporary file; returns its path (the caller deletes it)."""
+    import tempfile
+    import zipfile
+    fd, path = tempfile.mkstemp(prefix="gink-export-", suffix=".zip")
+    os.close(fd)
+    tables = {}
+    with _db_lock:
+        con = _db()
+        try:
+            names = [r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
+            for t in names:
+                if t in EXPORT_SKIP_TABLES or t.startswith("sqlite_"):
+                    continue
+                cols = [r[1] for r in con.execute(f"PRAGMA table_info({t})").fetchall()]
+                who = next((c for c in ("email", "owner", "teen", "parent") if c in cols), None)
+                if not who:
+                    continue
+                keep = [c for c in cols if not EXPORT_SECRET_COL.search(c) or c in ("email",)]
+                rows = con.execute(f"SELECT {', '.join(keep)} FROM {t} WHERE {who}=?", (email,)).fetchall()
+                if rows:
+                    tables[t] = [dict(zip(keep, r)) for r in rows]
+        finally:
+            con.close()
+    projects = _genie_db(lambda con: con.execute("SELECT id, name FROM genie_projects WHERE email=?", (email,)).fetchall())
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("README.txt", (
+            f"Everything Gink's server keeps for {_account_label(email)}, exported {time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime())}.\n\n"
+            "data/<table>.json  -- every record, as stored (passwords, keys, tokens and 2FA secrets are never exported)\n"
+            "genie/             -- your Gink Genie projects (and the agents' workspaces) as real files\n"
+            "websites/          -- the websites you made, as .html\n\n"
+            "Chats, memories and settings on your devices are in the app's own export (Settings > Export my data).\n"))
+        for t, rows in sorted(tables.items()):
+            z.writestr(f"data/{t}.json", _json.dumps(rows, ensure_ascii=False, indent=1, default=str))
+        for pid, name in projects:
+            folder = "genie/" + (re.sub(r"[^\w .-]+", "_", name or "project").strip()[:60] or "project") + f" ({pid})/"
+            for fpath, content in _genie_files(pid).items():
+                if content.startswith(GENIE_PIC):
+                    z.writestr(folder + fpath, base64.b64decode(content[len(GENIE_PIC):].split(",", 1)[-1]))
+                else:
+                    z.writestr(folder + fpath, content)
+        for site in tables.get("sites", []):
+            if site.get("html"):
+                z.writestr(f"websites/{site.get('id')}.html", site["html"])
+    return path
+
+
+def _export_response(email: str):
+    from fastapi.responses import FileResponse
+    from starlette.background import BackgroundTask
+    last = _export_last.get(email, 0)
+    if time.time() - last < EXPORT_EVERY:
+        raise HTTPException(status_code=429, detail=f"You can download your data once every {EXPORT_EVERY // 60} minutes.")
+    _export_last[email] = time.time()
+    path = _export_zip(email)
+    name = f"gink-data-{time.strftime('%Y-%m-%d')}.zip"
+    return FileResponse(path, media_type="application/zip", filename=name, background=BackgroundTask(os.remove, path))
+
+
+@app.get("/account/export.zip")
+def account_export(request: Request):
+    return _export_response(_email_from_auth(request))
+
+
+@app.get("/v1/account/export.zip")
+def api_account_export(request: Request):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    return _export_response(owner[0])
 
 # ---- Owner only: download a copy of the whole database (accounts, chats sync, payments...).
 #   GET /admin/backup  header x-admin-key: <GINK_ADMIN_KEY>  -> gink-backup-<date>.db

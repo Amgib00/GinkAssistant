@@ -342,11 +342,13 @@ SETTINGS_JS = r"""
           {type: 'button', label: 'Delete your account', desc: 'Permanently deletes your account and everything synced to it. Payment records are kept for accounting, without your name or email. This can\u2019t be undone.', action: 'delete_account', text: 'Delete account', style: 'danger-ghost'}]}]},
       {id: 'family', group: 'Settings', title: 'Parental controls', sections: familySections(info.family, info.family_error)},
       {id: 'workspace', group: 'Settings', title: 'Workspace', sections: workspaceSections(info.org, info.org_error)},
+      {id: 'schedules', group: 'Settings', title: 'Scheduled tasks', sections: scheduleSections(info.schedules, info.schedules_error)},
       {id: 'privacy', group: 'Settings', title: 'Privacy', sections: [
         {title: 'Your data', rows: [
           {apps: true, type: 'toggle', key: 'use_memory', label: 'Use memories in answers', desc: 'When off, Gink ignores what you asked it to remember (they stay saved \u2014 manage them under Memory).'},
           {type: 'toggle', key: 'send_errors', label: 'Send error reports', desc: 'When something breaks, Gink tells its team what went wrong and where in Gink\u2019s code \u2014 never your chats, files or what you typed. It helps fix problems faster.'},
           {type: 'button', label: 'Export my data', desc: 'Save your chats, Workspace, memories and settings as a file.', action: 'export', text: 'Export'},
+          {type: 'button', label: 'Download everything on the server', desc: 'Your Gink Genie projects, websites, agent runs, scheduled tasks and account records, as a ZIP. Passwords and keys are never included.', action: 'export_server', text: 'Download'},
           {type: 'button', label: 'Delete all chats', desc: 'Removes every conversation from this device and your other devices.', action: 'delete_chats', text: 'Delete all', style: 'danger-ghost'}]},
         {title: 'Help improve Gink', rows: trainingRows(info.training)},
         {title: 'Archived chats', rows: [
@@ -557,6 +559,22 @@ SETTINGS_JS = r"""
     return out;
   }
 
+  // Settings > Scheduled tasks (server: /dev/schedules -- the same scheduled agents as the API, console and Genie)
+  function scheduleSections(list, err) {
+    if (!list) return [{title: 'Scheduled tasks', rows: [{type: 'list', items: [], empty: err || 'Loading\u2026'}]}];
+    return [{title: 'New scheduled task', rows: [
+      {type: 'note', text: 'Gink\u2019s agent does a task on its own, every hour, day or week at your time \u2014 for example \u201cevery morning, write today\u2019s top news in news.md\u201d. The results are saved in a Gink Genie project.'},
+      {type: 'input', key: 'sch_task', label: 'Task', placeholder: 'e.g. Write the three biggest news stories of the day in news.md', wide: true},
+      {type: 'html', label: 'When', html: '<select class="s-input" data-input="sch_every" style="width:auto"><option value="daily">Every day</option><option value="hourly">Every hour</option><option value="weekly">Every week</option></select> ' +
+        '<input class="s-input" type="time" data-input="sch_at" value="08:00" style="width:auto"> ' +
+        '<label style="font-size:13px"><input type="checkbox" data-sch-email checked> Email me the result</label> <button class="s-btn primary" data-act="sch_add">Schedule</button>'}]},
+      {title: 'Your scheduled tasks', rows: [{type: 'list', items: list.map(function (x) {
+        return {t: x.input.slice(0, 80), m: (x.every === 'hourly' ? 'Every hour at :' + x.at.slice(3) : (x.every === 'weekly' ? 'Every week at ' : 'Every day at ') + x.at) +
+                   ' \u00b7 ' + x.timezone + (x.notify_email ? ' \u00b7 emails you' : '') + (x.enabled ? '' : ' \u00b7 paused') + (x.last_run ? ' \u00b7 last ran ' + new Date(x.last_run * 1000).toLocaleString() : ''),
+                button: {text: x.enabled ? 'Pause' : 'Resume', action: x.enabled ? 'sch_pause' : 'sch_resume', value: x.id, style: 'plain'},
+                button2: {text: 'Delete', action: 'sch_delete', value: x.id}}; }), empty: 'Nothing scheduled yet.'}]}];
+  }
+
   // The device's time zone names a nearby city ("Europe/Paris" -> "Paris"): local examples, not one country's
   var LOCAL_CITY = (function () {
     try { var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
@@ -661,7 +679,7 @@ SETTINGS_JS = r"""
         return '<option value="' + esc(o[0]) + '"' + (String(v[r.key]) === String(o[0]) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>';
     } else if (r.type === 'input') {
       ctl = '<input class="s-input" data-input="' + r.key + '" value="' + esc(v[r.key] || '') + '" placeholder="' + esc(r.placeholder || '') + '"' + (r.narrow ? ' style="width:90px"' : '') + '>' +
-            '<button class="s-btn" data-act="' + r.action + '" data-from="' + r.key + '">' + esc(r.text) + '</button>';
+            (r.action ? '<button class="s-btn" data-act="' + r.action + '" data-from="' + r.key + '">' + esc(r.text) + '</button>' : '');
     } else if (r.type === 'button') {
       ctl = '<button class="s-btn ' + (r.style || '') + '" data-act="' + r.action + '"' + (r.value ? ' data-value="' + esc(r.value) + '"' : '') + '>' + esc(r.text) + '</button>';
     } else if (r.type === 'info') {
@@ -699,7 +717,8 @@ SETTINGS_JS = r"""
       if (!r.items.length) return '<div class="s-empty">' + esc(r.empty || '') + '</div>';
       return '<div class="s-list">' + r.items.map(function (it) {
         return '<div class="s-item"><div class="t">' + esc(it.t) + '</div>' + (it.m ? '<div class="m">' + esc(it.m) + '</div>' : '') +
-               (it.button ? '<button class="s-btn ' + (it.button.style === 'plain' ? '' : 'danger-ghost') + '" data-act="' + it.button.action + '" data-value="' + esc(it.button.value) + '">' + esc(it.button.text) + '</button>' : '') + '</div>'; }).join('') + '</div>';
+               (it.button ? '<button class="s-btn ' + (it.button.style === 'plain' ? '' : 'danger-ghost') + '" data-act="' + it.button.action + '" data-value="' + esc(it.button.value) + '">' + esc(it.button.text) + '</button>' : '') +
+               (it.button2 ? ' <button class="s-btn danger-ghost" data-act="' + it.button2.action + '" data-value="' + esc(it.button2.value) + '">' + esc(it.button2.text) + '</button>' : '') + '</div>'; }).join('') + '</div>';
     }
     return '<div class="s-row" data-search="' + esc(((r.label || '') + ' ' + (r.desc || '')).toLowerCase()) + '">' + lab + '<div class="ctl">' + ctl + '</div></div>';
   }
@@ -854,6 +873,13 @@ SETTINGS_JS = r"""
       var name = b.getAttribute('data-act'), from = b.getAttribute('data-from'), value = b.getAttribute('data-value');
       if (from) { var inp = document.querySelector('[data-input="' + from + '"]'); value = inp ? inp.value : ''; }
       if (name === 'upgrade') { closeSettings(); ginkEmit('open', 'pro'); return; }
+      if (name === 'sch_add') {                       // Scheduled tasks: the task, how often and when, together
+        var q = function (k) { var x = document.querySelector('[data-input="' + k + '"]'); return x ? x.value : ''; };
+        var em = document.querySelector('[data-sch-email]');
+        ginkEmit('settings_action', {name: 'sch_add', value: JSON.stringify({input: q('sch_task'), every: q('sch_every'), at: q('sch_at') || '08:00',
+                                                                           notify_email: !!(em && em.checked)})});
+        return;
+      }
       if (name === 'delete_account') { confirmDanger('Delete your account?', 'Your account and everything synced to it will be permanently deleted. Type DELETE to confirm.', 'DELETE', function () { ginkEmit('settings_action', {name: 'delete_account'}); }); return; }
       if (name === 'delete_chats') { confirmDanger('Delete all chats?', 'Every conversation will be removed from this device and your other devices.', null, function () { ginkEmit('settings_action', {name: 'delete_chats'}); }); return; }
       if (name === 'forget_all') { confirmDanger('Forget everything?', 'Gink will forget everything you asked it to remember.', null, function () { ginkEmit('settings_action', {name: 'forget_all'}); }); return; }

@@ -83,6 +83,9 @@ export class Gink {
   imageIdeas() { return this.request("GET", "/images/ideas"); }
 
   async models() { return ((await this.request("GET", "/models")).data || []).map((m) => m.id); }
+
+  // Everything Gink's server keeps for this account, as a ZIP (bytes). At most once every 10 minutes.
+  async exportAccount() { return new Uint8Array(await (await this.request("GET", "/account/export.zip", { raw: true })).arrayBuffer()); }
 }
 
 async function toError(res) {
@@ -116,6 +119,7 @@ function body(params, extra = {}) {
   if (params.tools) b.tools = params.tools;
   if (params.background) b.background = true;
   if (params.webhook_url) b.webhook_url = params.webhook_url;
+  if (params.notify_email) b.notify_email = true;
   return b;
 }
 
@@ -179,9 +183,10 @@ class Environments {
 // Scheduled agents: gink.schedules.create({ input: "Update report.md with today's news", every: "daily", at: "08:00" })
 class Schedules {
   constructor(client) { this.c = client; }
-  create({ input, every = "daily", at = "08:00", timezone, environment = "remote", tools, webhook_url } = {}) {
+  create({ input, every = "daily", at = "08:00", timezone, environment = "remote", tools, webhook_url, notify_email } = {}) {
     const body = { input, every, at, environment };
     if (webhook_url) body.webhook_url = webhook_url;
+    if (notify_email) body.notify_email = true;
     if (timezone) body.timezone = timezone;
     if (tools) body.tools = tools;
     return this.c.request("POST", "/schedules", { json: body });

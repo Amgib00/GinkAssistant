@@ -239,3 +239,23 @@ def test_console_page_and_genie_links():
     assert 'data-v="agents"' in console and 'data-view="agents"' in console and "agents: function () { return Promise.all([loadAgents(), loadSchedules()]); }" in console
     assert "stream: true" in console and '"/genie#" + it.environment' in console
     assert "/^#(gp_[a-f0-9]+)$/.exec(location.hash)" in genie                       # /genie#gp_... opens that project
+
+
+def test_at_most_a_few_runs_at_once(api, monkeypatch):
+    """One account (or a buggy script) can't start hundreds of agent runs: GINK_AGENT_CONCURRENT (default 3)."""
+    b, c, k = api
+    monkeypatch.setattr(b, "AGENT_CONCURRENT_MAX", 2)
+    for i in range(2):
+        b._agent_db(lambda con: con.execute("INSERT INTO agent_interactions (id, email, status, created) VALUES (?, ?, 'running', ?)",
+                                            (f"int_busy{i}", "ib@example.com", time.time())))
+    r = c.post("/v1/interactions", headers=k, json={"input": "one more"})
+    assert r.status_code == 429 and r.json()["error"]["code"] == "too_many_running"
+    s = c.post("/v1/schedules", headers=k, json={"input": "brief"}).json()
+    before = time.time()
+    out = c.post(f"/v1/schedules/{s['id']}/run", headers=k).json()
+    assert out["interaction_id"] is None
+    nxt = c.get("/v1/schedules", headers=k).json()["data"][0]["next_run"]
+    assert before + 250 < nxt < before + 400                                       # busy: tried again in ~5 minutes
+    b._agent_db(lambda con: con.execute("UPDATE agent_interactions SET status='completed' WHERE id LIKE 'int_busy%'"))
+    SCRIPT[:] = [{"content": "ok"}]
+    assert c.post("/v1/interactions", headers=k, json={"input": "now it fits"}).json()["status"] == "completed"

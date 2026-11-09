@@ -208,6 +208,11 @@ class SettingsController:
                 extra_info["twofa"] = dict(status, **self._twofa)
             except Exception:
                 extra_info["twofa"] = dict(self._twofa)
+        if token and panel == "schedules":                    # Scheduled tasks (agents)
+            try:
+                extra_info["schedules"] = (await asyncio.wait_for(api.schedules(token), timeout=8)).get("data", [])
+            except Exception:
+                extra_info["schedules_error"] = "Scheduled tasks aren't available right now (offline, or the server is older)."
         if token and panel == "workspace":                    # Workspace (organisations)
             try:
                 extra_info["org"] = await asyncio.wait_for(api.org(token), timeout=8)
@@ -528,6 +533,40 @@ class SettingsController:
             await self.web.settings_toast("Phone number removed.")
             await self.refresh("account")
 
+    # ---- Settings > Scheduled tasks (server: /dev/schedules) ----
+    async def _sch(self, method: str, path: str, body=None, done: str = ""):
+        token = getattr(self.app, "session_token", None)
+        if not token:
+            return
+        try:
+            await ApiClient(self.app.state.base_url).org_call(token, method, path, body)
+        except ApiError as exc:
+            return await self.web.settings_toast(str(exc))
+        if done:
+            await self.web.settings_toast(done)
+        await self.refresh("schedules")
+
+    async def _a_sch_add(self, raw):
+        import json as _json
+        try:
+            v = _json.loads(raw) if isinstance(raw, str) else dict(raw or {})
+        except Exception:
+            return
+        if not str(v.get("input") or "").strip():
+            return await self.web.settings_toast("Write the task first.")
+        await self._sch("POST", "/dev/schedules", {"input": v["input"].strip(), "every": v.get("every") or "daily",
+                                                   "at": v.get("at") or "08:00", "notify_email": bool(v.get("notify_email"))},
+                        "Scheduled.")
+
+    async def _a_sch_pause(self, sid):
+        await self._sch("PATCH", f"/dev/schedules/{sid}", {"enabled": False}, "Paused.")
+
+    async def _a_sch_resume(self, sid):
+        await self._sch("PATCH", f"/dev/schedules/{sid}", {"enabled": True}, "Resumed.")
+
+    async def _a_sch_delete(self, sid):
+        await self._sch("DELETE", f"/dev/schedules/{sid}", None, "Deleted.")
+
     # ---- Settings > Workspace (server: /org) ----
     async def _org(self, method: str, path: str, body: dict = None, done: str = ""):
         token = getattr(self.app, "session_token", None)
@@ -809,6 +848,24 @@ class SettingsController:
         n = self.clear_all_chats()
         await self.web.settings_toast(f"Deleted {n} chat{'s' if n != 1 else ''}.")
         self.refresh_sidebar()
+
+    async def _a_export_server(self, _):
+        """Settings > Download everything on the server: a ZIP of the account's server data, saved where chosen."""
+        token = getattr(self.app, "session_token", None)
+        if not token:
+            return await self.web.settings_toast("Sign in first.")
+        await self.web.settings_toast("Preparing your data\u2026")
+        try:
+            data = await ApiClient(self.app.state.base_url).export_zip(token)
+        except ApiError as exc:
+            return await self.web.settings_toast(str(exc))
+
+        def write(path):
+            with open(path, "wb") as f:
+                f.write(data)
+        path = await data_export.save_with_dialog(self.app, f"gink-data-{time.strftime('%Y-%m-%d')}.zip", ["zip"], write)
+        if path:
+            await self.web.settings_toast(f"Saved to {path}")
 
     async def _a_export(self, _):
         data = data_export.build_export(self.email, self.brain.history, self.app.task_store, self.app.memory, self.p())

@@ -31,6 +31,7 @@ export interface InteractionParams {
   background?: boolean;
   max_steps?: number;              // 1-30, default 15
   tools?: Array<"files" | "web_search">;
+  notify_email?: boolean;          // email the account the result when it ends
   webhook_url?: string;            // https: Gink POSTs {"type": "interaction.<status>", "data": Interaction} when it ends
 }
 
@@ -57,7 +58,7 @@ export declare class Environment {
 export interface Schedule {
   id: string; object: "schedule"; input: string; every: "hourly" | "daily" | "weekly"; at: string; timezone: string;
   environment: string; tools: Array<"files" | "web_search">; enabled: boolean; next_run: number; last_run: number | null;
-  last_interaction_id: string | null; created: number;
+  last_interaction_id: string | null; created: number; notify_email: boolean; webhook_url?: string;
 }
 
 export declare class Gink {
@@ -76,7 +77,7 @@ export declare class Gink {
   };
   schedules: {
     create(params: { input: string; every?: Schedule["every"]; at?: string; timezone?: string; environment?: string;
-      tools?: Array<"files" | "web_search">; webhook_url?: string }): Promise<Schedule>;
+      tools?: Array<"files" | "web_search">; webhook_url?: string; notify_email?: boolean }): Promise<Schedule>;
     list(): Promise<Schedule[]>;
     run(id: string): Promise<{ schedule: Schedule; interaction_id: string | null }>;
     pause(id: string): Promise<Schedule>;
@@ -91,6 +92,7 @@ export declare class Gink {
   imageIdeas(): Promise<{ styles: Array<{ id: string; description: string }>;
     ideas: Array<{ id: string; title: string; prompt: string; example_subject: string; style: string; aspect_ratio: string }> }>;
   models(): Promise<string[]>;
+  exportAccount(): Promise<Uint8Array>;
 }
 
 export default Gink;

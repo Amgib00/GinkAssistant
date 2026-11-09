@@ -207,6 +207,7 @@
           <select id="sch-every" aria-label="How often"><option value="daily">Every day</option><option value="hourly">Every hour</option><option value="weekly">Every week</option></select>
           <label>at <input id="sch-at" type="time" value="08:00" aria-label="Time"></label>
           <input id="sch-hook" type="url" placeholder="Notify https://… (optional)" aria-label="Webhook address" style="min-width:220px">
+          <label><input type="checkbox" id="sch-email"> Email me the result</label>
           <button class="ghost" id="sch-add">Schedule it</button></div>
         <p class="err" id="ag-err"></p>
         <div id="ag-live" hidden>
@@ -482,7 +483,7 @@ cat notes.txt | gink "summarise this"</code></pre>
         var tr = el("tr");
         tr.appendChild(el("td", "", s.input.slice(0, 80)));
         tr.appendChild(el("td", "", (s.every === "hourly" ? "Every hour at :" + s.at.slice(3) : (s.every === "weekly" ? "Every week at " : "Every day at ") + s.at)
-                                 + " (" + s.timezone + ")" + (s.enabled ? "" : " \u00b7 paused")));
+                                 + " (" + s.timezone + ")" + (s.notify_email ? " \u00b7 emails you" : "") + (s.enabled ? "" : " \u00b7 paused")));
         tr.appendChild(el("td", "", s.enabled ? new Date(s.next_run * 1000).toLocaleString() : "\u2014"));
         var last = el("td");
         if (s.last_run) { var a = el("a", "", ago(s.last_run)); a.href = "/genie#" + s.environment; last.appendChild(a); } else last.textContent = "not yet";
@@ -507,6 +508,7 @@ cat notes.txt | gink "summarise this"</code></pre>
     var tools = []; if ($("ag-files").checked) tools.push("files"); if ($("ag-web").checked) tools.push("web_search");
     var body = { input: input, every: $("sch-every").value, at: $("sch-at").value || "08:00", environment: $("ag-env").value, tools: tools };
     if ($("sch-hook").value.trim()) body.webhook_url = $("sch-hook").value.trim();
+    if ($("sch-email").checked) body.notify_email = true;
     api("/dev/schedules", { body: body }).then(json)
       .then(function () { $("ag-err").textContent = ""; return loadSchedules(); })
       .catch(function (e) { if (e.message !== "signed out") $("ag-err").textContent = e.message; });
@@ -679,6 +681,27 @@ cat notes.txt | gink "summarise this"</code></pre>
     show(location.hash.slice(1) || "dashboard");
   }).catch(function () {});
 })();
+
+  // "We've updated our privacy policy and terms" -- once per change (GET /info; remembered in this browser)
+  (function policies() {
+    fetch("/info").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (!j || !j.policies_updated) return;
+      var seen = ""; try { seen = localStorage.getItem("gink_policy_seen") || ""; } catch (e) {}
+      if (j.policies_updated <= seen) return;
+      var bar = document.createElement("div"); bar.id = "policy-note"; bar.setAttribute("role", "status");
+      bar.style.cssText = "position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:80;max-width:min(560px,92vw);background:var(--card,#fff);color:inherit;border:1px solid rgba(127,127,127,.35);border-radius:12px;padding:10px 14px;box-shadow:0 8px 28px rgba(0,0,0,.2);font-size:14px;display:flex;gap:10px;align-items:center";
+      var t = document.createElement("span"); t.style.flex = "1";
+      t.appendChild(document.createTextNode("We\u2019ve updated our "));
+      [["privacy policy", j.privacy_url], [" and ", ""], ["terms", j.terms_url]].forEach(function (x) {
+        if (!x[1]) { t.appendChild(document.createTextNode(x[0])); return; }
+        var a = document.createElement("a"); a.textContent = x[0]; a.href = x[1]; a.target = "_blank"; a.rel = "noopener"; t.appendChild(a);
+      });
+      t.appendChild(document.createTextNode("."));
+      var ok = document.createElement("button"); ok.textContent = "OK";
+      ok.onclick = function () { bar.remove(); try { localStorage.setItem("gink_policy_seen", j.policies_updated); } catch (e) {} };
+      bar.appendChild(t); bar.appendChild(ok); document.body.appendChild(bar);
+    }).catch(function () {});
+  })();
 </script>
 </body>
 </html>

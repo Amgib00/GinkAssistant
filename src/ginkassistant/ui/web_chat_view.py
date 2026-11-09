@@ -1196,6 +1196,25 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     for (var i = 0; i < GINK_MODELS.length; i++) if (GINK_MODELS[i].id === id) return GINK_MODELS[i];
     return {id: id, name: MM.names[id] || 'Gink', desc: /^gink-/.test(id) ? 'Gink\u2019s own model' : ''};
   }
+  // "We've updated our privacy policy and terms" -- once per change (the date from the server's /info)
+  function policyNotice(date, privacy, terms) {
+    if (document.getElementById('policy-note')) return;
+    var d = document.createElement('div'); d.id = 'policy-note'; d.setAttribute('role', 'status');
+    d.style.cssText = 'position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:60;max-width:min(560px,92vw);' +
+      'background:var(--surface,#fff);color:var(--text-main,#111);border:1px solid var(--border,#ddd);border-radius:14px;' +
+      'padding:12px 14px;box-shadow:0 8px 28px rgba(0,0,0,.18);font-size:14px;display:flex;gap:10px;align-items:center';
+    var t = document.createElement('div'); t.style.flex = '1';
+    t.appendChild(document.createTextNode('We\u2019ve updated our '));
+    [['privacy policy', privacy], [' and ', null], ['terms', terms]].forEach(function (x) {
+      if (!x[1]) { t.appendChild(document.createTextNode(x[0])); return; }
+      var a = document.createElement('a'); a.textContent = x[0]; a.href = x[1]; a.target = '_blank'; a.rel = 'noopener';
+      t.appendChild(a);                              // (the page's own link handler opens it outside)
+    });
+    t.appendChild(document.createTextNode(' (' + new Date(date + 'T12:00:00Z').toLocaleDateString() + '): what Gink does with your data, in plain words.'));
+    var ok = document.createElement('button'); ok.textContent = 'OK'; ok.className = 'ibtn'; ok.style.width = 'auto'; ok.style.padding = '0 14px';
+    ok.addEventListener('click', function () { d.remove(); ginkEmit('policy_seen', date); });
+    d.appendChild(t); d.appendChild(ok); document.body.appendChild(d);
+  }
   function setModels(models, currentId) {
     MM.available = (models || []).map(function (m) { MM.names[m.id] = m.name; return m.id; });
     MM.current = currentId || MM.current;
@@ -1709,6 +1728,9 @@ class WebChatFeed:
     async def set_today(self, text: str):
         """Small chip under the centred welcome bar ("Next alarm 06:30 today")."""
         await self._js(f"setToday({json.dumps(text or '')})")
+
+    async def policy_notice(self, date: str, privacy: str, terms: str):
+        await self._js(f"policyNotice({json.dumps(date)}, {json.dumps(privacy)}, {json.dumps(terms)})")
 
     async def set_models(self, models: list, current_id: str):
         await self._js(f"setModels({json.dumps(models)}, {json.dumps(current_id)})")

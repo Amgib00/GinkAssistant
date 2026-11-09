@@ -166,6 +166,22 @@ class ApiClient:
             return None
         return self._session(data, data.get("email", ""))
 
+    # -- Download my data (server: /account/export.zip) -------------------------------
+    async def export_zip(self, token: str) -> bytes:
+        try:
+            async with httpx.AsyncClient(headers=device_headers(), timeout=300) as client:
+                resp = await client.get(f"{self.base_url}/account/export.zip", headers={"Authorization": f"Bearer {token}"})
+        except httpx.HTTPError as e:
+            raise unreachable(e)
+        if resp.status_code != 200:
+            detail = self._json(resp).get("detail", "Couldn't download your data.")
+            raise ApiError(detail if isinstance(detail, str) else "Couldn't download your data.")
+        return resp.content
+
+    # -- Scheduled tasks (server: /dev/schedules) ------------------------------------
+    async def schedules(self, token: str) -> dict:
+        return await self._authed("GET", "/dev/schedules", token)
+
     # -- Workspaces (server: /org) --------------------------------------------------
     async def org(self, token: str) -> dict:
         return await self._authed("GET", "/org", token)

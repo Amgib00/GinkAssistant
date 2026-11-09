@@ -2186,3 +2186,61 @@ New services/live_info.py (all free, no API keys):
 - SDKs: webhook_url params, webhooks.secret()/rotate(), Python verify_webhook(body, sig, secret, tolerance=300), JS
   verifyWebhook (Web Crypto, constant-time compare; matches the server's signature: test). CLI --webhook,
   `gink webhook secret`. Console: secret show/rotate + webhook field on "Schedule it". SDKs 0.3.4.
+
+## 0.1.134: scheduled tasks in Genie and in the apps' / web app's Settings
+- Genie: #schedule button (shown with the other project buttons) -> #schdlg: task, every, at -> POST /dev/schedules with
+  environment = the project; lists/pauses/resumes/runs/deletes this project's schedules. Runs land in the project chat
+  (_agent_to_genie).
+- Settings > Scheduled tasks (scheduleSections): input sch_task + html row (select sch_every, time sch_at, data-act
+  sch_add -> JSON value built in the click handler), list with Pause/Resume + Delete (list items gained `button2`).
+  Apps: settings_controller refresh("schedules") via ApiClient.schedules; _a_sch_add/pause/resume/delete -> org_call.
+  Web: loadSchedules()/schCall(). Input rows without an action no longer draw an empty button.
+
+## 0.1.135: "Email me the result" (notify_email) across the suite
+- notify_email columns (ALTER on first use) on agent_interactions and agent_schedules; _interaction_start stores it;
+  schedules pass it to every run; PATCH /schedules/{id} {notify_email}. _agent_notify -> _agent_email(account, it) in an
+  executor (Brevo send blocks): "Done:"/"Didn't finish:" + task, answer (4,000 chars), files changed, link
+  GINK_PUBLIC_URL/genie#<env>; skipped for phone-only accounts (@phone.gink.invalid).
+- UI: console "Email me the result" checkbox (+ "emails you" in the list), Genie's schedule dialog, Settings > Scheduled
+  tasks (checked by default) in apps + web; SDK notify_email params (+ types); CLI `schedule add --email`. SDKs 0.3.5.
+
+## 0.1.136: concurrent agent runs per account
+- _interaction_start counts the account's status='running' interactions; >= AGENT_CONCURRENT_MAX (env
+  GINK_AGENT_CONCURRENT, default 3) -> 429 too_many_running (every surface shows the message). _sched_fire: on that 429,
+  next_run = now + 300 (postponed, not skipped). Running rows left by a crash are cleared at startup
+  (_agents_after_restart), so the count can't stay stuck.
+
+## 0.1.137: complete server-side data export
+- _export_zip(email): every table with an email/owner/teen/parent column (EXPORT_SKIP_TABLES: sessions, passkeys, twofa,
+  deleted_accounts, webhook_secrets, error_reports; columns matching EXPORT_SECRET_COL -- hash/secret/token/password/
+  otp/credential/private/refresh/access/salt/code -- dropped) -> data/<table>.json; Genie projects as real files
+  (pictures decoded); sites as websites/<id>.html; README. Temp file, deleted after sending (BackgroundTask). Once per
+  10 minutes per account. GET /account/export.zip (session) and /v1/account/export.zip (API key).
+- Settings > Privacy "Download everything on the server" (apps: ApiClient.export_zip + save dialog; web: blob), CLI
+  `gink export [FILE]`, SDK export_account() / exportAccount(). SDKs 0.3.6. NOTE: the families table split
+  (teen/parent) exports only the first matching column -- a parent's own export lists links via their teen's rows.
+
+## 0.1.138: account deletion sweep (future-proof)
+- delete_account: after the explicit deletes, every table with an email/owner/teen/parent column except
+  ACCOUNT_DELETE_KEEP {payments (anonymised), deleted_accounts (marker), orgs (members' workspace)} is cleared.
+  Checked: the explicit list was already complete today; the sweep covers tables added later.
+  test_deleting_an_account_leaves_nothing_behind inserts a row for the account in every such table, deletes, scans all.
+
+## 0.1.139: privacy policy brought up to date (owner + lawyer to review)
+- website/pages/privacy.html: new store rows (phone, birth year, time zone/language header, Genie projects, websites/
+  shared links, agent tasks/schedules, API key names + request log, sign-in history), service rows (Gemini photo, Shazam,
+  Brevo, Twilio/Africa's Talking, GitHub, Cloudflare R2, webhooks), sections (error reports, Help improve Gink,
+  workspaces/healthcare, parental controls, where data is processed), deletion + export lines. Dated 9 Nov 2026.
+- tests/test_privacy_policy.py MUST_MENTION: one phrase per data-touching feature. ADD A LINE when such a feature lands.
+
+## 0.1.140: terms of use brought up to date (owner + lawyer to review)
+- website/pages/terms.html (dated 9 Nov 2026): "Health and other professional uses", "Workspaces", "Developers: the Gink
+  API, agents and SDKs" (keys, acceptable use, agents/schedules/webhooks responsibility, fair use, SDKs MIT), "Sharing to
+  improve Gink". tests/test_privacy_policy.py TERMS_MUST_MENTION guards them.
+
+## 0.1.141: in-app notice when the policies change
+- /info: privacy_url / terms_url (env or the GitHub Pages site) + policies_updated (POLICIES_UPDATED "2026-11-09", env
+  GINK_POLICIES_UPDATED). BUMP POLICIES_UPDATED (and "Last updated" on the pages -- a test checks they match) with an
+  important change. Apps: configure_offline_model's /info call -> web_chat.policy_notice() if newer than pref
+  policy_seen; the notice's OK -> 'policy_seen' event -> prefs. Web app: checkPolicies() (localStorage
+  gink_policy_seen). Genie + console: self-contained snippet (same storage key). Links open via the page's link handler.

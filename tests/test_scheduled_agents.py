@@ -1,6 +1,6 @@
 """Scheduled agents across the suite: hourly / daily / weekly runs at a local time, each an ordinary interaction;
 API keys, the console, both SDKs and the CLI."""
-import asyncio, datetime, json, os, shutil, subprocess, sys, time
+import asyncio, datetime, json, os, shutil, subprocess, sys, time, types
 sys.path.insert(0, os.path.dirname(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "cli"))
 import pytest
@@ -123,3 +123,68 @@ console.log(JSON.stringify(seen));
 def test_console_has_schedules():
     page = open(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "console.html"), encoding="utf-8").read()
     assert 'id="sch-add"' in page and "function loadSchedules" in page and '"/dev/schedules"' in page
+
+
+def test_genie_and_settings_have_schedules():
+    """The whole suite: Genie ("Run on a schedule" in a project) and Settings > Scheduled tasks (apps + web app)."""
+    genie = open(os.path.join(ROOT, "src", "ginkassistant", "services", "web_app", "genie.html"), encoding="utf-8").read()
+    page = open(os.path.join(ROOT, "src", "ginkassistant", "ui", "settings_page.py"), encoding="utf-8").read()
+    bridge = open(os.path.join(ROOT, "webapp", "bridge.js"), encoding="utf-8").read()
+    ctl = open(os.path.join(ROOT, "src", "ginkassistant", "ui", "settings_controller.py"), encoding="utf-8").read()
+    assert 'id="schedule"' in genie and 'id="schdlg"' in genie and "environment: S.project.id" in genie
+    assert "id: 'schedules'" in page and "name === 'sch_add'" in page
+    for a in ("sch_add", "sch_pause", "sch_resume", "sch_delete"):
+        assert f'name === "{a}"' in bridge and f"_a_{a}" in ctl, a
+
+
+def test_apps_settings_actions(api, monkeypatch):
+    """The apps' Settings controller calls the same /dev/schedules endpoints."""
+    import json as _json
+    from ginkassistant.ui import settings_controller as sc
+    calls = []
+
+    class FakeApi:
+        def __init__(self, base): pass
+        async def org_call(self, token, method, path, body=None):
+            calls.append((method, path, body)); return {}
+    monkeypatch.setattr(sc, "ApiClient", FakeApi)
+    ctl = sc.SettingsController.__new__(sc.SettingsController)
+    ctl.app = types.SimpleNamespace(session_token="t", state=types.SimpleNamespace(base_url="https://x"))
+    toasts = []
+    async def toast(t): toasts.append(t)
+    async def refresh(panel): pass
+    ctl.web = types.SimpleNamespace(settings_toast=toast)
+    ctl.refresh = refresh
+    asyncio.run(ctl._a_sch_add(_json.dumps({"input": "Morning news", "every": "daily", "at": "07:00"})))
+    asyncio.run(ctl._a_sch_pause("sch_1"))
+    asyncio.run(ctl._a_sch_delete("sch_1"))
+    assert calls == [("POST", "/dev/schedules", {"input": "Morning news", "every": "daily", "at": "07:00", "notify_email": False}),
+                     ("PATCH", "/dev/schedules/sch_1", {"enabled": False}), ("DELETE", "/dev/schedules/sch_1", None)]
+    assert toasts == ["Scheduled.", "Paused.", "Deleted."]
+
+
+def test_email_me_the_result(api, monkeypatch):
+    """A scheduled task (or any interaction) with notify_email emails its account the result when it ends."""
+    b, c, k, session = api
+    mails = []
+    monkeypatch.setattr(b, "_send_email", lambda to, subject, text, html="": mails.append((to, subject, text)) or "")
+    s = c.post("/dev/schedules", headers=session, json={"input": "Write today's news in news.md", "notify_email": True}).json()
+    assert s["notify_email"] is True
+    SCRIPT[:] = [{"content": "", "tool_calls": [call("write_file", path="news.md", content="# News")]}, {"content": "news.md is ready."}]
+    c.post(f"/dev/schedules/{s['id']}/run", headers=session)
+    for _ in range(100):
+        if mails:
+            break
+        time.sleep(0.05)
+    to, subject, text = mails[-1]
+    assert to == "ib@example.com" and subject.startswith("Done: Write today's news")
+    assert "news.md is ready." in text and "Files changed: news.md" in text and f"/genie#{s['environment']}" in text
+    assert c.patch(f"/dev/schedules/{s['id']}", headers=session, json={"notify_email": False}).json()["notify_email"] is False
+
+
+def test_email_option_everywhere():
+    files = {"console": "src/ginkassistant/services/web_app/console.html", "genie": "src/ginkassistant/services/web_app/genie.html",
+             "settings": "src/ginkassistant/ui/settings_page.py", "bridge": "webapp/bridge.js", "py": "cli/gink/client.py",
+             "js": "sdk/js/index.js", "cli": "cli/gink_cli/main.py"}
+    for name, f in files.items():
+        assert "notify_email" in open(os.path.join(ROOT, f), encoding="utf-8").read(), name

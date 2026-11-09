@@ -132,6 +132,10 @@ class Client:
         """{"styles": [...], "ideas": [{"id": "statue", "title", "example_subject", ...}]} -- Media Studio's looks."""
         return self.request("GET", "/images/ideas").json()
 
+    def export_account(self) -> bytes:
+        """Everything Gink's server keeps for this account, as a ZIP (bytes). At most once every 10 minutes."""
+        return self.request("GET", "/account/export.zip").content
+
     def models(self) -> list:
         return [m["id"] for m in self.request("GET", "/models").json().get("data", [])]
 
@@ -142,7 +146,7 @@ class _Interactions:
 
     def create(self, input: str, agent: str = "gink-agent", environment: str = "remote", previous_interaction_id: str = "",
                background: bool = False, stream: bool = False, max_steps: int = 15, tools: Optional[list] = None,
-               webhook_url: str = ""):
+               webhook_url: str = "", notify_email: bool = False):
         """Run the managed agent. Returns an Interaction -- or, with stream=True, an iterator of live Events."""
         body = {"agent": agent, "input": input, "max_steps": max_steps, "background": bool(background), "stream": bool(stream)}
         if previous_interaction_id:
@@ -153,6 +157,8 @@ class _Interactions:
             body["tools"] = list(tools)
         if webhook_url:
             body["webhook_url"] = webhook_url
+        if notify_email:
+            body["notify_email"] = True
         if stream:
             return self._stream(body)
         return Interaction(self.c.request("POST", "/interactions", json=body).json())
@@ -233,10 +239,12 @@ class _Schedules:
         self.c = client
 
     def create(self, input: str, every: str = "daily", at: str = "08:00", timezone: str = "", environment: str = "remote",
-               tools: Optional[list] = None, webhook_url: str = "") -> _Obj:
+               tools: Optional[list] = None, webhook_url: str = "", notify_email: bool = False) -> _Obj:
         body = {"input": input, "every": every, "at": at, "environment": environment}
         if webhook_url:
             body["webhook_url"] = webhook_url
+        if notify_email:
+            body["notify_email"] = True
         if timezone:
             body["timezone"] = timezone
         if tools is not None:

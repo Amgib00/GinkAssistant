@@ -302,6 +302,7 @@ src/ginkgenie/app.py
 src/ginkgenie/resources/ginkgenie.png
 tests/conftest.py
 tests/fake_android.py
+tests/test_account_export.py
 tests/test_actions.py
 tests/test_actions_briefing_mic.py
 tests/test_agent_mode.py
@@ -374,6 +375,7 @@ tests/test_parental_controls_app.py
 tests/test_phone_signin.py
 tests/test_phone_signin_app.py
 tests/test_play_music.py
+tests/test_privacy_policy.py
 tests/test_prompts.py
 tests/test_pull_requests.py
 tests/test_python_sdk.py
