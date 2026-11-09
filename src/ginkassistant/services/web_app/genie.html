@@ -320,6 +320,7 @@
     <div class="t">Files <button class="ghost" id="newfile">+ New</button></div>
     <div id="tree"></div>
     <div class="rs"><div class="t">Settings</div>
+      <div class="rs-row"><span>Fix preview errors</span><button class="ghost" type="button" id="autofix-btn" aria-pressed="true" title="After each change Genie checks the live preview and fixes errors by itself (up to 3 times)">Auto</button></div>
       <div class="rs-row"><span>Mode</span><button class="ghost mode-btn" type="button" aria-pressed="false" title="Plan first: Genie proposes a plan before changing anything">Auto</button></div>
       <div class="rs-row"><span>Model</span><span class="note">Gink Crystal</span></div>
       <div class="rs-row"><span>Runs in</span><span class="note">Browser sandbox</span></div></div>
@@ -471,7 +472,32 @@
   }
   // the live preview: reloads by itself when the project's files change (only while it's showing)
   var previewTimer = null;
-  // ---- errors in the preview reach Genie: a bar, and "Ask Genie to fix" (never automatic: no loops)
+  // ---- errors in the preview reach Genie: a bar and "Ask Genie to fix" -- and, unless switched off, Genie checks the
+  // preview after each change and fixes errors by itself: at most AUTOFIX_MAX rounds per request of yours (no loops)
+  var AUTOFIX_MAX = 3, AUTOFIX = { on: true, rounds: 0, timer: 0 };
+  try { AUTOFIX.on = localStorage.getItem("genie_autofix") !== "off"; } catch (e) {}
+  function autofixLabel() { var b = $("autofix-btn"); if (b) { b.textContent = AUTOFIX.on ? "Auto" : "Off"; b.setAttribute("aria-pressed", AUTOFIX.on ? "true" : "false"); } }
+  function fixText() {
+    return "The live preview shows these errors. Find the cause in the code and fix it:\n" +
+      PERR.list.map(function (x) { return "- " + x.kind + ": " + x.message + (x.where ? " (" + x.where + ")" : "") + (x.page ? " [page " + x.page + "]" : ""); }).join("\n");
+  }
+  function autoCheckPreview(changes) {                 // after an answer that changed files: load the preview, wait, fix
+    clearTimeout(AUTOFIX.timer);
+    if (!AUTOFIX.on || !changes || !changes.length || !S.project || !S.project.preview_url) return;
+    clearPerr();
+    $("pframe").src = S.project.preview_url + (S.project.preview_url.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now();
+    AUTOFIX.timer = setTimeout(function () {
+      if (!PERR.list.length || S.busy || !S.project) { if (!PERR.list.length) AUTOFIX.rounds = 0; return; }
+      if (AUTOFIX.rounds >= AUTOFIX_MAX) {
+        say("I tried " + AUTOFIX_MAX + " times and the preview still shows errors. Tell me more about what you see, or ask me to try another way.", true);
+        AUTOFIX.rounds = 0; return;
+      }
+      AUTOFIX.rounds++;
+      var text = fixText(); clearPerr();
+      if (PHONE_TAB()) tab("chat"); else dview("chat");
+      sendToGenie("(Automatic check " + AUTOFIX.rounds + " of " + AUTOFIX_MAX + ") " + text);
+    }, 3000);
+  }
   var PERR = { list: [], hidden: false };
   function showPerr() {
     var n = PERR.list.length; $("perr").hidden = !n || PERR.hidden;
@@ -765,6 +791,7 @@
       }).then(function (next) { return next && handleGenie(next, pid); });
     }
     stopProgress(); S.stopping = false; working(false); say(j.reply, false, j.changes, j.steps, j.checkpoint, j.plan);
+    autoCheckPreview(j.changes);                      // errors in the preview? Genie fixes them itself
     if (S.path) { var still = S.files.some(function (f) { return f.path === S.path; }); if (still) loadFile(S.path); else { S.path = ""; S.saved = ""; clearEditor(); } }
     else if (S.files.length) loadFile((S.files.filter(function (f) { return f.path === "index.html"; })[0] || S.files[0]).path);
     loadProjects(pid, true);
@@ -853,6 +880,7 @@
   }
   function ask() {
     var text = $("instr").value.trim(); if (!text || S.busy || !S.project) return;
+    AUTOFIX.rounds = 0;                               // a new request of yours: automatic fixes start again from 0
     if (dirty()) saveFile();
     $("instr").value = "";
     var repo = githubRepo(text);
@@ -979,10 +1007,14 @@
   $("side-new").onclick = function () { $("new").click(); };
   $("preload").onclick = reloadPreview;
   $("perr-x").onclick = function () { PERR.hidden = true; showPerr(); };
+  $("autofix-btn").onclick = function () {
+    AUTOFIX.on = !AUTOFIX.on; autofixLabel();
+    try { localStorage.setItem("genie_autofix", AUTOFIX.on ? "on" : "off"); } catch (e) {}
+  };
+  autofixLabel();
   $("perr-fix").onclick = function () {
     if (!PERR.list.length || S.busy || !S.project) return;
-    var text = "The live preview shows these errors. Find the cause in the code and fix it:\n" +
-      PERR.list.map(function (x) { return "- " + x.kind + ": " + x.message + (x.where ? " (" + x.where + ")" : "") + (x.page ? " [page " + x.page + "]" : ""); }).join("\n");
+    var text = fixText();
     clearPerr();
     if (PHONE_TAB()) tab("chat"); else dview("chat");          // watch Genie work on it
     sendToGenie(text);

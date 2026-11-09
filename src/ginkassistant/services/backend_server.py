@@ -7826,7 +7826,8 @@ GENIE_SYSTEM = (
     "in their browser (Python 3.14 via Pyodide: the standard library and pure-Python packages; no input(), no "
     "servers, no internet access, only the project's files) -- write code that works there, and put Python tests "
     "in test_*.py files. When done, reply with a short summary of what you built or changed and how to use or "
-    "run it, in the user's language.")
+    "run it, in the user's language."
+    " Never link a file you don't create: if index.html uses style.css or script.js, write those files too.")
 GENIE_TOOLS = [
     {"type": "function", "function": {"name": "list_files", "description": "List the project's files with sizes.",
                                       "parameters": {"type": "object", "properties": {}}}},
@@ -8286,6 +8287,20 @@ async def _genie_drive(state: dict) -> dict:
             msg = ((r.json().get("choices") or [{}])[0].get("message")) or {}
             calls = msg.get("tool_calls") or []
             if not calls:
+                missing = _genie_missing_refs(state["pid"]) if state.get("mode") != "plan" and state["changes"] else []
+                if missing and state.get("autofix", 0) < GENIE_AUTOFIX_ROUNDS:      # finish the job before answering
+                    state["autofix"] = state.get("autofix", 0) + 1
+                    state["steps"].append({"kind": "check", "title": f"Checked the links: {len(missing)} missing file"
+                                           + ("s" if len(missing) > 1 else "") + " \u2014 fixing",
+                                           "output": "\n".join(missing)})
+                    _genie_report(state)
+                    state["messages"].append({"role": "assistant", "content": msg.get("content") or ""})
+                    state["messages"].append({"role": "user", "content": (
+                        "Before you finish: the project links to files that don't exist, so the page breaks:\n"
+                        + "\n".join(f"- {m}" for m in missing)
+                        + "\nCreate each one now with write_file (complete, working content that fits the page), or "
+                          "change the link if it was a mistake. Then finish with your answer.")})
+                    continue
                 reply = (msg.get("content") or "").strip() or "Done."
                 _genie_remember(state, reply)
                 return {"reply": reply, "changes": state["changes"], "steps": state["steps"], "rounds": state["rounds"],
@@ -8296,6 +8311,36 @@ async def _genie_drive(state: dict) -> dict:
                 state["steps"].append({"kind": "note", "title": note})
                 _genie_report(state)
             state["queue"] = list(calls)
+
+
+GENIE_AUTOFIX_ROUNDS = 2                  # extra rounds Genie gets to create files its pages link to but are missing
+_REF_RES = [re.compile(r'<(?:link|script|img|source|audio|video|iframe)\b[^>]*?\b(?:href|src)\s*=\s*["\']([^"\'#?]+)', re.I),
+            re.compile(r'url\(\s*["\']?([^"\')#?]+)', re.I),
+            re.compile(r'(?:import\s[^"\']*?from\s*|import\s*\(\s*)["\'](\.{1,2}/[^"\']+)["\']')]
+
+
+def _genie_missing_refs(pid: str) -> list:
+    """Local files the project's pages, styles and scripts link to that don't exist ("index.html links style.css")."""
+    import posixpath
+    files = _genie_texts(pid)
+    have = set(_genie_files(pid, raw=True))
+    out = []
+    for path, text in files.items():
+        if not path.endswith((".html", ".htm", ".css", ".js", ".mjs")):
+            continue
+        base = posixpath.dirname(path)
+        for rx in _REF_RES:
+            for ref in rx.findall(text):
+                ref = ref.strip()
+                if not ref or re.match(r"^(?:[a-z][a-z0-9+.-]*:|//|/|\{|\$)", ref, re.I) or "${" in ref:
+                    continue                                   # web addresses, absolute paths, data:, templates
+                target = posixpath.normpath(posixpath.join(base, ref))
+                if target.startswith("..") or target in have:
+                    continue
+                item = f"{target} (linked from {path})"
+                if item not in out:
+                    out.append(item)
+    return out[:20]
 
 
 async def _genie_run(email: str, pid: str, instruction: str, progress: str = "", mode: str = "auto",

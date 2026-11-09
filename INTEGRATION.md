@@ -2244,3 +2244,13 @@ New services/live_info.py (all free, no API keys):
   important change. Apps: configure_offline_model's /info call -> web_chat.policy_notice() if newer than pref
   policy_seen; the notice's OK -> 'policy_seen' event -> prefs. Web app: checkPolicies() (localStorage
   gink_policy_seen). Genie + console: self-contained snippet (same storage key). Links open via the page's link handler.
+
+## 0.1.142: Genie auto-fix (owner's screenshot: index.html linked style.css/script.js that were never written)
+- Server: _genie_missing_refs(pid) -- relative refs in html/css/js (link/script/img/source/audio/video/iframe href|src,
+  css url(), relative ES imports; skips schemes, //, /, data:, templates) not in the project. In _genie_drive, a final
+  answer after changes (not plan mode) with missing refs -> a "check" step + a user nudge listing them, up to
+  GENIE_AUTOFIX_ROUNDS (2). GENIE_SYSTEM: "Never link a file you don't create".
+- Page: AUTOFIX (on by default; settings "Fix preview errors": Auto/Off in localStorage genie_autofix). After an answer
+  with changes, autoCheckPreview loads the preview (even if hidden), waits 3 s for preview errors, then sends
+  "(Automatic check n of 3) …" -- max 3 per request of yours (reset in ask()); then it says it couldn't.
+- Checked end to end in Chromium + a real local server: JS ReferenceError -> automatic fix request -> fixed -> stops.

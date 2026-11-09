@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.142 (November 2026)
+
+- Gink Genie fixes its own mistakes: before answering it checks that every file its pages link to really
+  exists (like style.css and script.js) and creates any it forgot; after each change it checks the live
+  preview and, if there are errors, fixes them by itself -- up to 3 times, then tells you. Switch it off
+  in Genie's settings ("Fix preview errors")
+
 ## 0.1.141 (November 2026)
 
 - When the privacy policy or terms change in an important way, Gink now says so once -- a short notice
