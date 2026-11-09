@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.132 (November 2026)
+
+- Scheduled agents: have Gink's agent run a task every hour, day or week at your local time -- for
+  example "every morning at 8, update report.md with today's news". Results wait in the workspace (and
+  in Gink Genie). In the developer console (Agents > Schedule it), the API (/v1/schedules), both SDKs
+  (gink-ai 0.3.3) and the command line (gink schedule add)
+
 ## 0.1.131 (November 2026)
 
 - For the owner: paraphrase.py and translate.py label new rows "Gink (via openai/gpt-oss-120b)" -- Gink's

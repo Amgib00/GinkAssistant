@@ -23,5 +23,7 @@ console.log(await gink.chat("What's the weather where I am right now?"));
 const png = await gink.image("my dog", { idea: "statue", photo: dogPhotoBytes });   // see gink.imageIdeas()
 ```
 
+Scheduled agents: `await gink.schedules.create({ input: "Update report.md with today's news", every: "daily", at: "08:00" })`.
+
 Keep your API key on your server: never in a web page anyone can open.
 Guide: https://gink-server.onrender.com/developers/agents

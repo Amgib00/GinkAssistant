@@ -2165,3 +2165,13 @@ New services/live_info.py (all free, no API keys):
 - paraphrase.py / translate.py: --label (env GINK_PARA_LABEL), default f"Gink (via {model})", written to the CSVs'
   "model" column; --model still selects the API model. The owner relabelled existing rows the same way (Gink branding
   + provenance: GPT-OSS is Apache-2.0; accurate records help with training-data questions, e.g. EU GPAI summaries).
+
+## 0.1.132: scheduled agents (full suite)
+- agent_schedules(id sch_*, email, key_id, env_id, input, every hourly|daily|weekly, at HH:MM, tz, tools, enabled,
+  next_run, last_run, last_interaction, created). _next_run(every, at, tz, after) with zoneinfo (hourly: minute of :MM;
+  daily/weekly: next local HH:MM; weekly passes after = run + 6 days). _schedules_tick() starts due rows via
+  _sched_fire -> _interaction_start(..., background=True, place={"tz"}) and advances next_run; _schedules_loop (lifespan,
+  every 60 s). tz defaults to X-Gink-TZ, else UTC. Limits: SCHEDULE_MAX 10; validation 400s; family/org gates.
+- Routes from _sched_routes(prefix, who): /v1 (API key; 401 without) and /dev (session). Console Agents: "Schedule it"
+  + Scheduled table (Run now / Pause / Resume / Delete). Python client.schedules, JS gink.schedules (+ types),
+  CLI `gink schedule ...`. SDKs 0.3.3 (publish: PyPI cli.yml; npm sdk-js.yml -> approve in Staged Packages).

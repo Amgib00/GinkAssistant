@@ -236,6 +236,6 @@ def test_console_page_and_genie_links():
     root = os.path.join(os.path.dirname(__file__), "..", "src", "ginkassistant", "services", "web_app")
     console = open(os.path.join(root, "console.html"), encoding="utf-8").read()
     genie = open(os.path.join(root, "genie.html"), encoding="utf-8").read()
-    assert 'data-v="agents"' in console and 'data-view="agents"' in console and "agents: function () { return loadAgents(); }" in console
+    assert 'data-v="agents"' in console and 'data-view="agents"' in console and "agents: function () { return Promise.all([loadAgents(), loadSchedules()]); }" in console
     assert "stream: true" in console and '"/genie#" + it.environment' in console
     assert "/^#(gp_[a-f0-9]+)$/.exec(location.hash)" in genie                       # /genie#gp_... opens that project

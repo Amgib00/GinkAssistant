@@ -202,6 +202,11 @@
           <label><input type="checkbox" id="ag-web" checked> Web search</label>
           <label><input type="checkbox" id="ag-files" checked> Files</label>
           <button id="ag-run">Run agent</button><button class="ghost" id="ag-stop" hidden>Stop</button></div>
+        <div class="row" style="margin-top:6px">
+          <span class="note">Or run it on a schedule:</span>
+          <select id="sch-every" aria-label="How often"><option value="daily">Every day</option><option value="hourly">Every hour</option><option value="weekly">Every week</option></select>
+          <label>at <input id="sch-at" type="time" value="08:00" aria-label="Time"></label>
+          <button class="ghost" id="sch-add">Schedule it</button></div>
         <p class="err" id="ag-err"></p>
         <div id="ag-live" hidden>
           <h2 style="margin-top:14px">Steps <span class="note" id="ag-status"></span></h2>
@@ -210,6 +215,9 @@
           <p class="note" id="ag-files-note"></p>
         </div>
       </div>
+      <h2>Scheduled</h2>
+      <div class="card scroll"><table><thead><tr><th>Task</th><th>When</th><th>Next run</th><th>Last run</th><th></th></tr></thead>
+        <tbody id="sch-rows"></tbody></table><p class="note" id="sch-empty" hidden>Nothing scheduled. Write a task above and choose &ldquo;Schedule it&rdquo; &mdash; e.g. every morning, update report.md with today&rsquo;s news.</p></div>
       <h2>Recent runs</h2>
       <div class="card scroll"><table><thead><tr><th>Task</th><th>Status</th><th>Steps</th><th>Files changed</th><th>Workspace</th><th>When</th></tr></thead>
         <tbody id="ag-rows"></tbody></table><p class="note" id="ag-empty" hidden>No runs yet.</p></div>
@@ -325,7 +333,7 @@ cat notes.txt | gink "summarise this"</code></pre>
 
   // ---- views
   var VIEWS = {
-    agents: function () { return loadAgents(); },
+    agents: function () { return Promise.all([loadAgents(), loadSchedules()]); },
     dashboard: function () {
       return Promise.all([api("/dev/overview").then(json), api("/dev/metrics?days=14").then(json)]).then(function (r) {
         var o = r[0], m = r[1], host = $("dash-cards"); STATE.overview = o; host.innerHTML = "";
@@ -463,6 +471,41 @@ cat notes.txt | gink "summarise this"</code></pre>
       });
     });
   }
+  function loadSchedules() {
+    return api("/dev/schedules").then(json).then(function (j) {
+      var rows = j.data || [], tb = $("sch-rows"); tb.innerHTML = ""; $("sch-empty").hidden = rows.length > 0;
+      rows.forEach(function (s) {
+        var tr = el("tr");
+        tr.appendChild(el("td", "", s.input.slice(0, 80)));
+        tr.appendChild(el("td", "", (s.every === "hourly" ? "Every hour at :" + s.at.slice(3) : (s.every === "weekly" ? "Every week at " : "Every day at ") + s.at)
+                                 + " (" + s.timezone + ")" + (s.enabled ? "" : " \u00b7 paused")));
+        tr.appendChild(el("td", "", s.enabled ? new Date(s.next_run * 1000).toLocaleString() : "\u2014"));
+        var last = el("td");
+        if (s.last_run) { var a = el("a", "", ago(s.last_run)); a.href = "/genie#" + s.environment; last.appendChild(a); } else last.textContent = "not yet";
+        tr.appendChild(last);
+        var act = el("td");
+        [["Run now", "POST", "/run", null], [s.enabled ? "Pause" : "Resume", "PATCH", "", { enabled: !s.enabled }], ["Delete", "DELETE", "", null]]
+          .forEach(function (b) {
+            var btn = el("button", "ghost", b[0]);
+            btn.onclick = function () {
+              api("/dev/schedules/" + encodeURIComponent(s.id) + b[2], { method: b[1], body: b[3] || (b[1] === "POST" ? {} : undefined) })
+                .then(json).then(function () { return Promise.all([loadSchedules(), b[0] === "Run now" ? loadAgents() : null]); })
+                .catch(function (e) { $("ag-err").textContent = e.message; });
+            };
+            act.appendChild(btn);
+          });
+        tr.appendChild(act); tb.appendChild(tr);
+      });
+    });
+  }
+  function addSchedule() {
+    var input = $("ag-input").value.trim(); if (!input) { $("ag-err").textContent = "Write the task first, then choose Schedule it."; return; }
+    var tools = []; if ($("ag-files").checked) tools.push("files"); if ($("ag-web").checked) tools.push("web_search");
+    api("/dev/schedules", { body: { input: input, every: $("sch-every").value, at: $("sch-at").value || "08:00",
+                                    environment: $("ag-env").value, tools: tools } }).then(json)
+      .then(function () { $("ag-err").textContent = ""; return loadSchedules(); })
+      .catch(function (e) { if (e.message !== "signed out") $("ag-err").textContent = e.message; });
+  }
   function agStep(st) {
     var li = el("li", "", (st.tool || "step") + (st.path ? " " + st.path : st.query ? " \u201c" + st.query + "\u201d" : ""));
     $("ag-steps").appendChild(li);
@@ -596,6 +639,7 @@ cat notes.txt | gink "summarise this"</code></pre>
   };
   $("bat-file").onchange = function () { var f = this.files[0]; if (!f) return; f.text().then(function (t) { $("bat-input").value = t; }); };
   $("ag-run").onclick = runAgent;
+  $("sch-add").onclick = addSchedule;
   $("ag-stop").onclick = function () {
     if (AG.id) api("/dev/interactions/" + encodeURIComponent(AG.id) + "/cancel", { body: {} }).catch(function () {});
     $("ag-status").textContent = "\u00b7 stopping after this step\u2026";

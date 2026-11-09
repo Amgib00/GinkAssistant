@@ -8,6 +8,8 @@ gink -- Gink in your terminal (the Gink Developer API, OpenAI-compatible).
     gink --image "prompt" -o x.png  make an image
     gink agent "task"               a managed agent does it in a workspace that persists (--env ID, --continue)
     gink env list | new NAME | files ID | pull ID [DIR] | push ID DIR | rm ID
+    gink schedule add "task" --every daily --at 08:00 [--env ID] | list | run ID | pause ID | resume ID | rm ID
+                                    scheduled agents (the time is your computer's time zone)
     gink ideas                      ready-made image looks: gink --image "my dog" --idea statue --photo dog.jpg
                                     the agents' workspaces (the same projects as Gink Genie)
     gink login                      sign in through your browser (or: gink login --key to paste a key)
@@ -281,6 +283,47 @@ def env_command(key: str, base: str, args: list) -> int:
     raise GinkError("gink env list | new NAME | files ID | pull ID [DIR] | push ID DIR | rm ID")
 
 
+def schedule_command(key: str, base: str, args: list) -> int:
+    """gink schedule add|list|run|pause|resume|rm: agents that run hourly, daily or weekly."""
+    what = args[0] if args else "list"
+    if what == "add":
+        ap = argparse.ArgumentParser(prog="gink schedule add")
+        ap.add_argument("task", nargs="+")
+        ap.add_argument("--every", default="daily", choices=["hourly", "daily", "weekly"])
+        ap.add_argument("--at", default="08:00", help="24-hour time, in your computer's time zone")
+        ap.add_argument("--env", default="remote")
+        b = ap.parse_args(args[1:])
+        s = _env_call(key, base, "POST", "/schedules", json={"input": " ".join(b.task), "every": b.every, "at": b.at,
+                                                              "environment": b.env}).json()
+        print(f"{s['id']}  {s['every']} at {s['at']} ({s['timezone']})  next: {time.strftime('%a %d %b %H:%M', time.localtime(s['next_run']))}")
+        print(f"Workspace: {s['environment']}  (see the results in Gink Genie, or: gink env files {s['environment']})")
+        return 0
+    if what == "list":
+        rows = _env_call(key, base, "GET", "/schedules").json()["data"]
+        for s in rows:
+            state = "on " if s["enabled"] else "off"
+            print(f"{s['id']}  {state} {s['every']:<6} {s['at']}  {s['input'][:60]}")
+        if not rows:
+            print("No schedules. Add one: gink schedule add \"Update report.md with today's news\" --every daily --at 08:00")
+        return 0
+    if len(args) < 2:
+        raise GinkError("say which schedule (its id from 'gink schedule list')")
+    sid = args[1]
+    if what == "run":
+        r = _env_call(key, base, "POST", f"/schedules/{sid}/run").json()
+        print(f"Started {r['interaction_id']}. Follow it on the console's Agents page, or open its workspace in Gink Genie.")
+        return 0
+    if what in ("pause", "resume"):
+        _env_call(key, base, "PATCH", f"/schedules/{sid}", json={"enabled": what == "resume"})
+        print(("Resumed " if what == "resume" else "Paused ") + sid)
+        return 0
+    if what == "rm":
+        _env_call(key, base, "DELETE", f"/schedules/{sid}")
+        print(f"Deleted {sid}")
+        return 0
+    raise GinkError("gink schedule add | list | run ID | pause ID | resume ID | rm ID")
+
+
 def show_agent_result(it: dict) -> int:
     if it.get("output_text"):
         print(it["output_text"])
@@ -446,6 +489,8 @@ def main(argv=None) -> int:
                 print(f"{i['id']:<11} {i['title']:<18} e.g. gink --image \"{i['example_subject']}\" --idea {i['id']}")
             print("styles: " + ", ".join(s["id"] for s in cat["styles"]))
             return 0
+        if argv[:1] == ["schedule"]:
+            return schedule_command(key, base, argv[1:])
         if argv[:1] == ["env"]:
             return env_command(key, base, argv[1:])
         if argv[:1] in (["version"], ["--version"]):

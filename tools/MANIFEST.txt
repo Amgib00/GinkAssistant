@@ -159,6 +159,9 @@ openspec/changes/add-plan-tiers/tasks.md
 openspec/changes/add-scale-errors-social/proposal.md
 openspec/changes/add-scale-errors-social/specs/operations/spec.md
 openspec/changes/add-scale-errors-social/tasks.md
+openspec/changes/add-scheduled-agents/proposal.md
+openspec/changes/add-scheduled-agents/specs/developer-api/spec.md
+openspec/changes/add-scheduled-agents/tasks.md
 openspec/changes/add-wake-status/proposal.md
 openspec/changes/add-wake-status/specs/languages-voice/spec.md
 openspec/changes/add-wake-status/tasks.md
@@ -376,6 +379,7 @@ tests/test_pull_requests.py
 tests/test_python_sdk.py
 tests/test_release_tooling.py
 tests/test_requirements_match.py
+tests/test_scheduled_agents.py
 tests/test_screens_and_server.py
 tests/test_security_lockdown_style.py
 tests/test_security_workflows.py

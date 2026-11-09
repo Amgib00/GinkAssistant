@@ -22,6 +22,13 @@ gink ideas                                            # ready-made looks
 gink --image "my dog" --idea statue --photo dog.jpg   # start from your own photo
 ```
 
+## Scheduled agents
+
+```bash
+gink schedule add "Update report.md with today's news" --every daily --at 08:00
+gink schedule list        # run ID | pause ID | resume ID | rm ID
+```
+
 ## In Python (the SDK)
 
 ```python

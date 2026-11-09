@@ -63,7 +63,7 @@
           font-size:14px; padding:6px 12px; border-radius:8px; cursor:pointer; } .tabs button.on { color:var(--text); background:var(--code); }
   pre { margin:0; background:var(--code); border:1px solid var(--line); border-radius:14px; padding:16px; overflow-x:auto;
         font:13.5px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; }
-  .cards { display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px; }
   .card h3 { margin:0 0 6px; font-size:17px; } .card p { margin:0; color:var(--muted); font-size:14.5px; }
   table { width:100%; border-collapse:collapse; font-size:14.5px; } td, th { text-align:left; padding:10px; border-bottom:1px solid var(--line);
@@ -175,6 +175,7 @@ for await (const event of gink.interactions.stream({ input: "Add this year's num
     <div class="cards">
       <div class="card"><h3>Research briefs</h3><p>Search the web, compare sources and write a report with links into the workspace.</p></div>
       <div class="card"><h3>Working on files</h3><p>Upload a project or a dataset; ask for changes, summaries or translations, file by file.</p></div>
+      <div class="card"><h3>On a schedule</h3><p>Every morning at 8, update report.md with today&rsquo;s news &mdash; in your time zone, results waiting in the workspace.</p></div>
       <div class="card"><h3>Ongoing assistants</h3><p>Keep one environment per customer or project and continue where the last call stopped.</p></div>
     </div>
   </section>
@@ -193,6 +194,10 @@ for await (const event of gink.interactions.stream({ input: "Add this year's num
         Try <code>curl -N</code>.</td></tr>
       <tr><td><code>GET /v1/interactions/{id}</code></td><td>The interaction now (for background ones).</td></tr>
       <tr><td><code>POST /v1/interactions/{id}/cancel</code></td><td>Stops before its next step.</td></tr>
+      <tr><td><code>POST /v1/schedules</code></td><td>Scheduled agents: <code>{"input", "every": "hourly" | "daily" | "weekly",
+        "at": "08:00", "timezone", "environment", "tools"}</code> &mdash; each run is an ordinary interaction in that
+        workspace. <code>GET /v1/schedules</code>, <code>PATCH /v1/schedules/{id}</code> <code>{"enabled"}</code>,
+        <code>POST /v1/schedules/{id}/run</code>, <code>DELETE /v1/schedules/{id}</code>.</td></tr>
       <tr><td><code>POST /v1/environments</code></td><td><code>{"name"}</code> &rarr; a new, empty environment.</td></tr>
       <tr><td><code>GET /v1/environments</code>, <code>GET /v1/environments/{id}</code></td><td>Your environments and their files.</td></tr>
       <tr><td><code>PUT /v1/environments/{id}/files/{path}</code></td><td>Upload a file (the request body is its content).</td></tr>

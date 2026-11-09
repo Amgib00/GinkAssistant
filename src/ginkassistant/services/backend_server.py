@@ -84,10 +84,12 @@ async def _lifespan(_app):
     stored, then resume unfinished batches."""
     _check_storage_at_startup()
     _agents_after_restart()                         # managed agents that were running when the server stopped
+    sched_task = asyncio.get_running_loop().create_task(_schedules_loop())   # scheduled agents
     gc_task = asyncio.get_running_loop().create_task(_blob_gc_daily())   # unused big files (services/blob_store.py)
     await _resume_batches()
     yield
     gc_task.cancel()
+    sched_task.cancel()
 
 
 app = FastAPI(title="Gink Assistant Backend", docs_url=None, redoc_url=None, openapi_url=None, lifespan=_lifespan)
@@ -2763,6 +2765,8 @@ def delete_account(request: Request, data: dict = Body(...)):
             con.execute("DELETE FROM org_members WHERE email=?", (email,))
             con.execute(AGENT_TABLE)
             con.execute("DELETE FROM agent_interactions WHERE email=?", (email,))
+            con.execute(SCHEDULE_TABLE)
+            con.execute("DELETE FROM agent_schedules WHERE email=?", (email,))
             for t in TRAINING_TABLES:
                 con.execute(t)
             con.execute("DELETE FROM training_optin WHERE email=?", (email,))
@@ -5159,6 +5163,190 @@ def dev_environments(request: Request):
                                              (email,)).fetchall())
     return {"data": [_env_public(request, email, r[0]) for r in rows]}
 
+
+
+# ---- Scheduled agents: run an interaction hourly / daily / weekly (at a local time), e.g. "every morning at 8,
+# update report.md with today's news". Each run is an ordinary interaction (same limits, rules, Genie record).
+#   API (key):      POST/GET /v1/schedules   DELETE /v1/schedules/{id}   POST /v1/schedules/{id}/run   PATCH {enabled}
+#   Console (session): the same under /dev/schedules
+SCHEDULE_TABLE = ("CREATE TABLE IF NOT EXISTS agent_schedules (id TEXT PRIMARY KEY, email TEXT, key_id INTEGER, env_id TEXT, "
+                  "input TEXT, every TEXT, at TEXT, tz TEXT, tools TEXT, enabled INTEGER, next_run REAL, last_run REAL, "
+                  "last_interaction TEXT, created REAL)")
+SCHEDULE_EVERY = ("hourly", "daily", "weekly")
+SCHEDULE_MAX = int(os.environ.get("GINK_SCHEDULE_MAX") or 10)
+
+
+def _sched_db(fn):
+    with _db_lock:
+        con = _db()
+        try:
+            con.execute(SCHEDULE_TABLE)
+            out = fn(con)
+            con.commit()
+            return out
+        finally:
+            con.close()
+
+
+def _next_run(every: str, at: str, tz: str, after: float) -> float:
+    """The next time after `after` (unix) for hourly (at minute MM), daily (at HH:MM local) or weekly (same weekday)."""
+    import datetime as _dtm
+    from zoneinfo import ZoneInfo
+    try:
+        zone = ZoneInfo(tz or "UTC")
+    except Exception:
+        zone = ZoneInfo("UTC")
+    hh, mm = (int(x) for x in (at or "08:00").split(":"))
+    now = _dtm.datetime.fromtimestamp(after, zone)
+    if every == "hourly":
+        t = now.replace(minute=mm, second=0, microsecond=0)
+        if t <= now:
+            t += _dtm.timedelta(hours=1)
+    else:
+        t = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
+        while t <= now:
+            t += _dtm.timedelta(days=1)
+    return t.timestamp()          # weekly: the caller passes `after` = the last run + 6 days
+
+
+def _sched_public(row) -> dict:
+    keys = ("id", "email", "key_id", "env_id", "input", "every", "at", "tz", "tools", "enabled", "next_run", "last_run",
+            "last_interaction", "created")
+    r = dict(zip(keys, row))
+    return {"id": r["id"], "object": "schedule", "input": r["input"], "every": r["every"], "at": r["at"], "timezone": r["tz"],
+            "environment": r["env_id"], "tools": _json.loads(r["tools"] or "[]"), "enabled": bool(r["enabled"]),
+            "next_run": int(r["next_run"] or 0), "last_run": int(r["last_run"]) if r["last_run"] else None,
+            "last_interaction_id": r["last_interaction"], "created": int(r["created"] or 0)}
+
+
+def _sched_create(email: str, key_id, data: dict, place: dict) -> dict:
+    text = str(data.get("input") or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Give the scheduled agent an input (its task).")
+    every = str(data.get("every") or "daily").lower()
+    if every not in SCHEDULE_EVERY:
+        raise HTTPException(status_code=400, detail="every must be hourly, daily or weekly.")
+    at = str(data.get("at") or "08:00").strip()
+    if not re.fullmatch(r"([01]?\d|2[0-3]):[0-5]\d", at):
+        raise HTTPException(status_code=400, detail="at must be a time like 08:00 (24-hour).")
+    at = f"{int(at.split(':')[0]):02d}:{at.split(':')[1]}"
+    tz = str(data.get("timezone") or (place or {}).get("tz") or "UTC")
+    try:
+        from zoneinfo import ZoneInfo
+        ZoneInfo(tz)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Unknown timezone (use names like Europe/Paris).")
+    tools = sorted(set(data.get("tools") or ["files", "web_search"]) & {"files", "web_search"})
+    _genie_family_gate(email)
+    org_text, refusal = _org_guard(email, text)
+    if refusal:
+        raise HTTPException(status_code=422, detail=refusal)
+    n = _sched_db(lambda con: con.execute("SELECT COUNT(*) FROM agent_schedules WHERE email=?", (email,)).fetchone()[0])
+    if n >= SCHEDULE_MAX:
+        raise HTTPException(status_code=409, detail=f"You have {SCHEDULE_MAX} schedules: delete one first.")
+    env_id = _env_for(email, data.get("environment") or "remote", text[:50])
+    sid, now = "sch_" + secrets.token_hex(8), time.time()
+    _sched_db(lambda con: con.execute("INSERT INTO agent_schedules VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, NULL, NULL, ?)",
+                                      (sid, email, key_id, env_id, text[:20000], every, at, tz, _json.dumps(tools),
+                                       _next_run(every, at, tz, now), now)))
+    return _sched_public(_sched_db(lambda con: con.execute("SELECT * FROM agent_schedules WHERE id=?", (sid,)).fetchone()))
+
+
+def _sched_list(email: str) -> dict:
+    rows = _sched_db(lambda con: con.execute("SELECT * FROM agent_schedules WHERE email=? ORDER BY created DESC", (email,)).fetchall())
+    return {"object": "list", "data": [_sched_public(r) for r in rows]}
+
+
+def _sched_get_row(email: str, sid: str):
+    row = _sched_db(lambda con: con.execute("SELECT * FROM agent_schedules WHERE id=? AND email=?", (sid, email)).fetchone())
+    if not row:
+        raise HTTPException(status_code=404, detail="No schedule with that id.")
+    return row
+
+
+async def _sched_fire(row) -> dict:
+    """Start one run now (an ordinary background interaction in the schedule's environment)."""
+    r = _sched_public(row)
+    email, key_id = row[1], row[2]
+    try:
+        it = await _interaction_start(email, key_id, {"input": r["input"], "environment": r["environment"], "tools": r["tools"],
+                                                      "background": True}, {"tz": r["timezone"]})
+    except HTTPException as exc:
+        it = {"id": None, "error": {"message": str(exc.detail)}}
+    if not isinstance(it, dict):                               # an error response from _interaction_start
+        it = {"id": None}
+    now = time.time()
+    after = now + 6 * 86400 if r["every"] == "weekly" else now          # weekly: a week after this run
+    _sched_db(lambda con: con.execute("UPDATE agent_schedules SET last_run=?, last_interaction=?, next_run=? WHERE id=?",
+                                      (now, it.get("id"), _next_run(r["every"], r["at"], r["timezone"], after), r["id"])))
+    return it
+
+
+async def _schedules_loop():
+    """Every minute: start the schedules that are due (one server; restarts pick up where they left off)."""
+    await asyncio.sleep(30)
+    while True:
+        try:
+            await _schedules_tick()
+        except Exception as exc:
+            print(f"[Gink] schedules: {type(exc).__name__}", flush=True)
+        await asyncio.sleep(60)
+
+
+async def _schedules_tick() -> int:
+    """Start every schedule that's due now; returns how many."""
+    due = _sched_db(lambda con: con.execute("SELECT * FROM agent_schedules WHERE enabled=1 AND next_run<=? LIMIT 20",
+                                            (time.time(),)).fetchall())
+    for row in due:
+        await _sched_fire(row)
+    return len(due)
+
+
+def _sched_routes(prefix: str, who):
+    """The same schedule endpoints for API keys (/v1) and the console's session (/dev)."""
+    @app.post(f"{prefix}/schedules")
+    async def create(request: Request, data: dict = Body(...)):
+        email, key_id = who(request)
+        return _sched_create(email, key_id, data, _client_place_from(request))
+
+    @app.get(f"{prefix}/schedules")
+    def listing(request: Request):
+        return _sched_list(who(request)[0])
+
+    @app.patch(f"{prefix}/schedules/{{sid}}")
+    def patch(sid: str, request: Request, data: dict = Body(...)):
+        email = who(request)[0]
+        row = _sched_get_row(email, sid)
+        if "enabled" in data:
+            on = bool(data["enabled"])
+            r = _sched_public(row)
+            _sched_db(lambda con: con.execute("UPDATE agent_schedules SET enabled=?, next_run=? WHERE id=?",
+                                              (int(on), _next_run(r["every"], r["at"], r["timezone"], time.time()), sid)))
+        return _sched_public(_sched_get_row(email, sid))
+
+    @app.delete(f"{prefix}/schedules/{{sid}}")
+    def delete(sid: str, request: Request):
+        email = who(request)[0]
+        _sched_get_row(email, sid)
+        _sched_db(lambda con: con.execute("DELETE FROM agent_schedules WHERE id=?", (sid,)))
+        return {"id": sid, "object": "schedule", "deleted": True}
+
+    @app.post(f"{prefix}/schedules/{{sid}}/run")
+    async def run_now(sid: str, request: Request):
+        email = who(request)[0]
+        it = await _sched_fire(_sched_get_row(email, sid))
+        return {"schedule": _sched_public(_sched_get_row(email, sid)), "interaction_id": it.get("id")}
+
+
+def _api_who(request: Request):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        raise HTTPException(status_code=401, detail="Use a valid Gink API key.")
+    return owner
+
+
+_sched_routes("/v1", _api_who)
+_sched_routes("/dev", lambda request: (_session_email(request), None))
 
 @app.get("/developers/agents", response_class=HTMLResponse)
 def agents_page():

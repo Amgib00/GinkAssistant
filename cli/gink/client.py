@@ -75,6 +75,7 @@ class Client:
         self._http = http or httpx.Client(timeout=timeout)
         self.interactions = _Interactions(self)
         self.environments = _Environments(self)
+        self.schedules = _Schedules(self)
 
     # ---- plumbing
     def _headers(self) -> dict:
@@ -219,3 +220,34 @@ class _Environments:
 
     def get(self, environment_id: str) -> Environment:
         return Environment(self.c.request("GET", f"/environments/{environment_id}").json(), self.c)
+
+
+class _Schedules:
+    """Scheduled agents: client.schedules.create(input="Update report.md with today's news", every="daily", at="08:00")."""
+
+    def __init__(self, client: Client):
+        self.c = client
+
+    def create(self, input: str, every: str = "daily", at: str = "08:00", timezone: str = "", environment: str = "remote",
+               tools: Optional[list] = None) -> _Obj:
+        body = {"input": input, "every": every, "at": at, "environment": environment}
+        if timezone:
+            body["timezone"] = timezone
+        if tools is not None:
+            body["tools"] = list(tools)
+        return _Obj(self.c.request("POST", "/schedules", json=body).json())
+
+    def list(self) -> list:
+        return [_Obj(s) for s in self.c.request("GET", "/schedules").json().get("data", [])]
+
+    def run(self, schedule_id: str) -> _Obj:
+        return _Obj(self.c.request("POST", f"/schedules/{schedule_id}/run").json())
+
+    def pause(self, schedule_id: str) -> _Obj:
+        return _Obj(self.c.request("PATCH", f"/schedules/{schedule_id}", json={"enabled": False}).json())
+
+    def resume(self, schedule_id: str) -> _Obj:
+        return _Obj(self.c.request("PATCH", f"/schedules/{schedule_id}", json={"enabled": True}).json())
+
+    def delete(self, schedule_id: str) -> None:
+        self.c.request("DELETE", f"/schedules/{schedule_id}")

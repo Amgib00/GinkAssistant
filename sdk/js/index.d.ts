@@ -50,6 +50,12 @@ export declare class Environment {
   delete(): Promise<{ id: string; deleted: true }>;
 }
 
+export interface Schedule {
+  id: string; object: "schedule"; input: string; every: "hourly" | "daily" | "weekly"; at: string; timezone: string;
+  environment: string; tools: Array<"files" | "web_search">; enabled: boolean; next_run: number; last_run: number | null;
+  last_interaction_id: string | null; created: number;
+}
+
 export declare class Gink {
   constructor(options?: { apiKey?: string; baseURL?: string; fetch?: typeof fetch });
   interactions: {
@@ -63,6 +69,15 @@ export declare class Gink {
     create(options?: { name?: string }): Promise<Environment>;
     list(): Promise<Environment[]>;
     get(id: string): Promise<Environment>;
+  };
+  schedules: {
+    create(params: { input: string; every?: Schedule["every"]; at?: string; timezone?: string; environment?: string;
+      tools?: Array<"files" | "web_search"> }): Promise<Schedule>;
+    list(): Promise<Schedule[]>;
+    run(id: string): Promise<{ schedule: Schedule; interaction_id: string | null }>;
+    pause(id: string): Promise<Schedule>;
+    resume(id: string): Promise<Schedule>;
+    delete(id: string): Promise<{ id: string; deleted: true }>;
   };
   chat(message: string | Array<{ role: string; content: string }>, options?: { model?: string; system?: string }): Promise<string>;
   search(question: string): Promise<string>;

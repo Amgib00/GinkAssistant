@@ -40,6 +40,7 @@ export class Gink {
     this._fetch = fetchImpl || globalThis.fetch.bind(globalThis);
     this.interactions = new Interactions(this);
     this.environments = new Environments(this);
+    this.schedules = new Schedules(this);
   }
 
   async request(method, path, { json, body, raw } = {}) {
@@ -168,6 +169,22 @@ class Environments {
   async create({ name = "Agent environment" } = {}) { return new Environment(await this.c.request("POST", "/environments", { json: { name } }), this.c); }
   async list() { return ((await this.c.request("GET", "/environments")).data || []).map((e) => new Environment(e, this.c)); }
   async get(id) { return new Environment(await this.c.request("GET", `/environments/${encodeURIComponent(id)}`), this.c); }
+}
+
+// Scheduled agents: gink.schedules.create({ input: "Update report.md with today's news", every: "daily", at: "08:00" })
+class Schedules {
+  constructor(client) { this.c = client; }
+  create({ input, every = "daily", at = "08:00", timezone, environment = "remote", tools } = {}) {
+    const body = { input, every, at, environment };
+    if (timezone) body.timezone = timezone;
+    if (tools) body.tools = tools;
+    return this.c.request("POST", "/schedules", { json: body });
+  }
+  async list() { return (await this.c.request("GET", "/schedules")).data || []; }
+  run(id) { return this.c.request("POST", `/schedules/${encodeURIComponent(id)}/run`); }
+  pause(id) { return this.c.request("PATCH", `/schedules/${encodeURIComponent(id)}`, { json: { enabled: false } }); }
+  resume(id) { return this.c.request("PATCH", `/schedules/${encodeURIComponent(id)}`, { json: { enabled: true } }); }
+  delete(id) { return this.c.request("DELETE", `/schedules/${encodeURIComponent(id)}`); }
 }
 
 export default Gink;
