@@ -2254,3 +2254,10 @@ New services/live_info.py (all free, no API keys):
   with changes, autoCheckPreview loads the preview (even if hidden), waits 3 s for preview errors, then sends
   "(Automatic check n of 3) …" -- max 3 per request of yours (reset in ask()); then it says it couldn't.
 - Checked end to end in Chromium + a real local server: JS ReferenceError -> automatic fix request -> fixed -> stops.
+
+## 0.1.143: JavaScript SDK runs #5/#6 failed (15-18 s)
+- Likely cause: `env: NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}` became "" after the owner deleted the secret; setup-node's
+  .npmrc then carries an empty _authToken instead of its placeholder, and npm doesn't fall back to trusted publishing
+  (OIDC). Now NPM_TOKEN is read separately and NODE_AUTH_TOKEN exported only when it's non-empty; npm/node versions are
+  printed; a failure names the Trusted Publisher settings to check. `npm stage publish` is valid (npm v11 docs).
+  If it still fails: `gh run view --log-failed -R Amgib00/GinkAssistant <run id>` and paste the error lines.

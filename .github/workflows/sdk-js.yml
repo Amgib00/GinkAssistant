@@ -35,7 +35,7 @@ jobs:
           node -e "const p = require('./package.json'); const d = Object.keys({...p.dependencies, ...p.peerDependencies}); if (d.length) { console.error('::error::package.json has dependencies: ' + d.join(', ') + ' (the SDK uses only fetch)'); process.exit(1) }"
       - name: Stage the new version (you approve it on npmjs.com)
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           V=$(node -p "require('./package.json').version")
           if npm view "gink-ai@$V" version >/dev/null 2>&1; then
@@ -43,5 +43,12 @@ jobs:
             exit 0
           fi
           npm install -g npm@latest      # staged publishing and trusted publishing need a recent npm (11.15+)
-          npm stage publish --access public
+          echo "npm $(npm --version), node $(node --version)"
+          # Trusted publishing (OIDC) when there's no token. Only a REAL token may be set: an empty NODE_AUTH_TOKEN
+          # (what "${{ secrets.NPM_TOKEN }}" becomes once the secret is deleted) stops npm from using trusted publishing.
+          if [ -n "$NPM_TOKEN" ]; then export NODE_AUTH_TOKEN="$NPM_TOKEN"; fi
+          if ! npm stage publish --access public; then
+            echo "::error::Staging failed. If it says 404/ENEEDAUTH/403: check npmjs.com -> gink-ai -> Settings -> Trusted Publisher is GitHub Actions, Amgib00 / GinkAssistant / sdk-js.yml with NO environment name."
+            exit 1
+          fi
           echo "::notice::gink-ai $V is staged. Approve it: npmjs.com -> Staged Packages -> gink-ai $V -> Approve (2FA with your phone)."

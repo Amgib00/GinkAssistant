@@ -154,6 +154,8 @@ def test_npm_publishing_is_staged_for_the_owner_to_approve():
     text = open(os.path.join(ROOT, ".github", "workflows", "sdk-js.yml"), encoding="utf-8").read()
     assert "npm stage publish --access public" in text and "Staged Packages" in text and "npm install -g npm@latest" in text
     assert "already on npm" in text and "depends on nothing" in text
+    assert "NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}" not in text                  # an empty token blocks trusted publishing
+    assert 'if [ -n "$NPM_TOKEN" ]; then export NODE_AUTH_TOKEN="$NPM_TOKEN"; fi' in text
 
 
 def test_js_sdk_package_is_clean():

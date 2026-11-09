@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.143 (November 2026)
+
+- For the owner: the JavaScript SDK's npm workflow no longer blocks npm's trusted publishing (an empty
+  token was set once the NPM_TOKEN secret was deleted), and says exactly what to check if staging fails
+
 ## 0.1.142 (November 2026)
 
 - Gink Genie fixes its own mistakes: before answering it checks that every file its pages link to really
