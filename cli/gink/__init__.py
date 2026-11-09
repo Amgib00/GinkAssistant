@@ -19,7 +19,7 @@ The Gink Python SDK (pip install gink-ai), for the Gink Developer API.
     env.upload("data.csv", open("data.csv", "rb").read())
     print(env.download("report.md").decode())
 """
-from .client import Client, GinkAPIError, Interaction, Environment, Event
+from .client import Client, GinkAPIError, Interaction, Environment, Event, verify_webhook
 
-__all__ = ["Client", "GinkAPIError", "Interaction", "Environment", "Event"]
-__version__ = "0.3.3"
+__all__ = ["Client", "GinkAPIError", "Interaction", "Environment", "Event", "verify_webhook"]
+__version__ = "0.3.4"

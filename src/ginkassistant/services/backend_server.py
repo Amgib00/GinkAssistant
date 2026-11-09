@@ -2767,6 +2767,8 @@ def delete_account(request: Request, data: dict = Body(...)):
             con.execute("DELETE FROM agent_interactions WHERE email=?", (email,))
             con.execute(SCHEDULE_TABLE)
             con.execute("DELETE FROM agent_schedules WHERE email=?", (email,))
+            con.execute(WEBHOOK_TABLE)
+            con.execute("DELETE FROM webhook_secrets WHERE email=?", (email,))
             for t in TRAINING_TABLES:
                 con.execute(t)
             con.execute("DELETE FROM training_optin WHERE email=?", (email,))
@@ -4770,11 +4772,122 @@ def _agent_to_genie(env_id: str, messages: list, steps: list, reply: str) -> Non
         print(f"[Gink] agent: not added to the Genie conversation ({type(exc).__name__})", flush=True)
 
 
+# ---- Webhooks: when an interaction ends (completed, incomplete, failed, cancelled), Gink POSTs
+#   {"type": "interaction.completed", "data": <the interaction>} to its webhook_url, signed:
+#   Gink-Signature: t=<unix seconds>,v1=<hex HMAC-SHA256(secret, "<t>.<raw body>")>   (secret: GET /v1/webhooks/secret)
+# Only https addresses on the public internet (never this server's own network), 10 s timeout, no redirects,
+# 3 tries. The SDKs verify it: gink.verify_webhook(...) / verifyWebhook(...).
+WEBHOOK_TABLE = "CREATE TABLE IF NOT EXISTS webhook_secrets (email TEXT PRIMARY KEY, secret TEXT, created REAL)"
+
+
+def _webhook_secret(email: str, rotate: bool = False) -> str:
+    def get(con):
+        con.execute(WEBHOOK_TABLE)
+        row = con.execute("SELECT secret FROM webhook_secrets WHERE email=?", (email,)).fetchone()
+        if row and not rotate:
+            return row[0]
+        secret = "whsec_" + secrets.token_urlsafe(32)
+        con.execute("INSERT OR REPLACE INTO webhook_secrets VALUES (?, ?, ?)", (email, secret, time.time()))
+        return secret
+    with _db_lock:
+        con = _db()
+        try:
+            out = get(con)
+            con.commit()
+            return out
+        finally:
+            con.close()
+
+
+def _webhook_url_ok(url: str) -> str:
+    """The URL if it's safe to call (https, a public internet address); else raise 400 with why."""
+    import ipaddress
+    import socket
+    from urllib.parse import urlparse
+    url = str(url or "").strip()
+    u = urlparse(url)
+    if u.scheme != "https" or not u.hostname or u.username or u.password or len(url) > 2000:
+        raise HTTPException(status_code=400, detail="webhook_url must be an https:// address.")
+    try:
+        infos = socket.getaddrinfo(u.hostname, u.port or 443, proto=socket.IPPROTO_TCP)
+    except OSError:
+        raise HTTPException(status_code=400, detail="webhook_url's host can't be found.")
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0])
+        if not ip.is_global or ip.is_multicast:
+            raise HTTPException(status_code=400, detail="webhook_url must be on the public internet.")
+    return url
+
+
+def _webhook_sign(secret: str, body: bytes, ts: int) -> str:
+    import hmac as _hm
+    return f"t={ts},v1=" + _hm.new(secret.encode(), f"{ts}.".encode() + body, hashlib.sha256).hexdigest()
+
+
+async def _webhook_post(url: str, body: bytes, headers: dict) -> int:
+    import httpx
+    async with httpx.AsyncClient(timeout=10, follow_redirects=False) as client:
+        return (await client.post(url, content=body, headers=headers)).status_code
+
+
+async def _agent_notify(iid: str) -> None:
+    row = _agent_db(lambda con: con.execute("SELECT * FROM agent_interactions WHERE id=?", (iid,)).fetchone())
+    if not row:
+        return
+    it = _agent_public(row)
+    url = it.pop("webhook_url", "")
+    if not url or it["status"] == "running":
+        return
+    try:
+        _webhook_url_ok(url)                                   # checked again at send time (DNS can change)
+    except HTTPException:
+        return
+    body = _json.dumps({"type": f"interaction.{it['status']}", "data": it}, ensure_ascii=False).encode()
+    for attempt in range(3):
+        ts = int(time.time())
+        headers = {"Content-Type": "application/json", "User-Agent": "Gink-Webhooks/1",
+                   "Gink-Signature": _webhook_sign(_webhook_secret(row[1]), body, ts)}
+        try:
+            if 200 <= await _webhook_post(url, body, headers) < 300:
+                return
+        except Exception:
+            pass
+        await asyncio.sleep(2 ** attempt * 5)
+
+
+@app.get("/v1/webhooks/secret")
+def api_webhook_secret(request: Request):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    return {"secret": _webhook_secret(owner[0]), "header": "Gink-Signature"}
+
+
+@app.post("/v1/webhooks/secret/rotate")
+def api_webhook_rotate(request: Request):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    return {"secret": _webhook_secret(owner[0], rotate=True), "header": "Gink-Signature"}
+
+
+@app.get("/dev/webhooks/secret")
+def dev_webhook_secret(request: Request):
+    return {"secret": _webhook_secret(_session_email(request)), "header": "Gink-Signature"}
+
+
+@app.post("/dev/webhooks/secret/rotate")
+def dev_webhook_rotate(request: Request):
+    return {"secret": _webhook_secret(_session_email(request), rotate=True), "header": "Gink-Signature"}
+
+
 def _agent_db(fn):
     with _db_lock:
         con = _db()
         try:
             con.execute(AGENT_TABLE)
+            if "webhook_url" not in {r[1] for r in con.execute("PRAGMA table_info(agent_interactions)").fetchall()}:
+                con.execute("ALTER TABLE agent_interactions ADD COLUMN webhook_url TEXT")
             out = fn(con)
             con.commit()
             return out
@@ -4784,7 +4897,7 @@ def _agent_db(fn):
 
 def _agent_public(row) -> dict:
     keys = ("id", "email", "key_id", "env_id", "status", "input", "output_text", "steps", "messages", "previous_id",
-            "error", "created", "finished")
+            "error", "created", "finished", "webhook_url")
     r = dict(zip(keys, row))
     steps = _json.loads(r["steps"] or "[]")
     out = {"id": r["id"], "object": "interaction", "agent": "gink-agent", "status": r["status"], "environment": r["env_id"],
@@ -4794,6 +4907,8 @@ def _agent_public(row) -> dict:
            "finished": int(r["finished"]) if r["finished"] else None, "usage": {"steps": len(steps)}}
     if r["error"]:
         out["error"] = {"message": r["error"]}
+    if r.get("webhook_url"):
+        out["webhook_url"] = r["webhook_url"]
     return out
 
 
@@ -4895,6 +5010,12 @@ async def _agent_loop(iid: str, email: str, env_id: str, messages: list, tools_a
                     steps=_json.dumps(steps), finished=time.time())
     finally:
         _agent_tasks.pop(iid, None)
+        try:                                              # webhook_url, if any -- in the background: retries never
+            task = asyncio.get_running_loop().create_task(_agent_notify(iid))    # hold up the API's answer
+            _safety_tasks.add(task)
+            task.add_done_callback(_safety_tasks.discard)
+        except Exception as exc:
+            print(f"[Gink] webhook: {type(exc).__name__}", flush=True)
 
 
 @app.post("/v1/interactions")
@@ -4941,11 +5062,19 @@ async def _interaction_start(email: str, key_id, data: dict, place: dict = None)
         env_id = _env_for(email, env_hint or "remote", text[:50])
     except HTTPException as exc:
         return _api_error(exc.status_code, str(exc.detail), "environment")
+    webhook = ""
+    if data.get("webhook_url"):
+        try:
+            webhook = _webhook_url_ok(data["webhook_url"])
+        except HTTPException as exc:
+            return _api_error(400, str(exc.detail), "invalid_webhook_url")
     iid = "int_" + secrets.token_hex(10)
     messages = history + [{"role": "user", "content": text[:20000]}]
     _agent_db(lambda con: con.execute("INSERT INTO agent_interactions (id, email, key_id, env_id, status, input, steps, messages, "
                                       "previous_id, created) VALUES (?, ?, ?, ?, 'running', ?, '[]', ?, ?, ?)",
                                       (iid, email, key_id, env_id, text[:20000], _json.dumps(messages), prev or None, time.time())))
+    if webhook:
+        _agent_db(lambda con: con.execute("UPDATE agent_interactions SET webhook_url=? WHERE id=?", (webhook, iid)))
     _agent_tasks[iid] = "running"
     _client_place.set(place or {})                     # the background task copies this context
     run = _agent_loop(iid, email, env_id, messages, tools, max_steps, org_text, bool(family))
@@ -5181,6 +5310,8 @@ def _sched_db(fn):
         con = _db()
         try:
             con.execute(SCHEDULE_TABLE)
+            if "webhook_url" not in {r[1] for r in con.execute("PRAGMA table_info(agent_schedules)").fetchall()}:
+                con.execute("ALTER TABLE agent_schedules ADD COLUMN webhook_url TEXT")
             out = fn(con)
             con.commit()
             return out
@@ -5211,12 +5342,13 @@ def _next_run(every: str, at: str, tz: str, after: float) -> float:
 
 def _sched_public(row) -> dict:
     keys = ("id", "email", "key_id", "env_id", "input", "every", "at", "tz", "tools", "enabled", "next_run", "last_run",
-            "last_interaction", "created")
+            "last_interaction", "created", "webhook_url")
     r = dict(zip(keys, row))
     return {"id": r["id"], "object": "schedule", "input": r["input"], "every": r["every"], "at": r["at"], "timezone": r["tz"],
             "environment": r["env_id"], "tools": _json.loads(r["tools"] or "[]"), "enabled": bool(r["enabled"]),
             "next_run": int(r["next_run"] or 0), "last_run": int(r["last_run"]) if r["last_run"] else None,
-            "last_interaction_id": r["last_interaction"], "created": int(r["created"] or 0)}
+            "last_interaction_id": r["last_interaction"], "created": int(r["created"] or 0),
+            **({"webhook_url": r["webhook_url"]} if r.get("webhook_url") else {})}
 
 
 def _sched_create(email: str, key_id, data: dict, place: dict) -> dict:
@@ -5244,11 +5376,14 @@ def _sched_create(email: str, key_id, data: dict, place: dict) -> dict:
     n = _sched_db(lambda con: con.execute("SELECT COUNT(*) FROM agent_schedules WHERE email=?", (email,)).fetchone()[0])
     if n >= SCHEDULE_MAX:
         raise HTTPException(status_code=409, detail=f"You have {SCHEDULE_MAX} schedules: delete one first.")
+    webhook = _webhook_url_ok(data["webhook_url"]) if data.get("webhook_url") else ""
     env_id = _env_for(email, data.get("environment") or "remote", text[:50])
     sid, now = "sch_" + secrets.token_hex(8), time.time()
-    _sched_db(lambda con: con.execute("INSERT INTO agent_schedules VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, NULL, NULL, ?)",
+    _sched_db(lambda con: con.execute("INSERT INTO agent_schedules (id, email, key_id, env_id, input, every, at, tz, tools, "
+                                      "enabled, next_run, last_run, last_interaction, created, webhook_url) "
+                                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, NULL, NULL, ?, ?)",
                                       (sid, email, key_id, env_id, text[:20000], every, at, tz, _json.dumps(tools),
-                                       _next_run(every, at, tz, now), now)))
+                                       _next_run(every, at, tz, now), now, webhook or None)))
     return _sched_public(_sched_db(lambda con: con.execute("SELECT * FROM agent_schedules WHERE id=?", (sid,)).fetchone()))
 
 
@@ -5270,7 +5405,8 @@ async def _sched_fire(row) -> dict:
     email, key_id = row[1], row[2]
     try:
         it = await _interaction_start(email, key_id, {"input": r["input"], "environment": r["environment"], "tools": r["tools"],
-                                                      "background": True}, {"tz": r["timezone"]})
+                                                      "background": True, "webhook_url": r.get("webhook_url") or ""},
+                                      {"tz": r["timezone"]})
     except HTTPException as exc:
         it = {"id": None, "error": {"message": str(exc.detail)}}
     if not isinstance(it, dict):                               # an error response from _interaction_start

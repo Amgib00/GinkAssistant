@@ -31,7 +31,11 @@ export interface InteractionParams {
   background?: boolean;
   max_steps?: number;              // 1-30, default 15
   tools?: Array<"files" | "web_search">;
+  webhook_url?: string;            // https: Gink POSTs {"type": "interaction.<status>", "data": Interaction} when it ends
 }
+
+export declare function verifyWebhook(body: string, signature: string, secret: string,
+  options?: { tolerance?: number }): Promise<{ type: string; data: Interaction }>;
 
 export type InteractionEvent =
   | { type: "step"; data: Step }
@@ -72,13 +76,14 @@ export declare class Gink {
   };
   schedules: {
     create(params: { input: string; every?: Schedule["every"]; at?: string; timezone?: string; environment?: string;
-      tools?: Array<"files" | "web_search"> }): Promise<Schedule>;
+      tools?: Array<"files" | "web_search">; webhook_url?: string }): Promise<Schedule>;
     list(): Promise<Schedule[]>;
     run(id: string): Promise<{ schedule: Schedule; interaction_id: string | null }>;
     pause(id: string): Promise<Schedule>;
     resume(id: string): Promise<Schedule>;
     delete(id: string): Promise<{ id: string; deleted: true }>;
   };
+  webhooks: { secret(): Promise<string>; rotate(): Promise<string> };
   chat(message: string | Array<{ role: string; content: string }>, options?: { model?: string; system?: string }): Promise<string>;
   search(question: string): Promise<string>;
   image(prompt?: string, options?: { idea?: string; subject?: string; style?: string;

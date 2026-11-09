@@ -76,6 +76,7 @@ class Client:
         self.interactions = _Interactions(self)
         self.environments = _Environments(self)
         self.schedules = _Schedules(self)
+        self.webhooks = _Webhooks(self)
 
     # ---- plumbing
     def _headers(self) -> dict:
@@ -140,7 +141,8 @@ class _Interactions:
         self.c = client
 
     def create(self, input: str, agent: str = "gink-agent", environment: str = "remote", previous_interaction_id: str = "",
-               background: bool = False, stream: bool = False, max_steps: int = 15, tools: Optional[list] = None):
+               background: bool = False, stream: bool = False, max_steps: int = 15, tools: Optional[list] = None,
+               webhook_url: str = ""):
         """Run the managed agent. Returns an Interaction -- or, with stream=True, an iterator of live Events."""
         body = {"agent": agent, "input": input, "max_steps": max_steps, "background": bool(background), "stream": bool(stream)}
         if previous_interaction_id:
@@ -149,6 +151,8 @@ class _Interactions:
             body["environment"] = environment
         if tools is not None:
             body["tools"] = list(tools)
+        if webhook_url:
+            body["webhook_url"] = webhook_url
         if stream:
             return self._stream(body)
         return Interaction(self.c.request("POST", "/interactions", json=body).json())
@@ -229,8 +233,10 @@ class _Schedules:
         self.c = client
 
     def create(self, input: str, every: str = "daily", at: str = "08:00", timezone: str = "", environment: str = "remote",
-               tools: Optional[list] = None) -> _Obj:
+               tools: Optional[list] = None, webhook_url: str = "") -> _Obj:
         body = {"input": input, "every": every, "at": at, "environment": environment}
+        if webhook_url:
+            body["webhook_url"] = webhook_url
         if timezone:
             body["timezone"] = timezone
         if tools is not None:
@@ -251,3 +257,35 @@ class _Schedules:
 
     def delete(self, schedule_id: str) -> None:
         self.c.request("DELETE", f"/schedules/{schedule_id}")
+
+
+class _Webhooks:
+    """The secret Gink signs webhooks with (Gink-Signature header). Keep it on your server."""
+
+    def __init__(self, client: Client):
+        self.c = client
+
+    def secret(self) -> str:
+        return self.c.request("GET", "/webhooks/secret").json()["secret"]
+
+    def rotate(self) -> str:
+        return self.c.request("POST", "/webhooks/secret/rotate").json()["secret"]
+
+
+def verify_webhook(body: bytes, signature: str, secret: str, tolerance: int = 300) -> dict:
+    """Check a webhook really came from Gink, then return its JSON. `body`: the raw request body (bytes, exactly as
+    received); `signature`: the Gink-Signature header. Raises GinkAPIError if it doesn't match or is too old."""
+    import hashlib
+    import hmac
+    parts = dict(p.split("=", 1) for p in str(signature or "").split(",") if "=" in p)
+    try:
+        ts = int(parts.get("t", ""))
+    except ValueError:
+        raise GinkAPIError("Bad Gink-Signature header.", 400, "bad_signature")
+    if abs(time.time() - ts) > tolerance:
+        raise GinkAPIError("The webhook is too old (or the clocks differ).", 400, "stale_signature")
+    raw = body if isinstance(body, (bytes, bytearray)) else str(body).encode()
+    expected = hmac.new(secret.encode(), f"{ts}.".encode() + bytes(raw), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, parts.get("v1", "")):
+        raise GinkAPIError("The webhook's signature doesn't match.", 400, "bad_signature")
+    return json.loads(raw)

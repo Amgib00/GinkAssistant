@@ -198,6 +198,10 @@ for await (const event of gink.interactions.stream({ input: "Add this year's num
         "at": "08:00", "timezone", "environment", "tools"}</code> &mdash; each run is an ordinary interaction in that
         workspace. <code>GET /v1/schedules</code>, <code>PATCH /v1/schedules/{id}</code> <code>{"enabled"}</code>,
         <code>POST /v1/schedules/{id}/run</code>, <code>DELETE /v1/schedules/{id}</code>.</td></tr>
+      <tr><td><code>"webhook_url"</code></td><td>On interactions and schedules: when a run ends, Gink POSTs
+        <code>{"type": "interaction.completed", "data": &hellip;}</code> there (https, public addresses only), signed in the
+        <code>Gink-Signature</code> header with your secret (<code>GET /v1/webhooks/secret</code>). Check it with the SDKs:
+        <code>verify_webhook(body, signature, secret)</code> / <code>verifyWebhook(&hellip;)</code>.</td></tr>
       <tr><td><code>POST /v1/environments</code></td><td><code>{"name"}</code> &rarr; a new, empty environment.</td></tr>
       <tr><td><code>GET /v1/environments</code>, <code>GET /v1/environments/{id}</code></td><td>Your environments and their files.</td></tr>
       <tr><td><code>PUT /v1/environments/{id}/files/{path}</code></td><td>Upload a file (the request body is its content).</td></tr>

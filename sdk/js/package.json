@@ -1,6 +1,6 @@
 {
   "name": "gink-ai",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "The Gink API for JavaScript and TypeScript: managed agents, live steps, workspaces, chat, web search and images.",
   "type": "module",
   "main": "./index.js",

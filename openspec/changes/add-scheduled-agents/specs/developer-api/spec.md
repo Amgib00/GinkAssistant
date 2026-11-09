@@ -10,3 +10,10 @@ Developers and console users SHALL be able to schedule an agent task hourly, dai
 #### Scenario: Paused
 - **WHEN** a schedule is paused
 - **THEN** it doesn't run until it's resumed
+
+### Requirement: Signed webhooks
+Interactions and schedules SHALL accept a webhook_url (https, public internet addresses only); when a run ends Gink SHALL POST the interaction to it, signed with the account's webhook secret in the Gink-Signature header, retrying a few times, without delaying the API's answer.
+
+#### Scenario: A finished scheduled run
+- **WHEN** a schedule with a webhook_url finishes a run
+- **THEN** the URL receives {"type": "interaction.completed", "data": ...} with a signature the SDKs can verify

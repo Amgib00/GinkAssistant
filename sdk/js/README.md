@@ -25,5 +25,8 @@ const png = await gink.image("my dog", { idea: "statue", photo: dogPhotoBytes })
 
 Scheduled agents: `await gink.schedules.create({ input: "Update report.md with today's news", every: "daily", at: "08:00" })`.
 
+Webhooks: pass `webhook_url` to interactions or schedules; in your server,
+`const event = await verifyWebhook(rawBody, req.headers["gink-signature"], secret)` (`import { verifyWebhook } from "gink-ai"`).
+
 Keep your API key on your server: never in a web page anyone can open.
 Guide: https://gink-server.onrender.com/developers/agents

@@ -2175,3 +2175,14 @@ New services/live_info.py (all free, no API keys):
 - Routes from _sched_routes(prefix, who): /v1 (API key; 401 without) and /dev (session). Console Agents: "Schedule it"
   + Scheduled table (Run now / Pause / Resume / Delete). Python client.schedules, JS gink.schedules (+ types),
   CLI `gink schedule ...`. SDKs 0.3.3 (publish: PyPI cli.yml; npm sdk-js.yml -> approve in Staged Packages).
+
+## 0.1.133: signed webhooks for interactions and schedules
+- webhook_url column added to agent_interactions / agent_schedules (ALTER TABLE on first use; public helpers read the
+  extra column). _webhook_url_ok: https only, no userinfo, every resolved address ip.is_global (blocks loopback,
+  private, link-local incl. 169.254.169.254); checked when set AND when sending. _agent_notify after _agent_loop ends
+  (as a background task: never delays the response); payload {"type": "interaction.<status>", "data": public minus
+  webhook_url}; header Gink-Signature: t=<ts>,v1=<HMAC-SHA256(secret, "<ts>.<body>")>; 3 tries (5/10/20 s), 10 s timeout,
+  no redirects. webhook_secrets (whsec_*, per account; /v1|/dev/webhooks/secret, /rotate). Schedules pass theirs to runs.
+- SDKs: webhook_url params, webhooks.secret()/rotate(), Python verify_webhook(body, sig, secret, tolerance=300), JS
+  verifyWebhook (Web Crypto, constant-time compare; matches the server's signature: test). CLI --webhook,
+  `gink webhook secret`. Console: secret show/rotate + webhook field on "Schedule it". SDKs 0.3.4.

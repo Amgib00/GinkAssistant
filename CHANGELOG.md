@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.133 (November 2026)
+
+- Webhooks for agents: give a run or a schedule a webhook address and Gink tells your server the moment
+  it finishes -- signed, so your server can check it's really Gink. In the API, the console (Agents),
+  both SDKs (with verify_webhook / verifyWebhook; gink-ai 0.3.4) and the command line (--webhook)
+
 ## 0.1.132 (November 2026)
 
 - Scheduled agents: have Gink's agent run a task every hour, day or week at your local time -- for

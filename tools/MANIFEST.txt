@@ -410,6 +410,7 @@ tests/test_wake_status.py
 tests/test_wake_word.py
 tests/test_web_app.py
 tests/test_web_search.py
+tests/test_webhooks.py
 tests/test_websites.py
 tests/test_whats_new.py
 tests/test_workspaces.py

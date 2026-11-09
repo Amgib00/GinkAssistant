@@ -27,7 +27,11 @@ gink --image "my dog" --idea statue --photo dog.jpg   # start from your own phot
 ```bash
 gink schedule add "Update report.md with today's news" --every daily --at 08:00
 gink schedule list        # run ID | pause ID | resume ID | rm ID
+gink schedule add "Weekly report" --every weekly --at 09:00 --webhook https://example.com/gink-hook
+gink webhook secret       # what the notifications are signed with
 ```
+
+In your server (Python): `event = gink.verify_webhook(request_body_bytes, request.headers["Gink-Signature"], secret)`.
 
 ## In Python (the SDK)
 

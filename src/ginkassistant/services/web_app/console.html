@@ -206,6 +206,7 @@
           <span class="note">Or run it on a schedule:</span>
           <select id="sch-every" aria-label="How often"><option value="daily">Every day</option><option value="hourly">Every hour</option><option value="weekly">Every week</option></select>
           <label>at <input id="sch-at" type="time" value="08:00" aria-label="Time"></label>
+          <input id="sch-hook" type="url" placeholder="Notify https://… (optional)" aria-label="Webhook address" style="min-width:220px">
           <button class="ghost" id="sch-add">Schedule it</button></div>
         <p class="err" id="ag-err"></p>
         <div id="ag-live" hidden>
@@ -218,6 +219,9 @@
       <h2>Scheduled</h2>
       <div class="card scroll"><table><thead><tr><th>Task</th><th>When</th><th>Next run</th><th>Last run</th><th></th></tr></thead>
         <tbody id="sch-rows"></tbody></table><p class="note" id="sch-empty" hidden>Nothing scheduled. Write a task above and choose &ldquo;Schedule it&rdquo; &mdash; e.g. every morning, update report.md with today&rsquo;s news.</p></div>
+      <div class="card"><b>Webhooks</b> <span class="note">Gink signs each notification (header <code>Gink-Signature</code>) with your secret, so your server can check it&rsquo;s really Gink. The SDKs check it for you: <code>verify_webhook</code> / <code>verifyWebhook</code>.</span>
+        <div class="row" style="margin-top:6px"><code id="wh-secret">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</code>
+          <button class="ghost" id="wh-show">Show secret</button><button class="ghost" id="wh-rotate">New secret</button></div></div>
       <h2>Recent runs</h2>
       <div class="card scroll"><table><thead><tr><th>Task</th><th>Status</th><th>Steps</th><th>Files changed</th><th>Workspace</th><th>When</th></tr></thead>
         <tbody id="ag-rows"></tbody></table><p class="note" id="ag-empty" hidden>No runs yet.</p></div>
@@ -501,8 +505,9 @@ cat notes.txt | gink "summarise this"</code></pre>
   function addSchedule() {
     var input = $("ag-input").value.trim(); if (!input) { $("ag-err").textContent = "Write the task first, then choose Schedule it."; return; }
     var tools = []; if ($("ag-files").checked) tools.push("files"); if ($("ag-web").checked) tools.push("web_search");
-    api("/dev/schedules", { body: { input: input, every: $("sch-every").value, at: $("sch-at").value || "08:00",
-                                    environment: $("ag-env").value, tools: tools } }).then(json)
+    var body = { input: input, every: $("sch-every").value, at: $("sch-at").value || "08:00", environment: $("ag-env").value, tools: tools };
+    if ($("sch-hook").value.trim()) body.webhook_url = $("sch-hook").value.trim();
+    api("/dev/schedules", { body: body }).then(json)
       .then(function () { $("ag-err").textContent = ""; return loadSchedules(); })
       .catch(function (e) { if (e.message !== "signed out") $("ag-err").textContent = e.message; });
   }
@@ -640,6 +645,11 @@ cat notes.txt | gink "summarise this"</code></pre>
   $("bat-file").onchange = function () { var f = this.files[0]; if (!f) return; f.text().then(function (t) { $("bat-input").value = t; }); };
   $("ag-run").onclick = runAgent;
   $("sch-add").onclick = addSchedule;
+  $("wh-show").onclick = function () { api("/dev/webhooks/secret").then(json).then(function (j) { $("wh-secret").textContent = j.secret; }); };
+  $("wh-rotate").onclick = function () {
+    if (!confirm("Make a new webhook secret? Webhooks signed with the old one will stop checking out.")) return;
+    api("/dev/webhooks/secret/rotate", { body: {} }).then(json).then(function (j) { $("wh-secret").textContent = j.secret; });
+  };
   $("ag-stop").onclick = function () {
     if (AG.id) api("/dev/interactions/" + encodeURIComponent(AG.id) + "/cancel", { body: {} }).catch(function () {});
     $("ag-status").textContent = "\u00b7 stopping after this step\u2026";
