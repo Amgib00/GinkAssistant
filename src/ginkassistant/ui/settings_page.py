@@ -33,6 +33,10 @@ ICONS = {
     "help": '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><circle cx="12" cy="17.2" r=".6"/>',
     "about": '<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.8" r=".6"/>',
     "voice": '<path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/>',
+    # their own icons (they had borrowed General's gear)
+    "family": '<circle cx="9" cy="7.5" r="3"/><circle cx="17" cy="9.5" r="2.3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M14.2 20a3.8 3.8 0 0 1 6.6-2.6"/>',
+    "workspace": '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 21v-4h6v4M8 7h2M14 7h2M8 11h2M14 11h2"/>',
+    "schedules": '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>',
     "keyboard": '<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
     "language": '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"/>',
     "upgrade": '<circle cx="12" cy="12" r="9"/><path d="M12 16V8M8.5 11.5L12 8l3.5 3.5"/>',
@@ -215,6 +219,10 @@ SETTINGS_CSS = r"""
     .s-nav button { width: auto; white-space: nowrap; }
     .s-main { padding: 6px 16px 40px; }
     .s-row { flex-wrap: wrap; } .s-row .ctl { margin-top: 8px; }
+    /* the label keeps a readable width; a wide control (a value + a button) moves under it instead of
+       squeezing the description into a narrow column. Switches still fit beside it. */
+    .s-row .lab { min-width: 58%; }
+    .s-row .ctl { margin-left: auto; max-width: 100%; flex-wrap: wrap; justify-content: flex-end; }
   }
 """
 

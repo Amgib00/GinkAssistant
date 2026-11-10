@@ -86,7 +86,12 @@ PAGE = r"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport
   .photo button { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; border: 0;
     background: var(--text-main); color: var(--bg); font-size: 13px; line-height: 20px; cursor: pointer; padding: 0; }
   /* Ideas: big rounded cards in a row you can scroll, like a gallery of looks */
-  .ideas { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 12px; margin-bottom: 14px; scroll-snap-type: x proximity; }
+  .ideas { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 12px; margin-bottom: 14px; scroll-snap-type: x proximity;
+    /* a soft fade at the right edge says "there's more: scroll" instead of cutting a card in half */
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent);
+            mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent); }
+  .gallery:empty::before { content: "Your images will appear here. Pick an idea above or describe one."; display: block;
+    grid-column: 1 / -1; text-align: center; color: var(--muted, #8a918a); font-size: 13.5px; padding: 28px 12px; }
   .idea { flex: 0 0 132px; height: 176px; border-radius: 22px; border: 0; position: relative; cursor: pointer; overflow: hidden;
     scroll-snap-align: start; box-shadow: 0 1px 3px rgba(0,0,0,0.18); transition: transform 0.15s ease, box-shadow 0.15s ease; }
   .idea:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.22); }
@@ -106,7 +111,7 @@ PAGE = r"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport
     <div class="label" style="margin:0 0 8px">Ideas</div>
     <div class="ideas" id="ideas" role="list"></div>
     <div class="create">
-      <textarea id="prompt" placeholder="Describe the image you want \u2014 e.g. a sunset over an old harbour, colourful fishing boats in the foreground"></textarea>
+      <textarea id="prompt" placeholder="Describe the image you want — e.g. a sunset over an old harbour, colourful fishing boats in the foreground"></textarea>
       <div class="photo-row">
         <button class="chip" id="add-photo" type="button">&#128247; Use a photo</button>
         <span class="photo" id="photo" hidden><img id="photo-img" alt="Your photo"><button type="button" id="photo-x" aria-label="Remove the photo">&times;</button></span>

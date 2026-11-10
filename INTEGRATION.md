@@ -2283,3 +2283,10 @@ New services/live_info.py (all free, no API keys):
   user rows 14px + their action row (now 2px). Added #suggest chips on home (absolute under the composer: the composer's
   centred translate depends on the wrap's height), fill the box or open Media Studio / Genie. Ghost shapes in the first
   screenshots were transitions mid-way (screenshot timing), not bugs.
+
+## 0.1.147: Settings + Media Studio review
+- settings_page.ICONS gains family / workspace / schedules (they fell back to General's gear). Phones: .s-row .lab
+  min-width 58% so wide controls wrap under the label (Reply language's text was a narrow column).
+- media_studio_screen.PAGE is a raw string: "\\u2014" in an HTML attribute is shown literally (my 0.1.126 edit) -> a real
+  "—". .ideas mask fade; .gallery:empty::before hint (grid-column 1/-1). Test: no \\uXXXX inside placeholder/title/
+  aria-label/alt in the media, login and chat pages.

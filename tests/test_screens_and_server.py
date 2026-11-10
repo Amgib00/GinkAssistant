@@ -371,3 +371,19 @@ def test_main_screen_polish():
     assert ".gink-spin.with-logo .gink-spinner { display: none; }" in html and ".gsteps:not(.done) ~ .gink-spin { display: none; }" in html
     assert ".work-logo { width: 40px; height: 40px; margin: 14px 0 0; }" in html
     assert ".row.user { margin-bottom: 2px; }" in html
+
+
+def test_screens_have_no_escaped_text_and_settings_have_their_icons():
+    """Review of Settings + Media Studio: a placeholder showed a literal "\\u2014" (raw-string page); three Settings
+    sections borrowed General's gear icon."""
+    import re, sys, os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+    from ginkassistant.ui import media_studio_screen, login_screen, settings_page
+    from ginkassistant.ui.web_chat_view import _build_page_html
+    pages = {"media": media_studio_screen.PAGE, "login": login_screen._login_page_html(), "chat": _build_page_html("Hi", "x")}
+    for name, html in pages.items():
+        bad = re.findall(r'(?:placeholder|title|aria-label|alt)="[^"]*\\u[0-9a-fA-F]{4}[^"]*"', html)
+        assert bad == [], (name, bad[:3])
+    for panel in ("family", "workspace", "schedules"):
+        assert panel in settings_page.ICONS, panel
+    assert "grid-column: 1 / -1; text-align: center" in media_studio_screen.PAGE           # the empty-gallery hint

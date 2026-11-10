@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.147 (November 2026)
+
+- Settings: Parental controls, Workspace and Scheduled tasks have their own icons; on phones, long
+  descriptions no longer squeeze into a narrow column (wide controls move underneath)
+- Media Studio: the hint in the description box showed "\u2014" instead of a dash -- fixed; the Ideas row
+  fades at the edge to show there's more; an empty gallery says where your images will appear
+
 ## 0.1.146 (November 2026)
 
 - A more polished main screen: "How can I help today?" no longer hides behind the message box; quick
