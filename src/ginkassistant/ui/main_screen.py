@@ -1730,6 +1730,21 @@ def build_main_screen(app: toga.App, email: str):
         if bool(before) != off:
             await configure_wake()
 
+    async def status_loop():
+        while app._main_screen_token is not None:
+            await asyncio.sleep(300)
+            await check_status()
+
+    async def check_status():
+        """Gink's status (/status): a thin bar while something on Gink's side isn't working (every 5 minutes)."""
+        import httpx
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                st = (await client.get(app.state.base_url.rstrip("/") + "/status")).json()
+            await web_chat.status_bar(str(st.get("status") or "ok"), str(st.get("message") or ""))
+        except Exception:
+            pass                                       # offline: the app says so elsewhere
+
     async def configure_offline_model():
         """The server may name a different offline model for computers (e.g. Gink's own GGUF)."""
         from ..services import local_llm
@@ -1799,6 +1814,8 @@ def build_main_screen(app: toga.App, email: str):
             pass
         asyncio.create_task(check_family())          # age question / a parent's voice setting
         asyncio.create_task(configure_offline_model())
+        asyncio.create_task(check_status())
+        asyncio.create_task(status_loop())
         while getattr(app, "_main_screen_token", None) is screen_token:
             for event in await web_chat.poll():
                 if event.get("type") == "stop":

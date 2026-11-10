@@ -813,6 +813,12 @@
       pushSettings({ connected: j.services || [] }, { connected_configured: j.configured });
     }).catch(function () { pushSettings({ connected: [] }, { connected_error: "Connected apps aren\u2019t available right now." }); });
   }
+  // Gink's status: the page's thin bar while something on Gink's side isn't working (checked every 5 minutes)
+  function checkStatus() {
+    fetch("/status").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (j && typeof statusBar === "function") statusBar(j.status, j.message);
+    }).catch(function () {});
+  }
   // The policies changed since this browser said OK: the page's notice, once per change
   function checkPolicies() {
     fetch("/info").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
@@ -1310,6 +1316,7 @@
     newChat(); sync();
     checkFamily();
     checkPolicies();                                 // "we've updated our privacy policy and terms", once per change
+    checkStatus(); clearInterval(W.statusTimer); W.statusTimer = setInterval(checkStatus, 300000);
     clearInterval(W.timer); W.timer = setInterval(sync, 60000);
   }
   document.addEventListener("DOMContentLoaded", function () {

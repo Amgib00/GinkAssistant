@@ -93,6 +93,8 @@ export declare class Gink {
     ideas: Array<{ id: string; title: string; prompt: string; example_subject: string; style: string; aspect_ratio: string }> }>;
   models(): Promise<string[]>;
   exportAccount(): Promise<Uint8Array>;
+  status(): Promise<{ status: "ok" | "degraded" | "down" | "notice"; message: string;
+    components: Record<"chat" | "images" | "search" | "email" | "storage", "ok" | "degraded" | "down">; checked: number }>;
 }
 
 export default Gink;

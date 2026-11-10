@@ -702,6 +702,21 @@ cat notes.txt | gink "summarise this"</code></pre>
       bar.appendChild(t); bar.appendChild(ok); document.body.appendChild(bar);
     }).catch(function () {});
   })();
+
+  // Gink's status (GET /status): a thin bar while something on Gink's side isn't working
+  (function status() {
+    function check() {
+      fetch("/status").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+        var bar = document.getElementById("status-bar");
+        if (!j || j.status === "ok" || !j.message) { if (bar) bar.remove(); return; }
+        if (!bar) { bar = document.createElement("div"); bar.id = "status-bar"; bar.setAttribute("role", "status");
+          bar.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:90;padding:6px 14px;font-size:13px;text-align:center;background:#FDE7C7;color:#3d2b05";
+          document.body.appendChild(bar); }
+        bar.textContent = j.message;
+      }).catch(function () {});
+    }
+    check(); setInterval(check, 300000);
+  })();
 </script>
 </body>
 </html>

@@ -1196,6 +1196,21 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     for (var i = 0; i < GINK_MODELS.length; i++) if (GINK_MODELS[i].id === id) return GINK_MODELS[i];
     return {id: id, name: MM.names[id] || 'Gink', desc: /^gink-/.test(id) ? 'Gink\u2019s own model' : ''};
   }
+  // Gink's status (GET /status): a thin bar while something on Gink's side isn't working; gone when it's fixed
+  function statusBar(status, message) {
+    var b = document.getElementById('status-bar');
+    if (!message || status === 'ok') { if (b) b.remove(); return; }
+    if (!b) {
+      b = document.createElement('div'); b.id = 'status-bar'; b.setAttribute('role', 'status');
+      b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:70;padding:6px 40px 6px 14px;font-size:13px;text-align:center;' +
+        'background:' + (status === 'notice' ? 'var(--accent-soft,#e8f5d8)' : '#FDE7C7') + ';color:#3d2b05;border-bottom:1px solid rgba(0,0,0,.08)';
+      var x = document.createElement('button'); x.textContent = '\u00d7'; x.setAttribute('aria-label', 'Hide');
+      x.style.cssText = 'position:absolute;right:8px;top:2px;border:0;background:none;font-size:18px;cursor:pointer;color:inherit';
+      x.onclick = function () { b.remove(); };
+      b.appendChild(document.createElement('span')); b.appendChild(x); document.body.appendChild(b);
+    }
+    b.firstChild.textContent = message;
+  }
   // "We've updated our privacy policy and terms" -- once per change (the date from the server's /info)
   function policyNotice(date, privacy, terms) {
     if (document.getElementById('policy-note')) return;
@@ -1728,6 +1743,9 @@ class WebChatFeed:
     async def set_today(self, text: str):
         """Small chip under the centred welcome bar ("Next alarm 06:30 today")."""
         await self._js(f"setToday({json.dumps(text or '')})")
+
+    async def status_bar(self, status: str, message: str):
+        await self._js(f"statusBar({json.dumps(status)}, {json.dumps(message)})")
 
     async def policy_notice(self, date: str, privacy: str, terms: str):
         await self._js(f"policyNotice({json.dumps(date)}, {json.dumps(privacy)}, {json.dumps(terms)})")

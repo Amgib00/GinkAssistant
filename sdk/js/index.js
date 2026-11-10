@@ -84,6 +84,12 @@ export class Gink {
 
   async models() { return ((await this.request("GET", "/models")).data || []).map((m) => m.id); }
 
+  // Is Gink working right now? { status: "ok" | "degraded" | "down" | "notice", message, components }
+  async status() {
+    const base = this.baseURL.replace(/\/v1$/, "");
+    return (await this._fetch(base + "/status")).json();
+  }
+
   // Everything Gink's server keeps for this account, as a ZIP (bytes). At most once every 10 minutes.
   async exportAccount() { return new Uint8Array(await (await this.request("GET", "/account/export.zip", { raw: true })).arrayBuffer()); }
 }

@@ -397,6 +397,7 @@ tests/test_small_icons.py
 tests/test_sms_routing.py
 tests/test_social_accounts.py
 tests/test_song_server.py
+tests/test_status.py
 tests/test_sync_attach_memory_briefing.py
 tests/test_temporary_chat.py
 tests/test_translate_dataset.py

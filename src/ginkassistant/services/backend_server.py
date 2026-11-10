@@ -1512,8 +1512,15 @@ def _today() -> str:
     return time.strftime("%Y-%m-%d", time.gmtime())
 
 
+_upstream_fails = []                       # (time, part) of recent "the AI service didn't answer" errors -- for /status
+
+
 def _ai_error(status: int, message: str, code: str):
     from fastapi.responses import JSONResponse
+    if code == "upstream":
+        part = "images" if "image" in message.lower() else "search" if "search" in message.lower() else "chat"
+        _upstream_fails.append((time.time(), part))
+        del _upstream_fails[:-200]
     # x-should-retry: false -- the groq library otherwise retries 429s, which
     # can't help with a daily limit (it only slows the answer down)
     error = {"message": message, "type": "gink_" + code, "code": code}
@@ -5635,6 +5642,38 @@ def api_account_export(request: Request):
     if err:
         return err
     return _export_response(owner[0])
+
+
+# ---- Status: is Gink working right now? (public; the apps, web app, Genie, console, CLI and SDKs show it)
+#   GET /status -> {"status": "ok" | "degraded" | "down", "message", "components": {chat, images, search, email, storage}}
+# A part is "degraded" after a few failed upstream calls in the last 10 minutes, "down" when it isn't set up / many fail.
+# GINK_STATUS_MESSAGE (Render) adds your own notice, e.g. planned maintenance -- shown to everyone.
+STATUS_WINDOW, STATUS_DEGRADED, STATUS_DOWN = 600, 3, 15
+
+
+@app.get("/status")
+def service_status():
+    now = time.time()
+    recent = [p for t, p in _upstream_fails if now - t < STATUS_WINDOW]
+
+    def part(name, configured):
+        if not configured:
+            return "down"
+        n = recent.count(name)
+        return "down" if n >= STATUS_DOWN else "degraded" if n >= STATUS_DEGRADED else "ok"
+    st = _storage_status()
+    comps = {"chat": part("chat", bool(_env("GROQ_API_KEY"))), "images": part("images", bool(_env("GEMINI_API_KEY"))),
+             "search": part("search", bool(_env("GROQ_API_KEY"))),
+             "email": "ok" if (_env("BREVO_API_KEY") or _env("GMAIL_USER")) else "down",
+             "storage": "ok" if st.get("ok", True) else "degraded"}
+    overall = "down" if comps["chat"] == "down" else "degraded" if any(v != "ok" for k, v in comps.items()
+                                                                       if k in ("chat", "images", "search", "storage")) else "ok"
+    names = {"chat": "answers", "images": "image making", "search": "web search", "storage": "saving files"}
+    trouble = [names[k] for k, v in comps.items() if k in names and v != "ok"]
+    message = _env("GINK_STATUS_MESSAGE") or (
+        "" if overall == "ok" else "Gink is having trouble with " + ", ".join(trouble) + " right now. We're on it \u2014 please try again in a little while.")
+    return {"status": "notice" if overall == "ok" and _env("GINK_STATUS_MESSAGE") else overall, "message": message,
+            "components": comps, "checked": int(now)}
 
 # ---- Owner only: download a copy of the whole database (accounts, chats sync, payments...).
 #   GET /admin/backup  header x-admin-key: <GINK_ADMIN_KEY>  -> gink-backup-<date>.db

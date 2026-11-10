@@ -1843,6 +1843,21 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     for (var i = 0; i < GINK_MODELS.length; i++) if (GINK_MODELS[i].id === id) return GINK_MODELS[i];
     return {id: id, name: MM.names[id] || 'Gink', desc: /^gink-/.test(id) ? 'Gink’s own model' : ''};
   }
+  // Gink's status (GET /status): a thin bar while something on Gink's side isn't working; gone when it's fixed
+  function statusBar(status, message) {
+    var b = document.getElementById('status-bar');
+    if (!message || status === 'ok') { if (b) b.remove(); return; }
+    if (!b) {
+      b = document.createElement('div'); b.id = 'status-bar'; b.setAttribute('role', 'status');
+      b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:70;padding:6px 40px 6px 14px;font-size:13px;text-align:center;' +
+        'background:' + (status === 'notice' ? 'var(--accent-soft,#e8f5d8)' : '#FDE7C7') + ';color:#3d2b05;border-bottom:1px solid rgba(0,0,0,.08)';
+      var x = document.createElement('button'); x.textContent = '×'; x.setAttribute('aria-label', 'Hide');
+      x.style.cssText = 'position:absolute;right:8px;top:2px;border:0;background:none;font-size:18px;cursor:pointer;color:inherit';
+      x.onclick = function () { b.remove(); };
+      b.appendChild(document.createElement('span')); b.appendChild(x); document.body.appendChild(b);
+    }
+    b.firstChild.textContent = message;
+  }
   // "We've updated our privacy policy and terms" -- once per change (the date from the server's /info)
   function policyNotice(date, privacy, terms) {
     if (document.getElementById('policy-note')) return;
@@ -4701,6 +4716,12 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
       pushSettings({ connected: j.services || [] }, { connected_configured: j.configured });
     }).catch(function () { pushSettings({ connected: [] }, { connected_error: "Connected apps aren\u2019t available right now." }); });
   }
+  // Gink's status: the page's thin bar while something on Gink's side isn't working (checked every 5 minutes)
+  function checkStatus() {
+    fetch("/status").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (j && typeof statusBar === "function") statusBar(j.status, j.message);
+    }).catch(function () {});
+  }
   // The policies changed since this browser said OK: the page's notice, once per change
   function checkPolicies() {
     fetch("/info").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
@@ -5198,6 +5219,7 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     newChat(); sync();
     checkFamily();
     checkPolicies();                                 // "we've updated our privacy policy and terms", once per change
+    checkStatus(); clearInterval(W.statusTimer); W.statusTimer = setInterval(checkStatus, 300000);
     clearInterval(W.timer); W.timer = setInterval(sync, 60000);
   }
   document.addEventListener("DOMContentLoaded", function () {

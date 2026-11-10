@@ -132,6 +132,11 @@ class Client:
         """{"styles": [...], "ideas": [{"id": "statue", "title", "example_subject", ...}]} -- Media Studio's looks."""
         return self.request("GET", "/images/ideas").json()
 
+    def status(self) -> dict:
+        """Is Gink working right now? {"status": "ok" | "degraded" | "down" | "notice", "message", "components"}."""
+        base = self.base_url[:-3] if self.base_url.endswith("/v1") else self.base_url
+        return self._http.get(base + "/status", headers={"User-Agent": "gink-python"}).json()
+
     def export_account(self) -> bytes:
         """Everything Gink's server keeps for this account, as a ZIP (bytes). At most once every 10 minutes."""
         return self.request("GET", "/account/export.zip").content

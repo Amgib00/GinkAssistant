@@ -22,4 +22,4 @@ The Gink Python SDK (pip install gink-ai), for the Gink Developer API.
 from .client import Client, GinkAPIError, Interaction, Environment, Event, verify_webhook
 
 __all__ = ["Client", "GinkAPIError", "Interaction", "Environment", "Event", "verify_webhook"]
-__version__ = "0.3.6"
+__version__ = "0.3.7"

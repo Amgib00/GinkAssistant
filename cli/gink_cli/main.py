@@ -11,6 +11,7 @@ gink -- Gink in your terminal (the Gink Developer API, OpenAI-compatible).
     gink schedule add "task" --every daily --at 08:00 [--env ID] | list | run ID | pause ID | resume ID | rm ID
                                     scheduled agents (the time is your computer's time zone)
     gink export [FILE]              everything Gink's server keeps for you, as a ZIP
+    gink status                     is Gink working right now?
     gink webhook secret             the secret Gink signs webhooks with (schedule add --webhook URL)
     gink ideas                      ready-made image looks: gink --image "my dog" --idea statue --photo dog.jpg
                                     the agents' workspaces (the same projects as Gink Genie)
@@ -497,6 +498,14 @@ def main(argv=None) -> int:
                 print(f"{i['id']:<11} {i['title']:<18} e.g. gink --image \"{i['example_subject']}\" --idea {i['id']}")
             print("styles: " + ", ".join(s["id"] for s in cat["styles"]))
             return 0
+        if argv[:1] == ["status"]:                      # is Gink working right now? (no key needed)
+            import httpx
+            st = httpx.get((base[:-3] if base.endswith("/v1") else base) + "/status", timeout=15).json()
+            print({"ok": "\u2705 Gink is working normally.", "notice": "\u2139\ufe0f " + st.get("message", ""),
+                   "degraded": "\u26a0\ufe0f " + st.get("message", ""), "down": "\u274c " + st.get("message", "")}.get(st["status"], st["status"]))
+            for k, v in st.get("components", {}).items():
+                print(f"  {k:<8} {v}")
+            return 0 if st["status"] in ("ok", "notice") else 1
         if argv[:1] == ["export"]:                      # everything on the server, as a ZIP
             out = argv[1] if len(argv) > 1 else f"gink-data-{time.strftime('%Y-%m-%d')}.zip"
             data = _env_call(key, base, "GET", "/account/export.zip").content

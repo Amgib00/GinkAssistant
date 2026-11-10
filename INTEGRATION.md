@@ -2267,3 +2267,11 @@ New services/live_info.py (all free, no API keys):
   (_authToken=${NODE_AUTH_TOKEN} -> placeholder) -> "E401 token seems to be invalid". Now: setup-node without
   registry-url; ~/.npmrc written only for a real NPM_TOKEN, else removed; `npm stage publish --loglevel verbose | tee`
   and on failure grep the oidc/trusted/E4xx lines. Next failure shows the real OIDC reason.
+
+## 0.1.145: status (full suite)
+- _ai_error(code="upstream") records (time, part) in _upstream_fails (part from the message: images/search/chat).
+  GET /status (public): per part ok | degraded (>=3 failures in 10 min) | down (>=15, or not configured: GROQ/GEMINI/
+  BREVO-or-GMAIL), storage from _storage_status; overall down if chat is down; message lists the troubled parts;
+  GINK_STATUS_MESSAGE -> status "notice" with the owner's text.
+- Chat page statusBar(status, message) (apps: check_status at start + every 5 min; web: checkStatus + interval), Genie +
+  console snippet, CLI `gink status` (exit 1 when degraded/down), Python status(), JS status() (+ types). SDKs 0.3.7.

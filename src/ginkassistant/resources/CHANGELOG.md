@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.145 (November 2026)
+
+- Gink tells you when something on its side isn't working: a thin bar at the top ("Gink is having trouble
+  with image making right now...") in the apps, the web app, Gink Genie and the developer console -- gone
+  as soon as it's fixed. Also `gink status` and status() in the SDKs (0.3.7)
+- For the owner: put a notice in front of everyone (e.g. planned maintenance) with GINK_STATUS_MESSAGE on Render
+
 ## 0.1.144 (November 2026)
 
 - For the owner: the JavaScript SDK workflow no longer falls back to a placeholder token (which showed as
