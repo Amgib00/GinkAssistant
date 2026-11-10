@@ -8945,535 +8945,535 @@ pt,Que tempo vai fazer em Lagos amanhã?,Please let me know the weather in Lagos
 en,What’s the amount in CFA francs for 100 euros?,Could you tell me the amount in CFA francs for 100 euros?,Gink (via openai/gpt-oss-120b),yes
 en,What’s the amount in CFA francs for 100 euros?,"Hey, what's 100 euros in CFA francs?",Gink (via openai/gpt-oss-120b),yes
 en,What’s the amount in CFA francs for 100 euros?,Please provide the amount in CFA francs for 100 euros.,Gink (via openai/gpt-oss-120b),yes
-en,Weather Toronto today,What's the weather like in Toronto today?,openai/gpt-oss-120b,yes
-en,Weather Toronto today,Can you tell me the Toronto weather for today?,openai/gpt-oss-120b,yes
-en,Weather Toronto today,"Toronto weather today, please.",openai/gpt-oss-120b,yes
-en,Weather Toronto today,"Hey, what's the forecast for Toronto today?",openai/gpt-oss-120b,yes
-fr,"Fais-moi un PDF de ma liste de courses : riz, pain, huile de palme, oignons","Peux-tu me créer un PDF de ma liste de courses : riz, pain, huile de palme, oignons ?",openai/gpt-oss-120b,yes
-fr,"Fais-moi un PDF de ma liste de courses : riz, pain, huile de palme, oignons","Fais-moi un PDF avec ces courses : riz, pain, huile de palme, oignons.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un PDF de ma liste de courses : riz, pain, huile de palme, oignons","S'il te plaît, génère un PDF de ma liste de courses : riz, pain, huile de palme, oignons.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un PDF de ma liste de courses : riz, pain, huile de palme, oignons","PDF de ma liste de courses, stp : riz, pain, huile de palme, oignons.",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Jakarta en ce moment ?,"Salut, tu sais quel temps il fait à Jakarta maintenant ?",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Jakarta en ce moment ?,"Pouvez-vous me dire la météo actuelle à Jakarta, s'il vous plaît ?",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Jakarta en ce moment ?,Quel temps à Jakarta en ce moment ?,openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Jakarta en ce moment ?,"Hey, donne-moi la météo de Jakarta à l'instant.",openai/gpt-oss-120b,yes
-en,How much is 50 yuan in won?,"Hey, could you tell me what 50 yuan equals in Korean won?",openai/gpt-oss-120b,yes
-en,How much is 50 yuan in won?,Please let me know the conversion for 50 yuan to won.,openai/gpt-oss-120b,yes
-en,How much is 50 yuan in won?,What's the amount in won for 50 yuan?,openai/gpt-oss-120b,yes
-en,How much is 50 yuan in won?,Can you convert 50 yuan to won for me?,openai/gpt-oss-120b,yes
-fr,Alarme à 5h15 s'il te plaît pour le sport,Peux-tu mettre une alarme à 5h15 s'il te plaît pour le sport ?,openai/gpt-oss-120b,yes
-fr,Alarme à 5h15 s'il te plaît pour le sport,"Alarme 5h15 pour le sport, merci.",openai/gpt-oss-120b,yes
-fr,Alarme à 5h15 s'il te plaît pour le sport,"Mets une alarme à 5h15, s'il te plaît, pour le sport.",openai/gpt-oss-120b,yes
-fr,Alarme à 5h15 s'il te plaît pour le sport,"Hey, règle une alarme à 5h15 pour le sport, s'il te plaît.",openai/gpt-oss-120b,yes
-fr,Alarme à 5h s'il te plaît,"Peux-tu mettre une alarme à 5h, s'il te plaît ?",openai/gpt-oss-120b,yes
-fr,Alarme à 5h s'il te plaît,"Hey, règle une alarme pour 5h, s'il te plaît.",openai/gpt-oss-120b,yes
-fr,Alarme à 5h s'il te plaît,Merci de programmer une alarme à 5h.,openai/gpt-oss-120b,yes
-fr,Rappelle-moi de réviser pour l'examen dans 15 minutes,Peux-tu me rappeler de réviser pour l'examen dans 15 minutes ?,openai/gpt-oss-120b,yes
-fr,Rappelle-moi de réviser pour l'examen dans 15 minutes,N'oublie pas de me dire de réviser pour l'examen dans 15 minutes.,openai/gpt-oss-120b,yes
-fr,Rappelle-moi de réviser pour l'examen dans 15 minutes,"Hey, rappelle-moi de réviser pour l'examen dans 15 minutes, s'il te plaît.",openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on May 28,Please note that my best friend's birthday falls on May 28.,openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on May 28,Can you remember that my best friend's birthday is on May 28?,openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on May 28,My best friend's birthday is on May 28—don't forget!,openai/gpt-oss-120b,yes
-fr,Réveille-moi à 5h15 pour le travail,Peux-tu me réveiller à 5h15 afin d'aller travailler ?,openai/gpt-oss-120b,yes
-fr,Réveille-moi à 5h15 pour le travail,Mets une alarme à 5h15 pour le boulot.,openai/gpt-oss-120b,yes
-fr,Réveille-moi à 5h15 pour le travail,"Hey, rappelle-moi de me lever à 5h15, j'ai du travail.",openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on October 17,Please note that my mother's birthday falls on October 17.,openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on October 17,"Don't forget, my mom's birthday is October 17.",openai/gpt-oss-120b,yes
-en,Wake me up at 7 am for the prayer,"Hey, can you set an alarm for 7 am so I don't miss the prayer?",openai/gpt-oss-120b,yes
-en,Wake me up at 7 am for the prayer,Please wake me up at 7 am for the prayer.,openai/gpt-oss-120b,yes
-en,Wake me up at 7 am for the prayer,"Wake me up at 7 am for the prayer, thanks.",openai/gpt-oss-120b,yes
-en,Wake me up at 7 am for the prayer,Set an alarm for 7 am – I need to pray.,openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on August 10,Please note: my best friend's birthday falls on August 10.,openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on August 10,Can you remember that my best friend's birthday is on August 10?,openai/gpt-oss-120b,yes
-fr,Lance WhatsApp,Peux-tu lancer WhatsApp ?,openai/gpt-oss-120b,yes
-fr,Lance WhatsApp,"Ouvre WhatsApp, s'il te plaît.",openai/gpt-oss-120b,yes
-fr,Rappelle-moi de récupérer les enfants samedi à 20h,"N'oublie pas, je dois aller chercher les enfants samedi à 20h.",openai/gpt-oss-120b,yes
-fr,Rappelle-moi de récupérer les enfants samedi à 20h,Peux‑tu me rappeler de récupérer les enfants samedi à 20h ?,openai/gpt-oss-120b,yes
-fr,Rappelle-moi de récupérer les enfants samedi à 20h,"Svp, rappelle‑moi de récupérer les enfants samedi à 20h.",openai/gpt-oss-120b,yes
-fr,Alarme à 7h s'il te plaît pour le sport,"Peux-tu mettre une alarme à 7h pour le sport, s'il te plaît ?",openai/gpt-oss-120b,yes
-fr,Alarme à 7h s'il te plaît pour le sport,"Mets une alarme à 7h, j'ai du sport.",openai/gpt-oss-120b,yes
-fr,Alarme à 7h s'il te plaît pour le sport,"Hey, règle une alarme à 7h pour le sport, stp.",openai/gpt-oss-120b,yes
-en,Convert 50 Canadian dollars to pounds,"Hey, could you convert 50 Canadian dollars to pounds for me?",openai/gpt-oss-120b,yes
-en,Convert 50 Canadian dollars to pounds,Please convert 50 Canadian dollars to pounds.,openai/gpt-oss-120b,yes
-en,Convert 50 Canadian dollars to pounds,"Convert 50 Canadian dollars to pounds, thanks.",openai/gpt-oss-120b,yes
-en,Convert 50 Canadian dollars to pounds,I need to know how much 50 Canadian dollars is in pounds.,openai/gpt-oss-120b,yes
-en,Set the volume to 10,"Hey, can you set the volume to 10?",openai/gpt-oss-120b,yes
-en,Set the volume to 10,Please set the volume to 10.,openai/gpt-oss-120b,yes
-en,Set the volume to 10,"Volume 10, thanks.",openai/gpt-oss-120b,yes
-en,Set the volume to 10,Adjust volume to 10.,openai/gpt-oss-120b,yes
-en,What's the weather in Chicago tomorrow?,"Hey, can you tell me the weather in Chicago tomorrow?",openai/gpt-oss-120b,yes
-en,What's the weather in Chicago tomorrow?,What's the weather like in Chicago tomorrow?,openai/gpt-oss-120b,yes
-en,What's the weather in Chicago tomorrow?,Weather in Chicago tomorrow?,openai/gpt-oss-120b,yes
-fr,"Fais-moi un Word de ma liste de courses : pain, lait, huile de palme, poisson","Peux-tu me créer un document Word avec ma liste de courses : pain, lait, huile de palme, poisson ?",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Word de ma liste de courses : pain, lait, huile de palme, poisson","Fais-moi un fichier Word contenant : pain, lait, huile de palme, poisson.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Word de ma liste de courses : pain, lait, huile de palme, poisson","Hey, prépare un Word avec ma liste de courses : pain, lait, huile de palme, poisson, s’il te plaît.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Word de ma liste de courses : pain, lait, huile de palme, poisson","Word de ma liste de courses : pain, lait, huile de palme, poisson, merci.",openai/gpt-oss-120b,yes
-fr,Rappelle-moi de arroser les plantes dans 10 minutes,Rappelle-moi d'arroser les plantes dans 10 minutes.,openai/gpt-oss-120b,yes
-fr,Rappelle-moi de arroser les plantes dans 10 minutes,Peux-tu me rappeler d’arroser les plantes dans 10 minutes ?,openai/gpt-oss-120b,yes
-fr,Rappelle-moi de arroser les plantes dans 10 minutes,"N'oublie pas, arroser les plantes dans 10 minutes.",openai/gpt-oss-120b,yes
-fr,Rappelle-moi de arroser les plantes dans 10 minutes,"Hey, rappelle-moi d'arroser les plantes dans 10 minutes, s'il te plaît.",openai/gpt-oss-120b,yes
-fr,Calcule 185 fois 25,"Pouvez-vous calculer 185 × 25, s'il vous plaît ?",openai/gpt-oss-120b,yes
-fr,Calcule 185 fois 25,"Hey, ça serait top si tu pouvais faire 185 fois 25.",openai/gpt-oss-120b,yes
-fr,Calcule 185 fois 25,Merci de me donner le résultat de 185*25.,openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: fish, palm oil, tomatoes, eggs","Could you create a Markdown list of my shopping items: fish, palm oil, tomatoes, eggs?",openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: fish, palm oil, tomatoes, eggs","Please format my grocery list (fish, palm oil, tomatoes, eggs) as Markdown.",openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: fish, palm oil, tomatoes, eggs","Hey, turn my shopping list—fish, palm oil, tomatoes, eggs—into a Markdown list.",openai/gpt-oss-120b,yes
-fr,Réveille-moi à 7h,"Réveille-moi à 7h, s'il te plaît.",openai/gpt-oss-120b,yes
-fr,Réveille-moi à 7h,"Hey, mets une alarme pour 7h demain.",openai/gpt-oss-120b,yes
-fr,Réveille-moi à 7h,Peux-tu me réveiller à 7h ? Merci.,openai/gpt-oss-120b,yes
-fr,Convertis 50 shillings kényans en nairas,"Salut, pourrais-tu transformer 50 shillings kényans en nairas ?",openai/gpt-oss-120b,yes
-fr,Convertis 50 shillings kényans en nairas,"Bonjour, merci de convertir 50 shillings kényans en nairas s'il te plaît.",openai/gpt-oss-120b,yes
-fr,Convertis 50 shillings kényans en nairas,"Hey, fais le change de 50 shillings kényans en nairas.",openai/gpt-oss-120b,yes
-fr,Réveille-moi à 5h45,"Réveille-moi à 5h45, s'il te plaît.",openai/gpt-oss-120b,yes
-fr,Réveille-moi à 5h45,"Hey, mets une alarme pour 5h45.",openai/gpt-oss-120b,yes
-fr,Réveille-moi à 5h45,Peux‑tu me réveiller à 5h45 ?,openai/gpt-oss-120b,yes
-fr,Réveille-moi à 5h45,Fais sonner le réveil à 5h45.,openai/gpt-oss-120b,yes
-en,Remind me to water the plants at 4 pm today,"Hey, could you remind me to water the plants at 4 pm today?",openai/gpt-oss-120b,yes
-en,Remind me to water the plants at 4 pm today,Please set a reminder: water the plants at 4 pm today.,openai/gpt-oss-120b,yes
-en,Remind me to water the plants at 4 pm today,Can you ping me at 4 pm today to water the plants?,openai/gpt-oss-120b,yes
-en,What's 10% of 5000?,"Hey, can you tell me what 10% of 5000 is?",openai/gpt-oss-120b,yes
-en,What's 10% of 5000?,"Could you calculate 10% of 5000 for me, please?",openai/gpt-oss-120b,yes
-en,What's 10% of 5000?,10% of 5000—what does that come out to?,openai/gpt-oss-120b,yes
-fr,Rappelle-moi de réviser pour l'examen lundi à 19h,Peux-tu me rappeler de réviser pour l'examen ce lundi à 19h ?,openai/gpt-oss-120b,yes
-fr,Rappelle-moi de réviser pour l'examen lundi à 19h,N'oublie pas de me dire de réviser pour l'examen lundi à 19h.,openai/gpt-oss-120b,yes
-fr,Rappelle-moi de réviser pour l'examen lundi à 19h,"Hey, rappelle-moi de réviser pour l'examen lundi à 19h.",openai/gpt-oss-120b,yes
-en,"Make a PDF of my shopping list: onions, tomatoes, rice, milk","Hey, could you please create a PDF of my shopping list? It includes onions, tomatoes, rice, and milk.",openai/gpt-oss-120b,yes
-en,"Make a PDF of my shopping list: onions, tomatoes, rice, milk","Make a PDF for my shopping list: onions, tomatoes, rice, milk.",openai/gpt-oss-120b,yes
-en,"Make a PDF of my shopping list: onions, tomatoes, rice, milk","Can you turn my shopping list (onions, tomatoes, rice, milk) into a PDF, please?",openai/gpt-oss-120b,yes
-en,"Make a PDF of my shopping list: onions, tomatoes, rice, milk","I need a PDF of my shopping list—onions, tomatoes, rice, milk.",openai/gpt-oss-120b,yes
-en,Remind me to revise for the exam at 9 am today,"Hey, can you set a reminder for me to revise for the exam at 9 am today?",openai/gpt-oss-120b,yes
-en,Remind me to revise for the exam at 9 am today,Please remind me to revise for the exam at 9 am today.,openai/gpt-oss-120b,yes
-en,Remind me to revise for the exam at 9 am today,"I need a reminder to revise for the exam at 9 am today, thanks.",openai/gpt-oss-120b,yes
-en,Set a timer for 45 minutes,"Hey, could you set a timer for 45 minutes?",openai/gpt-oss-120b,yes
-en,Set a timer for 45 minutes,"Timer, 45 minutes, go.",openai/gpt-oss-120b,yes
-en,Can you open WhatsApp?,"Hey, could you open WhatsApp for me?",openai/gpt-oss-120b,yes
-en,Can you open WhatsApp?,Please open WhatsApp.,openai/gpt-oss-120b,yes
-en,Can you open WhatsApp?,"Open WhatsApp, thanks.",openai/gpt-oss-120b,yes
-en,Can you open WhatsApp?,Can you launch WhatsApp?,openai/gpt-oss-120b,yes
-en,Weather Cairo right now,What's the weather in Cairo right now?,openai/gpt-oss-120b,yes
-en,Weather Cairo right now,Can you tell me the current weather for Cairo?,openai/gpt-oss-120b,yes
-en,Weather Cairo right now,"Weather Cairo right now, please.",openai/gpt-oss-120b,yes
-en,Weather Cairo right now,"Hey, need the weather update for Cairo at this moment.",openai/gpt-oss-120b,yes
-en,Remember that my sister's birthday is on March 4,Please note: my sister's birthday falls on March 4.,openai/gpt-oss-120b,yes
-en,Remember that my sister's birthday is on March 4,Can you remember my sister's birthday? It's March 4.,openai/gpt-oss-120b,yes
-en,Remember that my sister's birthday is on March 4,"Don't forget, my sister's birthday is March 4.",openai/gpt-oss-120b,yes
-en,Wake me up at 7 am for the work,"Hey, can you set an alarm for 7 am tomorrow? I need to be up for work.",openai/gpt-oss-120b,yes
-en,Wake me up at 7 am for the work,Please wake me up at 7 am for the work.,openai/gpt-oss-120b,yes
-en,Wake me up at 7 am for the work,Set an alarm for 7 am so I’m up for work.,openai/gpt-oss-120b,yes
-en,Wake me up at 7 am for the work,"Alarm at 7 am, need to get ready for work.",openai/gpt-oss-120b,yes
-fr,Combien font 10000 livres turques en pesos philippins ?,"Salut, tu sais combien 10000 livres turques ça fait en pesos philippins ?",openai/gpt-oss-120b,yes
-fr,Combien font 10000 livres turques en pesos philippins ?,"Bonjour, pourriez-vous me dire la conversion de 10000 livres turques en pesos philippins, s'il vous plaît ?",openai/gpt-oss-120b,yes
-fr,Combien font 10000 livres turques en pesos philippins ?,"Hey, c’est quoi le taux pour 10000 livres turques en pesos philippins ?",openai/gpt-oss-120b,yes
-fr,Combien font 10000 livres turques en pesos philippins ?,Je veux savoir : 10000 livres turques = combien de pesos philippins ?,openai/gpt-oss-120b,yes
-en,Weather Johannesburg right now,"Hey, can you tell me the weather in Johannesburg right now?",openai/gpt-oss-120b,yes
-en,Weather Johannesburg right now,Please give me the current weather for Johannesburg.,openai/gpt-oss-120b,yes
-en,Weather Johannesburg right now,What's the weather like in Johannesburg right now?,openai/gpt-oss-120b,yes
-fr,Combien font 1000 rands en yuans ?,"Salut, tu sais combien font 1000 rands en yuans ?",openai/gpt-oss-120b,yes
-fr,Combien font 1000 rands en yuans ?,"Bonjour, pourriez-vous me dire la conversion de 1000 rands en yuans, s'il vous plaît ?",openai/gpt-oss-120b,yes
-fr,Combien font 1000 rands en yuans ?,"Hey, c’est quoi le taux pour 1000 rands en yuans ?",openai/gpt-oss-120b,yes
-fr,Combien font 1000 rands en yuans ?,Dis-moi rapidement combien vaut 1000 rands en yuans.,openai/gpt-oss-120b,yes
-fr,Mets un minuteur de 45 minutes,"Hey, peux-tu mettre un minuteur de 45 minutes s'il te plaît ?",openai/gpt-oss-120b,yes
-fr,Mets un minuteur de 45 minutes,"Je voudrais un minuteur de 45 minutes, merci.",openai/gpt-oss-120b,yes
-fr,Mets un minuteur de 45 minutes,"Active un minuteur de 45 minutes, d'accord ?",openai/gpt-oss-120b,yes
-fr,Retiens que l'anniversaire de ma mère est le 7 juillet,"Note bien que l'anniversaire de ma mère, c'est le 7 juillet.",openai/gpt-oss-120b,yes
-fr,Retiens que l'anniversaire de ma mère est le 7 juillet,Peux-tu retenir que ma mère fête son anniversaire le 7 juillet ?,openai/gpt-oss-120b,yes
-fr,Retiens que l'anniversaire de ma mère est le 7 juillet,"Souviens-toi, le 7 juillet, c'est l'anniversaire de ma mère.",openai/gpt-oss-120b,yes
-fr,Retiens que l'anniversaire de ma sœur est le 19 février,"Note que l'anniversaire de ma sœur, c'est le 19 février.",openai/gpt-oss-120b,yes
-fr,Retiens que l'anniversaire de ma sœur est le 19 février,"N'oublie pas : le 19 février, c’est l'anniversaire de ma sœur.",openai/gpt-oss-120b,yes
-fr,Retiens que l'anniversaire de ma sœur est le 19 février,"Hey, garde en tête que le 19 février, c’est l'anniv' de ma sœur.",openai/gpt-oss-120b,yes
-en,What is 911 times 3?,"Hey, can you tell me what 911 multiplied by 3 is?",openai/gpt-oss-120b,yes
-en,What is 911 times 3?,Could you please calculate 911 times 3 for me?,openai/gpt-oss-120b,yes
-en,What is 911 times 3?,What's 911 x 3?,openai/gpt-oss-120b,yes
-en,What is 911 times 3?,"I need the result of 911 times 3, thanks.",openai/gpt-oss-120b,yes
-fr,Mets un minuteur de 2 minutes,"Hey, tu peux mettre un minuteur de 2 minutes, s'il te plaît ?",openai/gpt-oss-120b,yes
-fr,Mets un minuteur de 2 minutes,"Je veux un minuteur de 2 minutes, merci.",openai/gpt-oss-120b,yes
-fr,Convertis 10 dollars australiens en yens,"Salut, tu peux me convertir 10 dollars australiens en yens ?",openai/gpt-oss-120b,yes
-fr,Convertis 10 dollars australiens en yens,"Bonjour, pourriez-vous s'il vous plaît convertir 10 dollars australiens en yens ?",openai/gpt-oss-120b,yes
-fr,Convertis 10 dollars australiens en yens,"Hey, fais le change de 10 dollars australiens en yens, merci.",openai/gpt-oss-120b,yes
-fr,Convertis 10 dollars australiens en yens,"Convertis 10 dollars australiens en yens, s'il te plaît.",openai/gpt-oss-120b,yes
-fr,Mets un minuteur de 5 minutes pour la lessive,"Hey, peux-tu mettre un minuteur de 5 minutes pour la lessive ?",openai/gpt-oss-120b,yes
-fr,Mets un minuteur de 5 minutes pour la lessive,"Merci de régler un minuteur de 5 minutes afin de faire la lessive, s’il vous plaît.",openai/gpt-oss-120b,yes
-fr,Mets un minuteur de 5 minutes pour la lessive,"Je veux un minuteur de 5 minutes pour la lessive, ok ?",openai/gpt-oss-120b,yes
-en,Set an alarm for 8 am for the prayer,Could you please set a prayer alarm at 8 am?,openai/gpt-oss-120b,yes
-en,Set an alarm for 8 am for the prayer,"Hey, I need an alarm at 8 am for the prayer.",openai/gpt-oss-120b,yes
-en,Set an alarm for 8 am for the prayer,"Alarm at 8 am for prayer, thanks.",openai/gpt-oss-120b,yes
-en,Set a timer for 1 hour for the tea,"Hey, could you set a timer for 1 hour for the tea?",openai/gpt-oss-120b,yes
-en,Set a timer for 1 hour for the tea,"Set a timer for 1 hour for the tea, please.",openai/gpt-oss-120b,yes
-en,Set a timer for 1 hour for the tea,Timer 1 hour for tea.,openai/gpt-oss-120b,yes
-en,Set a timer for 1 hour for the tea,Can you start a 1‑hour timer for the tea?,openai/gpt-oss-120b,yes
-en,Convert 20 won to reais,"Hey, could you change 20 won into reais for me?",openai/gpt-oss-120b,yes
-en,Convert 20 won to reais,Please convert 20 won to reais.,openai/gpt-oss-120b,yes
-en,Convert 20 won to reais,Can you tell me how many reais 20 won is?,openai/gpt-oss-120b,yes
-en,Convert 20 won to reais,I need the conversion of 20 won into reais.,openai/gpt-oss-120b,yes
-en,How much is 1000 euros in yen?,"Hey, can you tell me what 1000 euros equals in yen?",openai/gpt-oss-120b,yes
-en,How much is 1000 euros in yen?,Please let me know the conversion rate for 1000 euros to yen.,openai/gpt-oss-120b,yes
-en,How much is 1000 euros in yen?,What’s the yen amount for 1000 euros?,openai/gpt-oss-120b,yes
-en,How much is 1000 euros in yen?,I’m curious—how many yen do I get for 1000 euros?,openai/gpt-oss-120b,yes
-en,What is 946 times 4?,"Hey, can you tell me what 946 times 4 is?",openai/gpt-oss-120b,yes
-en,What is 946 times 4?,What's the result of 946 multiplied by 4?,openai/gpt-oss-120b,yes
-en,What is 946 times 4?,946 × 4 = ?,openai/gpt-oss-120b,yes
-en,What is 946 times 4?,Could you calculate 946 times 4 for me?,openai/gpt-oss-120b,yes
-en,Remind me to water the plants tomorrow at 7 pm,"Hey, can you set a reminder for me to water the plants tomorrow at 7 pm?",openai/gpt-oss-120b,yes
-en,Remind me to water the plants tomorrow at 7 pm,Please remind me to water the plants tomorrow at 7 pm.,openai/gpt-oss-120b,yes
-en,Remind me to water the plants tomorrow at 7 pm,Reminder: water the plants tomorrow 7 pm.,openai/gpt-oss-120b,yes
-en,Remind me to water the plants tomorrow at 7 pm,"Don't forget to water the plants tomorrow at 7 pm, thanks.",openai/gpt-oss-120b,yes
-fr,Combien font 1000 pesos en dollars ?,"Salut, tu sais combien 1000 pesos ça fait en dollars ?",openai/gpt-oss-120b,yes
-fr,Combien font 1000 pesos en dollars ?,"Bonjour, pourriez-vous me dire la conversion de 1000 pesos en dollars, s'il vous plaît ?",openai/gpt-oss-120b,yes
-fr,Combien font 1000 pesos en dollars ?,"Hey, c’est quoi le montant en dollars pour 1000 pesos ?",openai/gpt-oss-120b,yes
-fr,Combien font 1000 pesos en dollars ?,"Excusez‑moi, je voudrais savoir la valeur de 1000 pesos en dollars.",openai/gpt-oss-120b,yes
-fr,Combien font 1000 livres turques en shillings kényans ?,"Salut, tu sais combien 1000 livres turques ça fait en shillings kényans ?",openai/gpt-oss-120b,yes
-fr,Combien font 1000 livres turques en shillings kényans ?,"Bonjour, pourriez-vous me dire la conversion de 1000 livres turques en shillings kényans, s'il vous plaît ?",openai/gpt-oss-120b,yes
-fr,Combien font 1000 livres turques en shillings kényans ?,"Hey, 1000 livres turques = combien de shillings kényans ?",openai/gpt-oss-120b,yes
-fr,Combien font 1000 livres turques en shillings kényans ?,Je voudrais connaître le taux de change : 1000 livres turques en shillings kényans.,openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on May 13,Could you please note that my mother's birthday falls on May 13?,openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on May 13,Remember: Mom's birthday is May 13.,openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on May 13,"Don't forget, my mother's birthday is on May 13.",openai/gpt-oss-120b,yes
-en,Remind me to book the dentist tomorrow at 7:30 am,"Hey, remind me to book the dentist tomorrow at 7:30 am.",openai/gpt-oss-120b,yes
-en,Remind me to book the dentist tomorrow at 7:30 am,Please set a reminder for me to schedule my dentist appointment tomorrow at 7:30 am.,openai/gpt-oss-120b,yes
-en,Remind me to book the dentist tomorrow at 7:30 am,Can you remind me to book the dentist tomorrow at 7:30 am?,openai/gpt-oss-120b,yes
-en,Remind me to book the dentist tomorrow at 7:30 am,Remind me: book dentist tomorrow 7:30 am.,openai/gpt-oss-120b,yes
-en,Weather São Paulo tomorrow,Can you tell me the weather in São Paulo tomorrow?,openai/gpt-oss-120b,yes
-en,Weather São Paulo tomorrow,"Hey, what's the forecast for São Paulo tomorrow?",openai/gpt-oss-120b,yes
-en,Weather São Paulo tomorrow,Please check the weather for São Paulo tomorrow.,openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids tomorrow at 12 pm,"Hey, can you set a reminder for me to pick up the kids tomorrow at 12 pm?",openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids tomorrow at 12 pm,Please remind me to pick up the kids tomorrow at 12 pm.,openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids tomorrow at 12 pm,Remind me: pick up the kids tomorrow at 12 pm.,openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids tomorrow at 12 pm,I need a reminder to pick up the kids tomorrow at 12 pm.,openai/gpt-oss-120b,yes
-fr,Mets une alarme à 7h pour le sport,Peux-tu programmer une alarme à 7h pour le sport ?,openai/gpt-oss-120b,yes
-fr,Mets une alarme à 7h pour le sport,"Hey, crée une alarme à 7h pour le sport, s'il te plaît.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Word de ma liste de courses : œufs, pain, riz, lait","Pouvez-vous créer un document Word avec ma liste de courses : œufs, pain, riz, lait ?",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Word de ma liste de courses : œufs, pain, riz, lait","Fais un Word de ma liste de courses : œufs, pain, riz, lait.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Word de ma liste de courses : œufs, pain, riz, lait","Merci de préparer un Word listant : œufs, pain, riz, lait.",openai/gpt-oss-120b,yes
-en,How much is 25000 Philippine pesos in lira?,"Hey, can you tell me the conversion for 25000 Philippine pesos to lira?",openai/gpt-oss-120b,yes
-en,How much is 25000 Philippine pesos in lira?,Please let me know how much 25000 Philippine pesos equals in lira.,openai/gpt-oss-120b,yes
-en,How much is 25000 Philippine pesos in lira?,What's the value of 25000 Philippine pesos in lira?,openai/gpt-oss-120b,yes
-en,How much is 25000 Philippine pesos in lira?,Could you convert 25000 Philippine pesos to lira for me?,openai/gpt-oss-120b,yes
-fr,"Fais-moi un Markdown de ma liste de courses : pain, œufs, poisson, oignons","Peux-tu me créer un Markdown pour ma liste de courses ? pain, œufs, poisson, oignons.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Markdown de ma liste de courses : pain, œufs, poisson, oignons","Fais-moi un fichier Markdown contenant: pain, œufs, poisson, oignons.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Markdown de ma liste de courses : pain, œufs, poisson, oignons","S'il te plaît, prépare un Markdown avec ma liste de courses : pain, œufs, poisson, oignons.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Markdown de ma liste de courses : pain, œufs, poisson, oignons","Markdown de ma liste de courses : pain, œufs, poisson, oignons, merci.",openai/gpt-oss-120b,yes
-fr,Calcule 233 fois 7,Pouvez-vous me dire quel est le résultat de 233 × 7 ?,openai/gpt-oss-120b,yes
-fr,Calcule 233 fois 7,Calcule 233 fois 7 s'il te plaît.,openai/gpt-oss-120b,yes
-fr,Calcule 233 fois 7,"Hey, fais le calcul 233*7.",openai/gpt-oss-120b,yes
-fr,Calcule 233 fois 7,Quel est 233 multiplié par 7 ?,openai/gpt-oss-120b,yes
-en,Convert 50 reais to Kenyan shillings,"Hey, could you please convert 50 reais to Kenyan shillings?",openai/gpt-oss-120b,yes
-en,Convert 50 reais to Kenyan shillings,Can you tell me how many Kenyan shillings 50 reais equals?,openai/gpt-oss-120b,yes
-en,What's 25% of 1200?,"Hey, can you tell me what 25% of 1200 is?",openai/gpt-oss-120b,yes
-en,What's 25% of 1200?,Could you please calculate 25% of 1200 for me?,openai/gpt-oss-120b,yes
-en,What's 25% of 1200?,"Yo, need the 25% of 1200 ASAP.",openai/gpt-oss-120b,yes
-fr,Calcule 730 fois 18,"Calcule 730 × 18, s'il te plaît.",openai/gpt-oss-120b,yes
-fr,Calcule 730 fois 18,Pouvez-vous faire le calcul de 730 fois 18 ?,openai/gpt-oss-120b,yes
-fr,Calcule 730 fois 18,"Hey, fais le compte de 730 multiplié par 18.",openai/gpt-oss-120b,yes
-fr,Calcule 730 fois 18,Je veux savoir le résultat de 730 fois 18.,openai/gpt-oss-120b,yes
-fr,Calcule 379 fois 27,"Calcule 379 fois 27, s'il te plaît.",openai/gpt-oss-120b,yes
-fr,Calcule 379 fois 27,J'ai besoin du résultat de 379 multiplié par 27.,openai/gpt-oss-120b,yes
-fr,"Fais-moi un Markdown de ma liste de courses : œufs, huile de palme, lait, pain","Peux‑tu me créer un fichier Markdown avec ma liste de courses ? Il faut mettre œufs, huile de palme, lait et pain.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Markdown de ma liste de courses : œufs, huile de palme, lait, pain","Fais-moi un Markdown pour ma liste de courses : œufs, huile de palme, lait, pain, s’il te plaît.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Markdown de ma liste de courses : œufs, huile de palme, lait, pain","Hey, tu pourrais mettre ma petite liste (œufs, huile de palme, lait, pain) en Markdown ?",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Markdown de ma liste de courses : œufs, huile de palme, lait, pain","Merci de générer un tableau Markdown contenant les articles suivants : œufs, huile de palme, lait, pain.",openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on December 15,Please note: my mom's birthday falls on December 15.,openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on December 15,"Don't forget, my mother's birthday is December 15.",openai/gpt-oss-120b,yes
-fr,Calcule 588 fois 45,Peux-tu calculer 588 fois 45 ?,openai/gpt-oss-120b,yes
-fr,Calcule 588 fois 45,Calcule 588×45 s’il te plaît.,openai/gpt-oss-120b,yes
-fr,Calcule 588 fois 45,"Hey, fais le calcul de 588 multiplié par 45.",openai/gpt-oss-120b,yes
-fr,Calcule 588 fois 45,Merci de me dire le résultat de 588 fois 45.,openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on December 10,Please note that my mother's birthday is on December 10.,openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on December 10,Remember: Mom's birthday is on December 10.,openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on December 10,Can you make a note that my mother's birthday falls on December 10?,openai/gpt-oss-120b,yes
-en,How much is 10 pesos in Kenyan shillings?,"Hey, can you tell me how much 10 pesos equals in Kenyan shillings?",openai/gpt-oss-120b,yes
-en,How much is 10 pesos in Kenyan shillings?,Please let me know the conversion for 10 pesos to Kenyan shillings.,openai/gpt-oss-120b,yes
-en,How much is 10 pesos in Kenyan shillings?,What's the value of 10 pesos in Kenyan shillings?,openai/gpt-oss-120b,yes
-en,How much is 250 lira in rupiah?,"Hey, can you tell me how much 250 lira is in rupiah?",openai/gpt-oss-120b,yes
-en,How much is 250 lira in rupiah?,Please let me know the conversion for 250 lira to rupiah.,openai/gpt-oss-120b,yes
-en,How much is 250 lira in rupiah?,What's the value of 250 lira in rupiah?,openai/gpt-oss-120b,yes
-en,How much is 250 lira in rupiah?,Could you convert 250 lira into rupiah for me?,openai/gpt-oss-120b,yes
-en,Remember that my sister's birthday is on October 9,Can you note that my sister's birthday is on October 9?,openai/gpt-oss-120b,yes
-en,Remember that my sister's birthday is on October 9,Please remember my sister’s birthday is on October 9.,openai/gpt-oss-120b,yes
-en,Remember that my sister's birthday is on October 9,"My sister’s birthday falls on October 9, don’t forget.",openai/gpt-oss-120b,yes
-en,What's 15% of 1200?,"Hey, can you tell me what 15% of 1200 is?",openai/gpt-oss-120b,yes
-en,What's 15% of 1200?,Could you please calculate 15% of 1200 for me?,openai/gpt-oss-120b,yes
-en,What's 15% of 1200?,"Yo, what's the 15% figure on 1200?",openai/gpt-oss-120b,yes
-fr,Mets un minuteur de 15 minutes,"Hey, peux-tu mettre un minuteur de 15 minutes ?",openai/gpt-oss-120b,yes
-fr,Mets un minuteur de 15 minutes,"Merci de lancer un minuteur de 15 minutes, s'il te plaît.",openai/gpt-oss-120b,yes
-en,Convert 1000 pounds to rupees,"Hey, can you tell me what 1000 pounds is in rupees?",openai/gpt-oss-120b,yes
-en,Convert 1000 pounds to rupees,Please convert 1000 pounds to rupees for me.,openai/gpt-oss-120b,yes
-en,Convert 1000 pounds to rupees,I need the conversion: 1000 pounds = ? rupees.,openai/gpt-oss-120b,yes
-en,Convert 1000 pounds to rupees,What’s the rupee amount for 1000 pounds?,openai/gpt-oss-120b,yes
-fr,Mets un minuteur de 1 minutes,"Mets un minuteur de 1 minutes, s'il te plaît.",openai/gpt-oss-120b,yes
-fr,Mets un minuteur de 1 minutes,"Hey, lance un minuteur de 1 minutes.",openai/gpt-oss-120b,yes
-fr,Mets un minuteur de 1 minutes,Peux‑tu programmer un minuteur de 1 minutes ?,openai/gpt-oss-120b,yes
-en,What is 412 times 50?,"Hey, can you tell me what 412 multiplied by 50 is?",openai/gpt-oss-120b,yes
-en,What is 412 times 50?,Please calculate 412 × 50 for me.,openai/gpt-oss-120b,yes
-en,What is 412 times 50?,What's 412 times 50?,openai/gpt-oss-120b,yes
-en,What is 412 times 50?,Could you quickly give me the result of 412 times 50?,openai/gpt-oss-120b,yes
-fr,Calcule 599 fois 50,"Pouvez-vous calculer 599 fois 50, s'il vous plaît ?",openai/gpt-oss-120b,yes
-fr,Calcule 599 fois 50,Je voudrais savoir le résultat de 599 multiplié par 50.,openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: onions, palm oil, milk, fish","Hey, could you create a Markdown list for my shopping items? I need onions, palm oil, milk, and fish.",openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: onions, palm oil, milk, fish","Please make a Markdown of my shopping list: onions, palm oil, milk, fish.",openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: onions, palm oil, milk, fish","Can you put my grocery list—onions, palm oil, milk, fish—into a Markdown format?",openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: onions, palm oil, milk, fish","I need a Markdown version of my shopping list: onions, palm oil, milk, fish. Thanks!",openai/gpt-oss-120b,yes
-fr,"Fais-moi un PDF de ma liste de courses : œufs, huile de palme, lait, oignons","Pouvez-vous me créer un PDF de ma liste de courses contenant œufs, huile de palme, lait et oignons, s'il vous plaît ?",openai/gpt-oss-120b,yes
-fr,"Fais-moi un PDF de ma liste de courses : œufs, huile de palme, lait, oignons","Fais un PDF avec ma liste de courses : œufs, huile de palme, lait, oignons.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un PDF de ma liste de courses : œufs, huile de palme, lait, oignons","Hey, fais-moi un PDF de ma liste de courses (œufs, huile de palme, lait, oignons) rapidement.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un PDF de ma liste de courses : œufs, huile de palme, lait, oignons","Je voudrais un PDF de ma liste de courses : œufs, huile de palme, lait, oignons. Merci.",openai/gpt-oss-120b,yes
-en,Set a timer for 25 minutes for the laundry,Please set a timer for 25 minutes for the laundry.,openai/gpt-oss-120b,yes
-en,Set a timer for 25 minutes for the laundry,"Timer 25 minutes – laundry, please.",openai/gpt-oss-120b,yes
-en,Remind me to take my medicine on Wednesday at 8:30 am,"Hey, can you set a reminder for me to take my medicine on Wednesday at 8:30 am?",openai/gpt-oss-120b,yes
-en,Remind me to take my medicine on Wednesday at 8:30 am,Please remind me to take my medicine Wednesday at 8:30 am.,openai/gpt-oss-120b,yes
-en,Remind me to take my medicine on Wednesday at 8:30 am,"Remind me to take my medicine on Wednesday at 8:30 am, thanks.",openai/gpt-oss-120b,yes
-en,Remind me to take my medicine on Wednesday at 8:30 am,I need a reminder for my medicine on Wednesday at 8:30 am.,openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids in 20 minutes,"Hey, can you set a reminder for me to pick up the kids in 20 minutes?",openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids in 20 minutes,Please remind me to pick up the kids in 20 minutes.,openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids in 20 minutes,"In 20 minutes, remind me to pick up the kids.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un PDF de ma liste de courses : huile de palme, poisson, oignons, lait","Peux-tu me créer un PDF de ma liste de courses : huile de palme, poisson, oignons, lait ?",openai/gpt-oss-120b,yes
-fr,"Fais-moi un PDF de ma liste de courses : huile de palme, poisson, oignons, lait","Fais-moi un PDF avec: huile de palme, poisson, oignons, lait, s'il te plaît.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un PDF de ma liste de courses : huile de palme, poisson, oignons, lait","PDF de la liste de courses : huile de palme, poisson, oignons, lait.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un PDF de ma liste de courses : huile de palme, poisson, oignons, lait","Hey, génère un PDF pour ma liste : huile de palme, poisson, oignons, lait.",openai/gpt-oss-120b,yes
-fr,Calcule 587 fois 3,"Calcule 587 fois 3, s'il te plaît.",openai/gpt-oss-120b,yes
-fr,Calcule 587 fois 3,"Hey, fais le calcul 587*3.",openai/gpt-oss-120b,yes
-en,Convert 25000 rupees to Canadian dollars,"Hey, can you convert 25000 rupees to Canadian dollars for me?",openai/gpt-oss-120b,yes
-en,Convert 25000 rupees to Canadian dollars,Please convert 25000 rupees into Canadian dollars.,openai/gpt-oss-120b,yes
-en,Convert 25000 rupees to Canadian dollars,Could you tell me how much 25000 rupees is in Canadian dollars?,openai/gpt-oss-120b,yes
-en,Start a 1 hour 30 minutes timer for the rice,"Hey, could you set a timer for 1 hour 30 minutes for the rice?",openai/gpt-oss-120b,yes
-en,Start a 1 hour 30 minutes timer for the rice,"Start a 1 hour 30 minutes timer for the rice, please.",openai/gpt-oss-120b,yes
-en,Start a 1 hour 30 minutes timer for the rice,Timer: 1 hour 30 minutes – rice.,openai/gpt-oss-120b,yes
-fr,Combien font 250 réaux en dollars canadiens ?,"Salut, tu sais combien 250 réaux valent en dollars canadiens ?",openai/gpt-oss-120b,yes
-fr,Combien font 250 réaux en dollars canadiens ?,"Bonjour, pourriez-vous me dire la conversion de 250 réaux en dollars canadiens, s'il vous plaît ?",openai/gpt-oss-120b,yes
-fr,Combien font 250 réaux en dollars canadiens ?,"Excusez‑moi, pouvez‑vous m'indiquer le montant en dollars canadiens pour 250 réaux ?",openai/gpt-oss-120b,yes
-fr,Retiens que l'anniversaire de mon meilleur ami est le 18 novembre,"Note que l'anniversaire de mon meilleur ami, c'est le 18 novembre.",openai/gpt-oss-120b,yes
-fr,Retiens que l'anniversaire de mon meilleur ami est le 18 novembre,Peux‑tu retenir que mon meilleur ami fête son anniversaire le 18 novembre ?,openai/gpt-oss-120b,yes
-fr,Retiens que l'anniversaire de mon meilleur ami est le 18 novembre,"N'oublie pas : le 18 novembre, c’est l’anniversaire de mon meilleur ami.",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à New York demain ?,Quel temps fera-t-il à New York demain ?,openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à New York demain ?,"Salut, tu sais quel temps il fait à New York demain ?",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à New York demain ?,"Pouvez-vous me dire la météo à New York pour demain, s'il vous plaît ?",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à New York demain ?,"Yo, la météo à New York demain, c’est quoi ?",openai/gpt-oss-120b,yes
-fr,Combien font 18 % de 250000 ?,"Salut, tu sais combien font 18 % de 250000 ?",openai/gpt-oss-120b,yes
-fr,Combien font 18 % de 250000 ?,"Pouvez-vous me dire quel est le résultat de 18 % de 250000, s'il vous plaît ?",openai/gpt-oss-120b,yes
-fr,Combien font 18 % de 250000 ?,C’est quoi 18% de 250000 ?,openai/gpt-oss-120b,yes
-fr,Combien font 18 % de 250000 ?,"Hey, j’ai besoin de savoir le calcul de 18 % de 250000.",openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids on Monday at 7 pm,"Hey, can you set a reminder for me to pick up the kids on Monday at 7 pm?",openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids on Monday at 7 pm,Please remind me to pick up the kids on Monday at 7 pm.,openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids on Monday at 7 pm,Remind me: pick up the kids Monday 7 pm.,openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids on Monday at 7 pm,"I need a reminder to pick up the kids on Monday at 7 pm, thanks.",openai/gpt-oss-120b,yes
-fr,Combien font 10000 dollars en livres égyptiennes ?,"Salut, tu sais combien font 10000 dollars en livres égyptiennes ?",openai/gpt-oss-120b,yes
-fr,Combien font 10000 dollars en livres égyptiennes ?,"Bonjour, pourriez‑vous me dire la conversion de 10000 dollars en livres égyptiennes, s'il vous plaît ?",openai/gpt-oss-120b,yes
-fr,Combien font 10000 dollars en livres égyptiennes ?,"Hey, 10000 dollars, c’est combien en livres égyptiennes ?",openai/gpt-oss-120b,yes
-fr,Combien font 10000 dollars en livres égyptiennes ?,"Excusez‑moi, j'aimerais savoir la valeur de 10000 dollars en livres égyptiennes.",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Cairo aujourd'hui ?,Sais-tu quel temps il fait à Cairo aujourd'hui ?,openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Cairo aujourd'hui ?,"Dis‑moi le temps qu'il fait à Cairo aujourd'hui, s'il te plaît.",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Cairo aujourd'hui ?,"Cairo, c'est quel temps aujourd'hui ?",openai/gpt-oss-120b,yes
-en,Remind me to send the report to Maria at 12 pm today,Can you please remind me to send the report to Maria at 12 pm today?,openai/gpt-oss-120b,yes
-en,Remind me to send the report to Maria at 12 pm today,"Hey, set a reminder: send the report to Maria at 12 pm today.",openai/gpt-oss-120b,yes
-en,Remind me to send the report to Maria at 12 pm today,Reminder: send report to Maria at 12 pm today.,openai/gpt-oss-120b,yes
-en,Set a timer for 15 minutes for the tea,Could you please set a timer for 15 minutes for the tea?,openai/gpt-oss-120b,yes
-en,Set a timer for 15 minutes for the tea,"Hey, timer 15 minutes for tea, thanks!",openai/gpt-oss-120b,yes
-en,Start a 15 minutes timer for the rice,"Start a 15 minutes timer for the rice, please.",openai/gpt-oss-120b,yes
-en,Start a 15 minutes timer for the rice,"Timer: 15 minutes, rice.",openai/gpt-oss-120b,yes
-fr,Mets le volume à 30,Peux-tu mettre le volume à 30 ?,openai/gpt-oss-120b,yes
-fr,Mets le volume à 30,Mets le volume à 30 s'il te plaît.,openai/gpt-oss-120b,yes
-fr,Mets le volume à 30,"Hey, règle le son à 30.",openai/gpt-oss-120b,yes
-en,How much is 100000 Kenyan shillings in Australian dollars?,"Hey, can you tell me what 100000 Kenyan shillings equals in Australian dollars?",openai/gpt-oss-120b,yes
-en,How much is 100000 Kenyan shillings in Australian dollars?,Please convert 100000 Kenyan shillings to Australian dollars.,openai/gpt-oss-120b,yes
-en,Convert 1000 Egyptian pounds to Canadian dollars,"Hey, could you convert 1000 Egyptian pounds to Canadian dollars for me?",openai/gpt-oss-120b,yes
-en,Convert 1000 Egyptian pounds to Canadian dollars,Please convert 1000 Egyptian pounds into Canadian dollars.,openai/gpt-oss-120b,yes
-en,Convert 1000 Egyptian pounds to Canadian dollars,"Convert 1000 Egyptian pounds to Canadian dollars, thanks.",openai/gpt-oss-120b,yes
-en,Convert 1000 Egyptian pounds to Canadian dollars,I need to know how much 1000 Egyptian pounds is in Canadian dollars.,openai/gpt-oss-120b,yes
-fr,Convertis 25000 réaux en pesos,"Salut, peux-tu transformer 25000 réaux en pesos ?",openai/gpt-oss-120b,yes
-fr,Convertis 25000 réaux en pesos,"Bonjour, pourriez-vous convertir 25000 réaux en pesos, s'il vous plaît ?",openai/gpt-oss-120b,yes
-fr,Convertis 25000 réaux en pesos,"Hey, je veux savoir combien font 25000 réaux en pesos.",openai/gpt-oss-120b,yes
-fr,Convertis 25000 réaux en pesos,"Bonjour, merci de convertir 25000 réaux en pesos pour moi.",openai/gpt-oss-120b,yes
-en,What's 5% of 250000?,"Hey, can you tell me what 5% of 250000 is?",openai/gpt-oss-120b,yes
-en,What's 5% of 250000?,Please calculate 5% of 250000 for me.,openai/gpt-oss-120b,yes
-en,What's 5% of 250000?,What’s the result of 5% of 250000?,openai/gpt-oss-120b,yes
-en,What's 5% of 250000?,"Just need the 5% figure of 250000, thanks.",openai/gpt-oss-120b,yes
-en,"Make a Word of my shopping list: tomatoes, eggs, palm oil, rice","Could you please create a Word document with my shopping list? It should include tomatoes, eggs, palm oil, and rice.",openai/gpt-oss-120b,yes
-en,"Make a Word of my shopping list: tomatoes, eggs, palm oil, rice","Make a Word file for my shopping list: tomatoes, eggs, palm oil, rice.",openai/gpt-oss-120b,yes
-en,"Make a Word of my shopping list: tomatoes, eggs, palm oil, rice","Hey, can you put tomatoes, eggs, palm oil, and rice into a Word doc for me?",openai/gpt-oss-120b,yes
-en,"Make a Word of my shopping list: tomatoes, eggs, palm oil, rice","Please generate a Word document containing my shopping list—tomatoes, eggs, palm oil, rice.",openai/gpt-oss-120b,yes
-en,What is 552 times 5?,"Hey, can you tell me what 552 times 5 is?",openai/gpt-oss-120b,yes
-en,What is 552 times 5?,Could you please calculate 552 * 5 for me?,openai/gpt-oss-120b,yes
-en,What is 552 times 5?,What's the result of 552 multiplied by 5?,openai/gpt-oss-120b,yes
-en,What is 552 times 5?,"Need the answer to 552×5, thanks.",openai/gpt-oss-120b,yes
-fr,Rappelle-moi de acheter du lait dimanche à 14h,Rappelle‑moi d'acheter du lait dimanche à 14h.,openai/gpt-oss-120b,yes
-fr,Rappelle-moi de acheter du lait dimanche à 14h,Peux‑tu me rappeler d’acheter du lait dimanche à 14h ?,openai/gpt-oss-120b,yes
-fr,Rappelle-moi de acheter du lait dimanche à 14h,"N'oublie pas, dimanche à 14h, acheter du lait.",openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids tomorrow at 8:30 am,"Hey, can you set a reminder for me to pick up the kids tomorrow at 8:30 am?",openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids tomorrow at 8:30 am,Please remind me to pick up the kids at 8:30 am tomorrow.,openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids tomorrow at 8:30 am,Remind me: pick up the kids tomorrow 8:30 am.,openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids tomorrow at 8:30 am,"I need a reminder to pick up the kids tomorrow at 8:30 am, thanks.",openai/gpt-oss-120b,yes
-en,Remind me to call Raj about the project in 45 minutes,"Hey, can you set a reminder for me to call Raj about the project in 45 minutes?",openai/gpt-oss-120b,yes
-en,Remind me to call Raj about the project in 45 minutes,Please remind me to call Raj about the project in 45 minutes.,openai/gpt-oss-120b,yes
-en,Remind me to call Raj about the project in 45 minutes,"Remind me to call Raj about the project in 45 minutes, thanks.",openai/gpt-oss-120b,yes
-en,Remind me to call Raj about the project in 45 minutes,"In 45 minutes, remind me to call Raj about the project.",openai/gpt-oss-120b,yes
-fr,Combien font 10 shillings kényans en wons ?,"Salut, tu sais combien font 10 shillings kényans en wons ?",openai/gpt-oss-120b,yes
-fr,Combien font 10 shillings kényans en wons ?,"Bonjour, pourriez‑vous me dire la conversion de 10 shillings kényans en wons, s’il vous plaît ?",openai/gpt-oss-120b,yes
-fr,Combien font 10 shillings kényans en wons ?,"Hey, 10 shillings kényans = combien en wons ?",openai/gpt-oss-120b,yes
-fr,Combien font 10 shillings kényans en wons ?,Merci de me dire la valeur de 10 shillings kényans en wons.,openai/gpt-oss-120b,yes
-en,Remind me to send flowers to Yuki at 8 pm today,Please set a reminder for me to send flowers to Yuki at 8 pm today.,openai/gpt-oss-120b,yes
-en,Remind me to send flowers to Yuki at 8 pm today,Reminder: send flowers to Yuki at 8 pm today.,openai/gpt-oss-120b,yes
-en,Timer 3 minutes for the laundry,,openai/gpt-oss-120b,no
-fr,Quel temps fait-il à Berlin aujourd'hui ?,"Salut, tu peux me dire quel temps il fait à Berlin aujourd'hui ?",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Berlin aujourd'hui ?,"Bonjour, pourriez-vous m'indiquer la météo à Berlin pour aujourd'hui, s'il vous plaît ?",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Berlin aujourd'hui ?,"Hey, c’est quoi la météo à Berlin aujourd'hui ?",openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: tomatoes, rice, palm oil, onions","Can you create a Markdown list for my shopping items: tomatoes, rice, palm oil, onions?",openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: tomatoes, rice, palm oil, onions","Hey, make a Markdown of my shopping list—tomatoes, rice, palm oil, onions.",openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: tomatoes, rice, palm oil, onions","Please generate a Markdown document containing my grocery list: tomatoes, rice, palm oil, onions.",openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: tomatoes, rice, palm oil, onions","Do a Markdown format of my shopping list: tomatoes, rice, palm oil, onions.",openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on May 4,Please note that my best friend's birthday falls on May 4.,openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on May 4,Don't forget—my best friend's birthday is May 4.,openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on May 4,Quick heads‑up: May 4 is my best friend's birthday.,openai/gpt-oss-120b,yes
-en,Can you wake me at 5 am? for the prayer,"Hey, could you set an alarm for 5 am for the prayer?",openai/gpt-oss-120b,yes
-en,Can you wake me at 5 am? for the prayer,Please wake me at 5 am for the prayer.,openai/gpt-oss-120b,yes
-en,Can you wake me at 5 am? for the prayer,"Wake me up at 5 am for the prayer, thanks.",openai/gpt-oss-120b,yes
-en,Can you wake me at 5 am? for the prayer,Set a 5 am alarm for the prayer.,openai/gpt-oss-120b,yes
-en,What's the weather in Sydney right now?,"Hey, can you tell me the current weather in Sydney?",openai/gpt-oss-120b,yes
-en,What's the weather in Sydney right now?,Could you please let me know what the weather is like in Sydney right now?,openai/gpt-oss-120b,yes
-en,What's the weather in Sydney right now?,What's the weather like in Sydney at the moment?,openai/gpt-oss-120b,yes
-en,What's the weather in Sydney right now?,Sydney weather right now?,openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Hanoi en ce moment ?,"Salut, tu sais quel temps il fait à Hanoi en ce moment ?",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Hanoi en ce moment ?,"Bonjour, pourriez-vous me dire la météo actuelle à Hanoi, s'il vous plaît ?",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Hanoi en ce moment ?,"Hey, c’est quoi la météo à Hanoi maintenant ?",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Hanoi en ce moment ?,Pouvez-vous me dire quel temps il fait à Hanoi à l'instant ?,openai/gpt-oss-120b,yes
-en,How much is 100000 Egyptian pounds in dollars?,"Hey, can you tell me what 100000 Egyptian pounds converts to in dollars?",openai/gpt-oss-120b,yes
-en,How much is 100000 Egyptian pounds in dollars?,I need to know how many dollars 100000 Egyptian pounds is.,openai/gpt-oss-120b,yes
-fr,Réveille-moi à 8h30 pour le travail,Peux-tu me réveiller à 8h30 afin d'aller travailler ?,openai/gpt-oss-120b,yes
-fr,Réveille-moi à 8h30 pour le travail,"S'il te plaît, programme mon alarme à 8h30 pour le boulot.",openai/gpt-oss-120b,yes
-fr,Réveille-moi à 8h30 pour le travail,"Mets une alarme à 8h30, c'est pour le travail.",openai/gpt-oss-120b,yes
-fr,Alarme à 6h15 s'il te plaît pour le sport,Peux‑tu mettre une alarme à 6h15 s'il te plaît pour le sport ?,openai/gpt-oss-120b,yes
-fr,Alarme à 6h15 s'il te plaît pour le sport,"Alarme 6h15 pour le sport, s'il te plaît.",openai/gpt-oss-120b,yes
-fr,Alarme à 6h15 s'il te plaît pour le sport,Merci de programmer une alarme à 6h15 pour le sport.,openai/gpt-oss-120b,yes
-fr,Alarme à 6h15 s'il te plaît pour le sport,"Hey, règle une alarme à 6h15 pour le sport, s'il te plaît.",openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: fish, palm oil, onions, milk","Could you create a Markdown list of my shopping items: fish, palm oil, onions, milk?",openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: fish, palm oil, onions, milk","Please make a Markdown of my shopping list—fish, palm oil, onions, milk.",openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: fish, palm oil, onions, milk","Hey, I need a Markdown version of my shopping list: fish, palm oil, onions, milk.",openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: fish, palm oil, onions, milk","Make a Markdown list for my shopping: fish, palm oil, onions, milk.",openai/gpt-oss-120b,yes
-en,Set the volume to 40,Could you please set the volume to 40?,openai/gpt-oss-120b,yes
-en,Set the volume to 40,"Hey, adjust the volume to 40.",openai/gpt-oss-120b,yes
-en,Set the volume to 40,"Volume 40, please.",openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on March 11,"Hey, just a heads‑up: my mom's birthday is on March 11.",openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on March 11,Please note my mother's birthday is March 11.,openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on March 11,"Don't forget, my mother was born on March 11.",openai/gpt-oss-120b,yes
-fr,Mets une alarme à 6h,Peux-tu programmer une alarme pour 6h ?,openai/gpt-oss-120b,yes
-fr,Mets une alarme à 6h,"Fais sonner le réveil à 6h, s'il te plaît.",openai/gpt-oss-120b,yes
-fr,Mets une alarme à 6h,"Alarme à 6h, ok ?",openai/gpt-oss-120b,yes
-en,What's the weather in Chicago today?,"Hey, can you tell me the weather in Chicago today?",openai/gpt-oss-120b,yes
-en,What's the weather in Chicago today?,Could you please let me know what the weather is like in Chicago today?,openai/gpt-oss-120b,yes
-en,What's the weather in Chicago today?,Weather in Chicago today?,openai/gpt-oss-120b,yes
-en,What's the weather in Chicago today?,What's the forecast for Chicago today?,openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on August 3,Please note that my mother's birthday falls on August 3.,openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on August 3,Can you remember that my mother's birthday is on August 3?,openai/gpt-oss-120b,yes
-en,Remember that my mother's birthday is on August 3,"Don't forget, my mom's birthday is August 3.",openai/gpt-oss-120b,yes
-en,Remind me to renew my passport tomorrow at 7 pm,"Hey, can you set a reminder for me to renew my passport tomorrow at 7 pm?",openai/gpt-oss-120b,yes
-en,Remind me to renew my passport tomorrow at 7 pm,Please remind me to renew my passport tomorrow at 7 pm.,openai/gpt-oss-120b,yes
-en,Remind me to renew my passport tomorrow at 7 pm,"Remind me to renew my passport tomorrow at 7 pm, thanks.",openai/gpt-oss-120b,yes
-en,Remind me to renew my passport tomorrow at 7 pm,I need a reminder: renew passport tomorrow 7 pm.,openai/gpt-oss-120b,yes
-fr,Alarme à 5h s'il te plaît pour le prière,Peux-tu mettre une alarme à 5h s'il te plaît pour la prière ?,openai/gpt-oss-120b,yes
-fr,Alarme à 5h s'il te plaît pour le prière,Merci de régler l'alarme à 5h pour le prière.,openai/gpt-oss-120b,yes
-fr,Alarme à 5h s'il te plaît pour le prière,"5h d'alarme, s'il te plaît, pour le prière.",openai/gpt-oss-120b,yes
-fr,Retiens que l'anniversaire de ma mère est le 3 mars,"Note : l'anniversaire de ma mère, c’est le 3 mars.",openai/gpt-oss-120b,yes
-fr,Retiens que l'anniversaire de ma mère est le 3 mars,Peux‑tu retenir que ma mère fête son anniversaire le 3 mars ?,openai/gpt-oss-120b,yes
-fr,Retiens que l'anniversaire de ma mère est le 3 mars,"N’oublie pas, ma mère a son anniversaire le 3 mars.",openai/gpt-oss-120b,yes
-en,Launch Calendar,Could you open the Calendar app for me?,openai/gpt-oss-120b,yes
-en,Launch Calendar,"Launch Calendar, please.",openai/gpt-oss-120b,yes
-en,Launch Calendar,"Hey, open Calendar.",openai/gpt-oss-120b,yes
-en,Launch Calendar,Open the Calendar now.,openai/gpt-oss-120b,yes
-fr,Combien font 20 % de 250000 ?,Quel est le résultat de 20 % de 250000 ?,openai/gpt-oss-120b,yes
-fr,Combien font 20 % de 250000 ?,"Peux‑tu me dire combien fait 20 % de 250000, s’il te plaît ?",openai/gpt-oss-120b,yes
-fr,Combien font 20 % de 250000 ?,"20 % de 250000, ça donne quoi ?",openai/gpt-oss-120b,yes
-fr,Combien font 20 % de 250000 ?,J’ai besoin de savoir combien représente 20 % de 250000.,openai/gpt-oss-120b,yes
-en,What is 275 times 28?,"Hey, can you tell me what 275 times 28 is?",openai/gpt-oss-120b,yes
-en,What is 275 times 28?,Please calculate 275 × 28.,openai/gpt-oss-120b,yes
-en,What is 275 times 28?,What's 275 multiplied by 28?,openai/gpt-oss-120b,yes
-en,What is 275 times 28?,Give me the result of 275 times 28.,openai/gpt-oss-120b,yes
-en,What is 21 times 8?,"Hey, can you tell me what 21 times 8 is?",openai/gpt-oss-120b,yes
-en,What is 21 times 8?,What's the product of 21 and 8?,openai/gpt-oss-120b,yes
-en,What is 21 times 8?,"Could you calculate 21 × 8 for me, please?",openai/gpt-oss-120b,yes
-en,What is 21 times 8?,21 times 8 = ?,openai/gpt-oss-120b,yes
-en,"Make a PDF of my shopping list: sugar, palm oil, fish, onions","Hey, can you create a PDF of my shopping list? It includes sugar, palm oil, fish, and onions.",openai/gpt-oss-120b,yes
-en,"Make a PDF of my shopping list: sugar, palm oil, fish, onions","Please make a PDF file containing my shopping list: sugar, palm oil, fish, onions.",openai/gpt-oss-120b,yes
-en,"Make a PDF of my shopping list: sugar, palm oil, fish, onions","Could you put sugar, palm oil, fish, onions into a PDF shopping list for me?",openai/gpt-oss-120b,yes
-en,What is 875 times 13?,"Hey, can you tell me what 875 times 13 is?",openai/gpt-oss-120b,yes
-en,What is 875 times 13?,Please calculate 875 × 13 for me.,openai/gpt-oss-120b,yes
-en,What is 875 times 13?,What's 875 multiplied by 13?,openai/gpt-oss-120b,yes
-en,What is 875 times 13?,"Yo, 875 * 13 = ?",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Markdown de ma liste de courses : huile de palme, oignons, riz, tomates","Peux-tu me préparer un Markdown de ma liste de courses ? huile de palme, oignons, riz, tomates",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Markdown de ma liste de courses : huile de palme, oignons, riz, tomates","Fais-moi un Markdown pour la liste de courses : huile de palme, oignons, riz, tomates, s’il te plaît.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Markdown de ma liste de courses : huile de palme, oignons, riz, tomates","Markdown de ma liste de courses, stp : huile de palme, oignons, riz, tomates.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Markdown de ma liste de courses : huile de palme, oignons, riz, tomates","Je veux un Markdown contenant : huile de palme, oignons, riz, tomates. Merci.",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Karachi en ce moment ?,"Salut, tu peux me dire le temps qu'il fait à Karachi en ce moment ?",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Karachi en ce moment ?,"Bonjour, pourriez-vous m'indiquer les conditions météo actuelles à Karachi, s'il vous plaît ?",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Karachi en ce moment ?,"Hey, c’est quoi la météo à Karachi maintenant ?",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Karachi en ce moment ?,Pouvez‑vous me dire quel temps il fait à Karachi en ce moment ?,openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on November 23,Please note that my best friend's birthday falls on November 23.,openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on November 23,Just a heads‑up: my best friend's birthday is November 23.,openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on November 23,Remember: best friend's birthday = November 23.,openai/gpt-oss-120b,yes
-fr,Mets une alarme à 5h,Peux-tu régler une alarme pour 5h ?,openai/gpt-oss-120b,yes
-fr,Mets une alarme à 5h,"Alarme 5h, s’il te plaît.",openai/gpt-oss-120b,yes
-fr,Mets une alarme à 5h,"Hey, je veux une alarme à 5h.",openai/gpt-oss-120b,yes
-fr,Convertis 5000 roupies indonésiennes en dollars australiens,"Salut, tu peux me dire combien font 5000 roupies indonésiennes en dollars australiens ?",openai/gpt-oss-120b,yes
-fr,Convertis 5000 roupies indonésiennes en dollars australiens,"Bonjour, pourriez-vous convertir 5000 roupies indonésiennes en dollars australiens, s'il vous plaît ?",openai/gpt-oss-120b,yes
-fr,Convertis 5000 roupies indonésiennes en dollars australiens,"Hey, fais le calcul : 5000 roupies indonésiennes = ? dollars australiens",openai/gpt-oss-120b,yes
-en,Set a timer for 20 minutes for the rice,"Hey, can you set a timer for 20 minutes for the rice?",openai/gpt-oss-120b,yes
-en,Set a timer for 20 minutes for the rice,"Timer 20 minutes, rice.",openai/gpt-oss-120b,yes
-en,Set a timer for 20 minutes for the rice,"Set a timer for 20 minutes for the rice, thanks.",openai/gpt-oss-120b,yes
-fr,Rappelle-moi de arroser les plantes dans 30 minutes,Rappelle-moi d'arroser les plantes dans 30 minutes.,openai/gpt-oss-120b,yes
-fr,Rappelle-moi de arroser les plantes dans 30 minutes,Peux-tu me rappeler d'arroser les plantes dans 30 minutes ?,openai/gpt-oss-120b,yes
-fr,Rappelle-moi de arroser les plantes dans 30 minutes,N'oublie pas de me dire d'arroser les plantes dans 30 minutes.,openai/gpt-oss-120b,yes
-fr,Rappelle-moi de arroser les plantes dans 30 minutes,"Hey, rappelle-moi d'arroser les plantes dans 30 minutes, s'il te plaît.",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Chicago demain ?,Quel sera le temps à Chicago demain ?,openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Chicago demain ?,"Peux-tu me dire la météo pour demain à Chicago, s'il te plaît ?",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Chicago demain ?,"Hey, c'est quoi la prévision météo à Chicago pour demain ?",openai/gpt-oss-120b,yes
-fr,Quel temps fait-il à Chicago demain ?,Je veux savoir s'il va faire beau ou pas à Chicago demain.,openai/gpt-oss-120b,yes
-en,How much is 100 dollars in Philippine pesos?,"Hey, can you tell me what 100 dollars equals in Philippine pesos?",openai/gpt-oss-120b,yes
-en,How much is 100 dollars in Philippine pesos?,What's the amount in Philippine pesos for 100 dollars?,openai/gpt-oss-120b,yes
-fr,Retiens que l'anniversaire de mon meilleur ami est le 5 février,"Note que l'anniversaire de mon meilleur ami, c’est le 5 février.",openai/gpt-oss-120b,yes
-fr,Retiens que l'anniversaire de mon meilleur ami est le 5 février,Merci de retenir que mon meilleur ami fête son anniversaire le 5 février.,openai/gpt-oss-120b,yes
-fr,Retiens que l'anniversaire de mon meilleur ami est le 5 février,Pouvez‑vous enregistrer la date du 5 février comme étant l’anniversaire de mon meilleur ami ?,openai/gpt-oss-120b,yes
-en,What's the weather in Mexico City tomorrow?,"Hey, can you tell me the weather forecast for Mexico City tomorrow?",openai/gpt-oss-120b,yes
-en,What's the weather in Mexico City tomorrow?,Please let me know what the weather will be like in Mexico City tomorrow.,openai/gpt-oss-120b,yes
-en,What's the weather in Mexico City tomorrow?,"Yo, what's the forecast for Mexico City tomorrow?",openai/gpt-oss-120b,yes
-fr,Rappelle-moi de renouveler mon passeport demain à 18h,Peux-tu me rappeler de faire le renouvellement de mon passeport demain à 18h ?,openai/gpt-oss-120b,yes
-fr,Rappelle-moi de renouveler mon passeport demain à 18h,"N'oublie pas, c'est demain à 18h que je dois renouveler mon passeport.",openai/gpt-oss-120b,yes
-fr,Rappelle-moi de renouveler mon passeport demain à 18h,"Hey, rappelle-moi de renouveler mon passeport demain à 18h, s'il te plaît.",openai/gpt-oss-120b,yes
-en,Set an alarm for 7 am for the gym,Could you please set a 7 am alarm for the gym?,openai/gpt-oss-120b,yes
-en,Set an alarm for 7 am for the gym,"Hey, I need an alarm at 7 am for the gym.",openai/gpt-oss-120b,yes
-en,Set an alarm for 7 am for the gym,"Alarm at 7 am for the gym, thanks.",openai/gpt-oss-120b,yes
-en,How much is 5000 pounds in Philippine pesos?,"Hey, can you tell me how much 5000 pounds is in Philippine pesos?",openai/gpt-oss-120b,yes
-en,How much is 5000 pounds in Philippine pesos?,Please let me know the conversion for 5000 pounds to Philippine pesos.,openai/gpt-oss-120b,yes
-en,How much is 5000 pounds in Philippine pesos?,"5000 pounds to Philippine pesos, please.",openai/gpt-oss-120b,yes
-en,Set a timer for 1 hour,"Hey, can you set a timer for 1 hour?",openai/gpt-oss-120b,yes
-en,Set a timer for 1 hour,Please set a timer for 1 hour.,openai/gpt-oss-120b,yes
-en,Set a timer for 1 hour,"Timer 1 hour, please.",openai/gpt-oss-120b,yes
-en,Set a timer for 1 hour,Set a 1 hour timer.,openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on March 28,"Hey, just a heads‑up: my best friend's birthday is on March 28.",openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on March 28,Please note that my best friend's birthday falls on March 28.,openai/gpt-oss-120b,yes
-en,Remember that my best friend's birthday is on March 28,Can you remember my best friend's birthday? It's March 28.,openai/gpt-oss-120b,yes
-fr,"Fais-moi un Word de ma liste de courses : huile de palme, lait, pain, sucre","Hey, crée un document Word avec ma liste de courses : huile de palme, lait, pain, sucre.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Word de ma liste de courses : huile de palme, lait, pain, sucre","Pouvez‑vous s'il vous plaît générer un fichier Word contenant : huile de palme, lait, pain, sucre ?",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Word de ma liste de courses : huile de palme, lait, pain, sucre","Fais un Word de ma liste de courses : huile de palme, lait, pain, sucre.",openai/gpt-oss-120b,yes
-fr,"Fais-moi un Word de ma liste de courses : huile de palme, lait, pain, sucre","Salut, j’ai besoin d’un Word qui liste : huile de palme, lait, pain, sucre.",openai/gpt-oss-120b,yes
-en,Remind me to buy milk tomorrow at 10 am,"Hey, could you set a reminder for me to buy milk tomorrow at 10 am?",openai/gpt-oss-120b,yes
-en,Remind me to buy milk tomorrow at 10 am,Please remind me to pick up milk tomorrow at 10 am.,openai/gpt-oss-120b,yes
-en,Remind me to buy milk tomorrow at 10 am,Don't forget: buy milk tomorrow at 10 am.,openai/gpt-oss-120b,yes
-en,How much is 25000 Canadian dollars in Philippine pesos?,"Hey, can you tell me the conversion for 25000 Canadian dollars to Philippine pesos?",openai/gpt-oss-120b,yes
-en,How much is 25000 Canadian dollars in Philippine pesos?,Please let me know how much 25000 Canadian dollars equals in Philippine pesos.,openai/gpt-oss-120b,yes
-en,How much is 25000 Canadian dollars in Philippine pesos?,I need to know the amount of Philippine pesos I get for 25000 Canadian dollars.,openai/gpt-oss-120b,yes
-en,Timer 1 minutes for the rice,Please timer 1 minutes for the rice.,openai/gpt-oss-120b,yes
-en,Weather Berlin tomorrow,What's the weather in Berlin tomorrow?,openai/gpt-oss-120b,yes
-en,Weather Berlin tomorrow,"Weather Berlin tomorrow, please.",openai/gpt-oss-120b,yes
-en,Weather Berlin tomorrow,"Hey, need the forecast for Berlin tomorrow.",openai/gpt-oss-120b,yes
-en,How much is 250 naira in rupees?,"Hey, could you tell me how much 250 naira equals in rupees?",openai/gpt-oss-120b,yes
-en,How much is 250 naira in rupees?,Please convert 250 naira to rupees for me.,openai/gpt-oss-120b,yes
-en,How much is 250 naira in rupees?,What's the rupee amount for 250 naira?,openai/gpt-oss-120b,yes
-en,How much is 250 naira in rupees?,"Yo, what's 250 naira worth in rupees?",openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids tomorrow at 7 am,"Hey, can you set a reminder for me to pick up the kids tomorrow at 7 am?",openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids tomorrow at 7 am,Please remind me to pick up the kids tomorrow at 7 am.,openai/gpt-oss-120b,yes
-en,Remind me to pick up the kids tomorrow at 7 am,"I need a reminder to pick up the kids tomorrow at 7 am, thanks.",openai/gpt-oss-120b,yes
-fr,Ouvre Spotify,Peux-tu ouvrir Spotify ?,openai/gpt-oss-120b,yes
-fr,Ouvre Spotify,Ouvre Spotify s'il te plaît.,openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: onions, palm oil, bread, fish","Hey, could you create a Markdown list of my shopping items: onions, palm oil, bread, fish?",openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: onions, palm oil, bread, fish","Please make a Markdown version of my shopping list: onions, palm oil, bread, fish.",openai/gpt-oss-120b,yes
-en,"Make a Markdown of my shopping list: onions, palm oil, bread, fish","Can you do a Markdown list for these groceries—onions, palm oil, bread, fish?",openai/gpt-oss-120b,yes
-en,Remember that my brother's birthday is on December 22,Please note that my brother's birthday falls on December 22.,openai/gpt-oss-120b,yes
-en,Remember that my brother's birthday is on December 22,"Remember, my brother’s birthday is December 22.",openai/gpt-oss-120b,yes
-en,Remember that my brother's birthday is on December 22,Don't forget: my brother's birthday is on December 22.,openai/gpt-oss-120b,yes
+en,Weather Toronto today,What's the weather like in Toronto today?,Gink (via openai/gpt-oss-120b),yes
+en,Weather Toronto today,Can you tell me the Toronto weather for today?,Gink (via openai/gpt-oss-120b),yes
+en,Weather Toronto today,"Toronto weather today, please.",Gink (via openai/gpt-oss-120b),yes
+en,Weather Toronto today,"Hey, what's the forecast for Toronto today?",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un PDF de ma liste de courses : riz, pain, huile de palme, oignons","Peux-tu me créer un PDF de ma liste de courses : riz, pain, huile de palme, oignons ?",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un PDF de ma liste de courses : riz, pain, huile de palme, oignons","Fais-moi un PDF avec ces courses : riz, pain, huile de palme, oignons.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un PDF de ma liste de courses : riz, pain, huile de palme, oignons","S'il te plaît, génère un PDF de ma liste de courses : riz, pain, huile de palme, oignons.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un PDF de ma liste de courses : riz, pain, huile de palme, oignons","PDF de ma liste de courses, stp : riz, pain, huile de palme, oignons.",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Jakarta en ce moment ?,"Salut, tu sais quel temps il fait à Jakarta maintenant ?",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Jakarta en ce moment ?,"Pouvez-vous me dire la météo actuelle à Jakarta, s'il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Jakarta en ce moment ?,Quel temps à Jakarta en ce moment ?,Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Jakarta en ce moment ?,"Hey, donne-moi la météo de Jakarta à l'instant.",Gink (via openai/gpt-oss-120b),yes
+en,How much is 50 yuan in won?,"Hey, could you tell me what 50 yuan equals in Korean won?",Gink (via openai/gpt-oss-120b),yes
+en,How much is 50 yuan in won?,Please let me know the conversion for 50 yuan to won.,Gink (via openai/gpt-oss-120b),yes
+en,How much is 50 yuan in won?,What's the amount in won for 50 yuan?,Gink (via openai/gpt-oss-120b),yes
+en,How much is 50 yuan in won?,Can you convert 50 yuan to won for me?,Gink (via openai/gpt-oss-120b),yes
+fr,Alarme à 5h15 s'il te plaît pour le sport,Peux-tu mettre une alarme à 5h15 s'il te plaît pour le sport ?,Gink (via openai/gpt-oss-120b),yes
+fr,Alarme à 5h15 s'il te plaît pour le sport,"Alarme 5h15 pour le sport, merci.",Gink (via openai/gpt-oss-120b),yes
+fr,Alarme à 5h15 s'il te plaît pour le sport,"Mets une alarme à 5h15, s'il te plaît, pour le sport.",Gink (via openai/gpt-oss-120b),yes
+fr,Alarme à 5h15 s'il te plaît pour le sport,"Hey, règle une alarme à 5h15 pour le sport, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Alarme à 5h s'il te plaît,"Peux-tu mettre une alarme à 5h, s'il te plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Alarme à 5h s'il te plaît,"Hey, règle une alarme pour 5h, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Alarme à 5h s'il te plaît,Merci de programmer une alarme à 5h.,Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de réviser pour l'examen dans 15 minutes,Peux-tu me rappeler de réviser pour l'examen dans 15 minutes ?,Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de réviser pour l'examen dans 15 minutes,N'oublie pas de me dire de réviser pour l'examen dans 15 minutes.,Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de réviser pour l'examen dans 15 minutes,"Hey, rappelle-moi de réviser pour l'examen dans 15 minutes, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+en,Remember that my best friend's birthday is on May 28,Please note that my best friend's birthday falls on May 28.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my best friend's birthday is on May 28,Can you remember that my best friend's birthday is on May 28?,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my best friend's birthday is on May 28,My best friend's birthday is on May 28—don't forget!,Gink (via openai/gpt-oss-120b),yes
+fr,Réveille-moi à 5h15 pour le travail,Peux-tu me réveiller à 5h15 afin d'aller travailler ?,Gink (via openai/gpt-oss-120b),yes
+fr,Réveille-moi à 5h15 pour le travail,Mets une alarme à 5h15 pour le boulot.,Gink (via openai/gpt-oss-120b),yes
+fr,Réveille-moi à 5h15 pour le travail,"Hey, rappelle-moi de me lever à 5h15, j'ai du travail.",Gink (via openai/gpt-oss-120b),yes
+en,Remember that my mother's birthday is on October 17,Please note that my mother's birthday falls on October 17.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my mother's birthday is on October 17,"Don't forget, my mom's birthday is October 17.",Gink (via openai/gpt-oss-120b),yes
+en,Wake me up at 7 am for the prayer,"Hey, can you set an alarm for 7 am so I don't miss the prayer?",Gink (via openai/gpt-oss-120b),yes
+en,Wake me up at 7 am for the prayer,Please wake me up at 7 am for the prayer.,Gink (via openai/gpt-oss-120b),yes
+en,Wake me up at 7 am for the prayer,"Wake me up at 7 am for the prayer, thanks.",Gink (via openai/gpt-oss-120b),yes
+en,Wake me up at 7 am for the prayer,Set an alarm for 7 am – I need to pray.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my best friend's birthday is on August 10,Please note: my best friend's birthday falls on August 10.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my best friend's birthday is on August 10,Can you remember that my best friend's birthday is on August 10?,Gink (via openai/gpt-oss-120b),yes
+fr,Lance WhatsApp,Peux-tu lancer WhatsApp ?,Gink (via openai/gpt-oss-120b),yes
+fr,Lance WhatsApp,"Ouvre WhatsApp, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de récupérer les enfants samedi à 20h,"N'oublie pas, je dois aller chercher les enfants samedi à 20h.",Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de récupérer les enfants samedi à 20h,Peux‑tu me rappeler de récupérer les enfants samedi à 20h ?,Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de récupérer les enfants samedi à 20h,"Svp, rappelle‑moi de récupérer les enfants samedi à 20h.",Gink (via openai/gpt-oss-120b),yes
+fr,Alarme à 7h s'il te plaît pour le sport,"Peux-tu mettre une alarme à 7h pour le sport, s'il te plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Alarme à 7h s'il te plaît pour le sport,"Mets une alarme à 7h, j'ai du sport.",Gink (via openai/gpt-oss-120b),yes
+fr,Alarme à 7h s'il te plaît pour le sport,"Hey, règle une alarme à 7h pour le sport, stp.",Gink (via openai/gpt-oss-120b),yes
+en,Convert 50 Canadian dollars to pounds,"Hey, could you convert 50 Canadian dollars to pounds for me?",Gink (via openai/gpt-oss-120b),yes
+en,Convert 50 Canadian dollars to pounds,Please convert 50 Canadian dollars to pounds.,Gink (via openai/gpt-oss-120b),yes
+en,Convert 50 Canadian dollars to pounds,"Convert 50 Canadian dollars to pounds, thanks.",Gink (via openai/gpt-oss-120b),yes
+en,Convert 50 Canadian dollars to pounds,I need to know how much 50 Canadian dollars is in pounds.,Gink (via openai/gpt-oss-120b),yes
+en,Set the volume to 10,"Hey, can you set the volume to 10?",Gink (via openai/gpt-oss-120b),yes
+en,Set the volume to 10,Please set the volume to 10.,Gink (via openai/gpt-oss-120b),yes
+en,Set the volume to 10,"Volume 10, thanks.",Gink (via openai/gpt-oss-120b),yes
+en,Set the volume to 10,Adjust volume to 10.,Gink (via openai/gpt-oss-120b),yes
+en,What's the weather in Chicago tomorrow?,"Hey, can you tell me the weather in Chicago tomorrow?",Gink (via openai/gpt-oss-120b),yes
+en,What's the weather in Chicago tomorrow?,What's the weather like in Chicago tomorrow?,Gink (via openai/gpt-oss-120b),yes
+en,What's the weather in Chicago tomorrow?,Weather in Chicago tomorrow?,Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Word de ma liste de courses : pain, lait, huile de palme, poisson","Peux-tu me créer un document Word avec ma liste de courses : pain, lait, huile de palme, poisson ?",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Word de ma liste de courses : pain, lait, huile de palme, poisson","Fais-moi un fichier Word contenant : pain, lait, huile de palme, poisson.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Word de ma liste de courses : pain, lait, huile de palme, poisson","Hey, prépare un Word avec ma liste de courses : pain, lait, huile de palme, poisson, s’il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Word de ma liste de courses : pain, lait, huile de palme, poisson","Word de ma liste de courses : pain, lait, huile de palme, poisson, merci.",Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de arroser les plantes dans 10 minutes,Rappelle-moi d'arroser les plantes dans 10 minutes.,Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de arroser les plantes dans 10 minutes,Peux-tu me rappeler d’arroser les plantes dans 10 minutes ?,Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de arroser les plantes dans 10 minutes,"N'oublie pas, arroser les plantes dans 10 minutes.",Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de arroser les plantes dans 10 minutes,"Hey, rappelle-moi d'arroser les plantes dans 10 minutes, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 185 fois 25,"Pouvez-vous calculer 185 × 25, s'il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 185 fois 25,"Hey, ça serait top si tu pouvais faire 185 fois 25.",Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 185 fois 25,Merci de me donner le résultat de 185*25.,Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: fish, palm oil, tomatoes, eggs","Could you create a Markdown list of my shopping items: fish, palm oil, tomatoes, eggs?",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: fish, palm oil, tomatoes, eggs","Please format my grocery list (fish, palm oil, tomatoes, eggs) as Markdown.",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: fish, palm oil, tomatoes, eggs","Hey, turn my shopping list—fish, palm oil, tomatoes, eggs—into a Markdown list.",Gink (via openai/gpt-oss-120b),yes
+fr,Réveille-moi à 7h,"Réveille-moi à 7h, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Réveille-moi à 7h,"Hey, mets une alarme pour 7h demain.",Gink (via openai/gpt-oss-120b),yes
+fr,Réveille-moi à 7h,Peux-tu me réveiller à 7h ? Merci.,Gink (via openai/gpt-oss-120b),yes
+fr,Convertis 50 shillings kényans en nairas,"Salut, pourrais-tu transformer 50 shillings kényans en nairas ?",Gink (via openai/gpt-oss-120b),yes
+fr,Convertis 50 shillings kényans en nairas,"Bonjour, merci de convertir 50 shillings kényans en nairas s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Convertis 50 shillings kényans en nairas,"Hey, fais le change de 50 shillings kényans en nairas.",Gink (via openai/gpt-oss-120b),yes
+fr,Réveille-moi à 5h45,"Réveille-moi à 5h45, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Réveille-moi à 5h45,"Hey, mets une alarme pour 5h45.",Gink (via openai/gpt-oss-120b),yes
+fr,Réveille-moi à 5h45,Peux‑tu me réveiller à 5h45 ?,Gink (via openai/gpt-oss-120b),yes
+fr,Réveille-moi à 5h45,Fais sonner le réveil à 5h45.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to water the plants at 4 pm today,"Hey, could you remind me to water the plants at 4 pm today?",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to water the plants at 4 pm today,Please set a reminder: water the plants at 4 pm today.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to water the plants at 4 pm today,Can you ping me at 4 pm today to water the plants?,Gink (via openai/gpt-oss-120b),yes
+en,What's 10% of 5000?,"Hey, can you tell me what 10% of 5000 is?",Gink (via openai/gpt-oss-120b),yes
+en,What's 10% of 5000?,"Could you calculate 10% of 5000 for me, please?",Gink (via openai/gpt-oss-120b),yes
+en,What's 10% of 5000?,10% of 5000—what does that come out to?,Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de réviser pour l'examen lundi à 19h,Peux-tu me rappeler de réviser pour l'examen ce lundi à 19h ?,Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de réviser pour l'examen lundi à 19h,N'oublie pas de me dire de réviser pour l'examen lundi à 19h.,Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de réviser pour l'examen lundi à 19h,"Hey, rappelle-moi de réviser pour l'examen lundi à 19h.",Gink (via openai/gpt-oss-120b),yes
+en,"Make a PDF of my shopping list: onions, tomatoes, rice, milk","Hey, could you please create a PDF of my shopping list? It includes onions, tomatoes, rice, and milk.",Gink (via openai/gpt-oss-120b),yes
+en,"Make a PDF of my shopping list: onions, tomatoes, rice, milk","Make a PDF for my shopping list: onions, tomatoes, rice, milk.",Gink (via openai/gpt-oss-120b),yes
+en,"Make a PDF of my shopping list: onions, tomatoes, rice, milk","Can you turn my shopping list (onions, tomatoes, rice, milk) into a PDF, please?",Gink (via openai/gpt-oss-120b),yes
+en,"Make a PDF of my shopping list: onions, tomatoes, rice, milk","I need a PDF of my shopping list—onions, tomatoes, rice, milk.",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to revise for the exam at 9 am today,"Hey, can you set a reminder for me to revise for the exam at 9 am today?",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to revise for the exam at 9 am today,Please remind me to revise for the exam at 9 am today.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to revise for the exam at 9 am today,"I need a reminder to revise for the exam at 9 am today, thanks.",Gink (via openai/gpt-oss-120b),yes
+en,Set a timer for 45 minutes,"Hey, could you set a timer for 45 minutes?",Gink (via openai/gpt-oss-120b),yes
+en,Set a timer for 45 minutes,"Timer, 45 minutes, go.",Gink (via openai/gpt-oss-120b),yes
+en,Can you open WhatsApp?,"Hey, could you open WhatsApp for me?",Gink (via openai/gpt-oss-120b),yes
+en,Can you open WhatsApp?,Please open WhatsApp.,Gink (via openai/gpt-oss-120b),yes
+en,Can you open WhatsApp?,"Open WhatsApp, thanks.",Gink (via openai/gpt-oss-120b),yes
+en,Can you open WhatsApp?,Can you launch WhatsApp?,Gink (via openai/gpt-oss-120b),yes
+en,Weather Cairo right now,What's the weather in Cairo right now?,Gink (via openai/gpt-oss-120b),yes
+en,Weather Cairo right now,Can you tell me the current weather for Cairo?,Gink (via openai/gpt-oss-120b),yes
+en,Weather Cairo right now,"Weather Cairo right now, please.",Gink (via openai/gpt-oss-120b),yes
+en,Weather Cairo right now,"Hey, need the weather update for Cairo at this moment.",Gink (via openai/gpt-oss-120b),yes
+en,Remember that my sister's birthday is on March 4,Please note: my sister's birthday falls on March 4.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my sister's birthday is on March 4,Can you remember my sister's birthday? It's March 4.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my sister's birthday is on March 4,"Don't forget, my sister's birthday is March 4.",Gink (via openai/gpt-oss-120b),yes
+en,Wake me up at 7 am for the work,"Hey, can you set an alarm for 7 am tomorrow? I need to be up for work.",Gink (via openai/gpt-oss-120b),yes
+en,Wake me up at 7 am for the work,Please wake me up at 7 am for the work.,Gink (via openai/gpt-oss-120b),yes
+en,Wake me up at 7 am for the work,Set an alarm for 7 am so I’m up for work.,Gink (via openai/gpt-oss-120b),yes
+en,Wake me up at 7 am for the work,"Alarm at 7 am, need to get ready for work.",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 10000 livres turques en pesos philippins ?,"Salut, tu sais combien 10000 livres turques ça fait en pesos philippins ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 10000 livres turques en pesos philippins ?,"Bonjour, pourriez-vous me dire la conversion de 10000 livres turques en pesos philippins, s'il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 10000 livres turques en pesos philippins ?,"Hey, c’est quoi le taux pour 10000 livres turques en pesos philippins ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 10000 livres turques en pesos philippins ?,Je veux savoir : 10000 livres turques = combien de pesos philippins ?,Gink (via openai/gpt-oss-120b),yes
+en,Weather Johannesburg right now,"Hey, can you tell me the weather in Johannesburg right now?",Gink (via openai/gpt-oss-120b),yes
+en,Weather Johannesburg right now,Please give me the current weather for Johannesburg.,Gink (via openai/gpt-oss-120b),yes
+en,Weather Johannesburg right now,What's the weather like in Johannesburg right now?,Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 1000 rands en yuans ?,"Salut, tu sais combien font 1000 rands en yuans ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 1000 rands en yuans ?,"Bonjour, pourriez-vous me dire la conversion de 1000 rands en yuans, s'il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 1000 rands en yuans ?,"Hey, c’est quoi le taux pour 1000 rands en yuans ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 1000 rands en yuans ?,Dis-moi rapidement combien vaut 1000 rands en yuans.,Gink (via openai/gpt-oss-120b),yes
+fr,Mets un minuteur de 45 minutes,"Hey, peux-tu mettre un minuteur de 45 minutes s'il te plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Mets un minuteur de 45 minutes,"Je voudrais un minuteur de 45 minutes, merci.",Gink (via openai/gpt-oss-120b),yes
+fr,Mets un minuteur de 45 minutes,"Active un minuteur de 45 minutes, d'accord ?",Gink (via openai/gpt-oss-120b),yes
+fr,Retiens que l'anniversaire de ma mère est le 7 juillet,"Note bien que l'anniversaire de ma mère, c'est le 7 juillet.",Gink (via openai/gpt-oss-120b),yes
+fr,Retiens que l'anniversaire de ma mère est le 7 juillet,Peux-tu retenir que ma mère fête son anniversaire le 7 juillet ?,Gink (via openai/gpt-oss-120b),yes
+fr,Retiens que l'anniversaire de ma mère est le 7 juillet,"Souviens-toi, le 7 juillet, c'est l'anniversaire de ma mère.",Gink (via openai/gpt-oss-120b),yes
+fr,Retiens que l'anniversaire de ma sœur est le 19 février,"Note que l'anniversaire de ma sœur, c'est le 19 février.",Gink (via openai/gpt-oss-120b),yes
+fr,Retiens que l'anniversaire de ma sœur est le 19 février,"N'oublie pas : le 19 février, c’est l'anniversaire de ma sœur.",Gink (via openai/gpt-oss-120b),yes
+fr,Retiens que l'anniversaire de ma sœur est le 19 février,"Hey, garde en tête que le 19 février, c’est l'anniv' de ma sœur.",Gink (via openai/gpt-oss-120b),yes
+en,What is 911 times 3?,"Hey, can you tell me what 911 multiplied by 3 is?",Gink (via openai/gpt-oss-120b),yes
+en,What is 911 times 3?,Could you please calculate 911 times 3 for me?,Gink (via openai/gpt-oss-120b),yes
+en,What is 911 times 3?,What's 911 x 3?,Gink (via openai/gpt-oss-120b),yes
+en,What is 911 times 3?,"I need the result of 911 times 3, thanks.",Gink (via openai/gpt-oss-120b),yes
+fr,Mets un minuteur de 2 minutes,"Hey, tu peux mettre un minuteur de 2 minutes, s'il te plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Mets un minuteur de 2 minutes,"Je veux un minuteur de 2 minutes, merci.",Gink (via openai/gpt-oss-120b),yes
+fr,Convertis 10 dollars australiens en yens,"Salut, tu peux me convertir 10 dollars australiens en yens ?",Gink (via openai/gpt-oss-120b),yes
+fr,Convertis 10 dollars australiens en yens,"Bonjour, pourriez-vous s'il vous plaît convertir 10 dollars australiens en yens ?",Gink (via openai/gpt-oss-120b),yes
+fr,Convertis 10 dollars australiens en yens,"Hey, fais le change de 10 dollars australiens en yens, merci.",Gink (via openai/gpt-oss-120b),yes
+fr,Convertis 10 dollars australiens en yens,"Convertis 10 dollars australiens en yens, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Mets un minuteur de 5 minutes pour la lessive,"Hey, peux-tu mettre un minuteur de 5 minutes pour la lessive ?",Gink (via openai/gpt-oss-120b),yes
+fr,Mets un minuteur de 5 minutes pour la lessive,"Merci de régler un minuteur de 5 minutes afin de faire la lessive, s’il vous plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Mets un minuteur de 5 minutes pour la lessive,"Je veux un minuteur de 5 minutes pour la lessive, ok ?",Gink (via openai/gpt-oss-120b),yes
+en,Set an alarm for 8 am for the prayer,Could you please set a prayer alarm at 8 am?,Gink (via openai/gpt-oss-120b),yes
+en,Set an alarm for 8 am for the prayer,"Hey, I need an alarm at 8 am for the prayer.",Gink (via openai/gpt-oss-120b),yes
+en,Set an alarm for 8 am for the prayer,"Alarm at 8 am for prayer, thanks.",Gink (via openai/gpt-oss-120b),yes
+en,Set a timer for 1 hour for the tea,"Hey, could you set a timer for 1 hour for the tea?",Gink (via openai/gpt-oss-120b),yes
+en,Set a timer for 1 hour for the tea,"Set a timer for 1 hour for the tea, please.",Gink (via openai/gpt-oss-120b),yes
+en,Set a timer for 1 hour for the tea,Timer 1 hour for tea.,Gink (via openai/gpt-oss-120b),yes
+en,Set a timer for 1 hour for the tea,Can you start a 1‑hour timer for the tea?,Gink (via openai/gpt-oss-120b),yes
+en,Convert 20 won to reais,"Hey, could you change 20 won into reais for me?",Gink (via openai/gpt-oss-120b),yes
+en,Convert 20 won to reais,Please convert 20 won to reais.,Gink (via openai/gpt-oss-120b),yes
+en,Convert 20 won to reais,Can you tell me how many reais 20 won is?,Gink (via openai/gpt-oss-120b),yes
+en,Convert 20 won to reais,I need the conversion of 20 won into reais.,Gink (via openai/gpt-oss-120b),yes
+en,How much is 1000 euros in yen?,"Hey, can you tell me what 1000 euros equals in yen?",Gink (via openai/gpt-oss-120b),yes
+en,How much is 1000 euros in yen?,Please let me know the conversion rate for 1000 euros to yen.,Gink (via openai/gpt-oss-120b),yes
+en,How much is 1000 euros in yen?,What’s the yen amount for 1000 euros?,Gink (via openai/gpt-oss-120b),yes
+en,How much is 1000 euros in yen?,I’m curious—how many yen do I get for 1000 euros?,Gink (via openai/gpt-oss-120b),yes
+en,What is 946 times 4?,"Hey, can you tell me what 946 times 4 is?",Gink (via openai/gpt-oss-120b),yes
+en,What is 946 times 4?,What's the result of 946 multiplied by 4?,Gink (via openai/gpt-oss-120b),yes
+en,What is 946 times 4?,946 × 4 = ?,Gink (via openai/gpt-oss-120b),yes
+en,What is 946 times 4?,Could you calculate 946 times 4 for me?,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to water the plants tomorrow at 7 pm,"Hey, can you set a reminder for me to water the plants tomorrow at 7 pm?",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to water the plants tomorrow at 7 pm,Please remind me to water the plants tomorrow at 7 pm.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to water the plants tomorrow at 7 pm,Reminder: water the plants tomorrow 7 pm.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to water the plants tomorrow at 7 pm,"Don't forget to water the plants tomorrow at 7 pm, thanks.",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 1000 pesos en dollars ?,"Salut, tu sais combien 1000 pesos ça fait en dollars ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 1000 pesos en dollars ?,"Bonjour, pourriez-vous me dire la conversion de 1000 pesos en dollars, s'il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 1000 pesos en dollars ?,"Hey, c’est quoi le montant en dollars pour 1000 pesos ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 1000 pesos en dollars ?,"Excusez‑moi, je voudrais savoir la valeur de 1000 pesos en dollars.",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 1000 livres turques en shillings kényans ?,"Salut, tu sais combien 1000 livres turques ça fait en shillings kényans ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 1000 livres turques en shillings kényans ?,"Bonjour, pourriez-vous me dire la conversion de 1000 livres turques en shillings kényans, s'il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 1000 livres turques en shillings kényans ?,"Hey, 1000 livres turques = combien de shillings kényans ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 1000 livres turques en shillings kényans ?,Je voudrais connaître le taux de change : 1000 livres turques en shillings kényans.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my mother's birthday is on May 13,Could you please note that my mother's birthday falls on May 13?,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my mother's birthday is on May 13,Remember: Mom's birthday is May 13.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my mother's birthday is on May 13,"Don't forget, my mother's birthday is on May 13.",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to book the dentist tomorrow at 7:30 am,"Hey, remind me to book the dentist tomorrow at 7:30 am.",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to book the dentist tomorrow at 7:30 am,Please set a reminder for me to schedule my dentist appointment tomorrow at 7:30 am.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to book the dentist tomorrow at 7:30 am,Can you remind me to book the dentist tomorrow at 7:30 am?,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to book the dentist tomorrow at 7:30 am,Remind me: book dentist tomorrow 7:30 am.,Gink (via openai/gpt-oss-120b),yes
+en,Weather São Paulo tomorrow,Can you tell me the weather in São Paulo tomorrow?,Gink (via openai/gpt-oss-120b),yes
+en,Weather São Paulo tomorrow,"Hey, what's the forecast for São Paulo tomorrow?",Gink (via openai/gpt-oss-120b),yes
+en,Weather São Paulo tomorrow,Please check the weather for São Paulo tomorrow.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids tomorrow at 12 pm,"Hey, can you set a reminder for me to pick up the kids tomorrow at 12 pm?",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids tomorrow at 12 pm,Please remind me to pick up the kids tomorrow at 12 pm.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids tomorrow at 12 pm,Remind me: pick up the kids tomorrow at 12 pm.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids tomorrow at 12 pm,I need a reminder to pick up the kids tomorrow at 12 pm.,Gink (via openai/gpt-oss-120b),yes
+fr,Mets une alarme à 7h pour le sport,Peux-tu programmer une alarme à 7h pour le sport ?,Gink (via openai/gpt-oss-120b),yes
+fr,Mets une alarme à 7h pour le sport,"Hey, crée une alarme à 7h pour le sport, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Word de ma liste de courses : œufs, pain, riz, lait","Pouvez-vous créer un document Word avec ma liste de courses : œufs, pain, riz, lait ?",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Word de ma liste de courses : œufs, pain, riz, lait","Fais un Word de ma liste de courses : œufs, pain, riz, lait.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Word de ma liste de courses : œufs, pain, riz, lait","Merci de préparer un Word listant : œufs, pain, riz, lait.",Gink (via openai/gpt-oss-120b),yes
+en,How much is 25000 Philippine pesos in lira?,"Hey, can you tell me the conversion for 25000 Philippine pesos to lira?",Gink (via openai/gpt-oss-120b),yes
+en,How much is 25000 Philippine pesos in lira?,Please let me know how much 25000 Philippine pesos equals in lira.,Gink (via openai/gpt-oss-120b),yes
+en,How much is 25000 Philippine pesos in lira?,What's the value of 25000 Philippine pesos in lira?,Gink (via openai/gpt-oss-120b),yes
+en,How much is 25000 Philippine pesos in lira?,Could you convert 25000 Philippine pesos to lira for me?,Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Markdown de ma liste de courses : pain, œufs, poisson, oignons","Peux-tu me créer un Markdown pour ma liste de courses ? pain, œufs, poisson, oignons.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Markdown de ma liste de courses : pain, œufs, poisson, oignons","Fais-moi un fichier Markdown contenant: pain, œufs, poisson, oignons.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Markdown de ma liste de courses : pain, œufs, poisson, oignons","S'il te plaît, prépare un Markdown avec ma liste de courses : pain, œufs, poisson, oignons.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Markdown de ma liste de courses : pain, œufs, poisson, oignons","Markdown de ma liste de courses : pain, œufs, poisson, oignons, merci.",Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 233 fois 7,Pouvez-vous me dire quel est le résultat de 233 × 7 ?,Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 233 fois 7,Calcule 233 fois 7 s'il te plaît.,Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 233 fois 7,"Hey, fais le calcul 233*7.",Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 233 fois 7,Quel est 233 multiplié par 7 ?,Gink (via openai/gpt-oss-120b),yes
+en,Convert 50 reais to Kenyan shillings,"Hey, could you please convert 50 reais to Kenyan shillings?",Gink (via openai/gpt-oss-120b),yes
+en,Convert 50 reais to Kenyan shillings,Can you tell me how many Kenyan shillings 50 reais equals?,Gink (via openai/gpt-oss-120b),yes
+en,What's 25% of 1200?,"Hey, can you tell me what 25% of 1200 is?",Gink (via openai/gpt-oss-120b),yes
+en,What's 25% of 1200?,Could you please calculate 25% of 1200 for me?,Gink (via openai/gpt-oss-120b),yes
+en,What's 25% of 1200?,"Yo, need the 25% of 1200 ASAP.",Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 730 fois 18,"Calcule 730 × 18, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 730 fois 18,Pouvez-vous faire le calcul de 730 fois 18 ?,Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 730 fois 18,"Hey, fais le compte de 730 multiplié par 18.",Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 730 fois 18,Je veux savoir le résultat de 730 fois 18.,Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 379 fois 27,"Calcule 379 fois 27, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 379 fois 27,J'ai besoin du résultat de 379 multiplié par 27.,Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Markdown de ma liste de courses : œufs, huile de palme, lait, pain","Peux‑tu me créer un fichier Markdown avec ma liste de courses ? Il faut mettre œufs, huile de palme, lait et pain.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Markdown de ma liste de courses : œufs, huile de palme, lait, pain","Fais-moi un Markdown pour ma liste de courses : œufs, huile de palme, lait, pain, s’il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Markdown de ma liste de courses : œufs, huile de palme, lait, pain","Hey, tu pourrais mettre ma petite liste (œufs, huile de palme, lait, pain) en Markdown ?",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Markdown de ma liste de courses : œufs, huile de palme, lait, pain","Merci de générer un tableau Markdown contenant les articles suivants : œufs, huile de palme, lait, pain.",Gink (via openai/gpt-oss-120b),yes
+en,Remember that my mother's birthday is on December 15,Please note: my mom's birthday falls on December 15.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my mother's birthday is on December 15,"Don't forget, my mother's birthday is December 15.",Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 588 fois 45,Peux-tu calculer 588 fois 45 ?,Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 588 fois 45,Calcule 588×45 s’il te plaît.,Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 588 fois 45,"Hey, fais le calcul de 588 multiplié par 45.",Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 588 fois 45,Merci de me dire le résultat de 588 fois 45.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my mother's birthday is on December 10,Please note that my mother's birthday is on December 10.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my mother's birthday is on December 10,Remember: Mom's birthday is on December 10.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my mother's birthday is on December 10,Can you make a note that my mother's birthday falls on December 10?,Gink (via openai/gpt-oss-120b),yes
+en,How much is 10 pesos in Kenyan shillings?,"Hey, can you tell me how much 10 pesos equals in Kenyan shillings?",Gink (via openai/gpt-oss-120b),yes
+en,How much is 10 pesos in Kenyan shillings?,Please let me know the conversion for 10 pesos to Kenyan shillings.,Gink (via openai/gpt-oss-120b),yes
+en,How much is 10 pesos in Kenyan shillings?,What's the value of 10 pesos in Kenyan shillings?,Gink (via openai/gpt-oss-120b),yes
+en,How much is 250 lira in rupiah?,"Hey, can you tell me how much 250 lira is in rupiah?",Gink (via openai/gpt-oss-120b),yes
+en,How much is 250 lira in rupiah?,Please let me know the conversion for 250 lira to rupiah.,Gink (via openai/gpt-oss-120b),yes
+en,How much is 250 lira in rupiah?,What's the value of 250 lira in rupiah?,Gink (via openai/gpt-oss-120b),yes
+en,How much is 250 lira in rupiah?,Could you convert 250 lira into rupiah for me?,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my sister's birthday is on October 9,Can you note that my sister's birthday is on October 9?,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my sister's birthday is on October 9,Please remember my sister’s birthday is on October 9.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my sister's birthday is on October 9,"My sister’s birthday falls on October 9, don’t forget.",Gink (via openai/gpt-oss-120b),yes
+en,What's 15% of 1200?,"Hey, can you tell me what 15% of 1200 is?",Gink (via openai/gpt-oss-120b),yes
+en,What's 15% of 1200?,Could you please calculate 15% of 1200 for me?,Gink (via openai/gpt-oss-120b),yes
+en,What's 15% of 1200?,"Yo, what's the 15% figure on 1200?",Gink (via openai/gpt-oss-120b),yes
+fr,Mets un minuteur de 15 minutes,"Hey, peux-tu mettre un minuteur de 15 minutes ?",Gink (via openai/gpt-oss-120b),yes
+fr,Mets un minuteur de 15 minutes,"Merci de lancer un minuteur de 15 minutes, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+en,Convert 1000 pounds to rupees,"Hey, can you tell me what 1000 pounds is in rupees?",Gink (via openai/gpt-oss-120b),yes
+en,Convert 1000 pounds to rupees,Please convert 1000 pounds to rupees for me.,Gink (via openai/gpt-oss-120b),yes
+en,Convert 1000 pounds to rupees,I need the conversion: 1000 pounds = ? rupees.,Gink (via openai/gpt-oss-120b),yes
+en,Convert 1000 pounds to rupees,What’s the rupee amount for 1000 pounds?,Gink (via openai/gpt-oss-120b),yes
+fr,Mets un minuteur de 1 minutes,"Mets un minuteur de 1 minutes, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Mets un minuteur de 1 minutes,"Hey, lance un minuteur de 1 minutes.",Gink (via openai/gpt-oss-120b),yes
+fr,Mets un minuteur de 1 minutes,Peux‑tu programmer un minuteur de 1 minutes ?,Gink (via openai/gpt-oss-120b),yes
+en,What is 412 times 50?,"Hey, can you tell me what 412 multiplied by 50 is?",Gink (via openai/gpt-oss-120b),yes
+en,What is 412 times 50?,Please calculate 412 × 50 for me.,Gink (via openai/gpt-oss-120b),yes
+en,What is 412 times 50?,What's 412 times 50?,Gink (via openai/gpt-oss-120b),yes
+en,What is 412 times 50?,Could you quickly give me the result of 412 times 50?,Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 599 fois 50,"Pouvez-vous calculer 599 fois 50, s'il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 599 fois 50,Je voudrais savoir le résultat de 599 multiplié par 50.,Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: onions, palm oil, milk, fish","Hey, could you create a Markdown list for my shopping items? I need onions, palm oil, milk, and fish.",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: onions, palm oil, milk, fish","Please make a Markdown of my shopping list: onions, palm oil, milk, fish.",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: onions, palm oil, milk, fish","Can you put my grocery list—onions, palm oil, milk, fish—into a Markdown format?",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: onions, palm oil, milk, fish","I need a Markdown version of my shopping list: onions, palm oil, milk, fish. Thanks!",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un PDF de ma liste de courses : œufs, huile de palme, lait, oignons","Pouvez-vous me créer un PDF de ma liste de courses contenant œufs, huile de palme, lait et oignons, s'il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un PDF de ma liste de courses : œufs, huile de palme, lait, oignons","Fais un PDF avec ma liste de courses : œufs, huile de palme, lait, oignons.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un PDF de ma liste de courses : œufs, huile de palme, lait, oignons","Hey, fais-moi un PDF de ma liste de courses (œufs, huile de palme, lait, oignons) rapidement.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un PDF de ma liste de courses : œufs, huile de palme, lait, oignons","Je voudrais un PDF de ma liste de courses : œufs, huile de palme, lait, oignons. Merci.",Gink (via openai/gpt-oss-120b),yes
+en,Set a timer for 25 minutes for the laundry,Please set a timer for 25 minutes for the laundry.,Gink (via openai/gpt-oss-120b),yes
+en,Set a timer for 25 minutes for the laundry,"Timer 25 minutes – laundry, please.",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to take my medicine on Wednesday at 8:30 am,"Hey, can you set a reminder for me to take my medicine on Wednesday at 8:30 am?",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to take my medicine on Wednesday at 8:30 am,Please remind me to take my medicine Wednesday at 8:30 am.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to take my medicine on Wednesday at 8:30 am,"Remind me to take my medicine on Wednesday at 8:30 am, thanks.",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to take my medicine on Wednesday at 8:30 am,I need a reminder for my medicine on Wednesday at 8:30 am.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids in 20 minutes,"Hey, can you set a reminder for me to pick up the kids in 20 minutes?",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids in 20 minutes,Please remind me to pick up the kids in 20 minutes.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids in 20 minutes,"In 20 minutes, remind me to pick up the kids.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un PDF de ma liste de courses : huile de palme, poisson, oignons, lait","Peux-tu me créer un PDF de ma liste de courses : huile de palme, poisson, oignons, lait ?",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un PDF de ma liste de courses : huile de palme, poisson, oignons, lait","Fais-moi un PDF avec: huile de palme, poisson, oignons, lait, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un PDF de ma liste de courses : huile de palme, poisson, oignons, lait","PDF de la liste de courses : huile de palme, poisson, oignons, lait.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un PDF de ma liste de courses : huile de palme, poisson, oignons, lait","Hey, génère un PDF pour ma liste : huile de palme, poisson, oignons, lait.",Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 587 fois 3,"Calcule 587 fois 3, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Calcule 587 fois 3,"Hey, fais le calcul 587*3.",Gink (via openai/gpt-oss-120b),yes
+en,Convert 25000 rupees to Canadian dollars,"Hey, can you convert 25000 rupees to Canadian dollars for me?",Gink (via openai/gpt-oss-120b),yes
+en,Convert 25000 rupees to Canadian dollars,Please convert 25000 rupees into Canadian dollars.,Gink (via openai/gpt-oss-120b),yes
+en,Convert 25000 rupees to Canadian dollars,Could you tell me how much 25000 rupees is in Canadian dollars?,Gink (via openai/gpt-oss-120b),yes
+en,Start a 1 hour 30 minutes timer for the rice,"Hey, could you set a timer for 1 hour 30 minutes for the rice?",Gink (via openai/gpt-oss-120b),yes
+en,Start a 1 hour 30 minutes timer for the rice,"Start a 1 hour 30 minutes timer for the rice, please.",Gink (via openai/gpt-oss-120b),yes
+en,Start a 1 hour 30 minutes timer for the rice,Timer: 1 hour 30 minutes – rice.,Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 250 réaux en dollars canadiens ?,"Salut, tu sais combien 250 réaux valent en dollars canadiens ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 250 réaux en dollars canadiens ?,"Bonjour, pourriez-vous me dire la conversion de 250 réaux en dollars canadiens, s'il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 250 réaux en dollars canadiens ?,"Excusez‑moi, pouvez‑vous m'indiquer le montant en dollars canadiens pour 250 réaux ?",Gink (via openai/gpt-oss-120b),yes
+fr,Retiens que l'anniversaire de mon meilleur ami est le 18 novembre,"Note que l'anniversaire de mon meilleur ami, c'est le 18 novembre.",Gink (via openai/gpt-oss-120b),yes
+fr,Retiens que l'anniversaire de mon meilleur ami est le 18 novembre,Peux‑tu retenir que mon meilleur ami fête son anniversaire le 18 novembre ?,Gink (via openai/gpt-oss-120b),yes
+fr,Retiens que l'anniversaire de mon meilleur ami est le 18 novembre,"N'oublie pas : le 18 novembre, c’est l’anniversaire de mon meilleur ami.",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à New York demain ?,Quel temps fera-t-il à New York demain ?,Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à New York demain ?,"Salut, tu sais quel temps il fait à New York demain ?",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à New York demain ?,"Pouvez-vous me dire la météo à New York pour demain, s'il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à New York demain ?,"Yo, la météo à New York demain, c’est quoi ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 18 % de 250000 ?,"Salut, tu sais combien font 18 % de 250000 ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 18 % de 250000 ?,"Pouvez-vous me dire quel est le résultat de 18 % de 250000, s'il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 18 % de 250000 ?,C’est quoi 18% de 250000 ?,Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 18 % de 250000 ?,"Hey, j’ai besoin de savoir le calcul de 18 % de 250000.",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids on Monday at 7 pm,"Hey, can you set a reminder for me to pick up the kids on Monday at 7 pm?",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids on Monday at 7 pm,Please remind me to pick up the kids on Monday at 7 pm.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids on Monday at 7 pm,Remind me: pick up the kids Monday 7 pm.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids on Monday at 7 pm,"I need a reminder to pick up the kids on Monday at 7 pm, thanks.",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 10000 dollars en livres égyptiennes ?,"Salut, tu sais combien font 10000 dollars en livres égyptiennes ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 10000 dollars en livres égyptiennes ?,"Bonjour, pourriez‑vous me dire la conversion de 10000 dollars en livres égyptiennes, s'il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 10000 dollars en livres égyptiennes ?,"Hey, 10000 dollars, c’est combien en livres égyptiennes ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 10000 dollars en livres égyptiennes ?,"Excusez‑moi, j'aimerais savoir la valeur de 10000 dollars en livres égyptiennes.",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Cairo aujourd'hui ?,Sais-tu quel temps il fait à Cairo aujourd'hui ?,Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Cairo aujourd'hui ?,"Dis‑moi le temps qu'il fait à Cairo aujourd'hui, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Cairo aujourd'hui ?,"Cairo, c'est quel temps aujourd'hui ?",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to send the report to Maria at 12 pm today,Can you please remind me to send the report to Maria at 12 pm today?,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to send the report to Maria at 12 pm today,"Hey, set a reminder: send the report to Maria at 12 pm today.",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to send the report to Maria at 12 pm today,Reminder: send report to Maria at 12 pm today.,Gink (via openai/gpt-oss-120b),yes
+en,Set a timer for 15 minutes for the tea,Could you please set a timer for 15 minutes for the tea?,Gink (via openai/gpt-oss-120b),yes
+en,Set a timer for 15 minutes for the tea,"Hey, timer 15 minutes for tea, thanks!",Gink (via openai/gpt-oss-120b),yes
+en,Start a 15 minutes timer for the rice,"Start a 15 minutes timer for the rice, please.",Gink (via openai/gpt-oss-120b),yes
+en,Start a 15 minutes timer for the rice,"Timer: 15 minutes, rice.",Gink (via openai/gpt-oss-120b),yes
+fr,Mets le volume à 30,Peux-tu mettre le volume à 30 ?,Gink (via openai/gpt-oss-120b),yes
+fr,Mets le volume à 30,Mets le volume à 30 s'il te plaît.,Gink (via openai/gpt-oss-120b),yes
+fr,Mets le volume à 30,"Hey, règle le son à 30.",Gink (via openai/gpt-oss-120b),yes
+en,How much is 100000 Kenyan shillings in Australian dollars?,"Hey, can you tell me what 100000 Kenyan shillings equals in Australian dollars?",Gink (via openai/gpt-oss-120b),yes
+en,How much is 100000 Kenyan shillings in Australian dollars?,Please convert 100000 Kenyan shillings to Australian dollars.,Gink (via openai/gpt-oss-120b),yes
+en,Convert 1000 Egyptian pounds to Canadian dollars,"Hey, could you convert 1000 Egyptian pounds to Canadian dollars for me?",Gink (via openai/gpt-oss-120b),yes
+en,Convert 1000 Egyptian pounds to Canadian dollars,Please convert 1000 Egyptian pounds into Canadian dollars.,Gink (via openai/gpt-oss-120b),yes
+en,Convert 1000 Egyptian pounds to Canadian dollars,"Convert 1000 Egyptian pounds to Canadian dollars, thanks.",Gink (via openai/gpt-oss-120b),yes
+en,Convert 1000 Egyptian pounds to Canadian dollars,I need to know how much 1000 Egyptian pounds is in Canadian dollars.,Gink (via openai/gpt-oss-120b),yes
+fr,Convertis 25000 réaux en pesos,"Salut, peux-tu transformer 25000 réaux en pesos ?",Gink (via openai/gpt-oss-120b),yes
+fr,Convertis 25000 réaux en pesos,"Bonjour, pourriez-vous convertir 25000 réaux en pesos, s'il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Convertis 25000 réaux en pesos,"Hey, je veux savoir combien font 25000 réaux en pesos.",Gink (via openai/gpt-oss-120b),yes
+fr,Convertis 25000 réaux en pesos,"Bonjour, merci de convertir 25000 réaux en pesos pour moi.",Gink (via openai/gpt-oss-120b),yes
+en,What's 5% of 250000?,"Hey, can you tell me what 5% of 250000 is?",Gink (via openai/gpt-oss-120b),yes
+en,What's 5% of 250000?,Please calculate 5% of 250000 for me.,Gink (via openai/gpt-oss-120b),yes
+en,What's 5% of 250000?,What’s the result of 5% of 250000?,Gink (via openai/gpt-oss-120b),yes
+en,What's 5% of 250000?,"Just need the 5% figure of 250000, thanks.",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Word of my shopping list: tomatoes, eggs, palm oil, rice","Could you please create a Word document with my shopping list? It should include tomatoes, eggs, palm oil, and rice.",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Word of my shopping list: tomatoes, eggs, palm oil, rice","Make a Word file for my shopping list: tomatoes, eggs, palm oil, rice.",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Word of my shopping list: tomatoes, eggs, palm oil, rice","Hey, can you put tomatoes, eggs, palm oil, and rice into a Word doc for me?",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Word of my shopping list: tomatoes, eggs, palm oil, rice","Please generate a Word document containing my shopping list—tomatoes, eggs, palm oil, rice.",Gink (via openai/gpt-oss-120b),yes
+en,What is 552 times 5?,"Hey, can you tell me what 552 times 5 is?",Gink (via openai/gpt-oss-120b),yes
+en,What is 552 times 5?,Could you please calculate 552 * 5 for me?,Gink (via openai/gpt-oss-120b),yes
+en,What is 552 times 5?,What's the result of 552 multiplied by 5?,Gink (via openai/gpt-oss-120b),yes
+en,What is 552 times 5?,"Need the answer to 552×5, thanks.",Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de acheter du lait dimanche à 14h,Rappelle‑moi d'acheter du lait dimanche à 14h.,Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de acheter du lait dimanche à 14h,Peux‑tu me rappeler d’acheter du lait dimanche à 14h ?,Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de acheter du lait dimanche à 14h,"N'oublie pas, dimanche à 14h, acheter du lait.",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids tomorrow at 8:30 am,"Hey, can you set a reminder for me to pick up the kids tomorrow at 8:30 am?",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids tomorrow at 8:30 am,Please remind me to pick up the kids at 8:30 am tomorrow.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids tomorrow at 8:30 am,Remind me: pick up the kids tomorrow 8:30 am.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids tomorrow at 8:30 am,"I need a reminder to pick up the kids tomorrow at 8:30 am, thanks.",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to call Raj about the project in 45 minutes,"Hey, can you set a reminder for me to call Raj about the project in 45 minutes?",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to call Raj about the project in 45 minutes,Please remind me to call Raj about the project in 45 minutes.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to call Raj about the project in 45 minutes,"Remind me to call Raj about the project in 45 minutes, thanks.",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to call Raj about the project in 45 minutes,"In 45 minutes, remind me to call Raj about the project.",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 10 shillings kényans en wons ?,"Salut, tu sais combien font 10 shillings kényans en wons ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 10 shillings kényans en wons ?,"Bonjour, pourriez‑vous me dire la conversion de 10 shillings kényans en wons, s’il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 10 shillings kényans en wons ?,"Hey, 10 shillings kényans = combien en wons ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 10 shillings kényans en wons ?,Merci de me dire la valeur de 10 shillings kényans en wons.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to send flowers to Yuki at 8 pm today,Please set a reminder for me to send flowers to Yuki at 8 pm today.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to send flowers to Yuki at 8 pm today,Reminder: send flowers to Yuki at 8 pm today.,Gink (via openai/gpt-oss-120b),yes
+en,Timer 3 minutes for the laundry,,Gink (via openai/gpt-oss-120b),no
+fr,Quel temps fait-il à Berlin aujourd'hui ?,"Salut, tu peux me dire quel temps il fait à Berlin aujourd'hui ?",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Berlin aujourd'hui ?,"Bonjour, pourriez-vous m'indiquer la météo à Berlin pour aujourd'hui, s'il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Berlin aujourd'hui ?,"Hey, c’est quoi la météo à Berlin aujourd'hui ?",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: tomatoes, rice, palm oil, onions","Can you create a Markdown list for my shopping items: tomatoes, rice, palm oil, onions?",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: tomatoes, rice, palm oil, onions","Hey, make a Markdown of my shopping list—tomatoes, rice, palm oil, onions.",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: tomatoes, rice, palm oil, onions","Please generate a Markdown document containing my grocery list: tomatoes, rice, palm oil, onions.",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: tomatoes, rice, palm oil, onions","Do a Markdown format of my shopping list: tomatoes, rice, palm oil, onions.",Gink (via openai/gpt-oss-120b),yes
+en,Remember that my best friend's birthday is on May 4,Please note that my best friend's birthday falls on May 4.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my best friend's birthday is on May 4,Don't forget—my best friend's birthday is May 4.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my best friend's birthday is on May 4,Quick heads‑up: May 4 is my best friend's birthday.,Gink (via openai/gpt-oss-120b),yes
+en,Can you wake me at 5 am? for the prayer,"Hey, could you set an alarm for 5 am for the prayer?",Gink (via openai/gpt-oss-120b),yes
+en,Can you wake me at 5 am? for the prayer,Please wake me at 5 am for the prayer.,Gink (via openai/gpt-oss-120b),yes
+en,Can you wake me at 5 am? for the prayer,"Wake me up at 5 am for the prayer, thanks.",Gink (via openai/gpt-oss-120b),yes
+en,Can you wake me at 5 am? for the prayer,Set a 5 am alarm for the prayer.,Gink (via openai/gpt-oss-120b),yes
+en,What's the weather in Sydney right now?,"Hey, can you tell me the current weather in Sydney?",Gink (via openai/gpt-oss-120b),yes
+en,What's the weather in Sydney right now?,Could you please let me know what the weather is like in Sydney right now?,Gink (via openai/gpt-oss-120b),yes
+en,What's the weather in Sydney right now?,What's the weather like in Sydney at the moment?,Gink (via openai/gpt-oss-120b),yes
+en,What's the weather in Sydney right now?,Sydney weather right now?,Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Hanoi en ce moment ?,"Salut, tu sais quel temps il fait à Hanoi en ce moment ?",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Hanoi en ce moment ?,"Bonjour, pourriez-vous me dire la météo actuelle à Hanoi, s'il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Hanoi en ce moment ?,"Hey, c’est quoi la météo à Hanoi maintenant ?",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Hanoi en ce moment ?,Pouvez-vous me dire quel temps il fait à Hanoi à l'instant ?,Gink (via openai/gpt-oss-120b),yes
+en,How much is 100000 Egyptian pounds in dollars?,"Hey, can you tell me what 100000 Egyptian pounds converts to in dollars?",Gink (via openai/gpt-oss-120b),yes
+en,How much is 100000 Egyptian pounds in dollars?,I need to know how many dollars 100000 Egyptian pounds is.,Gink (via openai/gpt-oss-120b),yes
+fr,Réveille-moi à 8h30 pour le travail,Peux-tu me réveiller à 8h30 afin d'aller travailler ?,Gink (via openai/gpt-oss-120b),yes
+fr,Réveille-moi à 8h30 pour le travail,"S'il te plaît, programme mon alarme à 8h30 pour le boulot.",Gink (via openai/gpt-oss-120b),yes
+fr,Réveille-moi à 8h30 pour le travail,"Mets une alarme à 8h30, c'est pour le travail.",Gink (via openai/gpt-oss-120b),yes
+fr,Alarme à 6h15 s'il te plaît pour le sport,Peux‑tu mettre une alarme à 6h15 s'il te plaît pour le sport ?,Gink (via openai/gpt-oss-120b),yes
+fr,Alarme à 6h15 s'il te plaît pour le sport,"Alarme 6h15 pour le sport, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Alarme à 6h15 s'il te plaît pour le sport,Merci de programmer une alarme à 6h15 pour le sport.,Gink (via openai/gpt-oss-120b),yes
+fr,Alarme à 6h15 s'il te plaît pour le sport,"Hey, règle une alarme à 6h15 pour le sport, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: fish, palm oil, onions, milk","Could you create a Markdown list of my shopping items: fish, palm oil, onions, milk?",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: fish, palm oil, onions, milk","Please make a Markdown of my shopping list—fish, palm oil, onions, milk.",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: fish, palm oil, onions, milk","Hey, I need a Markdown version of my shopping list: fish, palm oil, onions, milk.",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: fish, palm oil, onions, milk","Make a Markdown list for my shopping: fish, palm oil, onions, milk.",Gink (via openai/gpt-oss-120b),yes
+en,Set the volume to 40,Could you please set the volume to 40?,Gink (via openai/gpt-oss-120b),yes
+en,Set the volume to 40,"Hey, adjust the volume to 40.",Gink (via openai/gpt-oss-120b),yes
+en,Set the volume to 40,"Volume 40, please.",Gink (via openai/gpt-oss-120b),yes
+en,Remember that my mother's birthday is on March 11,"Hey, just a heads‑up: my mom's birthday is on March 11.",Gink (via openai/gpt-oss-120b),yes
+en,Remember that my mother's birthday is on March 11,Please note my mother's birthday is March 11.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my mother's birthday is on March 11,"Don't forget, my mother was born on March 11.",Gink (via openai/gpt-oss-120b),yes
+fr,Mets une alarme à 6h,Peux-tu programmer une alarme pour 6h ?,Gink (via openai/gpt-oss-120b),yes
+fr,Mets une alarme à 6h,"Fais sonner le réveil à 6h, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Mets une alarme à 6h,"Alarme à 6h, ok ?",Gink (via openai/gpt-oss-120b),yes
+en,What's the weather in Chicago today?,"Hey, can you tell me the weather in Chicago today?",Gink (via openai/gpt-oss-120b),yes
+en,What's the weather in Chicago today?,Could you please let me know what the weather is like in Chicago today?,Gink (via openai/gpt-oss-120b),yes
+en,What's the weather in Chicago today?,Weather in Chicago today?,Gink (via openai/gpt-oss-120b),yes
+en,What's the weather in Chicago today?,What's the forecast for Chicago today?,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my mother's birthday is on August 3,Please note that my mother's birthday falls on August 3.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my mother's birthday is on August 3,Can you remember that my mother's birthday is on August 3?,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my mother's birthday is on August 3,"Don't forget, my mom's birthday is August 3.",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to renew my passport tomorrow at 7 pm,"Hey, can you set a reminder for me to renew my passport tomorrow at 7 pm?",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to renew my passport tomorrow at 7 pm,Please remind me to renew my passport tomorrow at 7 pm.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to renew my passport tomorrow at 7 pm,"Remind me to renew my passport tomorrow at 7 pm, thanks.",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to renew my passport tomorrow at 7 pm,I need a reminder: renew passport tomorrow 7 pm.,Gink (via openai/gpt-oss-120b),yes
+fr,Alarme à 5h s'il te plaît pour le prière,Peux-tu mettre une alarme à 5h s'il te plaît pour la prière ?,Gink (via openai/gpt-oss-120b),yes
+fr,Alarme à 5h s'il te plaît pour le prière,Merci de régler l'alarme à 5h pour le prière.,Gink (via openai/gpt-oss-120b),yes
+fr,Alarme à 5h s'il te plaît pour le prière,"5h d'alarme, s'il te plaît, pour le prière.",Gink (via openai/gpt-oss-120b),yes
+fr,Retiens que l'anniversaire de ma mère est le 3 mars,"Note : l'anniversaire de ma mère, c’est le 3 mars.",Gink (via openai/gpt-oss-120b),yes
+fr,Retiens que l'anniversaire de ma mère est le 3 mars,Peux‑tu retenir que ma mère fête son anniversaire le 3 mars ?,Gink (via openai/gpt-oss-120b),yes
+fr,Retiens que l'anniversaire de ma mère est le 3 mars,"N’oublie pas, ma mère a son anniversaire le 3 mars.",Gink (via openai/gpt-oss-120b),yes
+en,Launch Calendar,Could you open the Calendar app for me?,Gink (via openai/gpt-oss-120b),yes
+en,Launch Calendar,"Launch Calendar, please.",Gink (via openai/gpt-oss-120b),yes
+en,Launch Calendar,"Hey, open Calendar.",Gink (via openai/gpt-oss-120b),yes
+en,Launch Calendar,Open the Calendar now.,Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 20 % de 250000 ?,Quel est le résultat de 20 % de 250000 ?,Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 20 % de 250000 ?,"Peux‑tu me dire combien fait 20 % de 250000, s’il te plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 20 % de 250000 ?,"20 % de 250000, ça donne quoi ?",Gink (via openai/gpt-oss-120b),yes
+fr,Combien font 20 % de 250000 ?,J’ai besoin de savoir combien représente 20 % de 250000.,Gink (via openai/gpt-oss-120b),yes
+en,What is 275 times 28?,"Hey, can you tell me what 275 times 28 is?",Gink (via openai/gpt-oss-120b),yes
+en,What is 275 times 28?,Please calculate 275 × 28.,Gink (via openai/gpt-oss-120b),yes
+en,What is 275 times 28?,What's 275 multiplied by 28?,Gink (via openai/gpt-oss-120b),yes
+en,What is 275 times 28?,Give me the result of 275 times 28.,Gink (via openai/gpt-oss-120b),yes
+en,What is 21 times 8?,"Hey, can you tell me what 21 times 8 is?",Gink (via openai/gpt-oss-120b),yes
+en,What is 21 times 8?,What's the product of 21 and 8?,Gink (via openai/gpt-oss-120b),yes
+en,What is 21 times 8?,"Could you calculate 21 × 8 for me, please?",Gink (via openai/gpt-oss-120b),yes
+en,What is 21 times 8?,21 times 8 = ?,Gink (via openai/gpt-oss-120b),yes
+en,"Make a PDF of my shopping list: sugar, palm oil, fish, onions","Hey, can you create a PDF of my shopping list? It includes sugar, palm oil, fish, and onions.",Gink (via openai/gpt-oss-120b),yes
+en,"Make a PDF of my shopping list: sugar, palm oil, fish, onions","Please make a PDF file containing my shopping list: sugar, palm oil, fish, onions.",Gink (via openai/gpt-oss-120b),yes
+en,"Make a PDF of my shopping list: sugar, palm oil, fish, onions","Could you put sugar, palm oil, fish, onions into a PDF shopping list for me?",Gink (via openai/gpt-oss-120b),yes
+en,What is 875 times 13?,"Hey, can you tell me what 875 times 13 is?",Gink (via openai/gpt-oss-120b),yes
+en,What is 875 times 13?,Please calculate 875 × 13 for me.,Gink (via openai/gpt-oss-120b),yes
+en,What is 875 times 13?,What's 875 multiplied by 13?,Gink (via openai/gpt-oss-120b),yes
+en,What is 875 times 13?,"Yo, 875 * 13 = ?",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Markdown de ma liste de courses : huile de palme, oignons, riz, tomates","Peux-tu me préparer un Markdown de ma liste de courses ? huile de palme, oignons, riz, tomates",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Markdown de ma liste de courses : huile de palme, oignons, riz, tomates","Fais-moi un Markdown pour la liste de courses : huile de palme, oignons, riz, tomates, s’il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Markdown de ma liste de courses : huile de palme, oignons, riz, tomates","Markdown de ma liste de courses, stp : huile de palme, oignons, riz, tomates.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Markdown de ma liste de courses : huile de palme, oignons, riz, tomates","Je veux un Markdown contenant : huile de palme, oignons, riz, tomates. Merci.",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Karachi en ce moment ?,"Salut, tu peux me dire le temps qu'il fait à Karachi en ce moment ?",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Karachi en ce moment ?,"Bonjour, pourriez-vous m'indiquer les conditions météo actuelles à Karachi, s'il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Karachi en ce moment ?,"Hey, c’est quoi la météo à Karachi maintenant ?",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Karachi en ce moment ?,Pouvez‑vous me dire quel temps il fait à Karachi en ce moment ?,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my best friend's birthday is on November 23,Please note that my best friend's birthday falls on November 23.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my best friend's birthday is on November 23,Just a heads‑up: my best friend's birthday is November 23.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my best friend's birthday is on November 23,Remember: best friend's birthday = November 23.,Gink (via openai/gpt-oss-120b),yes
+fr,Mets une alarme à 5h,Peux-tu régler une alarme pour 5h ?,Gink (via openai/gpt-oss-120b),yes
+fr,Mets une alarme à 5h,"Alarme 5h, s’il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Mets une alarme à 5h,"Hey, je veux une alarme à 5h.",Gink (via openai/gpt-oss-120b),yes
+fr,Convertis 5000 roupies indonésiennes en dollars australiens,"Salut, tu peux me dire combien font 5000 roupies indonésiennes en dollars australiens ?",Gink (via openai/gpt-oss-120b),yes
+fr,Convertis 5000 roupies indonésiennes en dollars australiens,"Bonjour, pourriez-vous convertir 5000 roupies indonésiennes en dollars australiens, s'il vous plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Convertis 5000 roupies indonésiennes en dollars australiens,"Hey, fais le calcul : 5000 roupies indonésiennes = ? dollars australiens",Gink (via openai/gpt-oss-120b),yes
+en,Set a timer for 20 minutes for the rice,"Hey, can you set a timer for 20 minutes for the rice?",Gink (via openai/gpt-oss-120b),yes
+en,Set a timer for 20 minutes for the rice,"Timer 20 minutes, rice.",Gink (via openai/gpt-oss-120b),yes
+en,Set a timer for 20 minutes for the rice,"Set a timer for 20 minutes for the rice, thanks.",Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de arroser les plantes dans 30 minutes,Rappelle-moi d'arroser les plantes dans 30 minutes.,Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de arroser les plantes dans 30 minutes,Peux-tu me rappeler d'arroser les plantes dans 30 minutes ?,Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de arroser les plantes dans 30 minutes,N'oublie pas de me dire d'arroser les plantes dans 30 minutes.,Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de arroser les plantes dans 30 minutes,"Hey, rappelle-moi d'arroser les plantes dans 30 minutes, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Chicago demain ?,Quel sera le temps à Chicago demain ?,Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Chicago demain ?,"Peux-tu me dire la météo pour demain à Chicago, s'il te plaît ?",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Chicago demain ?,"Hey, c'est quoi la prévision météo à Chicago pour demain ?",Gink (via openai/gpt-oss-120b),yes
+fr,Quel temps fait-il à Chicago demain ?,Je veux savoir s'il va faire beau ou pas à Chicago demain.,Gink (via openai/gpt-oss-120b),yes
+en,How much is 100 dollars in Philippine pesos?,"Hey, can you tell me what 100 dollars equals in Philippine pesos?",Gink (via openai/gpt-oss-120b),yes
+en,How much is 100 dollars in Philippine pesos?,What's the amount in Philippine pesos for 100 dollars?,Gink (via openai/gpt-oss-120b),yes
+fr,Retiens que l'anniversaire de mon meilleur ami est le 5 février,"Note que l'anniversaire de mon meilleur ami, c’est le 5 février.",Gink (via openai/gpt-oss-120b),yes
+fr,Retiens que l'anniversaire de mon meilleur ami est le 5 février,Merci de retenir que mon meilleur ami fête son anniversaire le 5 février.,Gink (via openai/gpt-oss-120b),yes
+fr,Retiens que l'anniversaire de mon meilleur ami est le 5 février,Pouvez‑vous enregistrer la date du 5 février comme étant l’anniversaire de mon meilleur ami ?,Gink (via openai/gpt-oss-120b),yes
+en,What's the weather in Mexico City tomorrow?,"Hey, can you tell me the weather forecast for Mexico City tomorrow?",Gink (via openai/gpt-oss-120b),yes
+en,What's the weather in Mexico City tomorrow?,Please let me know what the weather will be like in Mexico City tomorrow.,Gink (via openai/gpt-oss-120b),yes
+en,What's the weather in Mexico City tomorrow?,"Yo, what's the forecast for Mexico City tomorrow?",Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de renouveler mon passeport demain à 18h,Peux-tu me rappeler de faire le renouvellement de mon passeport demain à 18h ?,Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de renouveler mon passeport demain à 18h,"N'oublie pas, c'est demain à 18h que je dois renouveler mon passeport.",Gink (via openai/gpt-oss-120b),yes
+fr,Rappelle-moi de renouveler mon passeport demain à 18h,"Hey, rappelle-moi de renouveler mon passeport demain à 18h, s'il te plaît.",Gink (via openai/gpt-oss-120b),yes
+en,Set an alarm for 7 am for the gym,Could you please set a 7 am alarm for the gym?,Gink (via openai/gpt-oss-120b),yes
+en,Set an alarm for 7 am for the gym,"Hey, I need an alarm at 7 am for the gym.",Gink (via openai/gpt-oss-120b),yes
+en,Set an alarm for 7 am for the gym,"Alarm at 7 am for the gym, thanks.",Gink (via openai/gpt-oss-120b),yes
+en,How much is 5000 pounds in Philippine pesos?,"Hey, can you tell me how much 5000 pounds is in Philippine pesos?",Gink (via openai/gpt-oss-120b),yes
+en,How much is 5000 pounds in Philippine pesos?,Please let me know the conversion for 5000 pounds to Philippine pesos.,Gink (via openai/gpt-oss-120b),yes
+en,How much is 5000 pounds in Philippine pesos?,"5000 pounds to Philippine pesos, please.",Gink (via openai/gpt-oss-120b),yes
+en,Set a timer for 1 hour,"Hey, can you set a timer for 1 hour?",Gink (via openai/gpt-oss-120b),yes
+en,Set a timer for 1 hour,Please set a timer for 1 hour.,Gink (via openai/gpt-oss-120b),yes
+en,Set a timer for 1 hour,"Timer 1 hour, please.",Gink (via openai/gpt-oss-120b),yes
+en,Set a timer for 1 hour,Set a 1 hour timer.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my best friend's birthday is on March 28,"Hey, just a heads‑up: my best friend's birthday is on March 28.",Gink (via openai/gpt-oss-120b),yes
+en,Remember that my best friend's birthday is on March 28,Please note that my best friend's birthday falls on March 28.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my best friend's birthday is on March 28,Can you remember my best friend's birthday? It's March 28.,Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Word de ma liste de courses : huile de palme, lait, pain, sucre","Hey, crée un document Word avec ma liste de courses : huile de palme, lait, pain, sucre.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Word de ma liste de courses : huile de palme, lait, pain, sucre","Pouvez‑vous s'il vous plaît générer un fichier Word contenant : huile de palme, lait, pain, sucre ?",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Word de ma liste de courses : huile de palme, lait, pain, sucre","Fais un Word de ma liste de courses : huile de palme, lait, pain, sucre.",Gink (via openai/gpt-oss-120b),yes
+fr,"Fais-moi un Word de ma liste de courses : huile de palme, lait, pain, sucre","Salut, j’ai besoin d’un Word qui liste : huile de palme, lait, pain, sucre.",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to buy milk tomorrow at 10 am,"Hey, could you set a reminder for me to buy milk tomorrow at 10 am?",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to buy milk tomorrow at 10 am,Please remind me to pick up milk tomorrow at 10 am.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to buy milk tomorrow at 10 am,Don't forget: buy milk tomorrow at 10 am.,Gink (via openai/gpt-oss-120b),yes
+en,How much is 25000 Canadian dollars in Philippine pesos?,"Hey, can you tell me the conversion for 25000 Canadian dollars to Philippine pesos?",Gink (via openai/gpt-oss-120b),yes
+en,How much is 25000 Canadian dollars in Philippine pesos?,Please let me know how much 25000 Canadian dollars equals in Philippine pesos.,Gink (via openai/gpt-oss-120b),yes
+en,How much is 25000 Canadian dollars in Philippine pesos?,I need to know the amount of Philippine pesos I get for 25000 Canadian dollars.,Gink (via openai/gpt-oss-120b),yes
+en,Timer 1 minutes for the rice,Please timer 1 minutes for the rice.,Gink (via openai/gpt-oss-120b),yes
+en,Weather Berlin tomorrow,What's the weather in Berlin tomorrow?,Gink (via openai/gpt-oss-120b),yes
+en,Weather Berlin tomorrow,"Weather Berlin tomorrow, please.",Gink (via openai/gpt-oss-120b),yes
+en,Weather Berlin tomorrow,"Hey, need the forecast for Berlin tomorrow.",Gink (via openai/gpt-oss-120b),yes
+en,How much is 250 naira in rupees?,"Hey, could you tell me how much 250 naira equals in rupees?",Gink (via openai/gpt-oss-120b),yes
+en,How much is 250 naira in rupees?,Please convert 250 naira to rupees for me.,Gink (via openai/gpt-oss-120b),yes
+en,How much is 250 naira in rupees?,What's the rupee amount for 250 naira?,Gink (via openai/gpt-oss-120b),yes
+en,How much is 250 naira in rupees?,"Yo, what's 250 naira worth in rupees?",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids tomorrow at 7 am,"Hey, can you set a reminder for me to pick up the kids tomorrow at 7 am?",Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids tomorrow at 7 am,Please remind me to pick up the kids tomorrow at 7 am.,Gink (via openai/gpt-oss-120b),yes
+en,Remind me to pick up the kids tomorrow at 7 am,"I need a reminder to pick up the kids tomorrow at 7 am, thanks.",Gink (via openai/gpt-oss-120b),yes
+fr,Ouvre Spotify,Peux-tu ouvrir Spotify ?,Gink (via openai/gpt-oss-120b),yes
+fr,Ouvre Spotify,Ouvre Spotify s'il te plaît.,Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: onions, palm oil, bread, fish","Hey, could you create a Markdown list of my shopping items: onions, palm oil, bread, fish?",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: onions, palm oil, bread, fish","Please make a Markdown version of my shopping list: onions, palm oil, bread, fish.",Gink (via openai/gpt-oss-120b),yes
+en,"Make a Markdown of my shopping list: onions, palm oil, bread, fish","Can you do a Markdown list for these groceries—onions, palm oil, bread, fish?",Gink (via openai/gpt-oss-120b),yes
+en,Remember that my brother's birthday is on December 22,Please note that my brother's birthday falls on December 22.,Gink (via openai/gpt-oss-120b),yes
+en,Remember that my brother's birthday is on December 22,"Remember, my brother’s birthday is December 22.",Gink (via openai/gpt-oss-120b),yes
+en,Remember that my brother's birthday is on December 22,Don't forget: my brother's birthday is on December 22.,Gink (via openai/gpt-oss-120b),yes
