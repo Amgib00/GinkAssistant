@@ -117,6 +117,39 @@
   }
   .assistant-text > .gink-spinner:first-child { margin-top: 2px; }
   @keyframes gink-spin { to { transform: rotate(360deg); } }
+  /* ---------- notifications (Apple style) ---------- */
+  #notify-host { position: fixed; top: 14px; right: 14px; z-index: 1000; display: flex; flex-direction: column; gap: 10px;
+    width: min(372px, calc(100vw - 28px)); pointer-events: none; }
+  .gnote { pointer-events: auto; position: relative; display: flex; gap: 11px; padding: 12px 14px 12px 12px; border-radius: 18px;
+    background: rgba(250, 250, 250, 0.78); color: #1d1d1f; border: 1px solid rgba(0, 0, 0, 0.06);
+    -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%);
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.16), 0 1px 3px rgba(0, 0, 0, 0.08);
+    animation: gn-in .5s cubic-bezier(.2, .9, .25, 1.15) both; transition: transform .2s; }
+  .gnote.out { animation: gn-out .3s ease forwards; }
+  @keyframes gn-in { from { opacity: 0; transform: translateX(30px) scale(.96); } to { opacity: 1; transform: none; } }
+  @keyframes gn-out { to { opacity: 0; transform: translateX(40px) scale(.96); } }
+  body.theme-dark .gnote { background: rgba(44, 44, 46, 0.78); color: #f5f5f7; border-color: rgba(255, 255, 255, 0.08); }
+  .gn-ic { flex: none; width: 38px; height: 38px; border-radius: 10px; background: #151D23; display: grid; place-items: center; font-size: 20px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+  .gnote.warn .gn-ic { background: #FFF1D6; }
+  body.theme-dark .gnote.warn .gn-ic { background: #4a3a14; }
+  .gn-main { flex: 1; min-width: 0; }
+  .gn-top { display: flex; justify-content: space-between; font-size: 11px; letter-spacing: .04em; opacity: .55; margin-bottom: 1px; }
+  .gn-title { font-weight: 600; font-size: 14px; line-height: 1.3; }
+  .gn-body { font-size: 13.5px; line-height: 1.35; opacity: .85; margin-top: 1px; word-wrap: break-word; }
+  .gn-acts { display: flex; gap: 8px; margin-top: 10px; }
+  .gn-acts button { flex: 1; border: 0; border-radius: 10px; padding: 7px 10px; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+    background: rgba(120, 120, 128, 0.16); color: inherit; }
+  .gn-acts button.primary { background: var(--accent); color: var(--on-accent); }
+  .gn-acts button:hover { filter: brightness(0.96); }
+  .gn-x { position: absolute; top: -7px; left: -7px; width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(0,0,0,.1);
+    background: rgba(250,250,250,.95); color: #444; font-size: 14px; line-height: 18px; padding: 0; cursor: pointer; opacity: 0; transition: opacity .15s; }
+  .gnote:hover .gn-x, .gnote:focus-within .gn-x { opacity: 1; }
+  @media (hover: none) { .gn-x { opacity: .9; } }
+  @media (max-width: 600px) { #notify-host { left: 50%; right: auto; transform: translateX(-50%); top: 10px; }
+    @keyframes gn-in { from { opacity: 0; transform: translateY(-24px) scale(.97); } to { opacity: 1; transform: none; } }
+    @keyframes gn-out { to { opacity: 0; transform: translateY(-24px) scale(.97); } } }
+  @media (prefers-reduced-motion: reduce) { .gnote, .gnote.out { animation-duration: .01s; } }
   .msg-logo { display: block; width: 22px; height: 22px; margin: 12px 0 0; opacity: 0.9; }   /* in line with the reply */
   .msg-logo.landing { animation: logo-land 1.3s cubic-bezier(.3,.7,.3,1); }
   @keyframes logo-land { 0% { transform: rotate(-200deg) scale(.5); opacity: 0; } 55% { opacity: 1; } 100% { transform: rotate(0) scale(1); } }
@@ -1879,39 +1912,73 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     for (var i = 0; i < GINK_MODELS.length; i++) if (GINK_MODELS[i].id === id) return GINK_MODELS[i];
     return {id: id, name: MM.names[id] || 'Gink', desc: /^gink-/.test(id) ? 'Gink’s own model' : ''};
   }
-  // Gink's status (GET /status): a thin bar while something on Gink's side isn't working; gone when it's fixed
-  function statusBar(status, message) {
-    var b = document.getElementById('status-bar');
-    if (!message || status === 'ok') { if (b) b.remove(); return; }
-    if (!b) {
-      b = document.createElement('div'); b.id = 'status-bar'; b.setAttribute('role', 'status');
-      b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:70;padding:6px 40px 6px 14px;font-size:13px;text-align:center;' +
-        'background:' + (status === 'notice' ? 'var(--accent-soft,#e8f5d8)' : '#FDE7C7') + ';color:#3d2b05;border-bottom:1px solid rgba(0,0,0,.08)';
-      var x = document.createElement('button'); x.textContent = '×'; x.setAttribute('aria-label', 'Hide');
-      x.style.cssText = 'position:absolute;right:8px;top:2px;border:0;background:none;font-size:18px;cursor:pointer;color:inherit';
-      x.onclick = function () { b.remove(); };
-      b.appendChild(document.createElement('span')); b.appendChild(x); document.body.appendChild(b);
+  // ---- Notifications, Apple style: frosted cards that slide in at the top right (top centre on phones), stack,
+  // and leave by themselves. ginkNotify({id, title, body, icon, kind, actions: [{label, emit, value, url, primary}],
+  // timeout}) -- the same id replaces its card; timeout 0 = stays until closed or dismissed (ginkDismiss(id)).
+  var NOTIFY_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#A8F03C" stroke-width="1.7" stroke-linecap="round"><path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9"/><path d="M12 6.5l-2-2M12 6.5l2-2M12 17.5l-2 2M12 17.5l2 2"/></svg>';
+  function notifyHost() {
+    var h = document.getElementById('notify-host');
+    if (!h) { h = document.createElement('div'); h.id = 'notify-host'; h.setAttribute('aria-live', 'polite'); document.body.appendChild(h); }
+    return h;
+  }
+  function ginkDismiss(id) {
+    var n = id && document.querySelector('.gnote[data-id="' + id + '"]');
+    if (!n || n.classList.contains('out')) return;
+    n.classList.add('out'); setTimeout(function () { if (n.parentNode) n.parentNode.removeChild(n); }, 320);
+  }
+  function ginkNotify(o) {
+    o = o || {}; var host = notifyHost(), id = o.id || ('n' + Date.now() + Math.random().toString(36).slice(2, 6));
+    var old = host.querySelector('.gnote[data-id="' + id + '"]'); if (old) old.parentNode.removeChild(old);
+    var n = document.createElement('div'); n.className = 'gnote' + (o.kind ? ' ' + o.kind : ''); n.setAttribute('data-id', id);
+    n.setAttribute('role', o.kind === 'alert' ? 'alert' : 'status');
+    var ic = document.createElement('div'); ic.className = 'gn-ic'; ic.innerHTML = o.icon ? '' : NOTIFY_ICON; if (o.icon) ic.textContent = o.icon;
+    var main = document.createElement('div'); main.className = 'gn-main';
+    var top = document.createElement('div'); top.className = 'gn-top';
+    var app = document.createElement('span'); app.textContent = 'GINK'; var when = document.createElement('span'); when.textContent = 'now';
+    top.appendChild(app); top.appendChild(when);
+    var t = document.createElement('div'); t.className = 'gn-title'; t.textContent = o.title || 'Gink';
+    var b = document.createElement('div'); b.className = 'gn-body'; b.textContent = o.body || '';
+    main.appendChild(top); main.appendChild(t); if (o.body) main.appendChild(b);
+    (o.links || []).forEach(function (l) { var a = document.createElement('a'); a.href = l.url; a.textContent = l.label; a.className = 'gn-link'; main.appendChild(a); });
+    if (o.actions && o.actions.length) {
+      var row = document.createElement('div'); row.className = 'gn-acts';
+      o.actions.forEach(function (a) {
+        var btn = document.createElement('button'); btn.type = 'button'; btn.textContent = a.label; if (a.primary) btn.className = 'primary';
+        btn.onclick = function (e) { e.stopPropagation(); if (a.emit) ginkEmit(a.emit, a.value === undefined ? null : a.value);
+          if (a.url) ginkEmit('open_url', a.url); if (typeof a.run === 'function') a.run(); ginkDismiss(id); };
+        row.appendChild(btn);
+      });
+      main.appendChild(row);
     }
-    b.firstChild.textContent = message;
+    var x = document.createElement('button'); x.type = 'button'; x.className = 'gn-x'; x.setAttribute('aria-label', 'Close'); x.textContent = '×';
+    x.onclick = function (e) { e.stopPropagation(); ginkDismiss(id); if (o.onclose) o.onclose(); };
+    n.appendChild(x); n.appendChild(ic); n.appendChild(main);
+    host.insertBefore(n, host.firstChild);
+    while (host.children.length > 4) host.removeChild(host.lastChild);           // at most four at once, like a stack
+    var ms = o.timeout === undefined ? 6000 : o.timeout;
+    if (ms > 0) { var timer = setTimeout(function () { ginkDismiss(id); }, ms);
+      n.addEventListener('mouseenter', function () { clearTimeout(timer); });
+      n.addEventListener('mouseleave', function () { timer = setTimeout(function () { ginkDismiss(id); }, 2500); }); }
+    var x0 = null;                                                             // swipe it away (touch)
+    n.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, {passive: true});
+    n.addEventListener('touchmove', function (e) { if (x0 !== null) n.style.transform = 'translateX(' + Math.max(0, e.touches[0].clientX - x0) + 'px)'; }, {passive: true});
+    n.addEventListener('touchend', function (e) { var dx = (e.changedTouches[0].clientX - (x0 || 0)); x0 = null;
+      if (dx > 80) ginkDismiss(id); else n.style.transform = ''; });
+    return id;
+  }
+  // Gink's status (GET /status): a notification while something on Gink's side isn't working; gone when it's fixed
+  function statusBar(status, message) {
+    if (!message || status === 'ok') { ginkDismiss('status'); return; }
+    var m = /^Gink is having trouble with (.+?) right now[.] (.*)$/.exec(message);    // the title already says "trouble"
+    var body = m ? m[1].charAt(0).toUpperCase() + m[1].slice(1) + ' isn’t working right now. ' + m[2] : message;
+    ginkNotify({id: 'status', kind: status === 'notice' ? '' : 'warn', title: status === 'notice' ? 'Notice' : 'Gink is having trouble',
+                body: body, icon: status === 'notice' ? 'ℹ️' : '⚠️', timeout: 0});
   }
   // "We've updated our privacy policy and terms" -- once per change (the date from the server's /info)
   function policyNotice(date, privacy, terms) {
-    if (document.getElementById('policy-note')) return;
-    var d = document.createElement('div'); d.id = 'policy-note'; d.setAttribute('role', 'status');
-    d.style.cssText = 'position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:60;max-width:min(560px,92vw);' +
-      'background:var(--surface,#fff);color:var(--text-main,#111);border:1px solid var(--border,#ddd);border-radius:14px;' +
-      'padding:12px 14px;box-shadow:0 8px 28px rgba(0,0,0,.18);font-size:14px;display:flex;gap:10px;align-items:center';
-    var t = document.createElement('div'); t.style.flex = '1';
-    t.appendChild(document.createTextNode('We’ve updated our '));
-    [['privacy policy', privacy], [' and ', null], ['terms', terms]].forEach(function (x) {
-      if (!x[1]) { t.appendChild(document.createTextNode(x[0])); return; }
-      var a = document.createElement('a'); a.textContent = x[0]; a.href = x[1]; a.target = '_blank'; a.rel = 'noopener';
-      t.appendChild(a);                              // (the page's own link handler opens it outside)
-    });
-    t.appendChild(document.createTextNode(' (' + new Date(date + 'T12:00:00Z').toLocaleDateString() + '): what Gink does with your data, in plain words.'));
-    var ok = document.createElement('button'); ok.textContent = 'OK'; ok.className = 'ibtn'; ok.style.width = 'auto'; ok.style.padding = '0 14px';
-    ok.addEventListener('click', function () { d.remove(); ginkEmit('policy_seen', date); });
-    d.appendChild(t); d.appendChild(ok); document.body.appendChild(d);
+    ginkNotify({id: 'policy', title: 'Privacy policy and terms updated',
+      body: 'What Gink does with your data, in plain words (' + new Date(date + 'T12:00:00Z').toLocaleDateString() + ').',
+      timeout: 0, actions: [{label: 'Read', url: privacy, emit: 'policy_seen', value: date}, {label: 'OK', primary: true, emit: 'policy_seen', value: date}]});
   }
   function setModels(models, currentId) {
     MM.available = (models || []).map(function (m) { MM.names[m.id] = m.name; return m.id; });
@@ -2771,6 +2838,11 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
   }
   var toastTimer = null;
   function settingsToast(text, kind) {
+    if (typeof ginkNotify === 'function') {             // the same notification cards as everywhere (Apple style)
+      ginkNotify({id: 'settings', title: kind === 'err' ? 'Couldn\u2019t do that' : 'Settings', body: text, kind: kind === 'err' ? 'warn' : '',
+                  icon: kind === 'err' ? '\u26a0\ufe0f' : '\u2713', timeout: kind === 'err' ? 7000 : 3200});
+      return;
+    }
     var t = document.getElementById('s-toast'); t.textContent = text; t.className = 'show' + (kind === 'err' ? ' err' : '');
     clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.className = ''; }, kind === 'err' ? 7000 : 3200);
   }
@@ -3816,10 +3888,16 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <script>
   function showUpdate(version) {
-    document.getElementById('update-text').textContent = 'Gink ' + String(version).replace(/^v/, '') + ' is available.';
+    var v = String(version).replace(/^v/, '');
+    if (typeof ginkNotify === 'function') {             // an Apple-style notification card (ui/web_chat_view.py)
+      ginkNotify({id: 'update', title: 'Gink ' + v + ' is available', body: 'Download the new version when you’re ready.',
+                  icon: '⬇️', timeout: 0, actions: [{label: 'Later', emit: 'update_later'}, {label: 'Download', emit: 'update_get', primary: true}]});
+      return;
+    }
+    document.getElementById('update-text').textContent = 'Gink ' + v + ' is available.';
     document.getElementById('update-bar').classList.add('show');
   }
-  function hideUpdate() { document.getElementById('update-bar').classList.remove('show'); }
+  function hideUpdate() { document.getElementById('update-bar').classList.remove('show'); if (typeof ginkDismiss === 'function') ginkDismiss('update'); }
 </script>
 
 <div id="agent-panel" role="status" aria-live="polite">

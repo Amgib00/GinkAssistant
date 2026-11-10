@@ -2290,3 +2290,21 @@ New services/live_info.py (all free, no API keys):
 - media_studio_screen.PAGE is a raw string: "\\u2014" in an HTML attribute is shown literally (my 0.1.126 edit) -> a real
   "—". .ideas mask fade; .gallery:empty::before hint (grid-column 1/-1). Test: no \\uXXXX inside placeholder/title/
   aria-label/alt in the media, login and chat pages.
+
+## 0.1.148: Apple-style notifications, new Workspace, Hey Gink watchdog (owner's screenshot + recording)
+- ui/web_chat_view.py: ginkNotify({id, title, body, icon, kind, actions[{label, emit, value, url, primary}], timeout}) /
+  ginkDismiss(id); #notify-host top right (top centre <= 600px), frosted cards (backdrop-filter), max 4, hover pauses the
+  timer, swipe right to dismiss; web_chat.notify(...) from Python. Routed through it: statusBar, policyNotice,
+  update_ui.showUpdate, settings_page.settingsToast (old elements kept as fallback), and on_item_due (was the blocking
+  show_due_dialog): actions item_done / item_snooze (snooze = a new item in 10 minutes + the old one done) +
+  system_notification() (macOS osascript "display notification" -- it appears under Script Editor's name; Linux
+  notify-send). Genie + console snippets use the same card style inline.
+- /status: storage no longer counts toward the overall status or the message (still in components) -- the owner's app
+  showed "trouble with saving files" to everyone. THE OWNER SHOULD STILL CHECK /health -> files/storage on Render.
+- ui/workspace_page.py (PAGE) + ui/tasks_screen.py rewritten around a WebView like Media Studio: snapshot() (stats,
+  groups overdue/today/upcoming/anytime/finished, steps + progress) -> setData; events ready/back/filter/show_done/done/
+  undone/delete/clear_done/command. Tests use snapshot() (the native widgets list_box/stat_labels are gone).
+  Web app: Workspace is still "in the apps only" (tasks live on the device).
+- Hey Gink (desktop, Vosk grammar): WAKE_PHRASES/MATCH_WORDS gain near-sounds (gin, jinx, ink, kink, link -- all still
+  need hey/hi/okay in front); wake_watchdog() every 5 s: restarts a dead listener thread, resumes one paused > 20 s with
+  nothing using the mic. NOT verified on a Mac with a microphone here: Settings > Voice shows "last heard".

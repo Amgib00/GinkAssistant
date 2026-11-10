@@ -16,13 +16,14 @@ def test_screens_build_and_refresh():
     s = TaskStore(os.path.join(tempfile.mkdtemp(), "t.db"))
     agent = TaskAgent(ToolRunner(s, FakeDevice()), api_key="")
     scr = TasksScreen(app, s, agent)
-    assert "Nothing here yet" in scr.list_box.children[0].text
+    assert scr.snapshot()["groups"] == []                                   # the page shows its "All clear" state
     p = s.add("task", "Exam prep"); s.add("task", "Past papers", parent_id=p.id)
     s.add("alarm", "Wake up", due=datetime.now() + timedelta(hours=8), system_scheduled=True)
-    scr.refresh()
-    assert len(scr.list_box.children) == 3
-    scr.command.value = "set a timer for 5 minutes"
-    asyncio.run(scr._run_command(None))
-    assert "5m" in scr.status.text and len(scr.list_box.children) == 4
+    snap = scr.snapshot()
+    items = [i for g in snap["groups"] for i in g["items"]]
+    assert len(items) == 2 and items[[i["title"] for i in items].index("Exam prep")]["steps_total"] == 1
+    scr.call = lambda *a: asyncio.sleep(0)
+    asyncio.run(scr._run_command("set a timer for 5 minutes"))
+    assert "5m" in scr.status and scr.snapshot()["stats"]["timer"] == 1
     home = HomeActions(s, on_prompt=lambda t: None, on_open_tasks=lambda: None)
     assert "Next alarm" in home.today.text and "1 open task" in home.today.text

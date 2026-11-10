@@ -131,19 +131,25 @@ def test_workspace_filters_stats_and_clear_done(tmp_path):
     t = store.add("task", "Revise maths")
     store.add("task", "Past papers", parent_id=t.id)
     store.add("alarm", "Wake up", due=datetime.now() + timedelta(hours=8))
+    late = store.add("reminder", "Pay rent", due=datetime.now() - timedelta(hours=2))
     done = store.add("reminder", "Old one", due=datetime.now() - timedelta(hours=1))
     store.set_done(done.id, True)
-    scr.refresh()
-    assert scr.stat_labels["tasks"].text == "1" and scr.stat_labels["alarms"].text == "1"
+    snap = scr.snapshot()
+    assert snap["stats"]["task"] == 1 and snap["stats"]["alarm"] == 1 and snap["done_count"] == 1
+    keys = [g["key"] for g in snap["groups"]]
+    assert keys[0] == "overdue" and snap["groups"][0]["items"][0]["title"] == "Pay rent"          # overdue first
+    assert "finished" not in keys
+    revise = next(i for g in snap["groups"] for i in g["items"] if i["title"] == "Revise maths")
+    assert revise["steps_done"] == 0 and revise["steps_total"] == 1
     scr._set_kind("alarm")
-    assert len(scr.list_box.children) == 1
+    assert [i["title"] for g in scr.snapshot()["groups"] for i in g["items"]] == ["Wake up"]
     scr._set_kind(None)
-    texts = []
-    def walk(x):
-        texts.append(getattr(x, "text", ""))
-        for c in getattr(x, "children", []) or []: walk(c)
-    walk(scr.list_box)
-    assert any("0/1 steps done" in t for t in texts)
+    scr.show_done = True
+    assert "finished" in [g["key"] for g in scr.snapshot()["groups"]]
+    import asyncio
+    scr.call = lambda *a: asyncio.sleep(0)
+    asyncio.run(scr.handle({"type": "done", "value": late.id}))
+    assert store.get(late.id).done
     scr._clear_done(None)
     assert all(not i.done for i in store.list(include_done=True))
 

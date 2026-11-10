@@ -34,8 +34,12 @@ from typing import Callable, Optional
 # vocabulary" and drops them), so only words it knows are used: "ginkgo" starts with the very same
 # sounds as "Gink", and "king" is the closest short word. matches() also accepts "gink" for engines
 # (or future models) that know it.
-WAKE_PHRASES = ["hey ginkgo", "hey king", "hi ginkgo", "hi king", "okay ginkgo", "ginkgo"]   # "ginkgo" alone = "Gink"
-MATCH_WORDS = ("gink", "ginkgo", "king", "jink")
+# The offline model can only answer with these phrases (or "[unk]"), and "gink" isn't an English word it knows:
+# so the list holds what "Gink" sounds closest to. More near-sounds = it catches the name more reliably (owner:
+# "Hey Gink isn't working automatically"); every one still needs "hey"/"hi"/"okay" in front, except "ginkgo".
+WAKE_PHRASES = ["hey ginkgo", "hey king", "hi ginkgo", "hi king", "okay ginkgo", "ginkgo",
+                "hey gin", "hey jinx", "hey ink", "hey kink", "hey link", "hi gin", "okay king"]
+MATCH_WORDS = ("gink", "ginkgo", "king", "jink", "gin", "jinx", "ink", "kink", "link")
 MODEL_NAME = "vosk-model-small-en-us-0.15"
 MODEL_URL = f"https://alphacephei.com/vosk/models/{MODEL_NAME}.zip"
 MODEL_MB = 40

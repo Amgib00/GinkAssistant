@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.148 (November 2026)
+
+- Notifications, Apple style: frosted cards that slide in at the top, stack and leave by themselves --
+  for reminders, alarms and timers (with Done and Snooze 10 min), new versions, Settings messages, Gink's
+  status and policy updates; in Gink Genie and the developer console too. A reminder no longer blocks the
+  whole window with a dialog, and it also appears in your computer's own notifications
+- A new Workspace: summary cards, one box to tell Gink what to add, a filter, and your items grouped into
+  Overdue, Today, Upcoming and Anytime, with round check marks, time labels and progress bars for steps
+- "Hey Gink" on computers: it catches the name in more of the ways the offline listener hears it, and
+  starts listening again by itself if it ever got stuck
+- "Trouble saving files" no longer appears to everyone: storage problems are shown to the owner only
+
 ## 0.1.147 (November 2026)
 
 - Settings: Parental controls, Workspace and Scheduled tasks have their own icons; on phones, long

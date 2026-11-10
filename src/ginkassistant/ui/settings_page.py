@@ -793,6 +793,11 @@ SETTINGS_JS = r"""
   }
   var toastTimer = null;
   function settingsToast(text, kind) {
+    if (typeof ginkNotify === 'function') {             // the same notification cards as everywhere (Apple style)
+      ginkNotify({id: 'settings', title: kind === 'err' ? 'Couldn\u2019t do that' : 'Settings', body: text, kind: kind === 'err' ? 'warn' : '',
+                  icon: kind === 'err' ? '\u26a0\ufe0f' : '\u2713', timeout: kind === 'err' ? 7000 : 3200});
+      return;
+    }
     var t = document.getElementById('s-toast'); t.textContent = text; t.className = 'show' + (kind === 'err' ? ' err' : '');
     clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.className = ''; }, kind === 'err' ? 7000 : 3200);
   }

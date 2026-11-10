@@ -82,7 +82,7 @@ def test_main_screen_end_to_end(tmp_path, monkeypatch):
         for _ in range(10):
             await asyncio.sleep(0.05)
         content = app.main_window.content
-        assert content is not root and "Workspace" in content.children[0].children[1].children[0].text
+        assert content is not root and hasattr(content.children[0], "evaluate_javascript")   # the Workspace page (a WebView)
         app.task_scheduler.stop()
         return root
     asyncio.run(go())

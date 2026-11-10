@@ -21,10 +21,16 @@ _HTML = """
 </div>
 <script>
   function showUpdate(version) {
-    document.getElementById('update-text').textContent = 'Gink ' + String(version).replace(/^v/, '') + ' is available.';
+    var v = String(version).replace(/^v/, '');
+    if (typeof ginkNotify === 'function') {             // an Apple-style notification card (ui/web_chat_view.py)
+      ginkNotify({id: 'update', title: 'Gink ' + v + ' is available', body: 'Download the new version when you\u2019re ready.',
+                  icon: '\u2b07\ufe0f', timeout: 0, actions: [{label: 'Later', emit: 'update_later'}, {label: 'Download', emit: 'update_get', primary: true}]});
+      return;
+    }
+    document.getElementById('update-text').textContent = 'Gink ' + v + ' is available.';
     document.getElementById('update-bar').classList.add('show');
   }
-  function hideUpdate() { document.getElementById('update-bar').classList.remove('show'); }
+  function hideUpdate() { document.getElementById('update-bar').classList.remove('show'); if (typeof ginkDismiss === 'function') ginkDismiss('update'); }
 </script>
 """
 

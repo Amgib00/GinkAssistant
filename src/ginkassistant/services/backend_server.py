@@ -5666,9 +5666,11 @@ def service_status():
              "search": part("search", bool(_env("GROQ_API_KEY"))),
              "email": "ok" if (_env("BREVO_API_KEY") or _env("GMAIL_USER")) else "down",
              "storage": "ok" if st.get("ok", True) else "degraded"}
+    # storage is for the owner (/health, the dashboard): a full or temporary disk isn't something people can act on,
+    # and "trouble saving files" alarmed them (the owner's screenshot) -- it stays in components, out of the message
     overall = "down" if comps["chat"] == "down" else "degraded" if any(v != "ok" for k, v in comps.items()
-                                                                       if k in ("chat", "images", "search", "storage")) else "ok"
-    names = {"chat": "answers", "images": "image making", "search": "web search", "storage": "saving files"}
+                                                                       if k in ("chat", "images", "search")) else "ok"
+    names = {"chat": "answers", "images": "image making", "search": "web search"}
     trouble = [names[k] for k, v in comps.items() if k in names and v != "ok"]
     message = _env("GINK_STATUS_MESSAGE") or (
         "" if overall == "ok" else "Gink is having trouble with " + ", ".join(trouble) + " right now. We're on it \u2014 please try again in a little while.")

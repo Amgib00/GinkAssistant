@@ -86,6 +86,7 @@ LaunchAgent implementation in services/launch_at_login.py), and About.
 import asyncio
 import json
 import os
+import shutil
 import re
 import uuid
 import datetime
@@ -116,7 +117,7 @@ from .home_actions import HomeActions
 from .login_screen import clear_saved_session
 from .media_studio_screen import build_media_studio_screen
 from .settings_screen import _initial_model_choices
-from .tasks_screen import TasksScreen, show_due_dialog
+from .tasks_screen import TasksScreen
 from .toga_live_tv import build_live_tv_view
 from .web_chat_view import WebChatFeed
 
@@ -797,6 +798,19 @@ def build_main_screen(app: toga.App, email: str):
             await web_chat.show_update(offer["version"])
     asyncio.create_task(check_for_update())
 
+    def system_notification(title: str, body: str):
+        """The computer's own notification too (Notification Centre on a Mac; notify-send on Linux)."""
+        import subprocess
+        import sys as _sys
+        try:
+            if _sys.platform == "darwin":
+                q = lambda t: str(t).replace("\\", "\\\\").replace('"', '\\"')
+                subprocess.Popen(["osascript", "-e", f'display notification "{q(body)}" with title "Gink" subtitle "{q(title)}" sound name "Glass"'])
+            elif _sys.platform.startswith("linux") and shutil.which("notify-send"):
+                subprocess.Popen(["notify-send", "-a", "Gink", f"Gink \u00b7 {title}", body])
+        except Exception:
+            pass
+
     async def on_item_due(item):
         """A reminder/alarm/timer came due. Items handed to the OS
         (Android Clock, macOS Reminders, Windows Task Scheduler) already
@@ -808,7 +822,11 @@ def build_main_screen(app: toga.App, email: str):
         refresh_home()
         if not item.system_scheduled:
             await voice_bridge.speak(f"{item.kind.capitalize()}: {item.title}", voice_key=selected_voice["value"])
-            await show_due_dialog(app.main_window, "Gink", f"{icon}  {item.title}")
+            # an Apple-style card in the window (not a dialog that blocks everything) + the computer's own notification
+            actions = [{"label": "Snooze 10 min", "emit": "item_snooze", "value": item.id},
+                       {"label": "Done", "emit": "item_done", "value": item.id, "primary": True}]
+            await web_chat.notify(item.kind.capitalize(), item.title, icon=icon, timeout=0, actions=actions, nid=f"due-{item.id}")
+            system_notification(item.kind.capitalize(), item.title)
 
     app.task_scheduler.on_due = on_item_due
     if not getattr(app, "_task_scheduler_started", False):
@@ -1102,6 +1120,16 @@ def build_main_screen(app: toga.App, email: str):
             await web_chat.set_attachments([a.chip() for a in pending_attachments])
         elif kind == "play_video" and isinstance(value, dict) and value.get("id"):
             viewer.show(watch_url(value["id"]), value.get("title") or "Video")
+        elif kind == "item_done" and value:            # a reminder's notification: Done
+            app.task_store.set_done(int(value), True)
+            refresh_home()
+        elif kind == "item_snooze" and value:          # ... or Snooze 10 min: the same item, again in 10 minutes
+            it = app.task_store.get(int(value))
+            if it:
+                from datetime import datetime as _dt, timedelta as _td
+                app.task_store.add(it.kind, it.title, due=_dt.now() + _td(minutes=10))
+                app.task_store.set_done(it.id, True)
+                await web_chat.notify("Snoozed", f"{it.title} \u2014 again in 10 minutes", icon="\U0001F4A4", timeout=3000)
         elif kind == "policy_seen" and value:          # the policy notice's OK: don't show it again for this change
             prefs.save(app, policy_seen=str(value)[:20])
         elif kind == "open_url" and value:
@@ -1514,6 +1542,30 @@ def build_main_screen(app: toga.App, email: str):
         if lst is not None and not voice_session["active"] and not wake["busy"] and not audio_engine._is_listening:
             lst.resume()
 
+    async def wake_watchdog():
+        """Hey Gink must come back by itself: if listening has been paused for 20 s with nothing using the
+        microphone (a turn that ended in an error left it paused), or its thread died, start it again."""
+        paused_since = None
+        while app._main_screen_token is not None:
+            await asyncio.sleep(5)
+            lst = wake["listener"]
+            if lst is None or not prefs.load(app).get("wake_enabled"):
+                paused_since = None
+                continue
+            idle = not voice_session["active"] and not wake["busy"] and not audio_engine._is_listening
+            if not lst.running and idle:                      # the listening thread stopped (mic error...)
+                wake["listener"] = None
+                await configure_wake()
+                paused_since = None
+            elif lst.paused and idle:
+                paused_since = paused_since or asyncio.get_event_loop().time()
+                if asyncio.get_event_loop().time() - paused_since > 20:
+                    lst.resume()
+                    paused_since = None
+                    await push_wake_chip()
+            else:
+                paused_since = None
+
     def on_wake_detected():                     # runs on the listener's thread
         _loop.call_soon_threadsafe(lambda: asyncio.ensure_future(wake_turn()))
 
@@ -1816,6 +1868,7 @@ def build_main_screen(app: toga.App, email: str):
         asyncio.create_task(configure_offline_model())
         asyncio.create_task(check_status())
         asyncio.create_task(status_loop())
+        asyncio.create_task(wake_watchdog())             # Hey Gink comes back by itself if it got stuck
         while getattr(app, "_main_screen_token", None) is screen_token:
             for event in await web_chat.poll():
                 if event.get("type") == "stop":

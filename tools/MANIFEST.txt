@@ -296,6 +296,7 @@ src/ginkassistant/ui/viewer_util.py
 src/ginkassistant/ui/voice_ui.py
 src/ginkassistant/ui/wake_ui.py
 src/ginkassistant/ui/web_chat_view.py
+src/ginkassistant/ui/workspace_page.py
 src/ginkgenie/__init__.py
 src/ginkgenie/__main__.py
 src/ginkgenie/app.py
@@ -363,6 +364,7 @@ tests/test_media_photo.py
 tests/test_model_upgrade.py
 tests/test_natural_voice.py
 tests/test_no_dead_buttons.py
+tests/test_notifications_workspace_wake.py
 tests/test_official_sources.py
 tests/test_offline_model.py
 tests/test_offline_song_engine.py
