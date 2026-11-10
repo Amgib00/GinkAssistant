@@ -49,6 +49,11 @@ CSS = r"""
     animation: label-fade 1.8s ease-in-out infinite;
   }
   @keyframes label-fade { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+  /* while the steps list shows the current step, the spinner's label would only repeat it */
+  .gsteps:not(.done) ~ .gink-spin { display: none; }
+  /* one animated mark at a time: with the working logo below, the small spinning one beside the label goes */
+  .gink-spin.with-logo .gink-spinner { display: none; }
+  .gink-spin.with-logo .spin-label { margin-left: 0; }
   body.reduced-motion .spin-label { opacity: 1; }
   /* ---------- steps timeline ("Worked for 12s") ---------- */
   .gsteps { margin: 2px 0 10px; }
@@ -71,8 +76,9 @@ CSS = r"""
   body.reduced-motion .gsteps li.now svg { animation: none; }
 
   /* ---------- big centred logo; the middle animates while Gink works (Claude-style) ---------- */
-  .work-logo { width: 104px; height: 104px; margin: 18px auto 0; }
-  .work-logo svg { display: block; width: 104px; height: 104px; overflow: visible;
+  /* the working mark: compact and in line with the reply (it used to be 104px in the middle of the page) */
+  .work-logo { width: 40px; height: 40px; margin: 14px 0 0; }
+  .work-logo svg { display: block; width: 40px; height: 40px; overflow: visible;
     animation: logo-turn 6s linear infinite; }            /* the whole snowflake spins slowly */
   @keyframes logo-turn { to { transform: rotate(360deg); } }
   .work-logo .hex-inner { transform-box: fill-box; transform-origin: center;
@@ -379,7 +385,9 @@ JS = r"""
   function startSpinClock(id) {
     spinState[id] = spinState[id] || {t0: Date.now(), steps: []};
     var host = document.getElementById(id);
-    if (host && !host.querySelector('.work-logo')) host.appendChild(workLogo());   // centred logo + ring of dots
+    if (host && !host.querySelector('.work-logo')) host.appendChild(workLogo());   // the animated working mark
+    var sp = host ? host.querySelector('.gink-spin') : null;
+    if (sp) sp.classList.add('with-logo');            // one animated mark at a time (the small spinner hides)
     var t0 = spinState[id].t0;
     spinClocks[id] = setInterval(function () {
       var el = document.getElementById(id), lab = el ? el.querySelector('.spin-label') : null;

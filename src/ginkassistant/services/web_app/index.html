@@ -47,8 +47,8 @@
     #welcome .logo, .gink-spinner { animation: none; }
   }
   #welcome p { color: var(--text-muted); font-size: 15px; margin: 8px 0 0; max-width: 420px; }
-  .row { display: flex; margin-bottom: 20px; }
-  .row.user { margin-bottom: 14px; }
+  .row { display: flex; margin-bottom: 18px; }
+  .row.user { margin-bottom: 2px; }          /* its action row (copy, edit) already leaves the space */
   .row.user { justify-content: flex-end; }
   .bubble {
     max-width: 460px;
@@ -117,7 +117,7 @@
   }
   .assistant-text > .gink-spinner:first-child { margin-top: 2px; }
   @keyframes gink-spin { to { transform: rotate(360deg); } }
-  .msg-logo { display: block; width: 26px; height: 26px; margin: 14px auto 0; opacity: 0.95; }
+  .msg-logo { display: block; width: 22px; height: 22px; margin: 12px 0 0; opacity: 0.9; }   /* in line with the reply */
   .msg-logo.landing { animation: logo-land 1.3s cubic-bezier(.3,.7,.3,1); }
   @keyframes logo-land { 0% { transform: rotate(-200deg) scale(.5); opacity: 0; } 55% { opacity: 1; } 100% { transform: rotate(0) scale(1); } }
   .assistant-text .stream > *:last-child { margin-bottom: 0; }
@@ -291,8 +291,20 @@
   body.home #cstatus, body.home .disclaimer { opacity: 0; }
   body.home #feed { padding-bottom: 40px; }
   #welcome { transition: opacity 0.3s; }
-  body.home #welcome { margin-top: calc(50vh - 141px); }
+  body.home #welcome { margin-top: calc(50vh - 182px); }   /* greeting + subtitle clear the composer */
   .today-wrap { display: none; text-align: center; margin-top: 16px; }
+  /* home: a few ways to start, under the composer (gone once the chat begins) */
+  #suggest { display: none; }
+  /* out of the flow, so the composer's centred position (it depends on this bar's height) doesn't move */
+  body.home #suggest { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 780px;
+    position: absolute; left: 0; right: 0; top: calc(100% - 22px); margin: 0 auto; padding: 0 16px;
+    animation: word-in 0.8s ease 1.1s both; }
+  .sug { border: 1px solid var(--border); background: var(--surface, var(--bg)); color: var(--text-main); border-radius: 999px;
+    padding: 8px 14px; font: inherit; font-size: 13.5px; cursor: pointer; transition: border-color .15s, background .15s, transform .15s; }
+  .sug:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .sug:active { transform: scale(0.97); }
+  @media (max-width: 520px) { body.home #suggest { gap: 6px; } .sug { padding: 7px 12px; font-size: 13px; } }
+  @media (prefers-reduced-motion: reduce) { body.home #suggest { animation: none; } }
   body.home .today-wrap { display: block; animation: word-in 0.8s ease 1s both; }
   .today {
     display: inline-block; font-size: 13px; color: var(--accent);
@@ -301,7 +313,7 @@
   .today:empty { display: none; }
   @media (max-height: 560px) {
     body.home #composer-wrap { transform: translateY(calc(-50vh + 170px)); }
-    body.home #welcome { margin-top: 30px; }
+    body.home #welcome { margin-top: 16px; }
   }
   @media (prefers-reduced-motion: reduce) { #composer-wrap, body { transition: none; } }
   /* ---------- sidebar ----------
@@ -822,6 +834,11 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     animation: label-fade 1.8s ease-in-out infinite;
   }
   @keyframes label-fade { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+  /* while the steps list shows the current step, the spinner's label would only repeat it */
+  .gsteps:not(.done) ~ .gink-spin { display: none; }
+  /* one animated mark at a time: with the working logo below, the small spinning one beside the label goes */
+  .gink-spin.with-logo .gink-spinner { display: none; }
+  .gink-spin.with-logo .spin-label { margin-left: 0; }
   body.reduced-motion .spin-label { opacity: 1; }
   /* ---------- steps timeline ("Worked for 12s") ---------- */
   .gsteps { margin: 2px 0 10px; }
@@ -844,8 +861,9 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
   body.reduced-motion .gsteps li.now svg { animation: none; }
 
   /* ---------- big centred logo; the middle animates while Gink works (Claude-style) ---------- */
-  .work-logo { width: 104px; height: 104px; margin: 18px auto 0; }
-  .work-logo svg { display: block; width: 104px; height: 104px; overflow: visible;
+  /* the working mark: compact and in line with the reply (it used to be 104px in the middle of the page) */
+  .work-logo { width: 40px; height: 40px; margin: 14px 0 0; }
+  .work-logo svg { display: block; width: 40px; height: 40px; overflow: visible;
     animation: logo-turn 6s linear infinite; }            /* the whole snowflake spins slowly */
   @keyframes logo-turn { to { transform: rotate(360deg); } }
   .work-logo .hex-inner { transform-box: fill-box; transform-origin: center;
@@ -1311,6 +1329,13 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     </div>
     <div class="today-wrap"><span class="today" id="today-chip"></span></div>
     <div id="cstatus"></div>
+    <div id="suggest" role="group" aria-label="Ideas to start with">
+      <button type="button" class="sug" data-fill="Plan my day: ">☀️ Plan my day</button>
+      <button type="button" class="sug" data-fill="Search the web for ">🔎 Search the web</button>
+      <button type="button" class="sug" data-open="media">🎨 Make an image</button>
+      <button type="button" class="sug" data-open="genie">🧞 Build with Genie</button>
+      <button type="button" class="sug" data-fill="Explain simply: ">💡 Explain something</button>
+    </div>
     <div class="disclaimer">Gink is AI and can make mistakes. Please double-check responses.</div>
   </div>
 
@@ -1555,6 +1580,13 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
       else ginkEmit('open', what);
     });
     renderGreeting(); exTimer = setTimeout(cyclePlaceholder, 3500);
+    document.getElementById('suggest').addEventListener('click', function (e) {
+      var b = e.target.closest('.sug'); if (!b) return;
+      if (b.getAttribute('data-open')) { ginkEmit('open', b.getAttribute('data-open')); return; }
+      var cin = document.getElementById('cin'); cin.value = b.getAttribute('data-fill'); cin.focus();
+      cin.dispatchEvent(new Event('input', { bubbles: true }));
+      try { cin.setSelectionRange(cin.value.length, cin.value.length); } catch (err) {}
+    });
     document.querySelector('.nav').addEventListener('click', function (e) {
       var b = e.target.closest('button'); if (!b) return;
       var what = b.getAttribute('data-nav');
@@ -3026,7 +3058,9 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
   function startSpinClock(id) {
     spinState[id] = spinState[id] || {t0: Date.now(), steps: []};
     var host = document.getElementById(id);
-    if (host && !host.querySelector('.work-logo')) host.appendChild(workLogo());   // centred logo + ring of dots
+    if (host && !host.querySelector('.work-logo')) host.appendChild(workLogo());   // the animated working mark
+    var sp = host ? host.querySelector('.gink-spin') : null;
+    if (sp) sp.classList.add('with-logo');            // one animated mark at a time (the small spinner hides)
     var t0 = spinState[id].t0;
     spinClocks[id] = setInterval(function () {
       var el = document.getElementById(id), lab = el ? el.querySelector('.spin-label') : null;

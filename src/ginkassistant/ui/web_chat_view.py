@@ -117,8 +117,8 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     #welcome .logo, .gink-spinner { animation: none; }
   }
   #welcome p { color: var(--text-muted); font-size: 15px; margin: 8px 0 0; max-width: 420px; }
-  .row { display: flex; margin-bottom: 20px; }
-  .row.user { margin-bottom: 14px; }
+  .row { display: flex; margin-bottom: 18px; }
+  .row.user { margin-bottom: 2px; }          /* its action row (copy, edit) already leaves the space */
   .row.user { justify-content: flex-end; }
   .bubble {
     max-width: 460px;
@@ -187,7 +187,7 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
   }
   .assistant-text > .gink-spinner:first-child { margin-top: 2px; }
   @keyframes gink-spin { to { transform: rotate(360deg); } }
-  .msg-logo { display: block; width: 26px; height: 26px; margin: 14px auto 0; opacity: 0.95; }
+  .msg-logo { display: block; width: 22px; height: 22px; margin: 12px 0 0; opacity: 0.9; }   /* in line with the reply */
   .msg-logo.landing { animation: logo-land 1.3s cubic-bezier(.3,.7,.3,1); }
   @keyframes logo-land { 0% { transform: rotate(-200deg) scale(.5); opacity: 0; } 55% { opacity: 1; } 100% { transform: rotate(0) scale(1); } }
   .assistant-text .stream > *:last-child { margin-bottom: 0; }
@@ -361,8 +361,20 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
   body.home #cstatus, body.home .disclaimer { opacity: 0; }
   body.home #feed { padding-bottom: 40px; }
   #welcome { transition: opacity 0.3s; }
-  body.home #welcome { margin-top: calc(50vh - 141px); }
+  body.home #welcome { margin-top: calc(50vh - 182px); }   /* greeting + subtitle clear the composer */
   .today-wrap { display: none; text-align: center; margin-top: 16px; }
+  /* home: a few ways to start, under the composer (gone once the chat begins) */
+  #suggest { display: none; }
+  /* out of the flow, so the composer's centred position (it depends on this bar's height) doesn't move */
+  body.home #suggest { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 780px;
+    position: absolute; left: 0; right: 0; top: calc(100% - 22px); margin: 0 auto; padding: 0 16px;
+    animation: word-in 0.8s ease 1.1s both; }
+  .sug { border: 1px solid var(--border); background: var(--surface, var(--bg)); color: var(--text-main); border-radius: 999px;
+    padding: 8px 14px; font: inherit; font-size: 13.5px; cursor: pointer; transition: border-color .15s, background .15s, transform .15s; }
+  .sug:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .sug:active { transform: scale(0.97); }
+  @media (max-width: 520px) { body.home #suggest { gap: 6px; } .sug { padding: 7px 12px; font-size: 13px; } }
+  @media (prefers-reduced-motion: reduce) { body.home #suggest { animation: none; } }
   body.home .today-wrap { display: block; animation: word-in 0.8s ease 1s both; }
   .today {
     display: inline-block; font-size: 13px; color: var(--accent);
@@ -371,7 +383,7 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
   .today:empty { display: none; }
   @media (max-height: 560px) {
     body.home #composer-wrap { transform: translateY(calc(-50vh + 170px)); }
-    body.home #welcome { margin-top: 30px; }
+    body.home #welcome { margin-top: 16px; }
   }
   @media (prefers-reduced-motion: reduce) { #composer-wrap, body { transition: none; } }
   /* ---------- sidebar ----------
@@ -723,6 +735,13 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     </div>
     <div class="today-wrap"><span class="today" id="today-chip"></span></div>
     <div id="cstatus"></div>
+    <div id="suggest" role="group" aria-label="Ideas to start with">
+      <button type="button" class="sug" data-fill="Plan my day: ">\u2600\ufe0f Plan my day</button>
+      <button type="button" class="sug" data-fill="Search the web for ">\U0001F50E Search the web</button>
+      <button type="button" class="sug" data-open="media">\U0001F3A8 Make an image</button>
+      <button type="button" class="sug" data-open="genie">\U0001F9DE Build with Genie</button>
+      <button type="button" class="sug" data-fill="Explain simply: ">\U0001F4A1 Explain something</button>
+    </div>
     <div class="disclaimer">Gink is AI and can make mistakes. Please double-check responses.</div>
   </div>
 <script>
@@ -908,6 +927,13 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
       else ginkEmit('open', what);
     });
     renderGreeting(); exTimer = setTimeout(cyclePlaceholder, 3500);
+    document.getElementById('suggest').addEventListener('click', function (e) {
+      var b = e.target.closest('.sug'); if (!b) return;
+      if (b.getAttribute('data-open')) { ginkEmit('open', b.getAttribute('data-open')); return; }
+      var cin = document.getElementById('cin'); cin.value = b.getAttribute('data-fill'); cin.focus();
+      cin.dispatchEvent(new Event('input', { bubbles: true }));
+      try { cin.setSelectionRange(cin.value.length, cin.value.length); } catch (err) {}
+    });
     document.querySelector('.nav').addEventListener('click', function (e) {
       var b = e.target.closest('button'); if (!b) return;
       var what = b.getAttribute('data-nav');

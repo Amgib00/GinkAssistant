@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.146 (November 2026)
+
+- A more polished main screen: "How can I help today?" no longer hides behind the message box; quick
+  ideas to start with under the box (Plan my day, Search the web, Make an image, Build with Genie,
+  Explain something); while Gink works you see one calm animated mark and the current step (no repeated
+  labels or extra spinners); the finished mark sits neatly under the reply; tighter spacing between messages
+
 ## 0.1.145 (November 2026)
 
 - Gink tells you when something on its side isn't working: a thin bar at the top ("Gink is having trouble

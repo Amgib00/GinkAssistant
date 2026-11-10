@@ -2275,3 +2275,11 @@ New services/live_info.py (all free, no API keys):
   GINK_STATUS_MESSAGE -> status "notice" with the owner's text.
 - Chat page statusBar(status, message) (apps: check_status at start + every 5 min; web: checkStatus + interval), Genie +
   console snippet, CLI `gink status` (exit 1 when degraded/down), Python status(), JS status() (+ types). SDKs 0.3.7.
+
+## 0.1.146: main-screen review (owner's request after the cross-platform screenshots)
+- Found: the home subtitle sat behind the composer on desktop (welcome margin -141px -> -182px); the 104px centred
+  working logo + a small spinner + a label repeating the current step (now: work-logo 40px in line; .gink-spin.with-logo
+  hides the small spinner; .gsteps:not(.done) ~ .gink-spin hidden); the finished msg-logo centred (now 22px in line);
+  user rows 14px + their action row (now 2px). Added #suggest chips on home (absolute under the composer: the composer's
+  centred translate depends on the wrap's height), fill the box or open Media Studio / Genie. Ghost shapes in the first
+  screenshots were transitions mid-way (screenshot timing), not bugs.

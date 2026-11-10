@@ -151,7 +151,7 @@ def test_workspace_filters_stats_and_clear_done(tmp_path):
 def test_finish_logo_links_sidebar_toggle_and_history_animation():
     from ginkassistant.ui import web_chat_view as w
     html = w._build_page_html("Hi", "x")
-    assert ".msg-logo { display: block; width: 26px; height: 26px; margin: 14px auto 0;" in html
+    assert ".msg-logo { display: block; width: 22px; height: 22px; margin: 12px 0 0;" in html     # in line with the reply
     assert "ginkEmit('open_url'" in html and "window.open(" not in html
     assert html.count('id="tb-toggle"') == 1 and 'id="side-toggle"' not in html   # one button
     assert "function toggleSidebar" in html and "hoverBlocked" in html
@@ -356,3 +356,18 @@ def test_public_address_survives_a_localhost_setting_on_render(monkeypatch):
     assert b._public_base(_req("gink-server.onrender.com", "https")) == "https://gink.example.com"
     monkeypatch.setenv("GINK_PUBLIC_URL", "")
     assert b._public_base(_req("gink-server.onrender.com", "https")) == "https://gink-server.onrender.com"
+
+
+def test_main_screen_polish():
+    """The main-screen review: subtitle clears the composer, quick-start ideas on the home screen (out of the flow so
+    the composer stays centred), one animated mark while working, no repeated step label, tighter message spacing."""
+    import sys, os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+    from ginkassistant.ui.web_chat_view import _build_page_html
+    html = _build_page_html("Hi", "How can I help today?")
+    assert "body.home #welcome { margin-top: calc(50vh - 182px); }" in html
+    assert 'id="suggest"' in html and 'data-open="genie"' in html and 'data-open="media"' in html
+    assert "position: absolute; left: 0; right: 0; top: calc(100% - 22px)" in html
+    assert ".gink-spin.with-logo .gink-spinner { display: none; }" in html and ".gsteps:not(.done) ~ .gink-spin { display: none; }" in html
+    assert ".work-logo { width: 40px; height: 40px; margin: 14px 0 0; }" in html
+    assert ".row.user { margin-bottom: 2px; }" in html
