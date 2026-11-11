@@ -187,7 +187,9 @@
   // ---- where to go afterwards: only Gink's own pages
   function nextPath() {
     var n = new URLSearchParams(location.search).get("next") || "/app";
-    return /^\/(?!\/)[^\\\s]*$/.test(n) ? n : "/app";
+    var pathOnly = n.split("#")[0].split("?")[0];
+    var allowed = { "/app": true, "/signup": true, "/forgot": true, "/login": true };
+    return allowed[pathOnly] ? n : "/app";
   }
 
   function say(text, ok) { var m = $("msg"); m.textContent = text || ""; m.className = "msg " + (ok ? "ok" : "err"); }
