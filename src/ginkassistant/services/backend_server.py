@@ -238,7 +238,7 @@ def _send_email(to: str, subject: str, text: str, html: str = "") -> str:
             return ""
         except Exception as exc:
             blocked = isinstance(exc, (OSError, TimeoutError)) and not isinstance(exc, smtplib.SMTPException)
-            return (f"Gmail SMTP failed ({type(exc).__name__}: {str(exc)[:120]})"
+            return ("Gmail SMTP failed"
                     + (" -- Render's free plan blocks SMTP; set BREVO_API_KEY instead" if blocked else ""))
     return "no email service is set up (BREVO_API_KEY, or GMAIL_USER + GMAIL_APP_PASSWORD)"
 
