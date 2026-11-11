@@ -178,7 +178,7 @@ def main(argv=None, ask_fn=ask):
         return 1
     key = real_key(a.key) or ("" if a.ask_key else real_key(os.environ.get("GROQ_API_KEY", ""))) \
         or getpass.getpass("Groq API key (hidden): ").strip()
-    print(f"Using key {masked(key)}")
+    print("Using provided Groq API key.")
     rows = [json.loads(l) for l in open(a.train, encoding="utf-8") if l.strip()]
     todo, seen = [], set()
     for ex in rows:
