@@ -250,7 +250,7 @@ def main(argv=None, ask_fn=ask):
         key, source = real_key(os.environ.get("GROQ_API_KEY", "")), "GROQ_API_KEY in this Terminal"
     if not key:
         key, source = getpass.getpass("Groq API key (hidden): ").strip(), "what you typed"
-    print(f"Using the key from {source}: {masked(key)}")
+    print(f"Using API key from {source}.")
     rows = [json.loads(l) for l in open(a.train, encoding="utf-8") if l.strip()]
     todo, seen = [], set()
     for r in rows:
