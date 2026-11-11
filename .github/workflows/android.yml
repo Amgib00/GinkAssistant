@@ -7,6 +7,9 @@
 # Run it: Actions -> "Android build" -> Run workflow. Result: the run's page -> Artifacts.
 name: Android build
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
   workflow_call:          # used by release.yml
