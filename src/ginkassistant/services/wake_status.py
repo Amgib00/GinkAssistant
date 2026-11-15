@@ -61,6 +61,11 @@ def describe(*, enabled: bool, supported: bool, listener=None, downloading: bool
     if error:
         return {"state": "retrying", "label": "Hey Gink \u00b7 retrying",
                 "detail": f"Having trouble listening ({error}). Gink keeps trying."}
+    if getattr(listener, "silent", False) is True:           # blocked microphones send silence, not an error
+        return {"state": "problem", "label": "Hey Gink can\u2019t hear you",
+                "detail": "The microphone is sending only silence. Allow Gink to use the microphone (on a Mac: System "
+                          "Settings > Privacy & Security > Microphone), or choose a working microphone \u2014 click to "
+                          "open Voice settings"}
     if _paused(listener):
         return {"state": "paused", "label": "Hey Gink paused",
                 "detail": "Paused while Gink uses the microphone \u2014 it listens again right after"}

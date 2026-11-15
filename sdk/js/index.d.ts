@@ -35,6 +35,12 @@ export interface InteractionParams {
   webhook_url?: string;            // https: Gink POSTs {"type": "interaction.<status>", "data": Interaction} when it ends
 }
 
+/** Uint8Array, base64 or a data URL -> a data URL Gink can look at (JPEG, PNG, WebP or GIF). */
+export declare function imageDataURL(photo: Uint8Array | ArrayBuffer | string): string;
+/** A source of a web answer: official = a government, an international body or the organisation's own site;
+ *  icon = the site's real logo, served by Gink (<server>/icon/<host>). */
+export interface Source { title: string; url: string; host: string; official: boolean; icon: string }
+export declare function sources(text: string, baseURL?: string): Source[];
 export declare function verifyWebhook(body: string, signature: string, secret: string,
   options?: { tolerance?: number }): Promise<{ type: string; data: Interaction }>;
 
@@ -51,8 +57,16 @@ export declare class Environment {
   upload(path: string, content: string | Uint8Array | Blob): Promise<Environment>;
   download(path: string): Promise<Uint8Array>;
   text(path: string): Promise<string>;
+  check(): Promise<{ ok: boolean; files: number; problems: string[]; missing: string[]; broken: string[]; fix_request: string }>;
   refresh(): Promise<Environment>;
   delete(): Promise<{ id: string; deleted: true }>;
+}
+
+export interface SafetyCounts { patient_details_removed: number; patient_details_stopped: number; photo_checked: number }
+export interface SafetyReport {
+  object: "safety_report"; days: number; since: string; totals: SafetyCounts;
+  by_day: Array<SafetyCounts & { day: string }>; by_person: Array<SafetyCounts & { account: string; name: string }>;
+  by_feature: Record<string, number>; workspace?: { id: string; name: string; healthcare: boolean };
 }
 
 export interface Schedule {
@@ -85,12 +99,32 @@ export declare class Gink {
     delete(id: string): Promise<{ id: string; deleted: true }>;
   };
   webhooks: { secret(): Promise<string>; rotate(): Promise<string> };
-  chat(message: string | Array<{ role: string; content: string }>, options?: { model?: string; system?: string }): Promise<string>;
+  workspace: {
+    get(): Promise<{ workspace: { id: string; name: string; healthcare: boolean; patient_details: "remove" | "stop" } | null;
+      role?: "admin" | "member"; status?: "active" | "invited" }>;
+    /** Admins: healthcare mode's safety report -- counts only, never words. */
+    safety(options?: { days?: number }): Promise<SafetyReport>;
+  };
+  memories: {
+    list(): Promise<Array<{ id: string; text: string; created: number }>>;
+    add(text: string): Promise<{ id: string; text: string; replaced: string | null }>;
+    forget(id: string): Promise<{ id: string; deleted: true }>;
+    suggest(text: string): Promise<string | null>;
+  };
+  chat(message: string | Array<{ role: string; content: string | Array<Record<string, unknown>> }>,
+       options?: { model?: string; system?: string }): Promise<string>;
+  /** An answer from the web, its sources listed (official ones first); { withSources: true } adds them as data. */
   search(question: string): Promise<string>;
+  search(question: string, options: { withSources: true }): Promise<{ answer: string; sources: Source[] }>;
+  /** The sources under an answer's "Sources", each with its site's real logo. */
+  sources(text: string): Source[];
+  /** An answer about a photo (like the Live camera); careful with anything about health. Gink Pro. */
+  see(photo: Uint8Array | ArrayBuffer | string, options?: { question?: string; model?: string }): Promise<string>;
   image(prompt?: string, options?: { idea?: string; subject?: string; style?: string;
     aspect_ratio?: "1:1" | "16:9" | "9:16" | "4:3" | "3:4"; photo?: Uint8Array | string }): Promise<Uint8Array>;
   imageIdeas(): Promise<{ styles: Array<{ id: string; description: string }>;
-    ideas: Array<{ id: string; title: string; prompt: string; example_subject: string; style: string; aspect_ratio: string }> }>;
+    ideas: Array<{ id: string; title: string; prompt: string; example_subject: string; style: string; aspect_ratio: string }>;
+    looks: Array<{ id: string; title: string; prompt: string; example_subject: string; style: string; aspect_ratio: string }> }>;
   models(): Promise<string[]>;
   exportAccount(): Promise<Uint8Array>;
   status(): Promise<{ status: "ok" | "degraded" | "down" | "notice"; message: string;

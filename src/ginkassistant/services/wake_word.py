@@ -30,16 +30,39 @@ import time
 import zipfile
 from typing import Callable, Optional
 
-# The free model's dictionary doesn't contain "gink" or "jink" (Vosk logs "Ignoring word missing in
-# vocabulary" and drops them), so only words it knows are used: "ginkgo" starts with the very same
-# sounds as "Gink", and "king" is the closest short word. matches() also accepts "gink" for engines
-# (or future models) that know it.
-# The offline model can only answer with these phrases (or "[unk]"), and "gink" isn't an English word it knows:
-# so the list holds what "Gink" sounds closest to. More near-sounds = it catches the name more reliably (owner:
-# "Hey Gink isn't working automatically"); every one still needs "hey"/"hi"/"okay" in front, except "ginkgo".
-WAKE_PHRASES = ["hey ginkgo", "hey king", "hi ginkgo", "hi king", "okay ginkgo", "ginkgo",
-                "hey gin", "hey jinx", "hey ink", "hey kink", "hey link", "hi gin", "okay king"]
-MATCH_WORDS = ("gink", "ginkgo", "king", "jink", "gin", "jinx", "ink", "kink", "link")
+# ---- How the offline listener hears "Hey Gink" (measured with tools/wake_bench, not guessed) -------------------
+# The free model has a fixed dictionary and neither "gink" nor "jink" is in it (a word it doesn't know is silently
+# DROPPED from a phrase: "hey jink" would become just "hey"). So the listener is given single words it does know:
+#   LEADS      hey / hi / okay
+#   NEAR_GINK  what "Gink" (hard g) is heard as        NEAR_JINK  what "Jink" (soft g) is heard as
+#   DECOYS     everyday words, so ordinary talk has somewhere to go instead of being squeezed into "hey king"
+#              ("I think..." was heard as "hi king"; "hey kids", "okay thanks" too): false wakes fell from 29% to 3-7%
+# Wake = a lead followed directly by a near word. With "Also wake on just Gink" on: a rare near word first
+# (ALONE_FIRST), or ALONE_EXACT as the whole thing said ("Gink." then a pause).
+# Before changing ANY list, run tools/wake_bench: one decoy ("getting", when it wasn't a near word) took the
+# listener from 95% to 26%.
+LEADS = ("hey", "hi", "okay")
+NEAR_GINK = ("king", "kink", "ginkgo", "getting")
+NEAR_JINK = ("jinx", "jinks", "jing", "jin", "jinn", "jank", "gin", "genk")
+ALONE_FIRST = ("kink", "ginkgo", "jing", "jank", "jinx", "jinks", "jinn", "genk")      # never "king", "gin", "getting"
+ALONE_EXACT = ("getting",)
+DECOYS = ("i", "think", "there", "guys", "kids", "can", "look", "what", "come", "siri", "mum", "kim", "jim", "let's",
+          "thanks", "google", "you", "everyone", "so", "well", "it", "we", "how", "is", "the", "a", "and", "this", "that")
+# engines that know any word (Android, browsers, a future model) may also hear the name itself
+MATCH_WORDS = ("gink", "jink") + NEAR_GINK + NEAR_JINK
+WAKE_PHRASES = [f"{lead} {w}" for lead in LEADS for w in NEAR_GINK + NEAR_JINK] + list(ALONE_FIRST)   # (for reference/tests)
+
+
+def grammar_words(knows=None) -> list:
+    """The words the offline listener may answer with, + "[unk]" (anything else). `knows(word)` says whether the
+    model's dictionary has a word (VoskEngine passes the model's own lookup): unknown ones are left out."""
+    words = []
+    for w in LEADS + NEAR_GINK + NEAR_JINK + DECOYS:
+        if w not in words and (knows is None or knows(w)):
+            words.append(w)
+    return words + ["[unk]"]
+
+
 MODEL_NAME = "vosk-model-small-en-us-0.15"
 MODEL_URL = f"https://alphacephei.com/vosk/models/{MODEL_NAME}.zip"
 MODEL_MB = 40
@@ -87,14 +110,19 @@ async def download_model(base_dir, on_progress: Optional[Callable[[float], None]
 SHORT = {"on": True}          # also wake on just "Gink" (Settings > Voice; main_screen sets it from prefs)
 
 
-def matches(text: str) -> bool:
-    """Does a recognized phrase contain the wake word? "Hey Gink" anywhere, or "Gink" on its own / first."""
-    t = " " + re.sub(r"[^a-z ]", " ", (text or "").lower()) + " "
-    t = re.sub(r"\s+", " ", t)
-    if any(f" {lead} {w} " in t for lead in ("hey", "hi", "okay", "ok") for w in MATCH_WORDS):
+def matches(text: str, final: bool = True) -> bool:
+    """Does what was heard contain the wake word? `final` = the listener finished the utterance (a pause followed);
+    while it's still listening (partial text) the name alone needs a second word after it, so a word that is still
+    changing doesn't wake Gink."""
+    words = re.sub(r"[^a-z' ]", " ", (text or "").lower()).split()        # "[unk]" -> "unk": it breaks "hey ... king"
+    for a, b in zip(words, words[1:]):
+        if a in LEADS + ("ok",) and b in MATCH_WORDS:
+            return True
+    if not SHORT["on"] or not words:
+        return False
+    if words[0] in ("gink", "jink") + ALONE_FIRST and (final or len(words) > 1):      # not "king": too common
         return True
-    first = t.split()[:1]
-    return bool(SHORT["on"] and first and first[0] in ("gink", "ginkgo", "jink"))   # not "king": too common
+    return final and len(words) == 1 and words[0] in ALONE_EXACT
 
 
 # ---------------------------------------------------------------- engines
@@ -105,19 +133,23 @@ class VoskEngine:
         from vosk import KaldiRecognizer, Model, SetLogLevel
         SetLogLevel(-1)
         self._model = Model(path)
-        # only listen for the wake phrases (+ "anything else"): fast and few false alarms
-        self._rec = KaldiRecognizer(self._model, RATE, json.dumps(WAKE_PHRASES + ["[unk]"]))
+        # a small set of single words the model knows (+ "anything else"): fast, and ordinary talk doesn't wake it
+        knows = lambda w: self._model.vosk_model_find_word(w) >= 0        # noqa: E731
+        self.words = grammar_words(knows)
+        self._rec = KaldiRecognizer(self._model, RATE, json.dumps(self.words))
         self.frame = 4000                       # samples per read (0.25 s)
         self.last_heard = ""                    # shown in Settings -> Voice -> Hey Gink (helps tuning)
 
     def process(self, pcm: bytes) -> bool:
-        if self._rec.AcceptWaveform(pcm):
+        final = bool(self._rec.AcceptWaveform(pcm))
+        if final:
             text = json.loads(self._rec.Result()).get("text", "")
             if text and text != "[unk]":
                 self.last_heard = text
         else:
             text = json.loads(self._rec.PartialResult()).get("partial", "")
-        if matches(text):
+        if matches(text, final):
+            self.last_heard = text
             self._rec.Reset()
             return True
         return False
@@ -269,6 +301,8 @@ class WakeWordListener:
         self._released.set()                    # no stream open yet
         self._thread: Optional[threading.Thread] = None
         self.error = ""
+        self.level = 0                          # loudest sound in the last quarter second, % of full scale
+        self._silent_since = None
         self.detections = 0
 
     @property
@@ -301,6 +335,27 @@ class WakeWordListener:
     def mic_released(self) -> bool:
         return self._released.is_set()
 
+    # A microphone that is blocked (macOS without the Microphone permission) doesn't fail: it sends perfect
+    # silence, and Hey Gink would wait forever with a green light. So the listener watches the level.
+    SILENT_AFTER = 6.0
+
+    def _note_level(self, pcm: bytes) -> None:
+        import array
+        a = array.array("h")
+        a.frombytes(pcm[:len(pcm) // 2 * 2])
+        peak = max(max(a, default=0), -min(a, default=0))
+        self.level = round(100 * peak / 32768)
+        if peak > 2:                                         # any real microphone has more noise than this
+            self._silent_since = None
+        elif self._silent_since is None:
+            self._silent_since = time.time()
+
+    @property
+    def silent(self) -> bool:
+        """The microphone has sent nothing but digital silence for a while (blocked, muted or the wrong device)."""
+        since = getattr(self, "_silent_since", None)
+        return since is not None and time.time() - since > self.SILENT_AFTER and not self.paused
+
     def _loop(self):
         last_hit = 0.0
         try:
@@ -324,6 +379,7 @@ class WakeWordListener:
                         if not pcm:
                             time.sleep(0.02)
                             continue
+                        self._note_level(pcm)
                         if self.engine.process(pcm) and time.time() - last_hit > self.cooldown:
                             last_hit = time.time()
                             self.detections += 1

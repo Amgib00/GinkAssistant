@@ -104,7 +104,7 @@ def test_sidebar_page_has_hover_peek_recents_gear_and_delete_dialog():
     from ginkassistant.ui import web_chat_view as w
     html = w._build_page_html("Hi", "x")
     for el in ('id="side"', 'id="edge"', 'id="tb-toggle"', 'data-nav="new"',
-               'data-nav="search"', 'id="recents"', 'id="gear"', 'Delete chat?', 'id="del-ok"',
+               'id="side-q"', 'id="recents"', 'id="gear"', 'Delete chat?', 'id="del-ok"',
                "function setSessions", "mouseenter", "ginkEmit('delete_session'"):
         assert el in html, el
 
@@ -371,7 +371,7 @@ def test_main_screen_polish():
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
     from ginkassistant.ui.web_chat_view import _build_page_html
     html = _build_page_html("Hi", "How can I help today?")
-    assert "body.home #welcome { margin-top: calc(50vh - 182px); }" in html
+    assert "body.home #welcome { margin-top: calc(var(--app-h) * 0.5 - 182px); }" in html     # the VISIBLE height (0.1.155)
     assert 'id="suggest"' in html and 'data-open="genie"' in html and 'data-open="media"' in html
     assert "position: absolute; left: 0; right: 0; top: calc(100% - 22px)" in html
     assert ".gink-spin.with-logo .gink-spinner { display: none; }" in html and ".gsteps:not(.done) ~ .gink-spin { display: none; }" in html

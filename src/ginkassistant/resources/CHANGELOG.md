@@ -1,5 +1,157 @@
 # Changelog
 
+## 0.1.157 (November 2026)
+
+- A plain, quiet sidebar, like the ones you already know: the new glowing Gink logo and "Gink" at the top, with the
+  button that closes the sidebar next to them; plain rows for New chat, Search chats, Workspace, Media Studio and
+  Gink Genie; your chats under small headings (Pinned, Today, Yesterday...); a soft highlight on the chat you're in;
+  your account at the bottom. Keyboard shortcuts only show when you point at a row
+- Closed, the sidebar is a slim column of icons with the Gink logo at the top. Point at the logo and it becomes the
+  "open sidebar" button
+- Older Macs: the spacing is back. Their app window ignored the spacing Gink uses between an icon and its word, so
+  icons touched their labels (the sidebar, "Temporary", the logo next to "Gink"), and some panels -- the app lock
+  among them -- didn't cover the whole window. Fixed in the Gink app, the web app and Gink Genie, and on older Android
+  phones and Linux systems with the same problem
+
+## 0.1.156 (November 2026)
+
+- Sources show each website's real logo instead of a coloured letter, with official sources first and a green check
+  on an official one. Tapping "5 sources" opens the list again (it did nothing). Gink now looks for the official
+  source first -- the ministry, electoral commission, statistics office or central bank, or the organisation's own
+  website -- and recognises more of them as official (electoral commissions, central banks and statistics
+  offices whose websites aren't on a government address)
+- A more premium sidebar: a raised "New chat", search that's always there (with its keyboard shortcut), your chats
+  grouped by day (Pinned, Today, Yesterday, Previous 7 days...), a current chat that stands out, and an account card.
+  On a phone it slides over a dimmed page; tap outside to close it. The sidebar button is now a panel icon
+- People has no button any more: it works by itself. Ask "show my people", "who's in my photos" or "show me photos of
+  Awa" and it opens. The first time you share a photo, Gink asks once whether to turn it on (faces are sensitive, so
+  never without a yes) -- and a yes groups that photo straight away. Settings > Privacy > People has it too
+- Developers: web answers come with their sources as data (title, address, official, logo): `sources` in the API
+  response, `client.search(question, with_sources=True)` in Python and `gink.search(question, { withSources: true })`
+  in JavaScript (gink-ai 0.3.13), and `GET /icon/{site}` for a site's logo
+
+## 0.1.155 (November 2026)
+
+- Phones look like the designs: no teal "Gink" bar on top in the Android app (the status bar takes the page's
+  colour, light or dark), "Hi Ibrahim" with "How can I help today?" under it, the mic always inside the message box
+  (a long model name no longer pushes it out), and the ideas under the box (Plan my day, Search the web...)
+- The keyboard no longer moves the message box to the top of the screen or hides the conversation: on Android the
+  app now ends at the top of the keyboard, and on iPhone the box stays right above it, with your newest message in
+  view. Tapping the box no longer zooms the page in on iPhone (and no longer leaves it zoomed and shifted sideways)
+- Wide tables scroll sideways inside their own box -- the page never gets wider than your screen -- with columns as
+  wide as their words need and a soft shadow showing there's more to swipe to. Long links wrap
+- The header is solid: replies no longer show through "Gink Assistant" as you scroll
+- The sign-in card is never cut off on a small phone (the page scrolls), and the web sign-in does the same
+- Gink Genie on Android: the keyboard makes room too, and its bar is Gink's dark instead of teal. Genie, the
+  developer console and the sign-in pages don't zoom in when you tap a box on iPhone either
+- Fixed: the iPhone app laid the chat page out at desktop width (tiny text); it now fits the screen
+
+## 0.1.154 (November 2026)
+
+- Lock Gink with Face ID: Settings > Privacy > Lock Gink. Gink covers itself when it opens and after you've been away
+  (1, 5, 15 or 60 minutes, or only when it opens), until your device checks it's you -- Face ID, Touch ID or Optic ID
+  on Apple devices, Windows Hello on Windows, your phone's face, fingerprint or PIN unlock on Android, a fingerprint
+  reader on Linux. Your device tells Gink only yes or no: Gink never sees, keeps or sends your face or fingerprint.
+  Nothing behind the lock can be used, the Live camera turns off, and you can sign out from the lock screen
+- In a browser, the web app, Gink Genie and the developer console lock with your passkey (Face ID, Touch ID,
+  Windows Hello or your phone); only your own passkeys unlock your Gink. The Gink Genie app uses Touch ID, Face ID or
+  Windows Hello directly (Genie > Settings > Lock). `gink login` can be approved with a passkey too
+- People: like Photos on iPhone, Gink finds the faces in photos you share with it and groups them by person, so you
+  can name people and see all their photos (sidebar > People). Ask "show me photos of Awa" and People opens -- the
+  request never goes to the AI. Faces are found and grouped on your device only: the face model runs there, and
+  nothing about faces is sent to Gink's server, the AI or your other devices. Off until you turn it on; never for
+  Live camera frames, temporary chats or in a healthcare workspace; delete everything in Settings > Privacy > People
+- Fixed: "Remember things automatically" now switches off in the apps too (it only worked in the web app)
+
+## 0.1.153 (November 2026)
+
+- Healthcare workspaces keep a patient's details out automatically: names, record and ID numbers, dates of birth,
+  phone numbers and email addresses are removed before anything reaches the AI, a web search or a saved name --
+  the same name said again later ("Mr Diallo") is removed too -- and Gink says so above its answer. This works
+  everywhere: chat in the apps and the web app, photos, Gink Genie, agents, scheduled tasks, websites and the API.
+  Admins can choose to stop such messages instead (Settings > Workspace)
+- Safety report for workspace admins (Settings > Workspace > Safety): how many times patient details were removed
+  or stopped, and how many photos were checked with the patient-privacy rules -- per person and per day, with a
+  spreadsheet download. Counts only: never what anyone wrote or photographed. Members are told in Settings exactly
+  what admins can see, and their counts are deleted when they leave the workspace or delete their account
+- Fixed: in healthcare workspaces, the patient-details check now runs before Gink fetches live information or
+  searches the web, so details can never reach a search first
+- For developers: GET /v1/workspace and GET /v1/workspace/safety (admins), client.workspace / gink.workspace in the
+  SDKs, gink workspace [safety] in the CLI; answers say what was removed (X-Gink-Patient-Details-Removed).
+  SDKs 0.3.11
+
+## 0.1.152 (November 2026)
+
+- Every photo, everywhere, gets the same care: the Live camera, attached pictures, and photos sent through the API.
+  Gink works out what the picture needs (reads text, finds what's wrong and how to fix it, solves sums), and for a
+  body, a wound, a medicine, a scan or a medical record it describes in general terms only, never diagnoses or gives
+  doses, points to a qualified health professional, and says to get emergency help first when it could be urgent.
+  It doesn't try to identify people from their faces. These rules are applied by Gink's server, so every app,
+  the web app and the API get them
+- Your chat shows only your question: the Live camera no longer puts a long instruction in your messages
+- Healthcare workspaces: Gink never reads out or repeats anything in a photo that could identify a patient (names,
+  wristbands, record numbers, charts, screens), and the Live camera shows a patient-privacy reminder
+- Live is properly hands-free: the microphone keeps listening through pauses (about a minute of quiet, then it
+  waits for a tap), and Live switches the camera and microphone off when you leave the window
+- Agents fix their own work: when an agent (API, console or a scheduled task) changes files, it checks the whole
+  workspace before finishing -- missing linked files, JSON or Python that doesn't parse -- and fixes what it finds,
+  changing its approach if the same problem comes back. Each fix shows as a "check" step
+- For developers: see() in both SDKs and `gink see PHOTO "question"` in the CLI -- an answer about a photo, like the
+  Live camera (Gink Pro). SDKs 0.3.10
+
+## 0.1.151 (November 2026)
+
+- Everything new works by itself -- no extra buttons:
+  - Camera opens straight into Live. There are no modes to pick: point at anything and ask, or just press Ask
+    and Gink works out what the picture needs (reads text, finds what's wrong and how to fix it, solves
+    homework, explains what's inside things). The microphone listens by itself while Live is open, so you
+    can ask hands-free, again and again
+  - Gink remembers lasting things you mention (where you live, your job) by itself and tells you, with Undo.
+    It never remembers anything about health -- yours or anyone's -- never in temporary chats, and never in a
+    workspace in healthcare mode. Switch it off in Settings > Memory
+  - X-ray, Exploded view and Cutaway pictures are chosen from your words ("an x-ray of my camera") instead of
+    cards in Media Studio
+  - Gink Genie checks the whole project by itself: when you open it, and after every request, when it fixes
+    every missing file and file that doesn't parse anywhere in the project before answering (up to 6 tries)
+- Made for real work, hospitals included: the camera answers about bodies, wounds, medicines, scans and
+  medical records in general terms only, never diagnoses or gives doses, points to a qualified professional,
+  and says to get help now when something could be urgent. Live reminds you not to film people without their
+  permission, or patient records. Gink never draws a person's body as an "x-ray", and any scan-like picture
+  is marked as an illustration
+- Developers: GET /v1/images/ideas lists the automatic looks under "looks"; SDKs 0.3.9
+
+## 0.1.150 (November 2026)
+
+- Live camera: Camera > Live keeps the camera on, full screen. Point it at something and ask -- typed or
+  spoken -- then point it somewhere else and ask again. Each question goes with what the camera sees at that
+  moment, in the mode you choose (Ask, Read, X-ray, Fix, Solve); the answer shows over the picture and in
+  your chat. Nothing is sent until you ask, and the camera switches off when you close Live
+- X-ray looks in Media Studio: X-ray, Exploded view and Cutaway draw what's inside things -- from words or
+  from your own photo. They are illustrations from what's generally known, not real scans. Also in the API
+  (idea "xray", "exploded", "cutaway"), both SDKs and the CLI (gink --image "my bike" --idea xray)
+- Gink Genie: Check & fix the whole project. Genie reads every file for links to files that don't exist and
+  JSON or Python that doesn't parse, fixes them all, and checks again until it's clean. For developers:
+  GET /v1/environments/{id}/check, env.check() in both SDKs, and gink env check ID --fix
+- "Remember this?": when you mention something lasting -- where you live, your job, a family member's name --
+  Gink offers to remember it under its answer. Nothing is saved unless you choose Remember; never in
+  temporary chats; switch the offers off in Settings > Memory. The web app does it too
+- Memory for developers: GET/POST /v1/memories, DELETE /v1/memories/{id}, POST /v1/memories/suggest --
+  the same memories as your apps; client.memories / gink.memories in the SDKs; gink remember, gink memories
+  and gink forget in the CLI. SDKs 0.3.8
+
+## 0.1.149 (November 2026)
+
+- Camera: the + menu has Camera, with five ways to use the photo -- Ask about it, Read the text (and
+  translate it), X-ray (what's inside something and how it works, from what Gink knows), Fix it and Solve
+  it. In the apps it uses your device's camera; in the web app, your browser's
+- "Hey Gink" on computers, rebuilt from measurements: it now wakes on "Jink" as well as "Gink", wakes on
+  the name alone when you say it and pause, and wakes by mistake far less often on ordinary talk. If your
+  microphone is blocked or silent, the Hey Gink chip now says so instead of waiting forever
+- Gink Genie's auto-fix goes further: it also catches JSON and Python files that don't parse, gets more
+  tries, changes its approach when the same error comes back, and has a new Deep level (up to 8 fixes)
+- Smarter memory: tell Gink a new phone number, address or city and it updates what it knew instead of
+  keeping both
+
 ## 0.1.148 (November 2026)
 
 - Notifications, Apple style: frosted cards that slide in at the top, stack and leave by themselves --

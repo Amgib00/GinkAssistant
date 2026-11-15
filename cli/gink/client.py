@@ -1,4 +1,4 @@
-"""Gink Developer API client: managed agents (interactions), environments, chat, images."""
+"""Gink Developer API client: managed agents (interactions), environments, chat, photos (see), images."""
 import json
 import os
 import time
@@ -28,6 +28,39 @@ def place_headers() -> dict:
     if loc and "_" in loc:
         h["X-Gink-Locale"] = loc[:20]
     return h
+
+
+def image_data_url(photo) -> str:
+    """bytes, a file path or a data URL -> a data URL Gink can look at (JPEG, PNG, WebP or GIF)."""
+    import base64
+    if isinstance(photo, str) and photo.startswith("data:image/"):
+        return photo
+    raw = bytes(photo) if isinstance(photo, (bytes, bytearray)) else open(photo, "rb").read()
+    mime = ("image/jpeg" if raw[:3] == b"\xff\xd8\xff" else "image/png" if raw[:8] == b"\x89PNG\r\n\x1a\n"
+            else "image/webp" if raw[:4] == b"RIFF" and raw[8:12] == b"WEBP" else "image/gif" if raw[:4] == b"GIF8" else "")
+    if not mime:
+        raise GinkAPIError("That isn't a JPEG, PNG, WebP or GIF photo.", 400, "invalid_image")
+    return f"data:{mime};base64," + base64.b64encode(raw).decode("ascii")
+
+
+def sources(text: str, base_url: str = DEFAULT_BASE) -> list:
+    """The sources listed under a web answer's "Sources" (gink-search), official ones first:
+    [{"title", "url", "host", "official", "icon"}] -- icon is the site's real logo, served by Gink (<server>/icon/<host>)."""
+    import re
+    from urllib.parse import urlparse
+    root = (base_url or DEFAULT_BASE).rstrip("/")
+    root = root[:-3] if root.endswith("/v1") else root
+    part = (text or "").split("**Sources**", 1)
+    out = []
+    for line in (part[1] if len(part) == 2 else "").splitlines():
+        m = re.match(r"\s*[-*]\s*\[([^\]]*)\]\((https?://[^)\s]+)\)(.*)$", line)
+        if not m:
+            continue
+        host = (urlparse(m.group(2)).hostname or "").lower()
+        host = host[4:] if host.startswith("www.") else host
+        out.append({"title": m.group(1).strip() or host, "url": m.group(2), "host": host,
+                    "official": bool(re.search(r"\u00b7\s*official\s*$", m.group(3))), "icon": f"{root}/icon/{host}" if host else ""})
+    return sorted(out, key=lambda s: 0 if s["official"] else 1)
 
 
 class GinkAPIError(Exception):
@@ -76,6 +109,8 @@ class Client:
         self.interactions = _Interactions(self)
         self.environments = _Environments(self)
         self.schedules = _Schedules(self)
+        self.memories = _Memories(self)
+        self.workspace = _Workspace(self)
         self.webhooks = _Webhooks(self)
 
     # ---- plumbing
@@ -97,17 +132,42 @@ class Client:
         return r
 
     # ---- chat (OpenAI-compatible) and images
-    def chat(self, message, model: str = "", system: str = "", **extra) -> str:
-        """One answer. `message` is text or a full messages list. Live info (date, weather, rates...) is added by Gink."""
+    def _chat_data(self, message, model: str = "", system: str = "", **extra) -> dict:
         messages = message if isinstance(message, list) else (
             ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": str(message)}])
         body = dict({"messages": messages}, **({"model": model} if model else {}), **extra)
-        data = self.request("POST", "/chat/completions", json=body).json()
+        return self.request("POST", "/chat/completions", json=body).json()
+
+    def chat(self, message, model: str = "", system: str = "", **extra) -> str:
+        """One answer. `message` is text or a full messages list. Live info (date, weather, rates...) is added by Gink."""
+        data = self._chat_data(message, model=model, system=system, **extra)
         return ((data.get("choices") or [{}])[0].get("message") or {}).get("content") or ""
 
-    def search(self, question: str) -> str:
-        """An answer from the web, with its sources listed."""
-        return self.chat(question, model="gink-search")
+    def search(self, question: str, with_sources: bool = False):
+        """An answer from the web, with its sources listed (official ones first). with_sources=True:
+        {"answer": text, "sources": [{"title", "url", "host", "official", "icon"}]} -- icon: the site's real logo."""
+        data = self._chat_data(question, model="gink-search")
+        text = ((data.get("choices") or [{}])[0].get("message") or {}).get("content") or ""
+        if not with_sources:
+            return text
+        found = sources(text, self.base_url)
+        hosts = {s["url"]: s for s in found}
+        for s in data.get("sources") or []:                       # the server's own list, when it sent one
+            if isinstance(s, dict) and s.get("url") in hosts:
+                hosts[s["url"]].update(official=bool(s.get("official")), icon=s.get("icon") or hosts[s["url"]]["icon"])
+        return {"answer": text, "sources": sorted(found, key=lambda s: 0 if s["official"] else 1)}
+
+    def sources(self, text: str) -> list:
+        """The sources under an answer's "Sources", each with its site's real logo (see gink.sources)."""
+        return sources(text, self.base_url)
+
+    def see(self, photo, question: str = "", model: str = "", **extra) -> str:
+        """An answer about a photo -- like the Live camera: Gink works out what it needs (reads text, finds what's
+        wrong, solves sums...) and is careful with anything about health. photo: bytes, a file path or a data URL
+        (JPEG, PNG, WebP or GIF). Looking at photos is part of Gink Pro."""
+        content = [{"type": "text", "text": (question or "").strip() or "What's this?"},
+                   {"type": "image_url", "image_url": {"url": image_data_url(photo)}}]
+        return self.chat([{"role": "user", "content": content}], model=model, **extra)
 
     def image(self, prompt: str = "", idea: str = "", subject: str = "", style: str = "", aspect_ratio: str = "",
               photo=None) -> bytes:
@@ -215,6 +275,11 @@ class Environment(_Obj):
     def download(self, path: str) -> bytes:
         return self._c.request("GET", f"/environments/{self['id']}/files/{path}").content
 
+    def check(self) -> _Obj:
+        """The whole environment checked (nothing runs): .ok, .problems, .missing, .broken, .fix_request --
+        give fix_request to client.interactions.create(input=..., environment=env.id) to fix them all."""
+        return _Obj(self._c.request("GET", f"/environments/{self['id']}/check").json())
+
     def refresh(self) -> "Environment":
         self.update(self._c.request("GET", f"/environments/{self['id']}").json())
         return self
@@ -302,3 +367,41 @@ def verify_webhook(body: bytes, signature: str, secret: str, tolerance: int = 30
     if not hmac.compare_digest(expected, parts.get("v1", "")):
         raise GinkAPIError("The webhook's signature doesn't match.", 400, "bad_signature")
     return json.loads(raw)
+
+
+class _Memories:
+    """What Gink remembers about you -- the same memories as your apps and the web app.
+    client.memories.add("I live in Nairobi") -- a single fact said again (a new city, a new number) replaces the old one."""
+
+    def __init__(self, client: Client):
+        self.c = client
+
+    def list(self) -> list:
+        return [_Obj(m) for m in self.c.request("GET", "/memories").json().get("data", [])]
+
+    def add(self, text: str) -> _Obj:
+        return _Obj(self.c.request("POST", "/memories", json={"text": text}).json())
+
+    def forget(self, memory_id: str) -> None:
+        self.c.request("DELETE", f"/memories/{memory_id}")
+
+    def suggest(self, text: str):
+        """A lasting fact in `text` worth offering to remember ("I live in Nairobi"), or None. Saves nothing."""
+        return self.c.request("POST", "/memories/suggest", json={"text": text}).json().get("fact")
+
+
+class _Workspace:
+    """Your workspace (a hospital, school or business). Admins of one in healthcare mode also get its safety report:
+    counts only -- patient details removed or stopped, photos checked -- never words."""
+
+    def __init__(self, client: Client):
+        self.c = client
+
+    def get(self) -> _Obj:
+        """{"workspace": {"id", "name", "healthcare", "patient_details": "remove" | "stop"} or None, "role", "status"}"""
+        return _Obj(self.c.request("GET", "/workspace").json())
+
+    def safety(self, days: int = 30) -> _Obj:
+        """{"totals": {"patient_details_removed", "patient_details_stopped", "photo_checked"}, "by_day", "by_person",
+        "by_feature"} for the last `days` days (admins only)."""
+        return _Obj(self.c.request("GET", "/workspace/safety", params={"days": int(days)}).json())

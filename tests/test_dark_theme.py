@@ -18,7 +18,8 @@ def test_dark_colours_cover_the_html_element():
     h = _page()
     assert "html.theme-dark, body.theme-dark {" in h                  # <html> paints below short chats
     assert "document.documentElement.classList.toggle('theme-dark'" in h
-    i = h.index("  html, body {"); assert "min-height: 100%" in h[i:h.index("}", i)]
+    i = h.index("  html, body {"); block = h[i:h.index("}", i)]
+    assert "height: 100%" in block and "overflow: hidden" in block       # fills the window; only the chat scrolls (0.1.155)
 
 
 def test_switches_stay_blue_when_on_in_dark_mode():

@@ -17,6 +17,7 @@ from toga.style.pack import COLUMN
 
 from ..services.actions import TaskAgent, TaskStore
 from .theme import css_vars
+from . import compat
 from .workspace_page import PAGE
 
 ICON = {"task": "\u2705", "reminder": "\U0001F514", "alarm": "\u23F0", "timer": "\u23F2", "event": "\U0001F4C5"}
@@ -46,7 +47,7 @@ class TasksScreen:
         self.status = ""
         self._busy = False
         self.web = toga.WebView(style=Pack(flex=1))
-        self.web.set_content("https://gink.local/workspace", PAGE.replace("__THEME__", css_vars()))
+        self.web.set_content("https://gink.local/workspace", compat.inject(PAGE.replace("__THEME__", css_vars())))
         self.view = toga.Box(children=[self.web], style=Pack(direction=COLUMN, flex=1))
         self.token = object()
         app._workspace_token = self.token

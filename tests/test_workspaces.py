@@ -54,7 +54,9 @@ def test_create_invite_accept_and_what_admins_see(srv):
     assert c.post("/org/invite", headers=other, json={"email": "awa@hopital.sn"}).status_code == 409   # one workspace
 
 
-def test_patient_data_is_refused_in_healthcare_mode(srv):
+def test_patient_data_is_stopped_when_the_admins_choose_stop(srv):
+    """Healthcare mode removes a patient's details automatically by default (tests/test_patient_details_safety.py);
+    admins can choose to stop such messages instead -- the behaviour before 0.1.153."""
     b, c, account = srv
     for text in ("Summarise the notes for patient Mamadou Diallo, bed 4", "MRN: 2026-114578 needs a discharge letter",
                  "DOB 12/03/1961, admitted yesterday with chest pain", "patiente Aïssatou Ndiaye au 77 123 45 67",
@@ -64,6 +66,8 @@ def test_patient_data_is_refused_in_healthcare_mode(srv):
                  "Explain sepsis warning signs for a staff training session", "Draft a letter to patients about parking"):
         assert not b._looks_like_patient_data(text), text
     admin, nurse = setup(b, c, account)
+    assert c.put("/org/settings", headers=admin, json={"patient_details": "stop"}).json()["org"]["patient_details"] == "stop"
+    assert c.put("/org/settings", headers=admin, json={"patient_details": "maybe"}).status_code == 422
     r = c.post("/ai/openai/v1/chat/completions", headers=nurse,
                json={"messages": [{"role": "user", "content": "Summarise the notes for patient Mamadou Diallo"}]})
     assert r.status_code == 422 and r.json()["error"]["code"] == "patient_data"
@@ -115,6 +119,7 @@ def test_settings_pieces():
 def test_genie_follows_the_workspace_too(srv):
     b, c, account = srv
     admin, nurse = setup(b, c, account)
+    c.put("/org/settings", headers=admin, json={"patient_details": "stop"})
     r = c.post("/genie/projects", headers=nurse, json={"prompt": "Build a page listing patient Mamadou Diallo's results"})
     assert r.status_code == 422 and "healthcare mode" in r.json()["detail"]
     assert c.get("/genie/projects", headers=nurse).json()["projects"] == []        # nothing half-made
@@ -137,4 +142,5 @@ def test_admins_download_usage_without_chats(srv):
 
 def test_sidebar_waits_before_sliding_open():
     page = open(os.path.join(os.path.dirname(__file__), "..", "src", "ginkassistant", "ui", "web_chat_view.py"), encoding="utf-8").read()
-    assert "var PEEK_DELAY = 300;" in page and "setTimeout(function () { if (!hoverBlocked) document.body.classList.add('peek'); }, PEEK_DELAY)" in page
+    assert "var PEEK_DELAY = 300;" in page and \
+        "setTimeout(function () { if (!hoverBlocked) { document.body.classList.add('peek'); syncToggle(); } }, PEEK_DELAY)" in page

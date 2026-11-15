@@ -6,10 +6,15 @@ with the same Gink account. Everything Genie does happens through the server, so
 - The page is told it runs in the app (user agent "GinkGenieApp"), so it opens Preview and GitHub in
   the same window; with Toga 0.5+ those links are caught here and opened in the real browser instead.
 - If the server is asleep (Render's free plan) or unreachable, a friendly page with Retry.
+- Lock (Genie's Settings > Lock): the page asks gink-genie://unlock (or lock-on / lock-off) and the app answers with the
+  DEVICE's own check -- Touch ID, Face ID, Windows Hello, the phone's unlock (biometric.py, a copy of Gink's). Gink
+  never sees a face or a fingerprint. It also locks again after time away from the window.
 Server: GINK_SERVER_URL, else <app data>/server.txt (one line), else the public Gink server.
 """
 import asyncio
+import json
 import os
+import time
 import urllib.request
 import webbrowser
 
@@ -82,7 +87,15 @@ class GinkGenie(toga.App):
             self.main_window.toolbar.add(*[c for c in self.commands if getattr(c, "group", None) == group])
         except Exception:
             pass
+        from . import android_chrome               # Android: the keyboard makes room (the bar stays: it has Home, Back...)
+        android_chrome.setup(self, hide_title_bar=False)
         self.main_window.content = self.web
+        self.away, self.quiet_until = None, 0.0
+        try:                                       # Lock: away from the window, then back
+            self.main_window.on_lose_focus = self.went_away
+            self.main_window.on_gain_focus = self.came_back
+        except Exception:
+            pass
         self.main_window.show()
         asyncio.ensure_future(self.connect())
 
@@ -118,6 +131,10 @@ class GinkGenie(toga.App):
         if url.startswith("gink-genie://retry"):
             asyncio.ensure_future(self.connect())
             return False
+        for what in ("unlock", "lock-on", "lock-off"):         # the lock asks the device (web_app/lock.js)
+            if url.startswith("gink-genie://" + what):
+                asyncio.ensure_future(self.device_check(what))
+                return False
         if leaves_the_app(url, self.server):
             webbrowser.open(url)
             return False
@@ -125,6 +142,33 @@ class GinkGenie(toga.App):
 
     def loaded(self, widget, **kwargs):
         pass
+
+    async def device_check(self, what: str):
+        """Touch ID / Face ID / Windows Hello / the phone's unlock: yes or no, back to the page."""
+        from . import biometric
+        reason = {"unlock": "Unlock Gink Genie", "lock-on": "Turn on Lock", "lock-off": "Turn off Lock"}[what]
+        ok, message = await biometric.authenticate(reason, self)
+        self.quiet_until = time.time() + 3                 # the system sheet took the focus
+        if what == "unlock":
+            js = "GinkLock.unlocked()" if ok else f"GinkLock.failed({json.dumps(message or 'Not unlocked.')})"
+        else:
+            js = f"GinkLock.toggled({'true' if ok else 'false'}, {json.dumps(message or '')})"
+        try:
+            self.web.evaluate_javascript("window.GinkLock && " + js)
+        except Exception:
+            pass
+
+    def went_away(self, *args, **kwargs):
+        if time.time() >= self.quiet_until and self.away is None:
+            self.away = time.time()
+
+    def came_back(self, *args, **kwargs):
+        away, self.away = self.away, None
+        if away is not None and not self.showing_status:
+            try:                                       # the page knows the setting and how long is too long
+                self.web.evaluate_javascript(f"window.GinkLock && GinkLock.checkAway({int((time.time() - away) * 1000)})")
+            except Exception:
+                pass
 
     def go_home(self):
         if self.showing_status:

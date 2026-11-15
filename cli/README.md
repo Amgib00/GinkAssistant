@@ -2,12 +2,13 @@
 
 ```bash
 pip install gink-ai
-gink login                                   # opens your browser to approve (or: gink login --key)
+gink login                                   # opens your browser to approve -- a passkey works (or: gink login --key)
 gink "What's the weather where I am?"
 gink                                         # chat: /new, /model NAME, /models, /search on|off, /exit
 cat notes.txt | gink "summarise this"
 gink -s "latest news in my country"             # search the web (with sources)
 gink --image "a baobab at sunset" -o tree.png
+gink see label.jpg "what does this say?"     # about a photo (Gink Pro)
 gink models
 ```
 
@@ -20,7 +21,33 @@ Your key can also come from `GINK_API_KEY`; another server from `GINK_BASE_URL`
 gink --image "a lighthouse at dawn" --style watercolor --aspect 16:9
 gink ideas                                            # ready-made looks
 gink --image "my dog" --idea statue --photo dog.jpg   # start from your own photo
+gink --image "an x-ray of my camera"                  # X-ray, exploded view, cutaway: picked from your words
 ```
+
+## Photos
+
+```bash
+gink see broken-tap.jpg                    # Gink works out what it needs: reads text, finds what's wrong, solves sums
+gink see menu.jpg "translate this"
+```
+
+Like the Live camera in the apps: careful with anything about health (general terms only, never a diagnosis or a
+dose, and "get help now" when it could be urgent). In a workspace in healthcare mode, nothing that identifies a
+patient is read out.
+
+## Workspaces
+
+```bash
+gink workspace                  # your workspace (a hospital, school or business) and your role
+gink workspace safety --days 30 # admins, healthcare mode: patient details removed or stopped, photos checked
+```
+
+The safety report is counts only, never what anyone wrote. In Python: `client.workspace.safety(days=30)`.
+
+## Agents fix their work
+
+When an agent changes files, Gink checks the whole environment before it finishes (links to files that don't
+exist, JSON or Python that doesn't parse) and fixes what it finds. `gink env check ID` checks one yourself.
 
 ## Scheduled agents
 
@@ -47,7 +74,11 @@ for event in client.interactions.create(input="Update report.md with this year's
     print(event.type, event.data)                    # live: step, status, done
 
 print(client.chat("What's the weather where I am right now?"))    # live information included
+found = client.search("When is the next election in my country?", with_sources=True)
+for s in found["sources"]:                                           # official sources first, each with its real logo
+    print("official" if s["official"] else "        ", s["title"], s["url"], s["icon"])
 png = client.image("my dog", idea="figurine", photo="dog.jpg")         # Media Studio's looks
+print(client.see("receipt.jpg", "add these up"))                       # about a photo (Gink Pro)
 env = client.environments.get(it.environment)
 print(env.download("report.md").decode())
 ```

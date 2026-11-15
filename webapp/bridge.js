@@ -6,14 +6,20 @@
 (function () {
   "use strict";
   var LS = window.localStorage;
+  window.GINK_ICONS = "";              // the sources' real logos: this server's /icon/{host} (same site)
   function load(k, d) { try { var v = JSON.parse(LS.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
   function save(k, v) { try { LS.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function tokenName(t) {             // the account's name rides in the sign-in token (for "Hi Ibrahim")
+    try { var p = String(t || "").split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+          return String(JSON.parse(decodeURIComponent(escape(atob(p + "===".slice((p.length + 3) % 4))))).name || ""); } catch (e) { return ""; }
+  }
 
   var W = {
     // "Remember me" off keeps the sign-in in sessionStorage (until the browser closes): read both
     token: LS.getItem("gink_token") || sessionStorage.getItem("gink_token") || "",
     email: LS.getItem("gink_email") || sessionStorage.getItem("gink_email") || "",
-    name: LS.getItem("gink_name") || sessionStorage.getItem("gink_name") || "",
+    name: LS.getItem("gink_name") || sessionStorage.getItem("gink_name") ||
+          tokenName(LS.getItem("gink_token") || sessionStorage.getItem("gink_token")),
     model: LS.getItem("gink_model") || "", models: [],
     sessions: load("gink_sessions", {}), dirty: load("gink_dirty", {}), since: parseFloat(LS.getItem("gink_since") || "0"),
     prefs: Object.assign({ theme: "system", chat_font: "sans", motion: "system", read_aloud: false, voice: "Female (Jenny)", reply_language: "auto",
@@ -261,7 +267,8 @@
     var list = Object.keys(W.sessions).map(function (k) { return W.sessions[k]; })
       .filter(function (s) { return !s.deleted && !s.archived && !s.temporary && (s.messages || []).length; })
       .sort(function (a, b) { return (b.pinned - a.pinned) || (b.updated - a.updated); })
-      .map(function (s) { return { id: s.id, title: titleOf(s), current: s.id === W.current, pinned: !!s.pinned }; });
+      .map(function (s) { return { id: s.id, title: titleOf(s), current: s.id === W.current, pinned: !!s.pinned,
+                                   when: Math.round((s.updated || 0) * 1000) }; });      // grouped by day in the sidebar
     setSessions(list);
   }
   setTimeout(function () { setPrompts(myPrompts()); syncPrompts(); }, 0);   // the "/" menu knows your prompts
@@ -273,7 +280,7 @@
                    "what would you like to explore?", "ready when you are."];
     var ending = endings[Math.floor(Math.random() * endings.length)];
     if (/\d{3,}/.test(first) || first === (W.email || "").split("@")[0]) first = "";    // never a name made from the email
-    showWelcome(first ? "Hi " + first + ", " + ending : "Hi, " + ending, "");
+    showWelcome(first ? "Hi " + first : "Hi there", ending.charAt(0).toUpperCase() + ending.slice(1));   // like the designs
     setComposerText(load("gink_draft_new", "") || "");
     refreshSidebar();
   }
@@ -299,7 +306,7 @@
         .then(function (j) {
           if (W.current !== opened || !j || !Array.isArray(j.html)) return;      // another chat is open now
           answers.forEach(function (a, i) { if (typeof j.html[i] === "string") finalizeMessage(a[0], j.html[i]); });
-          window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });   // formatted answers can be taller
+          if (window.ginkScrollEnd) ginkScrollEnd(true);   // formatted answers can be taller
         }).catch(function () { /* the plain text stays: still readable */ });
     }
     setComposerText((load("gink_drafts", {}))[id] || "");
@@ -406,6 +413,12 @@
     if (W.prefs.use_memory !== false && window.showRecalled) showRecalled(recallMemories(text));   // "Recalled memory"
     s.messages.push({ role: "user", content: historyText(text, atts), ts: stamp() }); touch(s.id); refreshSidebar();
     var content = buildContent(text, atts);
+    var photos = atts.filter(function (a) { return a.kind === "image" && a.data_url && !/^live-/.test(a.name || ""); })
+                     .map(function (a) { return a.data_url; });                 // never Live frames
+    if (photos.length && !s.temporary && !W.care) {
+      if (W.prefs.people_on && typeof peopleAuto === "function") photos.forEach(function (d) { peopleAuto(d, "chat"); });
+      else if (typeof peoplePending === "function") peoplePending(photos);    // off: Gink offers once; a yes groups these too
+    }
     W.atts = []; showAtts();
     var drafts = load("gink_drafts", {}); delete drafts[s.id]; save("gink_drafts", drafts);
     var aid = "a" + uid().slice(0, 12);
@@ -420,6 +433,19 @@
     return job.then(function (reply) {
       if (reply) { s.messages.push({ role: "assistant", content: reply, ts: stamp() }); touch(s.id); }
       W.busy = null; setComposerBusy(false); refreshSidebar(); sync();
+      // A lasting fact they mentioned is remembered BY ITSELF (the server uses the apps' rules: never health, never in
+      // a healthcare workspace), with Undo in the notification. Never in a temporary chat, never when memory is off.
+      if (reply && text && !atts.length && !s.temporary && W.prefs.use_memory !== false && W.prefs.memory_suggest !== false &&
+          text.length <= 400) {
+        api("/memory/auto", { text: text }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+          var m = j && j.saved; if (!m) return;
+          var all = W.memories || {};
+          Object.keys(all).forEach(function (id) { if (m.replaced && all[id].text === m.replaced) delete all[id]; });
+          all[m.id] = { text: m.text, created: Date.now() / 1000 }; W.memories = all; save("gink_memories", all);
+          if (typeof ginkNotify === "function") ginkNotify({ id: "mem-auto", title: m.replaced ? "Updated" : "Remembered", body: m.text,
+            icon: "\uD83E\uDDE0", timeout: 6000, actions: [{ label: "Undo", emit: "memory_undo", value: { id: m.id, replaced: m.replaced || "" } }] });
+        }).catch(function () {});
+      }
       return reply;
     });
   }
@@ -586,8 +612,8 @@
   // ---- "Hey Gink" in the browser: the browser's speech recognition listens while this tab is visible
   // (Chrome sends what it hears to Google, Safari to Apple: Settings says so). On "Hey Gink", voice mode opens.
   var WK = { rec: null, status: "", blocked: false };
-  var WAKE_RE = /\b(hey|hi|ok|okay)[ ,]+(gink|ginks|king|jink|jinx|ginkgo|ging)\b/i;
-  var WAKE_SHORT_RE = /^\s*(gink|ginks|jink|jinx|ginkgo)\b/i;          // just "Gink" (Settings > Voice)
+  var WAKE_RE = /\b(hey|hi|ok|okay)[ ,]+(gink|ginks|king|kink|jink|jinks|jinx|jing|ginkgo|ging)\b/i;
+  var WAKE_SHORT_RE = /^\s*(gink|ginks|jink|jinks|jinx|ginkgo)\b/i;          // just "Gink" (Settings > Voice)
   function wakeHeard(t) { return WAKE_RE.test(t) || (W.prefs.wake_short !== false && WAKE_SHORT_RE.test(t)); }
   function wakeStatus(text) { if (WK.status !== text) { WK.status = text; pushSettings(); } }
   function wakeWanted() { return !!(W.prefs.wake_enabled && Rec && W.token && !V.on && !WK.blocked && !W.voiceOff && document.visibilityState === "visible"); }
@@ -758,6 +784,7 @@
   function pushSettings(lists, extra) {
     setSettingsState({ values: Object.assign({}, W.prefs, { model: W.model }),
                        info: Object.assign({ name: W.name, email: W.email, version: "web", plan: W.plan || "free", voices: [], models: W.models, web: true,
+                                             care: !!W.care,
                                              wake_supported: !!(window.SpeechRecognition || window.webkitSpeechRecognition), wake_web: true,
                                              wake_status: (typeof WK !== "undefined" && WK && WK.status) || "Off" }, extra || {}),
                        lists: Object.assign({ prompts: myPrompts() }, lists || {}) });
@@ -841,10 +868,20 @@
         if (done) settingsToast(done); loadSchedules(); }); })
       .catch(function (err) { settingsToast(err.message); });
   }
+  // A workspace in healthcare mode: the Live camera shows the patient-privacy reminder (the server's rules apply anyway)
+  function careFrom(j) {
+    var on = !!(j && j.org && j.org.healthcare && j.status === "active");
+    W.care = on;
+    if (typeof setCareMode === "function") setCareMode(on);
+    if (typeof peopleSetOn === "function") peopleSetOn(!!W.prefs.people_on && !on);   // never in a healthcare workspace
+  }
+  function checkCare() {
+    api("/org").then(function (r) { return r.ok ? r.json() : null; }).then(careFrom).catch(function () {});
+  }
   // Settings > Workspace (server: /org)
   function loadOrg() {
     api("/org").then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-      .then(function (j) { pushSettings({}, { org: j }); })
+      .then(function (j) { careFrom(j); pushSettings({}, { org: j }); })
       .catch(function () { pushSettings({}, { org_error: "Workspaces aren\u2019t available right now." }); });
   }
   function orgCall(method, path, body, done) {
@@ -916,7 +953,7 @@
   function applyAppearance() { setAppearance(W.prefs.theme, W.prefs.chat_font, W.prefs.motion); }
   // ---- settings on every device (the same list as the apps' prefs.SYNCED; a test keeps them equal)
   var SYNCED_PREFS = ["theme", "chat_font", "motion", "style_base", "style_warmth", "style_enthusiasm", "style_emoji", "style_headers",
-    "reply_language", "voice_speed", "read_aloud", "speech_lang", "web_search", "use_memory", "video_suggestions",
+    "reply_language", "voice_speed", "read_aloud", "speech_lang", "web_search", "use_memory", "memory_suggest", "video_suggestions",
     "notify_reminders", "agent_confirm", "send_key", "briefing_enabled", "briefing_time", "briefing_city",
     "briefing_speak", "wake_followup", "voice", "model", "genie_mode", "instructions", "effort"];
   var PREFSYNC = { pending: {}, timer: null, seen: parseFloat(LS.getItem("gink_prefs_seen") || "0") };
@@ -1009,6 +1046,16 @@
     model: function (v, fromSync) { W.model = String(v || ""); LS.setItem("gink_model", W.model); setModels(W.models, W.model);
                                     if (!fromSync && W.model) queuePrefs("model", W.model); },
     feedback: function (v) { if (v && typeof v === "object") api("/feedback", Object.assign({}, v, { model: W.model })).catch(function () {}); },
+    memory_undo: function (v) {                      // "Remembered" -> Undo
+      if (!v) return;
+      var job = v.replaced ? api("/memory/remember", { text: v.replaced }) : api("/memory/forget", { id: v.id });
+      job.then(function (r) { return r.json(); }).then(function (j) {
+        var all = W.memories || {}; delete all[v.id];
+        if (v.replaced && j && j.id) all[j.id] = { text: j.text, created: Date.now() / 1000 };
+        W.memories = all; save("gink_memories", all);
+        if (typeof ginkNotify === "function") ginkNotify({ id: "mem-auto", title: "Undone", body: "Gink won\u2019t remember that.", icon: "\u21A9\uFE0F", timeout: 2500 });
+      }).catch(function () {});
+    },
     policy_seen: function (d) { try { LS.setItem("gink_policy_seen", String(d || "").slice(0, 20)); } catch (e) {} },
     open_url: function (u) {
       u = String(u || "");
@@ -1025,7 +1072,14 @@
     menu: function (what) { HANDLERS.open(what); },
     setting: function (v) {
       if (!v || !v.key) return;
+      if (v.key === "app_lock") {                     // Lock Gink: a passkey proves it works (and that it's you) first
+        return passkeyCheck().then(function () {
+          W.prefs.app_lock = !!v.value; save("gink_prefs", W.prefs); lockMark();
+          settingsToast(v.value ? "Gink now locks in this browser. Unlock with your passkey." : "Lock Gink is off in this browser.");
+        }, function (e) { settingsToast(e.message || "Not changed.", "err"); }).then(function () { pushSettings(); });
+      }
       W.prefs[v.key] = v.value; save("gink_prefs", W.prefs);
+      if (v.key === "people_on" && typeof peopleSetOn === "function") peopleSetOn(!!v.value && !W.care);
       if (PROFILE_KEYS.indexOf(v.key) >= 0) profileEdit(v.key, v.value);      // follows you to the apps too
       if (SYNCED_PREFS.indexOf(v.key) >= 0) queuePrefs(v.key, v.value);         // follows you to every device
       if (/^(theme|chat_font|motion)$/.test(v.key)) applyAppearance();
@@ -1038,6 +1092,10 @@
       if (name === "refresh") return (v.value === "account" ? loadDevices() : v.value === "connected" ? loadConnected()
                                       : v.value === "privacy" ? loadLockdown() : v.value === "family" ? loadFamily()
                                       : v.value === "workspace" ? loadOrg() : v.value === "schedules" ? loadSchedules() : pushSettings());
+      if (name === "people_delete") {                   // People: everything kept in this browser
+        if (typeof peopleDeleteAll === "function") peopleDeleteAll();
+        return settingsToast("People data deleted from this browser.");
+      }
       if (name === "export_server") {                  // everything on the server, as a ZIP
         settingsToast("Preparing your data\u2026");
         return fetch("/account/export.zip", { headers: placeHeaders({ Authorization: "Bearer " + W.token }) }).then(function (r) {
@@ -1072,6 +1130,16 @@
             var a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "gink-workspace-usage.csv";
             document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
             settingsToast("Usage saved as a file.");
+          });
+        }).catch(function (err) { settingsToast(err.message); });
+      }
+      if (name === "org_safety") {                       // counts only (never words): healthcare mode's safety report
+        return fetch("/org/safety.csv?days=30", { headers: { Authorization: "Bearer " + W.token } }).then(function (r) {
+          if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.detail || "Couldn\u2019t get the safety report."); });
+          return r.blob().then(function (b) {
+            var a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "gink-workspace-safety.csv";
+            document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+            settingsToast("Safety report saved as a file.");
           });
         }).catch(function (err) { settingsToast(err.message); });
       }
@@ -1154,6 +1222,7 @@
           settingsToast(name === "lockdown_on" ? "Lockdown mode is on." : "Lockdown mode is off."); loadLockdown(); });
       }
       if (name === "upgrade") { window.open(PRICING, "_blank", "noopener"); return; }
+      if (name === "people_open") { if (window.closeSettings) closeSettings(); if (window.openPeople) openPeople(); return; }
       if (name === "save_instructions") {
         W.prefs.instructions = String(v.value || "").slice(0, 2000); save("gink_prefs", W.prefs);
         queuePrefs("instructions", W.prefs.instructions); pushSettings();
@@ -1212,6 +1281,58 @@
         return api("/account/sessions/sign-out-others", {}).then(function () { settingsToast("All your other devices are signed out."); loadDevices(); });
       }
       settingsToast(DESKTOP_ONLY);
+    },
+    // + menu > Camera (the page has written the mode's request into the box). Phones: the system camera, through a
+    // file input with `capture`. Computers: a small window with the live picture and a Take photo button.
+    camera: function () {
+      function attach(dataUrl) { HANDLERS.attach_data({ name: "photo-" + new Date().toISOString().slice(11, 19).replace(/:/g, "") + ".jpg", data: dataUrl }); }
+      function shrink(source, w, h) {                          // at most 1,600 px on the long side, JPEG
+        var k = Math.min(1, 1600 / Math.max(w, h)), c = document.createElement("canvas");
+        c.width = Math.round(w * k); c.height = Math.round(h * k);
+        c.getContext("2d").drawImage(source, 0, 0, c.width, c.height);
+        return c.toDataURL("image/jpeg", 0.88);
+      }
+      function fromFile() {                                    // phones (and the fallback everywhere)
+        var inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.setAttribute("capture", "environment");
+        inp.onchange = function () {
+          var f = inp.files && inp.files[0]; if (!f) return;
+          var img = new Image();
+          img.onload = function () { attach(shrink(img, img.naturalWidth, img.naturalHeight)); URL.revokeObjectURL(img.src); };
+          img.onerror = function () { setStatus("That photo couldn\u2019t be read. Please try again."); };
+          img.src = URL.createObjectURL(f);
+        };
+        inp.click();
+      }
+      var phone = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+      if (phone || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return fromFile();
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 } }, audio: false }).then(function (stream) {
+        var back = document.createElement("div"); back.id = "cam-live";
+        back.style.cssText = "position:fixed;top:0;right:0;bottom:0;left:0;z-index:500;background:rgba(0,0,0,.72);display:grid;place-items:center;padding:16px";
+        var box = document.createElement("div"); box.style.cssText = "background:#111;border-radius:20px;padding:12px;max-width:min(760px,96vw);box-shadow:0 30px 80px rgba(0,0,0,.5)";
+        var video = document.createElement("video"); video.autoplay = true; video.playsInline = true; video.muted = true; video.srcObject = stream;
+        video.style.cssText = "display:block;max-width:100%;max-height:70vh;border-radius:12px;background:#000";
+        var row = document.createElement("div"); row.style.cssText = "display:flex;gap:10px;justify-content:center;margin-top:12px";
+        function close() { stream.getTracks().forEach(function (t) { t.stop(); }); back.remove(); document.removeEventListener("keydown", onKey); }
+        function onKey(e) { if (e.key === "Escape") close(); if (e.key === "Enter" || e.key === " ") { e.preventDefault(); snap(); } }
+        function snap() { if (!video.videoWidth) return; var d = shrink(video, video.videoWidth, video.videoHeight); close(); attach(d); }
+        [["Cancel", close, "background:#2b2b2e;color:#fff"], ["Take photo", snap, "background:#A8F03C;color:#10200a;font-weight:700"]].forEach(function (x) {
+          var btn = document.createElement("button"); btn.type = "button"; btn.textContent = x[0]; btn.onclick = x[1];
+          btn.style.cssText = "border:0;border-radius:999px;padding:11px 22px;font:inherit;font-size:15px;cursor:pointer;" + x[2];
+          row.appendChild(btn);
+        });
+        box.appendChild(video); box.appendChild(row); back.appendChild(box); document.body.appendChild(back);
+        document.addEventListener("keydown", onKey);
+      }).catch(function (err) {
+        if (err && (err.name === "NotAllowedError" || err.name === "SecurityError"))
+          setStatus("Gink isn\u2019t allowed to use the camera. Allow it for this site in your browser, or choose a photo instead.");
+        fromFile();
+      });
+    },
+    live_ask: function (v) {                         // Live camera: what the camera sees now + the question
+      if (!v || !v.data) return;
+      HANDLERS.attach_data({ name: v.name || "live.jpg", data: v.data });
+      send(String(v.question || "What is this?")).then(function () { if (window.liveDone) window.liveDone(); },
+                                                     function () { if (window.liveDone) window.liveDone(); });
     },
     attach_data: function (v) {
       if (!v || !v.data) return;
@@ -1290,10 +1411,48 @@
       });
     }).catch(function () { askBirthYear("Couldn\u2019t save that \u2014 check your connection and try again."); });
   };
+  var LOCKED_OK = { unlock: 1, lock_signout: 1, page_visibility: 1 };
   window.ginkEmit = function (type, value) {
+    if (LK.locked && !LOCKED_OK[type]) return;                 // locked: nothing behind the lock can be used
     if (VOICE_EVENTS[type] && W.voiceOff) { settingsToast(W.voiceOff); return; }
     var h = HANDLERS[type];
     if (h) { try { h(value); } catch (e) { console.error("Gink web:", type, e); } }
+  };
+
+  // ---------------------------------------------------------------- Lock Gink in this browser (a passkey)
+  // Settings > Privacy > Lock Gink: the page is covered when Gink opens and after you've been away, until one of YOUR
+  // passkeys says it's you (Face ID, Touch ID, Windows Hello, your phone). Shared with Gink Genie and the console in
+  // this browser (web_app/lock.js reads the same gink_prefs and gink_unlocked_at).
+  var LK = { locked: false, away: null, busy: false };
+  function lockAfterMs() { var v = String(W.prefs.app_lock_after || "1"); return v === "launch" ? null : (parseFloat(v) || 1) * 60000; }
+  function lockMark() { try { LS.setItem("gink_unlocked_at", String(Date.now())); } catch (e) {} }
+  function lockLast() { try { return parseFloat(LS.getItem("gink_unlocked_at") || "0") || 0; } catch (e) { return 0; } }
+  function lockNow() {
+    if (LK.locked || !W.token) return;
+    LK.locked = true;
+    if (typeof appLock === "function") appLock(true, { label: "a passkey", message: "Use Face ID, Touch ID, Windows Hello or your phone to open Gink." });
+  }
+  function passkeyCheck() {                                   // one of this account's passkeys, on this device
+    if (!WA.supported()) return Promise.reject(new Error("This browser doesn\u2019t support passkeys."));
+    return api("/account/passkeys/verify/begin", {}).then(function (r) { return r.ok ? r.json() : errorText(r).then(function (t) { throw new Error(t); }); })
+      .then(function (b) { return WA.get(b.options).then(function (cred) { return api("/account/passkeys/verify/finish", { request_id: b.request_id, credential: cred }); }); })
+      .then(function (r) { if (!r.ok) return errorText(r).then(function (t) { throw new Error(t); }); })
+      .catch(function (e) { throw (e && (e.name === "NotAllowedError" || e.name === "AbortError")) ? new Error("Cancelled.") : e; });
+  }
+  setInterval(function () { if (!LK.locked && !document.hidden && W.token) lockMark(); }, 20000);
+  HANDLERS.unlock = function () {
+    if (LK.busy) return;
+    LK.busy = true; appLock(true, { label: "a passkey", busy: true });
+    passkeyCheck().then(function () { LK.locked = false; LK.away = null; lockMark(); appLock(false); },
+                        function (e) { appLock(true, { label: "a passkey", message: e.message || "Not unlocked." }); })
+      .then(function () { LK.busy = false; });
+  };
+  HANDLERS.lock_signout = function () { LK.locked = false; if (typeof appLock === "function") appLock(false); signOut(""); };
+  HANDLERS.page_visibility = function (v) {
+    if (v === "hidden") { if (!LK.locked) LK.away = Date.now(); return; }
+    var after = lockAfterMs();
+    if (W.prefs.app_lock && after !== null && LK.away && Date.now() - LK.away >= after) lockNow();
+    LK.away = null;
   };
 
   // ---------------------------------------------------------------- start
@@ -1317,6 +1476,12 @@
     checkFamily();
     checkPolicies();                                 // "we've updated our privacy policy and terms", once per change
     checkStatus(); clearInterval(W.statusTimer); W.statusTimer = setInterval(checkStatus, 300000);
+    checkCare();
+    // Lock Gink: opened after time away -> covered until a passkey says it's you
+    var lockAfter = lockAfterMs();
+    if (W.prefs.app_lock && Date.now() - lockLast() > (lockAfter === null ? 60000 : lockAfter)) lockNow(); else lockMark();
+    // People: faces grouped in THIS browser (IndexedDB); never uploaded
+    if (typeof peopleSetOn === "function") { peopleSetOn(!!W.prefs.people_on && !W.care); peopleConfigure({ base: "/app/faces/", native: false }); }
     clearInterval(W.timer); W.timer = setInterval(sync, 60000);
   }
   document.addEventListener("DOMContentLoaded", function () {

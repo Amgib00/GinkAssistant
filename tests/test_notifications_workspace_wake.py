@@ -44,7 +44,7 @@ def test_workspace_page_is_the_new_design():
 
 def test_hey_gink_hears_more_and_comes_back_by_itself():
     from ginkassistant.services import wake_word as w
-    for said in ("hey gin", "hey jinx", "hey ink", "hey king", "hey ginkgo", "ginkgo"):
+    for said in ("hey gin", "hey jinx", "hey jing", "hi jink", "hey king", "hey ginkgo", "ginkgo"):
         assert w.matches(said), said
     for not_wake in ("ink jet printer", "the king of the hill", "i like gin"):
         assert not w.matches(not_wake), not_wake

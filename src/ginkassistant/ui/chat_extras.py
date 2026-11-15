@@ -216,19 +216,18 @@ CSS = r"""
   .icard .ibar button { font: inherit; font-size: 13px; border: 1px solid var(--border); background: var(--bg); color: var(--text-main);
     border-radius: 999px; padding: 5px 12px; margin-left: 6px; cursor: pointer; }
   .icard .ibar button:hover { border-color: var(--accent); color: var(--accent); }
-  /* ---------- sidebar: pinned group ---------- */
-  .recents-head { font-size: 12px; color: var(--text-muted); padding: 10px 10px 4px; }
-  .recent.pinned .t::before { content: "\1F4CC"; font-size: 11px; margin-right: 6px; opacity: 0.7; }
+  /* ---------- sidebar: the day headings (Pinned, Today, Yesterday...) -- small, plain, sentence case ---------- */
+  .recents-head { font-size: 12.5px; font-weight: 500; color: var(--text-muted); padding: 16px 10px 6px; }
+  .recents-head:first-child { padding-top: 10px; }
   #row-menu button svg { width: 16px; height: 16px; margin-right: 10px; color: var(--text-muted); flex: none; }
   /* ---------- jump to latest ---------- */
-  #jump {
-    position: fixed; left: 50%; bottom: 150px; transform: translateX(-50%) translateY(10px); z-index: 25;
+  #jump {                       /* inside the shell (moved there on load): just above the composer, however tall it is */
+    position: absolute; left: 50%; bottom: calc(var(--composer-h, 140px) + 10px); transform: translateX(-50%) translateY(10px); z-index: 25;
     width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--bg);
     color: var(--text-main); box-shadow: 0 4px 14px rgba(0,0,0,0.12); cursor: pointer; opacity: 0; pointer-events: none;
     display: flex; align-items: center; justify-content: center; transition: opacity 0.2s, transform 0.2s;
   }
   #jump.show { opacity: 1; pointer-events: auto; transform: translateX(-50%); }
-  body.pinned #jump { left: calc(50% + var(--side-w) / 2); }
   body.home #jump { display: none; }
   /* Question cards (Gink asks with tappable choices) */
   .qcard { border: 1px solid var(--border); border-radius: 16px; background: var(--surface); margin: 10px 0; overflow: hidden; max-width: 640px; }
@@ -280,24 +279,44 @@ CSS = r"""
   #codeview .cvbody .code-block { margin: 0; border: 0; border-radius: 0; }
   #codeview .cvbody code { font-size: inherit; line-height: inherit; }   /* same line height as the numbers: no drift */
   #codeview .cvbody .code-block-body { border: 0; border-radius: 0; max-height: none !important; }
-  body.viewer-open { padding-right: min(50vw, 780px); }
-  body.viewer-open #composer-wrap { right: min(50vw, 780px); }
-  @media (max-width: 899px) { #codeview { width: 100vw; } body.viewer-open { padding-right: 0; } body.viewer-open #composer-wrap { right: 0; } }
+  body.viewer-open #shell { right: min(50vw, 780px); }
+  @media (max-width: 899px) { #codeview { width: 100vw; } body.viewer-open #shell { right: 0; } }
   /* Sources: a button in the answer's action row, opening the list (official ones first, with a badge) */
   .ga.gsrc { width: auto; display: inline-flex; align-items: center; gap: 7px; padding: 0 10px 0 6px; border-radius: 999px;
              font-size: 13px; font-weight: 600; color: var(--text-main); }
-  .gsrc .stack { display: inline-flex; }
-  .gsrc .stack span { width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 10.5px;
-                      font-weight: 700; color: #fff; margin-left: -6px; box-shadow: 0 0 0 2px var(--surface); }
+  .gsrc .stack { display: inline-flex; position: relative; }
+  .gsrc .stack span { width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 11px;
+                      font-weight: 700; color: #fff; margin-left: -7px; box-shadow: 0 0 0 2px var(--surface); position: relative; overflow: hidden; }
   .gsrc .stack span:first-child { margin-left: 0; }
-  .gsources { margin: 8px 0 4px; border: 1px solid var(--border); border-radius: 14px; padding: 6px; max-width: 560px; background: var(--surface); }
-  .gsources a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; color: var(--text-main); text-decoration: none; }
+  /* real logos (0.1.156): the site's own icon covers the letter once it arrives (GET /icon/{host} on Gink's server) */
+  .gsrc .stack span img, .gsources .si img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;
+                      opacity: 0; transition: opacity 0.2s; }
+  .gsrc .stack span.logo, .gsources .si.logo { background: #fff !important; }
+  .gsrc .stack span.logo { box-shadow: 0 0 0 2px var(--surface), inset 0 0 0 1px rgba(0, 0, 0, 0.08); }
+  .gsrc .stack span.logo img { opacity: 1; padding: 3px; }
+  .gsources .si.logo { box-shadow: inset 0 0 0 1px var(--border); }
+  .gsources .si.logo img { opacity: 1; padding: 5px; }
+  .gsrc .stack .logo b, .gsources .si.logo b { visibility: hidden; }
+  /* the first source is official: a small green check on its logo, like a verified mark */
+  .gsrc .stack .ok { position: absolute; left: 13px; bottom: -3px; width: 11px; height: 11px; border-radius: 50%; background: #1F9D55;
+                     box-shadow: 0 0 0 1.5px var(--surface); display: grid; place-items: center; z-index: 2; }
+  .gsrc .stack .ok svg { width: 7px; height: 7px; }
+  .gsources { margin: 8px 0 4px; border: 1px solid var(--border); border-radius: 16px; padding: 6px; max-width: 560px; background: var(--surface);
+              box-shadow: 0 8px 24px rgba(28, 33, 29, 0.06); animation: word-in 0.25s ease both; }
+  .gsources a { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 11px; color: var(--text-main); text-decoration: none;
+                border-bottom: 0; transition: background 0.15s; }
+  .gsources a::after { content: none; }
+  .gsources a + a { margin-top: 2px; }
   .gsources a:hover { background: var(--elevated); }
-  .gsources .si { width: 28px; height: 28px; border-radius: 8px; flex: none; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 13px; }
-  .gsources .st { display: flex; flex-direction: column; min-width: 0; }
+  .gsources .go { flex: none; width: 16px; height: 16px; color: var(--text-muted); opacity: 0.7; }
+  .gsources a:hover .go { opacity: 1; color: var(--text-main); }
+  .gsources .si { width: 28px; height: 28px; border-radius: 8px; flex: none; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 13px;
+                  position: relative; overflow: hidden; }
+  .gsources .st { display: flex; flex-direction: column; min-width: 0; flex: 1; }
   .gsources .st b { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .gsources .st small { color: var(--text-muted); font-size: 12px; }
-  .gsources .off { margin-left: auto; flex: none; font-size: 11px; font-weight: 700; color: #1F6F3A; background: #DDF5E3; border-radius: 999px; padding: 2px 8px; }
+  .gsources .off { flex: none; font-size: 11px; font-weight: 700; color: #1F6F3A; background: #DDF5E3; border-radius: 999px; padding: 3px 9px; }
+  body.theme-dark .gsources .off { color: #9BE0AE; background: rgba(46, 158, 85, 0.18); }
 """
 
 HTML = r"""
@@ -435,6 +454,9 @@ JS = r"""
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('.gactions .ga'); if (!b) return;   // not the reason chips
+    // the Sources button opens its own list: this listener runs first (capture) and stopping the click here
+    // meant tapping "5 sources" did nothing (fixed in 0.1.156)
+    if (b.classList.contains('gsrc')) return;
     e.stopPropagation();
     var el = b.closest('.assistant-text'), bar = b.closest('.gactions'), what = b.getAttribute('data-ga');
     var text = replyText(el);
@@ -613,9 +635,11 @@ JS = r"""
   }
 
   // ---- jump to latest ----
-  function nearBottom() { return (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 220; }
-  window.addEventListener('scroll', function () {
-    document.getElementById('jump').classList.toggle('show', !nearBottom() && !document.body.classList.contains('home'));
+  function nearBottom() { return atEnd(220); }
+  document.addEventListener('DOMContentLoaded', function () {             // the conversation scrolls inside #scroller
+    scroller().addEventListener('scroll', function () {
+      document.getElementById('jump').classList.toggle('show', !nearBottom() && !document.body.classList.contains('home'));
+    }, {passive: true});
   });
   document.getElementById('jump').addEventListener('click', function () { scrollDown(); this.classList.remove('show'); });
 
@@ -664,7 +688,7 @@ JS = r"""
   window.showShareLink = function (url, title) {
     var old = document.getElementById('share-dlg'); if (old) old.remove();
     var d = document.createElement('div'); d.id = 'share-dlg'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Shared link');
-    d.style.cssText = 'position:fixed;inset:0;z-index:10000;display:grid;place-items:center;background:rgba(0,0,0,.35)';
+    d.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:10000;display:grid;place-items:center;background:rgba(0,0,0,.35)';
     var box = document.createElement('div');
     box.style.cssText = 'width:min(460px,92vw);background:var(--surface);color:var(--text-main);border-radius:16px;padding:20px;' +
       'box-shadow:0 12px 40px rgba(0,0,0,.25);font:14.5px/1.5 system-ui,sans-serif';
@@ -762,7 +786,7 @@ JS = r"""
   window.showWhatsNew = function (version, sections) {
     var old = document.getElementById('whatsnew'); if (old) old.remove();
     var d = document.createElement('div'); d.id = 'whatsnew'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', "What's new");
-    d.style.cssText = 'position:fixed;inset:0;z-index:10000;display:grid;place-items:center;background:rgba(0,0,0,.35)';
+    d.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:10000;display:grid;place-items:center;background:rgba(0,0,0,.35)';
     var box = document.createElement('div');
     box.style.cssText = 'width:min(520px,92vw);max-height:80vh;overflow:auto;background:var(--surface);color:var(--text-main);border-radius:16px;' +
       'padding:22px;box-shadow:0 12px 40px rgba(0,0,0,.25);font:14.5px/1.55 system-ui,sans-serif';
@@ -949,6 +973,21 @@ JS = r"""
   var SRC_COLORS = ['#2F6FB3', '#3F7D12', '#B4530F', '#7A3FB3', '#0F7C74', '#A3274F'];
   function srcHost(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } }
   function srcColor(h) { var n = 0; for (var i = 0; i < h.length; i++) n = (n * 31 + h.charCodeAt(i)) % 997; return SRC_COLORS[n % SRC_COLORS.length]; }
+  // A source's mark: its site's real logo (fetched by Gink's server, never from the device: GINK_ICONS + /icon/{host}),
+  // over a coloured first letter that stays if the site has no logo.
+  function srcIcon(h, cls) {
+    var i = document.createElement('span'); i.className = cls; i.style.background = srcColor(h);
+    var letter = document.createElement('b'); letter.textContent = h.charAt(0).toUpperCase(); i.appendChild(letter);
+    if (typeof window.GINK_ICONS === 'string' && /^[a-z0-9.-]+$/i.test(h)) {
+      var im = document.createElement('img'); im.alt = ''; im.decoding = 'async';
+      try { im.referrerPolicy = 'no-referrer'; } catch (e) {}
+      im.onload = function () { if (im.naturalWidth > 4) i.classList.add('logo'); else im.remove(); };
+      im.onerror = function () { im.remove(); };
+      im.src = window.GINK_ICONS + '/icon/' + encodeURIComponent(h.toLowerCase());
+      i.appendChild(im);
+    }
+    return i;
+  }
   window.upgradeSources = function (el) {
     var head = null;
     Array.prototype.forEach.call(el.querySelectorAll('strong'), function (s) {
@@ -975,18 +1014,26 @@ JS = r"""
     var btn = document.createElement('button'); btn.className = 'ga gsrc'; btn.type = 'button';
     btn.setAttribute('aria-expanded', 'false'); btn.title = 'Where this answer comes from';
     var stack = document.createElement('span'); stack.className = 'stack'; stack.setAttribute('aria-hidden', 'true');
-    list.slice(0, 3).forEach(function (s) { var h = srcHost(s.url), i = document.createElement('span');
-      i.textContent = h.charAt(0).toUpperCase(); i.style.background = srcColor(h); stack.appendChild(i); });
+    list.slice(0, 3).forEach(function (s) { stack.appendChild(srcIcon(srcHost(s.url), '')); });
+    if (list[0].official) {                     // official first (the server ranks them): a green check on its logo
+      var ok = document.createElement('i'); ok.className = 'ok';
+      ok.innerHTML = '<svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.2l2.3 2.3 4.7-5"/></svg>';
+      stack.appendChild(ok);
+      btn.title = 'Where this answer comes from \u2014 official sources first';
+    }
     btn.appendChild(stack);
     btn.appendChild(document.createTextNode(list.length + (list.length === 1 ? ' source' : ' sources')));
     var panel = document.createElement('div'); panel.className = 'gsources'; panel.hidden = true; panel.setAttribute('role', 'list');
     list.forEach(function (s) {
       var h = srcHost(s.url), a = document.createElement('a'); a.href = s.url; a.setAttribute('role', 'listitem'); a.title = s.url;
-      var ic = document.createElement('span'); ic.className = 'si'; ic.textContent = h.charAt(0).toUpperCase(); ic.style.background = srcColor(h);
+      var ic = srcIcon(h, 'si');
       var tx = document.createElement('span'); tx.className = 'st';
       var b = document.createElement('b'); b.textContent = s.title; var sm = document.createElement('small'); sm.textContent = h;
       tx.appendChild(b); tx.appendChild(sm); a.appendChild(ic); a.appendChild(tx);
       if (s.official) { var o = document.createElement('span'); o.className = 'off'; o.textContent = 'Official'; a.appendChild(o); }
+      var go = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); go.setAttribute('class', 'go'); go.setAttribute('viewBox', '0 0 24 24');
+      go.innerHTML = '<path d="M7 17L17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>';
+      a.appendChild(go);
       panel.appendChild(a);
     });
     btn.onclick = function (e) { e.stopPropagation(); panel.hidden = !panel.hidden; btn.setAttribute('aria-expanded', String(!panel.hidden)); };

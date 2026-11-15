@@ -1,2 +1,2 @@
 """Gink in your terminal."""
-__version__ = "0.3.7"
+__version__ = "0.3.13"

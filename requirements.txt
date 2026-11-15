@@ -57,6 +57,9 @@ llvmlite==0.45.1; sys_platform == "darwin"
 duckduckgo-search
 psutil
 tzlocal; sys_platform == "win32"
+winrt-runtime; sys_platform == "win32"                          # Lock Gink with Windows Hello (services/biometric.py)
+winrt-Windows.Foundation; sys_platform == "win32"
+winrt-Windows.Security.Credentials.UI; sys_platform == "win32"
 llama-cpp-python                        # local offline AI -- compiles from source (slow first install)
 pillow-heif                             # iPhone HEIC photos
 

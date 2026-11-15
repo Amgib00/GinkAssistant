@@ -25,8 +25,9 @@ STATUS_LABELS = {"success": "Paid", "pending": "Pending", "failed": "Not complet
 BOOL_KEYS = {"read_aloud", "notify_reminders", "briefing_enabled", "briefing_speak", "use_memory",
              "web_search", "video_suggestions", "single_keys", "wake_enabled", "wake_followup", "wake_front",
              "wake_background", "briefing_projects", "use_location", "agent_confirm", "send_errors",
-             "wake_short"}
-CHOICES = {"effort": {"low", "medium", "high", "extra", "max"}, "theme": {"system", "light", "dark"}, "chat_font": {"sans", "serif", "mono"},
+             "wake_short", "memory_suggest", "people_on"}
+CHOICES = {"app_lock_after": {"1", "5", "15", "60", "launch"},
+           "effort": {"low", "medium", "high", "extra", "max"}, "theme": {"system", "light", "dark"}, "chat_font": {"sans", "serif", "mono"},
            "motion": {"system", "reduced"}, "voice_speed": {"slow", "normal", "fast"},
            "reply_language": set(languages.BY_CODE), "send_key": {"enter", "mod"},
            "speech_lang": SPEECH_LANG_CODES,
@@ -111,7 +112,8 @@ class SettingsController:
                                    "notify_reminders", "briefing_enabled", "briefing_time", "briefing_speak",
                                    "use_memory", "web_search", "video_suggestions", "speech_lang", "send_key",
                                    "single_keys", "wake_enabled", "wake_followup", "wake_front", "wake_background",
-                                   "briefing_projects", "send_errors", "wake_short")}
+                                   "briefing_projects", "send_errors", "wake_short", "memory_suggest",
+                                   "app_lock", "app_lock_after", "people_on")}
         v.update(voice=self.selected_voice["value"], model=self.brain.preferred_model,
                  city=prefs.city(self.app), server_url=server_config.saved_url(self.app) or "",
                  launch_at_login=bool(launch_at_login.is_supported() and launch_at_login.is_enabled()))
@@ -145,7 +147,9 @@ class SettingsController:
                 "work_options": WORK_OPTIONS,
                 "language_label": languages.label(prefs.load(self.app).get("reply_language", "auto")),
                 "build": getattr(self.app, "gink_build", ""),
-                "location_text": self._location_text()}
+                "location_text": self._location_text(),
+                "lock_kind": getattr(self, "lock_kind", ""),             # "Face ID", "Touch ID", "Windows Hello"...
+                "care": bool(getattr(self, "care", False))}              # a healthcare workspace: People is off
         if not getattr(self, "_langs_sent", False):
             info["languages"] = [[c, n, e, x] for c, n, e, x in languages.LANGUAGES]
             self._langs_sent = True
@@ -302,10 +306,22 @@ class SettingsController:
 
     # ------------------------------------------------------------ changes
     async def on_setting(self, key: str, value):
+        if key == "app_lock":                         # the device proves it works (and that it's you) first
+            check = getattr(self, "lock_check", None)
+            ok, message = await check(bool(value)) if check else (False, "Not available here.")
+            if ok:
+                prefs.save(self.app, app_lock=bool(value))
+                await self.web.settings_toast(("Gink now locks with " + (getattr(self, "lock_kind", "") or "your device") + ".")
+                                              if value else "Lock Gink is off.")
+            else:
+                await self.web.settings_toast(message or "Not changed.", "err")
+            return await self.push()                   # the switch shows what's really saved
         if key in BOOL_KEYS:
             prefs.save(self.app, **{key: bool(value)})
             if key.startswith("wake_") and self.on_wake_change:      # "Hey Gink": start / stop right away
                 await self.on_wake_change()
+            if key == "people_on" and getattr(self, "on_people_change", None):   # People: on or off right away
+                await self.on_people_change(bool(value))
         elif key in CHOICES:
             if value not in CHOICES[key]:
                 return
@@ -623,6 +639,34 @@ class SettingsController:
             with open(path, "wb") as f:
                 f.write(data)
         path = await data_export.save_with_dialog(self.app, "gink-workspace-usage.csv", ["csv"], write)
+        if path:
+            await self.web.settings_toast(f"Saved to {path}")
+
+    async def _a_people_open(self, _):
+        """Settings > Privacy > People > Open (the page opens it itself; this is the fallback)."""
+        await self.web.open_people()
+
+    async def _a_people_delete(self, _):
+        """Settings > Privacy > People > Delete: every face group, name and photo People kept on this device."""
+        delete = getattr(self, "on_people_delete", None)
+        if delete:
+            await delete()
+        await self.web.settings_toast("People data deleted from this device.")
+
+    async def _a_org_safety(self, _):
+        """Settings > Workspace > Download the safety report: counts only (never words), saved where the admin chooses."""
+        token = getattr(self.app, "session_token", None)
+        if not token:
+            return
+        try:
+            data = await ApiClient(self.app.state.base_url).org_safety_csv(token, 30)
+        except ApiError as exc:
+            return await self.web.settings_toast(str(exc))
+
+        def write(path):
+            with open(path, "wb") as f:
+                f.write(data)
+        path = await data_export.save_with_dialog(self.app, "gink-workspace-safety.csv", ["csv"], write)
         if path:
             await self.web.settings_toast(f"Saved to {path}")
 

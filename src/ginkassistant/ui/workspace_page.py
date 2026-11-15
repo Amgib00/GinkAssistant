@@ -59,26 +59,26 @@ PAGE = r"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport
   .list { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   .row { display: flex; align-items: flex-start; gap: 12px; padding: 13px 14px; border-top: 1px solid var(--border); position: relative; }
   .row:first-child { border-top: 0; }
-  .row.step { padding-left: 50px; background: color-mix(in srgb, var(--elevated) 45%, transparent); }
+  .row.step { padding-left: 50px; background: rgba(128, 128, 128, 0.05); background: color-mix(in srgb, var(--elevated) 45%, transparent); }
   .chk { width: 22px; height: 22px; border-radius: 50%; border: 1.8px solid var(--border); background: transparent; cursor: pointer; flex: none;
     display: grid; place-items: center; margin-top: 1px; transition: border-color .15s, background .2s, transform .15s; }
   .chk:hover { border-color: var(--accent); transform: scale(1.06); }
   .chk svg { opacity: 0; transform: scale(.4); transition: all .2s cubic-bezier(.3,1.6,.5,1); color: var(--on-accent); }
   .row.done .chk { background: var(--accent); border-color: var(--accent); }
   .row.done .chk svg { opacity: 1; transform: scale(1); }
-  .row.done .t { color: var(--text-muted); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text-muted) 60%, transparent); }
+  .row.done .t { color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--text-muted); text-decoration-color: color-mix(in srgb, var(--text-muted) 60%, transparent); }
   .body { flex: 1; min-width: 0; }
   .t { font-size: 15px; word-wrap: break-word; }
   .meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--elevated); color: var(--text-muted); }
   .chip.when { color: var(--accent); background: var(--accent-soft); }
-  .chip.late { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+  .chip.late { color: var(--danger); background: rgba(201, 59, 50, 0.12); background: color-mix(in srgb, var(--danger) 12%, transparent); }
   .bar { height: 5px; width: 120px; background: var(--elevated); border-radius: 999px; overflow: hidden; align-self: center; }
   .bar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
   .kind { font-size: 18px; opacity: .9; margin-top: 1px; }
   .del { opacity: 0; border: 0; background: transparent; cursor: pointer; padding: 4px; border-radius: 8px; color: var(--text-muted); transition: opacity .15s; }
   .row:hover .del, .row:focus-within .del { opacity: 1; }
-  .del:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); }
+  .del:hover { color: var(--danger); background: rgba(201, 59, 50, 0.1); background: color-mix(in srgb, var(--danger) 10%, transparent); }
   @media (hover: none) { .del { opacity: .7; } }
   .row.leaving { animation: leave .28s ease forwards; }
   @keyframes leave { to { opacity: 0; transform: translateX(16px); } }

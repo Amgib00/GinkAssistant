@@ -16,6 +16,13 @@ MUST_MENTION = {
     "deletion sweep (0.1.138)": "everything else that names your account",
     "phone sign-in (0.1.95)": "sign in with your phone number",
     "agents and schedules (0.1.121, 0.1.132)": "scheduled tasks",
+    "camera (0.1.149)": "The camera is used only when you choose Camera",
+    "automatic memory (0.1.150)": "never in a workspace in healthcare mode",
+    "patient details removed + safety counts (0.1.153)": "counts only, never what anyone wrote or photographed",
+    "Lock Gink with Face ID, Touch ID, Windows Hello (0.1.154)": "Gink never receives, keeps or sends a face or a fingerprint",
+    "People: faces grouped on the device (0.1.154)": "Faces are found and grouped on your device only",
+    "People asks once (0.1.156)": "Gink asks once, the first time you share a photo",
+    "source logos through Gink's server (0.1.156)": "so your device never contacts them",
 }
 
 

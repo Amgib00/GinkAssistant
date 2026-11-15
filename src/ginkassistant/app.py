@@ -157,6 +157,8 @@ class GinkAssistantApp(toga.App):
         error_reports.install(self)                      # problems reach the owner dashboard (Settings > Privacy)
 
         self.main_window = toga.MainWindow(title="")      # no "Gink" in the title bar (the app is named by its icon and menu)
+        from .services import android_chrome
+        android_chrome.setup(self)                       # Android: no teal title bar; the keyboard makes room
         self._try_auto_login()
         self.main_window.show()
 
@@ -185,6 +187,8 @@ class GinkAssistantApp(toga.App):
             self.show_login()
 
     def show_login(self):
+        from .services import android_chrome
+        android_chrome.set_bars(self, android_chrome.LOGIN_BG, False)    # Android: the status bar matches the sign-in page
         self.main_window.content = build_login_screen(self, on_success=self.show_main)
 
     def show_main(self, email: str):

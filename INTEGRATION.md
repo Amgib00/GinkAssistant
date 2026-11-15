@@ -2308,3 +2308,269 @@ New services/live_info.py (all free, no API keys):
 - Hey Gink (desktop, Vosk grammar): WAKE_PHRASES/MATCH_WORDS gain near-sounds (gin, jinx, ink, kink, link -- all still
   need hey/hi/okay in front); wake_watchdog() every 5 s: restarts a dead listener thread, resumes one paused > 20 s with
   nothing using the mic. NOT verified on a Mac with a microphone here: Settings > Voice shows "last heard".
+
+## 0.1.149: Hey Gink rebuilt from a bench; camera + vision modes; deeper Genie auto-fix; memory updates
+- HEY GINK (desktop, Vosk small model). Measured with tools/wake_bench (espeak-ng voices; 216 wake + 312 ordinary
+  recordings, same files for old and new):
+      old (<=0.1.147)   after hey/hi/okay 99%   name alone 57%   FALSE wakes 44%
+      new, short on     95%                     68% (said + pause: 100%; "Gink, <request>": 4%)   10%
+      new, short off    86%                     -                                                  3%
+  So the old listener's problem was waking on everything, not failing to wake: if it never wakes on the owner's Mac the
+  likely causes are the microphone (now detected) or a stuck pause (watchdog, 0.1.148) -- tools/wake_check.py tells.
+  Facts: the model has neither "gink" nor "jink" (Model.vosk_model_find_word); a phrase with an unknown word silently
+  loses that word ("hey jink" -> "hey"). Design: single words only -- LEADS + NEAR_GINK (king, kink, ginkgo, getting)
+  + NEAR_JINK (jinx, jinks, jing, jin, jinn, jank, gin, genk) + DECOYS (everyday words) + [unk]; grammar_words(knows)
+  filters by the model's dictionary. matches(text, final): lead + near word adjacent; with SHORT on, ALONE_FIRST first
+  (final, or a 2nd word follows) or ALONE_EXACT ("getting") as the whole final utterance. NEVER change a list without
+  the bench: adding "getting" as a decoy took recall from 95% to 26%; 0.1.148's ink/link/kink near-words are gone.
+  Android/web: unchanged lists (they already accept "jink"; Android's leads include "a"/"he", so real words stay out).
+  Listener: _note_level + .silent (digital silence > 6 s) -> wake_status "Hey Gink can't hear you" (chip + Settings).
+  The lasting fix is a trained wake-word model (openWakeWord, Apache-2.0: a Colab notebook makes hey_gink.onnx from
+  synthetic speech in 1-2.5 h); an engine for it needs onnxruntime in the builds -- not added yet (untested here).
+- CAMERA: page sheet (openCamera, CAM_MODES ask/read/xray/fix/solve) writes the mode's request into the box and emits
+  'camera'. Apps: take_photo() -> app.camera (Toga; permission asked; NotImplemented -> file picker) -> attachment.
+  Web: HANDLERS.camera -- phones: <input capture>; computers: getUserMedia window, "Take photo", tracks stopped; photos
+  shrunk to 1,600 px JPEG. Permissions-Policy camera=(self); pyproject camera permission (macOS, iOS, Android).
+  "X-ray" = an explanation from knowledge (the prompt says it can't see inside; medical images: general terms only).
+  Privacy policy row + POLICIES_UPDATED 2026-11-14 (people see the notice once).
+- GENIE AUTO-FIX: _genie_file_problems (changed .json must parse; .py must compile -- compile() only, nothing runs);
+  GENIE_AUTOFIX_ROUNDS 4; the nudge says "SAME problems... a different way" when a round repeats. Page: Off/Auto(3)/
+  Deep(8) (localStorage genie_autofix off|on|deep), same-error escalation text.
+- MEMORY: memory.subject(text) -- single-valued facts ("my <name|age|address|phone number|favourite x|...> is", "i live",
+  "i work", "i was born", "call me", "i am N"); MemoryStore.add marks the older one deleted (syncs) and returns
+  {"replaced": old}; the remember tool says "Updated: ...". Several-valued facts (my sister is..., I like...) are kept.
+- NOT built (asked for, too vague or already there): "advanced capabilities"; "advanced tools" (69 tools exist).
+
+
+## 0.1.150: Live camera, X-ray looks, whole-project Check & fix, "Remember this?" + /v1/memories
+
+- Page: Camera sheet gains `CAM_LIVE` (first row). `openLive(facing)` = full-screen getUserMedia view, mode chips,
+  ask box (+ mic via SpeechRecognition where available), flip camera. Each ask emits `live_ask {data, name, question}`
+  (JPEG, <=1280px). A MutationObserver on #feed mirrors the streaming answer; `window.liveDone()` (called from
+  finalizeMessage, and by bridge.js after send) ends the wait; 90 s safety timeout. No camera in the page -> emits
+  `camera 'ask'` (system camera). Apps: `live_ask` -> add_attachment(load_data_url) + send_query. Web: HANDLERS.live_ask.
+- image_ideas.py: new ideas xray, exploded, cutaway (IDEAS now 14) -> Media Studio, /v1/images/ideas, SDKs, CLI.
+- Server: `_genie_project_check(pid)` (all files: `_genie_missing_refs` + `_genie_file_problems` over every .json/.py),
+  `_genie_fix_all_text`. GET /genie/projects/{pid}/check and GET /v1/environments/{pid}/check ->
+  {object:"check", ok, files, missing, broken, problems, fix_request}. Genie page: Settings > Whole project >
+  "Check & fix" -> checkAll(round): check, sendToGenie(fix_request), re-check, up to max(AUTOFIX_MAX, 3) rounds with
+  the SAME-problems escalation. SDKs: env.check(); CLI: `gink env check ID [--fix]` (--fix runs run_agent, re-checks).
+- Memory: services/memory_rules.py (subject/norm/suggest; shared by apps + server, Dockerfile COPY).
+  POST /memory/suggest, POST /memory/remember (signed in; web app), GET/POST /v1/memories, DELETE /v1/memories/{id},
+  POST /v1/memories/suggest (API key). Stored as sync_docs kind "memories" (so apps sync them); a single-valued
+  subject replaces the old doc (deleted=1 + server_ts). MEMORY_MAX=500. Page: memorySuggestion(fact) chip ->
+  `remember_fact`. Pref `memory_suggest` (synced; Settings > Memory toggle). Never for temporary chats.
+- SDKs 0.3.8: client.memories / gink.memories (list, add, forget, suggest) + types; Environment.check().
+- Tests: test_memory_suggest.py, test_live_xray_check.py; privacy row "memory offers (0.1.150)".
+
+
+## 0.1.151: everything automatic (no new buttons); safe for hospitals
+
+- Page: camera sheet + CAM_MODES removed; `openCamera()` = `openLive()`. Live has no mode chips: empty ask sends
+  `CAM_AUTO` (works out what's needed + medical care rules), a typed/spoken question gets `CAM_CARE` appended.
+  SpeechRecognition starts by itself (`LIVE.hands`) and again after each answer (liveDone); tap the mic to pause.
+  No camera in the page -> `cameraFallback()` writes CAM_AUTO into #cin and emits `camera 'auto'`.
+  "Remember this?" chip (memorySuggestion, .mem-sug, WebChatView.memory_suggestion) removed.
+- Memory: automatic. memory_rules: health facts removed from _FACTS + `_HEALTH`/`is_health()` filter in suggest().
+  Apps: `auto_remember()` (prefs use_memory + memory_suggest, not temporary, not `in_healthcare_workspace()` --
+  GET /org cached 10 min) saves and notifies with Undo (`memory_undo {uid, replaced}`: replaced -> add(old) else
+  forget(uid)). Server: `_memory_suggest_for` returns None in healthcare workspaces; POST /memory/auto (suggest+save),
+  POST /memory/forget. Web: bridge calls /memory/auto, `HANDLERS.memory_undo`. Setting label "Remember things automatically".
+- Images: image_ideas.LOOKS (xray, exploded, cutaway) out of IDEAS (cards back to 11); `auto_look(prompt)` picks one
+  from the words, never for bodies (`_BODY`); `medical_prompt()` marks scan-like body pictures as illustrations.
+  /media/image applies both. Catalog: "ideas" (cards) + "looks" (automatic).
+- Genie: "Check & fix" button removed. The autofix loop uses `_genie_project_check(pid)["broken"]` (every .json/.py,
+  skipping vendor/build folders and templated JSON); GENIE_AUTOFIX_ROUNDS 6. Page `quietCheck(id)` on open (read only).
+- SDKs 0.3.9 (types: looks).
+
+
+## 0.1.152: photo rules on the server for every client; agents auto-fix; hands-free Live; healthcare reminder
+
+- services/vision_rules.py (flat-copied in deploy/Dockerfile): PHOTO_RULES, HEALTHCARE_PHOTO_RULES, rules_for(healthcare),
+  DEFAULT_QUESTION. backend_server `_vision_rules()`; in `ai_chat` (apps via AsyncGroq base_url <server>/ai, web app,
+  and /v1/chat/completions through `_logged`): when `_has_images(messages)`, a system message `rules_for(org healthcare)`
+  goes first (after the patient-data guard, which still refuses typed patient details with 422 patient_data).
+- Page: CAM_AUTO/CAM_CARE removed (the chat shows only the question; empty ask = "What's this?"). `cameraFallback()` only
+  emits `camera 'auto'`. Hands-free: `rec.onend` restarts listening after silence (`LIVE.quiet` <= 8, `LIVE.again`
+  timer), then the mic waits for a tap; `audio-capture` errors stop it too. `visibilitychange` (hidden) -> closeLive().
+  `CARE_MODE` + `window.setCareMode(on)` + `liveHint()`; WebChatView.set_care_mode(on). Apps: check_status() calls
+  `set_care_mode(await in_healthcare_workspace())` (startup + every 5 min). Web: `checkCare()` in start(), `careFrom(j)`
+  also in loadOrg().
+- Agents: `_agent_loop` -- when the model answers without tool calls and the run changed files (files tool on), it runs
+  `_genie_project_check(env_id)`; problems -> a `{"tool": "check", "result": ...}` step and a "Before you finish:" user
+  message from `_genie_fix_all_text` (+ SAME-problems escalation), up to AGENT_AUTOFIX_ROUNDS = 4 (each round uses one
+  of max_steps). Runs that changed nothing are never "fixed". CLI run_agent and console.html print the check result.
+- SDKs 0.3.10: Python `client.see(photo, question="", model="")` + `gink.client.image_data_url()`; JS
+  `gink.see(photo, { question, model })` + exported `imageDataURL()` (+ types; chat() content may be an array).
+  CLI `gink see PHOTO [question]` (stream_answer with an image part); `gink ideas` lists the automatic looks.
+- Docs: cli/README.md (Photos, Agents fix their work), sdk/js/README.md, web_app/agents.html (check endpoint + auto-fix).
+- Tests: tests/test_photos_agents_care.py; test_camera.py and test_live_xray_check.py updated.
+
+
+## 0.1.153: healthcare workspaces remove patient details automatically; admins' safety report
+
+- backend_server: PATIENT_PATTERNS (record number, ID number, date of birth, name -- `(?i:patient|patiente|pt)` label
+  + _NAME_PART names incl. Jean-Pierre, O'Neill, McDonald; `_NOT_A_PATIENT_NAME` stoplist: "Patient Safety Week",
+  weekdays... -- phone number, email address), PATIENT_PLACEHOLDERS, `_redact_patient_data(text)` -> (clean, kinds)
+  (also removes later mentions of a found name), `_looks_like_patient_data` (kept), `_removed_words`, `_removed_note`.
+  HEALTHCARE_RULES tells the AI to keep [placeholders] and never guess.
+- orgs.patient_details ('remove' default | 'stop'; migrated in `_org_db`); `_org_rules` returns id + patient_details.
+  `_org_check(email, text, feature)` -> (system, text to use, kinds, refusal); `_org_check_messages` (whole
+  conversation: every user/assistant message cleaned, only the newest reported/counted/stopped); `_org_redacted`
+  (names and stored copies, nothing counted). `_org_guard` is gone: every caller uses the cleaned text.
+- ai_chat is now a wrapper around `_ai_chat`: the org check runs FIRST (before live context, auto web search, teen
+  safety check); `_removed_kinds` contextvar -> `_with_removed_note` puts the notice first (stream: a "gink-note"
+  chunk; JSON: content prefix + "gink": {"patient_details_removed"}) + X-Gink-Patient-Details-Removed header.
+- Other features: websites (`_family_teen_messages(..., feature)` cleans messages; stored prompt cleaned), agents
+  (task cleaned; earlier interaction history cleaned; first step {"tool": "privacy"}), scheduled agents (saved input
+  cleaned), Genie (instruction cleaned; history cleaned; first step kind "note"; new project names via _org_redacted).
+- org_safety table (org_id, email, day, kind, feature, n) -- counts only; `_safety_note` (kinds: patient_details_removed,
+  patient_details_stopped, photo_checked; keeps 400 days); `_org_safety(org_id, days)`. GET /org adds "safety" (admins,
+  healthcare) and org.patient_details; PUT /org/settings {"patient_details"}; GET /org/safety, /org/safety.csv; API
+  GET /v1/workspace, /v1/workspace/safety (admins). Leave/remove deletes the person's counts; deleting the workspace
+  deletes all; account deletion sweeps them (email column). INSERT INTO orgs names its columns now.
+- Settings > Workspace (settings_page.py, shared by the apps and the web app): detailsChoice (data-org select, change
+  handler sends checkbox or value), Safety section (safetyRows), members' notice; downloads: apps `_a_org_safety`
+  (ApiClient.org_safety_csv), web `name === "org_safety"`.
+- SDKs 0.3.11: Python `client.workspace.get()/.safety(days)`; JS `gink.workspace.get()/.safety({days})` + SafetyReport
+  types; CLI `gink workspace [safety --days N]`. Console reference rows; OpenAPI chat: 422 patient_data + header.
+- tests/test_patient_details_safety.py; tests/test_server_names.py (no top-level name defined twice -- the new
+  stoplist first reused _NOT_A_NAME and broke official-source ranking); test_workspaces "stop" cases explicit.
+
+
+## 0.1.154: Lock Gink (Face ID / Touch ID / Windows Hello / passkeys) and People (faces grouped on the device)
+
+- services/biometric.py (copied to src/ginkgenie/biometric.py; tests keep them identical): `await kind(app)`,
+  `await authenticate(reason, app)` -> (ok, message), never raises. macOS/iOS: LocalAuthentication via rubicon
+  (LAPolicyDeviceOwnerAuthentication = biometrics then passcode; Block reply -> call_soon_threadsafe). Android:
+  KeyguardManager.createConfirmDeviceCredentialIntent + app._impl.intent_result (RESULT_OK). Windows: pywinrt
+  UserConsentVerifier (pyproject + requirements.txt: winrt-runtime, winrt-Windows.Foundation,
+  winrt-Windows.Security.Credentials.UI). Linux: fprintd-verify. iOS Info.plist: NSFaceIDUsageDescription.
+- Apps: prefs app_lock / app_lock_after ("1","5","15","60","launch") / people_on -- this device only (not SYNCED).
+  WebChatFeed(start_locked=...) covers the page from the first frame; main_screen `lock` state, lock_now/unlock,
+  went_away/came_back on main_window on_lose_focus/on_gain_focus/on_hide/on_show + page 'page_visibility';
+  LOCKED_OK = {unlock, lock_signout, page_visibility} (everything else ignored while locked); quiet 3 s after the
+  system sheet. Settings: on_setting("app_lock") calls settings.lock_check (the device first, both ways);
+  info.lock_kind labels it. Page: appLock(on, {label, message, busy}), isAppLocked(), keys blocked behind it, Live
+  and People closed. memory_suggest added to BOOL_KEYS/_values (the apps' switch did nothing before).
+- Browsers: POST /account/passkeys/verify/begin|finish (signed in; allowCredentials = this account's passkeys;
+  user verification required; owner + credential checked; one use). Web app (bridge.js): LK state, lockNow,
+  passkeyCheck, HANDLERS.unlock/lock_signout/page_visibility, ginkEmit guard; setting app_lock needs a passkey check;
+  shared localStorage gink_prefs + gink_unlocked_at. web_app/lock.js (GET /app/lock.js) for genie.html and
+  console.html: GinkLock.{unlocked, failed, lockNow, checkAway, toggle, toggled, enabled}; inside the Gink Genie app
+  (user agent GinkGenieApp) it uses gink-genie://unlock|lock-on|lock-off, answered by ginkgenie/app.py device_check.
+- People: web_app/faces/ (face-api 1.7.15, MIT: face-api.js + tiny face detector, 68 landmarks, face recognition;
+  ~8 MB) served by GET /app/faces/{name} and /app/faces/models/{name} (Access-Control-Allow-Origin *, immutable
+  cache, allowed names only). .gitignore re-includes faces/models/*.bin. Page module PEOPLE: peopleConfigure /
+  peopleLoad / peopleSetOn / peopleAuto / peopleAddPhotos / peopleDeleteAll / openPeople / peopleIntercept; faces
+  matched to the nearest person's running mean (Euclidean < 0.5), max 400 photos, faces under 36 px skipped, thumbs
+  360 px, crops 96 px. Storage: apps -> 'people_save' -> data_dir/people.json; web -> IndexedDB gink-people.
+  Off with CARE_MODE. Apps add image attachments (not "live-*", not temporary chats); 'people_pick' opens a native
+  picker (PIL, 1280 px). Settings > Privacy: People toggle + Delete People data. Sidebar + rail: People.
+- tests/test_app_lock.py (incl. a software passkey for the verify endpoints), tests/test_people.py (incl. the real
+  model in Chromium), tests/test_manifest_complete.py (every published file listed; nothing git-ignored).
+
+## 0.1.155: phones -- the app shell, the keyboard, tables, the Android window
+
+- The chat page (ui/web_chat_view.py, shared by every app and the web app) no longer scrolls the document:
+  html/body are `height: 100%; overflow: hidden`, `#shell` (position: fixed, height var(--app-h)) holds `#headbar`
+  (solid header background in chats), `#scroller` (the conversation; #feed inside) and `#composer-wrap` (absolute,
+  bottom 0). The rail / pinned sidebar / code viewer offset `#shell` (left/right) instead of the body padding.
+  Scrolling goes through `scroller()`, `atEnd(slack)` and `window.ginkScrollEnd(smooth)` (bridge.js uses it too);
+  `--composer-h` (ResizeObserver) sizes the feed's bottom padding and puts #jump (moved into the shell) above the box.
+  The see-through band of #composer-wrap has pointer-events: none, and wheel events over the box are forwarded.
+- `fitViewport()` (visualViewport resize/scroll, window resize, focus changes): --app-h = visualViewport.height,
+  `#shell` translateY(offsetTop) and --vv-top for the fixed top buttons (iPhone pans the page under the keyboard;
+  ignored while pinch-zoomed), body.kb (touch + a box focused + 120 px below the tallest height seen at this width),
+  body.short (< 560) / body.tiny (< 470); the end of the chat stays in view when the area shrinks. Home: the box is
+  centred in the visible area (calc(var(--app-h) * -0.5 + 103px)); with the keyboard up it sits on the keyboard and
+  the ideas hide. Viewport meta in the page itself (the iOS app had none: 980 px layout):
+  `width=device-width, initial-scale=1, interactive-widget=resizes-content` (no viewport-fit: no notch handling).
+- Touch screens: inputs/textareas/selects 16px (iPhone zooms in on anything smaller and stays zoomed), no #edge
+  hover strip, no hover-peek sidebar, no autofocus on load. `body.home #cin { min-width: 0 }` keeps the mic in the
+  pill. Same 16px rule in genie/console/auth/device/admin.html, the app login page and the web sign-in (which scroll).
+- `wrapTables(root)` (finalizeMessage + renderStream): every table in a .table-wrap (overflow-x: auto, scroll
+  shadows); the first row's cells get min-widths from the longest text in each column (72/120/180/240 px).
+- Greeting: apps `welcome_title()` = "Hi {name}" / "Hi there", `welcome_sub()` = a WELCOME_ENDINGS line,
+  capitalised; the name falls back to the account name in the sign-in token (account_name). Web: same, tokenName().
+- Android (services/android_chrome.py; identical copy in src/ginkgenie/): pyproject base_theme
+  Theme.AppCompat.Light.NoActionBar + Gink colours (Genie keeps its ActionBar -- Home/Back/Reload live there -- in
+  Gink's dark). setup(app, hide_title_bar=True): hides any ActionBar, SOFT_INPUT_ADJUST_RESIZE, and on the
+  edge-to-edge Briefcase template (found by its plain status-bar View next to android.R.id.content) replaces the
+  template's insets listener with one that adds the IME inset to the bottom margin (the template only applied
+  systemBars + displayCutout, so the keyboard covered the WebView and Chromium panned it). set_bars(app, hex, dark):
+  status/navigation bar colours (window + the template's status View + decor background) and light/dark icons via
+  WindowCompat.getInsetsController; the page sends 'bars' {bg, dark} from syncBars() (theme changes, lock screen),
+  handled before the lock check in handle_composer_event; the login screen sets LOGIN_BG. Never raises (state()).
+- tests/test_phone_layout.py: page structure, greeting, sign-in pages, the Android module against a fake `java`
+  (title bar, IME margins, bar colours, older template, Genie), and Chromium at iPhone/Android/desktop sizes (no
+  sideways scroll, wrapped tables, solid header, a faked iPhone keyboard via visualViewport, the login card).
+
+## 0.1.156: premium sidebar; People without a button; sources with real logos (and a Sources button that opens)
+
+- Sidebar (ui/web_chat_view.py): .side-head brand tile; .side-top = button.new-chat[data-nav=new] + label#side-search
+  (always visible; #side-q filters Recents; Escape clears) with .nk shortcut hints (#nk-new, #nk-search; not on touch);
+  .nav = Workspace / Media Studio / Gink Genie; .side-sep; #recents grouped by renderRecents() with dayGroup(when):
+  Pinned, Today, Yesterday, Previous 7 days, Previous 30 days, then "Month Year" (search: Results). The apps send
+  `when` (UTC ms, calendar.timegm of the history timestamp); the web app `when` = s.updated * 1000. One delegated
+  click handler on #side for [data-nav]. --side-hover / --side-line (light/dark). Phones: #side-scrim (tap closes),
+  rounded overlay. #tb-toggle: a panel icon; its .pf fill shows while the sidebar is open. Rail restyled.
+- People: no sidebar/rail buttons. peopleIntercept opens People for PEOPLE_OPEN phrases ("show my people", "who's
+  in my photos", "open people") whatever its state (off -> the intro with Turn on; care mode -> why it's off), and
+  "photos of X" only for a named person. Photos shared while off: apps -> web_chat.people_pending(data_urls) (not
+  temporary, not live-*, not care); web -> peoplePending(photos). peoplePending keeps the last 4 for 10 minutes and
+  shows a ginkNotify offer once (localStorage gink-people-offered); "Turn on" = setting people_on; peopleSetOn(true)
+  enqueues the waiting photos. Settings > Privacy > People: an Open button (action people_open, handled in the page).
+- Sources: chat_extras' capture-phase click listener on .gactions .ga now skips .gsrc (it called stopPropagation, so
+  the Sources button's own onclick never ran). srcIcon(host, cls): coloured letter + <img> from
+  window.GINK_ICONS + '/icon/' + host (apps: web_chat.set_server(base_url) at startup; web app: "" = same site);
+  .logo once loaded; a green .ok check on the first logo when it's official. Server: GET /icon/{host} -- fixed
+  upstreams (Google s2 favicons, then DuckDuckGo ip3), never a caller-chosen address; host must be a domain name
+  (no IPs, no localhost); only PNG/ICO/GIF/JPEG/WebP by magic bytes (never SVG), 40 B-100 KB; cache 7 days (misses
+  1 hour, 3000 entries); 120 new fetches per client IP per 10 minutes (429); CSP default-src 'none', nosniff.
+  _SEARCH_NOTE asks for the official source first; OFFICIAL_SITES (electoral commissions, central banks, statistics
+  offices off government domains) join _is_official. Non-streamed search answers get data["sources"] =
+  _source_list(): [{title, url, official, icon}] (icon = GINK_PUBLIC_URL/icon/host).
+- SDKs (gink-ai 0.3.13): Python gink.sources(text, base_url), Client.sources(text), Client.search(q, with_sources=True)
+  -> {answer, sources}; JS sources(text, baseURL), gink.sources(text), gink.search(q, {withSources: true}); types Source.
+- Privacy policy: the icon services row (only a website's name, fetched by our server); People asks once.
+  POLICIES_UPDATED 2026-11-15.
+- tests/test_sidebar_sources.py (incl. Chromium: logos, the Sources button opening, day groups, People asking once).
+
+## 0.1.157: a plain sidebar; the glowing logo on it and on the rail; older web engines (flex gap, inset)
+
+- The 0.1.156 sidebar "looked too AI" (glow, raised cards, shortcut pills, uppercase headings, accent bar, ringed
+  avatar). Now (ui/web_chat_view.py, the block "the sidebar (0.1.157): plain and quiet"): --side-w 260px; .side-head =
+  .brand (.gmark + "Gink"); .side-nav = .srow rows: button[data-nav=new], label#side-search (an input styled as a row;
+  #side-q still filters Recents), [data-nav=tasks|media|genie] -- each svg + span.lbl; .nk shortcut text shows only on
+  row hover; .recent rows 36px (40px on touch), .recent.current = var(--side-active); --side-hover / --side-active /
+  --side-line (light/dark); .recents-head sentence case (chat_extras); no pin emoji; .avatar a solid accent circle.
+  Phones: no rounded overlay, no blur on #side-scrim. Every space in the sidebar, the rail and Temporary is a margin.
+- The logo: branding.BRAND_TILE_BASE64 -- the tile cut from the owner's logo_spinner.png (box 65,49-958,969 inset
+  10px, corners re-rounded at 25.7%, outside transparent), 96x96. In the page once, as .gmark's background
+  (__BRAND_TILE_URI__).
+- #tb-toggle holds .gmark + svg.tb-panel. Desktop, sidebar closed: it sits at the top of the rail (left 10px) showing
+  the logo; :hover shows the panel icon. Open (pinned/peek): left = sidebar width - 50px (the sidebar's top right),
+  panel icon. Phones: always the panel icon. Its title follows the state (syncToggle: Open/Close sidebar). The button
+  no longer peeks the sidebar on mouseenter (it moved away from under the pointer); the left edge still does.
+- #rail = the collapsed sidebar: var(--sidebar) background, a hairline, 40px buttons 2px apart in the sidebar's order
+  (new, search, tasks, media, genie; settings and the avatar at the bottom). #topbar starts at 72px on desktop.
+- Older engines. Safari before 14.1 (older Macs' WKWebView), Android System WebView before Chrome 84 and older
+  WebKitGTK ignore flex `gap`. ui/compat.py FLEX_GAP_JS: one check (a column flex box of two 1px boxes with row-gap
+  1px: 3px tall where gap works, 2px where it doesn't, 0 while the page isn't laid out -- then it decides on load or
+  resize); if it doesn't, html.no-flex-gap and every flex container with a gap gets it
+  as margins: the far side of each item before the next (main axis; the next item's near side after a text node),
+  never on a side with an auto margin (rules read from document.styleSheets), plus the cross-axis gap on wrapped lines
+  (measured). Containers come from the selectors of rules that set a gap and [style*=gap]; batched MutationObserver
+  (childList, class/style/hidden/open; html/body class -> everything), load and resize; undo-then-redo per container;
+  inner containers first; every step in try/catch. Known difference: in a centred wrapping row the trailing margin
+  shifts a full line by gap/2. window.GINK_GAP_POLYFILL = true forces it in a browser that has gap (it then zeroes the
+  native gap per container) -- the tests compare those pixels with the native ones; window.ginkGapStats counts work.
+  Injected by compat.inject() into the chat page (so the web app too), Workspace, Media Studio and sign-in;
+  genie.html carries a copy between <!-- gink:compat --> markers, refreshed by tools/build_web_app.py (sync_genie).
+- `inset: 0` (Safari 14.1+) replaced by top/right/bottom/left in the page, chat_extras, settings, genie.html, lock.js
+  and the web app's sign-in and bridge (the app lock and People/Live overlays didn't cover the window). People's photo
+  tiles have an @supports not (aspect-ratio) fallback; Workspace's color-mix() values have a plain value first; the
+  web sign-in's "or" line spaces its ::before/::after with margins.
+- tests/test_plain_sidebar_compat.py (incl. Chromium: the rail's logo turns into the open button, the button moves
+  to the sidebar's top right, icons 10px from their labels, and the forced fix matching the native pixels).

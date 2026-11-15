@@ -396,6 +396,8 @@ class ToolRunner:
         if not self.memory:
             return {"ok": False, "message": "Memory isn't available."}
         m = self.memory.add(fact)
+        if m.get("replaced"):                           # the same single thing, said again (a new number, a new city)
+            return {"ok": True, "message": f"Updated: {m['text']}. (It replaces what I had: {m['replaced']}.)"}
         return {"ok": True, "message": f"I'll remember that: {m['text']}."}
 
     def _t_forget(self, what):

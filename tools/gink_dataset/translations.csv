@@ -2270,3 +2270,922 @@ es,¿Qué tiempo hace en Abidjan hoy?,Person: ¿Qué tiempo hace en Abidjan hoy?
 es,Lanza Spotify,"Person: Lanza Spotify
 Gink: Spotify está abierto.","Persona: Lanza Spotify
 Gink: Spotify está abierto.",Gink (via openai/gpt-oss-120b),yes
+es,What's the weather like in Chicago tomorrow?,¿Cómo estará el clima en Chicago mañana?,"Chicago mañana: soleado, alrededor de 31°C.",Gink (via openai/gpt-oss-120b),yes
+es,Can you launch Spotify?,¿Puedes abrir Spotify?,Spotify abierto.,Gink (via openai/gpt-oss-120b),yes
+es,Alarm 08:30.,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, fais la conversion de 100 cedis en dollars.","Hey, haz la conversión de 100 cedis a dólares.","100 cedis son aproximadamente 6.49 dólares, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Could you please calculate 803 × 45 for me?,"¿Podrías calcular 803 × 45 para mí, por favor?","Son 36,135.",Gink (via openai/gpt-oss-120b),yes
+es,Clima Conakry amanhã,Clima Conakry mañana,"Conakry mañana: nublado, alrededor de 22°C.",Gink (via openai/gpt-oss-120b),yes
+es,Calcule 825 por 3,,,Gink (via openai/gpt-oss-120b),no
+es,Quanto é 160 vezes 47?,Persona: ¿Cuánto es 160 por 47?,Son 7.520.,Gink (via openai/gpt-oss-120b),yes
+es,Lance WhatsApp,"Persona: Lance WhatsApp
+Gink: WhatsApp est ouvert.","Persona: Lanza WhatsApp
+Gink: WhatsApp está abierto.",Gink (via openai/gpt-oss-120b),yes
+es,"722 multiplied by 22, what's that?",,,Gink (via openai/gpt-oss-120b),no
+es,Please set a timer: 1 hour 30 minutes.,"Por favor, pon un temporizador: 1 hour 30 minutes.",Tu temporizador de 1 hour 30 minutes está en marcha.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me the current weather in Accra?",,,Gink (via openai/gpt-oss-120b),no
+es,Pouvez-vous me dire le résultat de 672 × 42 ?,¿Puedes decirme el resultado de 672 × 42?,"Son 28,224.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, could you tell me what 343 times 10 is?",,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, règle le son à 30.","Hey, pon el sonido a 30.",Volumen a 30.,Gink (via openai/gpt-oss-120b),yes
+es,Please convert 10 CFA francs to pounds for me.,,,Gink (via openai/gpt-oss-120b),no
+es,Could you please set the volume to 40?,¿Podrías poner el volumen a 40?,Volumen ajustado a 40.,Gink (via openai/gpt-oss-120b),yes
+es,Combien font 5 % de 15000 ?,Persona: ¿Cuánto es el 5 % de 15000?,Gink: Eso es 750.,Gink (via openai/gpt-oss-120b),yes
+es,كم يساوي 100000 فرنك سيفا في الليونات؟,¿Cuánto equivale 100000 francos suizos en leones?,"100000 francos suizos equivale aproximadamente a 3,735.54 leones según el tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Sais-tu quel temps il fait à Cairo aujourd'hui ?,¿Sabes qué tiempo hace en Cairo hoy?,"En Cairo hoy: nublado, alrededor de 27 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Weather in Johannesburg at the moment?,Persona: ¿Clima en Johannesburgo en este momento?,"Gink: Johannesburgo ahora: soleado, alrededor de 22°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Open WhatsApp, thanks.","Persona: Abre WhatsApp, gracias.",WhatsApp abierto.,Gink (via openai/gpt-oss-120b),yes
+es,كم يساوي 20 يورو بالليون؟,¿Cuánto equivale 20 يورو en ليون?,20 يورو equivale aproximadamente a 491.30 ليون según el tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, peux-tu mettre un minuteur de 15 minutes ?","Person: Hey, peux-tu mettre un minuteur de 15 minutes ?
+Gink: Minuteur de 15 minutes lancé.","Person: Hey, ¿puedes poner un temporizador de 15 minutos?
+Gink: Temporizador de 15 minutos iniciado.",Gink (via openai/gpt-oss-120b),yes
+es,"Mets une alarme pour 6h30, merci.","Pon una alarma para 6h30, gracias.",Hecho: te despertaré a 6h30.,Gink (via openai/gpt-oss-120b),yes
+es,الطقس في Thiès الآن,Persona: El tiempo en Thiès ahora,"Gink: Thiès ahora: lluvias ligeras, alrededor de 37°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu sais me dire combien 250 yens ça fait en roupies indonésiennes ?","Hola, ¿sabes decirme cuántas rupias indonesias son 250 yenes?","250 yenes son aproximadamente 25,986.84 rupias indonesias, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,إيقظني الساعة 5:30 ص,Despiértame a las 5:30 a.m.,"Hecho, te despertaré a las 5:30 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,"Person: Launch Mail
+Gink: Opened Mail","Person: Launch Mail
+Gink: Opened Mail
+Gink: Persona: Iniciar Mail
+Gink: Mail abierto","Persona: Abrir Mail
+Gink: Mail abierto",Gink (via openai/gpt-oss-120b),yes
+es,Convert 1000 pounds to rupees,,,Gink (via openai/gpt-oss-120b),no
+es,Calcule 214 fois 4,Calcule 214 por 4,Da 856.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es el 5 % de 250000?,Person: ¿Cuánto es el 5 % de 250000?,"Gink: Son 12,500.",Gink (via openai/gpt-oss-120b),yes
+es,"Je voudrais un minuteur de 45 minutes, merci.","Quisiera un temporizador de 45 minutos, gracias.",Temporizador de 45 minutos iniciado.,Gink (via openai/gpt-oss-120b),yes
+es,Quanto é 852 vezes 26?,¿Cuánto es 852 veces 26?,"Es 22,152.",Gink (via openai/gpt-oss-120b),yes
+es,Combien font 18 % de 250000 ?,¿Cuánto es el 18 % de 250000?,"Son 45,000.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu sais combien font 10000 shillings kényans en nairas ?","Hola, ¿sabes cuánto son 10000 shillings kényans en nairas?","10000 shillings kényans son aproximadamente 118,604.65 nairas, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Merci de calculer 171 x 10.,Gracias por calcular 171 x 10.,"Da 1,710.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you convert 250 euros to naira for me?","Oye, ¿puedes convertir 250 euros a naira para mí?","250 euros son aproximadamente 415,760.87 naira al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Pouvez-vous me dire quel est le résultat de 233 × 7 ?,¿Puedes decirme cuál es el resultado de 233 × 7?,"Da 1,631.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu sais combien font 18 % de 250000 ?","Hola, ¿sabes cuánto es el 18 % de 250000?","Son 45,000.",Gink (via openai/gpt-oss-120b),yes
+es,"Pouvez-vous me dire la météo à Johannesburg pour demain, s'il vous plaît ?","¿Puedes decirme el tiempo en Johannesburg para mañana, por favor?","En Johannesburg mañana: nublado, alrededor de 34 °C.",Gink (via openai/gpt-oss-120b),yes
+es,What’s the naira equivalent of 20 Kenyan shillings?,,,Gink (via openai/gpt-oss-120b),no
+es,"Launch Notes, please.","Person: Launch Notes, please.
+Gink: Opened Notes.","Persona: Abre Notes, por favor.
+Gink: Notes abierto.",Gink (via openai/gpt-oss-120b),yes
+es,Calcule 672 por 42,Persona: Calcule 672 por 42,"Gink: Da 28,224.",Gink (via openai/gpt-oss-120b),yes
+es,What's the weather like in Bangkok tomorrow?,¿Cómo estará el clima en Bangkok mañana?,"Bangkok mañana: lluvia ligera, alrededor de 37°C.",Gink (via openai/gpt-oss-120b),yes
+es,أيقظني الساعة 9 صباحًا,Despiértame a las 9 de la mañana,"Vale, te despertaré a las 9 de la mañana.",Gink (via openai/gpt-oss-120b),yes
+es,"Pouvez-vous calculer 599 fois 50, s'il vous plaît ?","¿Puedes calcular 599 por 50, por favor?","Son 29,950.",Gink (via openai/gpt-oss-120b),yes
+es,Weather in Lima today?,¿El clima en Lima hoy?,"Lima hoy: lluvia ligera, alrededor de 34°C.",Gink (via openai/gpt-oss-120b),yes
+es,alarm at 06:45,alarma a las 06:45,"Listo, te despertaré a las 6:45 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 100 dólares en francos CFA,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, 80*14, ça fait combien ?","Hey, 80*14, ¿cuánto es?","Son 1,120.",Gink (via openai/gpt-oss-120b),yes
+es,Please calculate 25% of 5000 for me.,"Por favor, calcula el 25 % de 5000 para mí.","Eso es 1,250.",Gink (via openai/gpt-oss-120b),yes
+es,Please open Notes.,,,Gink (via openai/gpt-oss-120b),no
+es,Please calculate 25% of 80000 for me.,"Por favor, calcula el 25 % de 80000 para mí.","Eso es 20,000.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, launch WhatsApp, please.","Oye, abre WhatsApp, por favor.",WhatsApp abierto.,Gink (via openai/gpt-oss-120b),yes
+es,Please calculate 937 × 52 for me.,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, fais le calcul de 922 multiplié par 45.","Hey, haz el cálculo de 922 multiplicado por 45.","Da 41,490.",Gink (via openai/gpt-oss-120b),yes
+es,Qual é o tempo em Conakry agora?,¿Cuál es el tiempo en Conakry ahora?,"Conakry ahora: nublado, alrededor de 36°C.",Gink (via openai/gpt-oss-120b),yes
+es,Could you tell me how many rupees 100000 Canadian dollars equals?,¿Podrías decirme a cuántas rupias equivale 100000 dólares canadienses?,"100000 dólares canadienses son aproximadamente 6,131,386.86 rupias al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, règle l'alarme à 6h45.","Hey, pon la alarma a las 6:45.",Listo: te despertaré a las 6:45.,Gink (via openai/gpt-oss-120b),yes
+es,Combien font 250 yens en roupies indonésiennes ?,¿Cuántos son 250 yenes en rupias indonesias?,"250 yenes son aproximadamente 25,986.84 rupias indonesias, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Weather forecast for Casablanca tomorrow?,¿Pronóstico del tiempo para Casablanca mañana?,"Casablanca mañana: lluvia ligera, alrededor de 22°C.",Gink (via openai/gpt-oss-120b),yes
+es,ما هو 10% من 15000؟,¿Cuál es el 10% de 15000?,"Eso equivale a 1,500.",Gink (via openai/gpt-oss-120b),yes
+es,Please start a timer that lasts 30 minutes.,"Por favor, inicia un temporizador de 30 minutos.",Tu temporizador de 30 minutos está en marcha.,Gink (via openai/gpt-oss-120b),yes
+es,كم 5 % من 1200؟,¿Cuánto es el 5 % de 1200?,El resultado es 60.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, what's the weather in Kinshasa right now?",,,Gink (via openai/gpt-oss-120b),no
+es,Set the volume to 40,Ajusta el volumen a 40,Volumen ajustado a 40.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, 10 shillings kényans = combien en wons ?","Oye, 10 shillings kényans = ¿cuántos wons?","10 shillings kényans son aproximadamente 106.98 wons, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu peux me dire combien font 5000 roupies indonésiennes en dollars australiens ?","Hola, ¿puedes decirme cuánto son 5000 rupias indonesias en dólares australianos?","5000 rupias indonesias son aproximadamente 0.48 dólares australianos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, mets-moi une alarme pour 8h.","Hey, ponme una alarma para 8h.",Listo: te despertaré a 8h.,Gink (via openai/gpt-oss-120b),yes
+es,Combien font 1000 rands en yuans ?,¿Cuánto son 1000 rands en yuanes?,"1000 rands son aproximadamente 395.60 yuanes, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me what 100000 Egyptian pounds converts to in dollars?",,,Gink (via openai/gpt-oss-120b),no
+es,J’ai besoin de savoir 214 multiplié par 4.,Necesito saber 214 multiplicado por 4.,Da 856.,Gink (via openai/gpt-oss-120b),yes
+es,Pessoa: Qual é 264 vezes 7?,Persona: ¿Cuál es 264 veces 7?,"Gink: Son 1,848.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me the weather forecast for Mexico City tomorrow?",,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, can you tell me what 131 times 43 is?",,,Gink (via openai/gpt-oss-120b),no
+es,What's 5% of 250000?,,,Gink (via openai/gpt-oss-120b),no
+es,Persona: Convierte 100 naira a leones,,,Gink (via openai/gpt-oss-120b),no
+es,Person: Rechne 1000 Leones in Dollar um,Persona: Calcula 1000 Leones a dólares,Gink: 1000 Leones equivalen a aproximadamente 44.25 dólares al tipo de cambio actual.,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 185 fois 25,Calcule 185 por 25,"Da 4,625.",Gink (via openai/gpt-oss-120b),yes
+es,What is 412 times 50?,¿Cuánto es 412 por 50?,"Eso es 20,600.",Gink (via openai/gpt-oss-120b),yes
+es,"Weather Cairo right now, please.","Clima en El Cairo ahora, por favor.","El Cairo ahora: soleado, alrededor de 37°C.",Gink (via openai/gpt-oss-120b),yes
+es,20 leones = how many dollars?,20 leones = ¿cuántos dólares?,20 leones son aproximadamente 0.88 dólares al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,Pessoa: Clima em Thiès agora,,,Gink (via openai/gpt-oss-120b),no
+es,"Start Spotify, thanks!","¡Inicia Spotify, gracias!",Spotify abierto.,Gink (via openai/gpt-oss-120b),yes
+es,What's the weather like right now in Dhaka?,¿Cómo está el clima ahora en Dhaka?,"Dhaka ahora: soleado, alrededor de 34°C.",Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 9:45 a.m.,Person: Despiértame a las 9:45 a.m.,"Gink: Listo, te despertaré a las 9:45 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,"Start Mail, please.","Persona: Inicia Mail, por favor.",Mail abierto.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, règle le volume à 10.","Hey, pon el volumen a 10.",Volumen a 10.,Gink (via openai/gpt-oss-120b),yes
+es,What’s the naira equivalent of 100 Kenyan shillings?,¿Cuál es el equivalente en naira de 100 chelines kenianos?,"100 chelines kenianos son aproximadamente 1,186.05 naira al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, could you convert 50 Canadian dollars to pounds for me?",,,Gink (via openai/gpt-oss-120b),no
+es,What's the weather like in Madrid tomorrow?,¿Cómo estará el tiempo en Madrid mañana?,"Madrid mañana: soleado, alrededor de 24°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, mets une alarme pour 7h demain.","Hey, pon una alarma para 7h mañana.",Listo: te despertaré a 7h.,Gink (via openai/gpt-oss-120b),yes
+es,Could you please calculate 25% of 1200 for me?,"¿Podrías calcular el 25% de 1200 para mí, por favor?",Son 300.,Gink (via openai/gpt-oss-120b),yes
+es,Qual é 20% de 250000?,¿Cuál es el 20% de 250000?,"Es 50,000.",Gink (via openai/gpt-oss-120b),yes
+es,Please let me know the conversion rate for 1000 euros to yen.,"Por favor, infórmame la tasa de conversión de 1000 euros a yen.","1000 euros son aproximadamente 165,217.39 yenes al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Quel est le résultat de 5 % de 250000 ?,Persona: ¿Cuál es el resultado del 5 % de 250000?,"Gink: Eso da 12,500.",Gink (via openai/gpt-oss-120b),yes
+es,What's the product of 131 and 43?,Persona: ¿Cuál es el producto de 131 y 43?,"Gink: Eso es 5,633.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, could you tell me what 5% of 15000 is?",,,Gink (via openai/gpt-oss-120b),no
+es,Set a timer for 10 minutes.,"Person: Set a timer for 10 minutes.
+Gink: Your 10 minutes timer is running.","Persona: Pon un temporizador de 10 minutos.
+Gink: Tu temporizador de 10 minutos está en marcha.",Gink (via openai/gpt-oss-120b),yes
+es,"Convertis 10000 shillings kényans en francs CFA, s'il te plaît.","Convierte 10000 shillings kényans a francos CFA, por favor.","10000 shillings kényans equivalen a aproximadamente 46,899.22 francos CFA, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"I need the conversion of 250 CFA francs into Kenyan shillings, thanks.",,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, can you tell me the conversion for 100000 CFA francs to leones?",,,Gink (via openai/gpt-oss-120b),no
+es,"Convert 5000 naira to Kenyan shillings, thanks.","Convierte 5000 naira a chelines kenianos, gracias.",5000 naira son aproximadamente 421.57 chelines kenianos al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,"Bonjour, pourriez-vous me dire la conversion de 1000 livres turques en shillings kényans, s'il vous plaît ?","Hola, ¿podría decirme la conversión de 1000 libras turcas a chelines kenianos, por favor?","1000 libras turcas son aproximadamente 3,794.12 chelines kenianos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Bonjour, pourriez-vous me calculer 25 % de 250000, s'il vous plaît ?","Hola, ¿podrías calcularme el 25 % de 250000, por favor?","Da 62,500.",Gink (via openai/gpt-oss-120b),yes
+es,"Could you calculate 10% of 5000 for me, please?","¿Podrías calcular el 10% de 5000 para mí, por favor?",Eso es 500.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, j’ai besoin de savoir le calcul de 18 % de 250000.","Hey, necesito saber el cálculo del 18 % de 250000.","Da 45,000.",Gink (via openai/gpt-oss-120b),yes
+es,Persona: ¿Puedes abrir Spotify?,"Person: Persona: ¿Puedes abrir Spotify?
+Gink: Gink: Spotify abierto.","Persona: ¿Puedes abrir Spotify?
+Gink: Spotify abierto.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me the weather in Bangkok tomorrow?",,,Gink (via openai/gpt-oss-120b),no
+es,هل يمكنك إيقاظي في الساعة 8:45 ص؟,¿Puedes despertarme a las 8:45 a.m.?,"Hecho, te despertaré a las 8:45 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,Persona: Clima Dakar hoy,,,Gink (via openai/gpt-oss-120b),no
+es,Quanto é 248 vezes 44?,¿Cuánto es 248 veces 44?,"Es 10,912.",Gink (via openai/gpt-oss-120b),yes
+es,Adjust volume to 10.,Ajusta el volumen a 10.,Volumen ajustado a 10.,Gink (via openai/gpt-oss-120b),yes
+es,Fais le calcul 825*3.,Persona: Haz el cálculo 825*3.,"Da 2,475.",Gink (via openai/gpt-oss-120b),yes
+es,Could you figure out the 25% amount of 80000?,Person: ¿Podrías calcular el 25% de 80000?,"Gink: Eso es 20,000.",Gink (via openai/gpt-oss-120b),yes
+es,"I need the conversion for 250 CFA francs into pounds, thanks.","Necesito la conversión de 250 CFA francs a libras, gracias.",250 CFA francs son aproximadamente 0.32 pounds al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,"Minuteur 5 minutes, active-le.","Temporizador 5 minutos, actívalo.",Temporizador de 5 minutos iniciado.,Gink (via openai/gpt-oss-120b),yes
+es,"Weather Chicago right now, please.","Clima de Chicago ahora, por favor.","Chicago ahora: lluvia ligera, alrededor de 25°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, set an alarm for 6:15 am tomorrow.","Person: Hey, set an alarm for 6:15 am tomorrow.
+Gink: Done, I'll wake you at 6:15 am.","Persona: Oye, pon una alarma para las 6:15 a. m. de mañana.
+Gink: Listo, te despertaré a las 6:15 a. m.",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 5000 leones en dólares,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, j’ai besoin de savoir combien font 10000 shillings kényans en francs CFA.","Hey, necesito saber cuánto son 10000 shillings kenyanes en francos CFA.","10000 shillings kenyanes equivalen a aproximadamente 46,899.22 francos CFA, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Quel est 233 multiplié par 7 ?,¿Cuál es 233 multiplicado por 7?,"Da 1,631.",Gink (via openai/gpt-oss-120b),yes
+es,Please let me know the conversion for 50 Philippine pesos to rupees.,"Por favor, infórmame la conversión de 50 pesos filipinos a rupias.",50 pesos filipinos son aproximadamente 72.41 rupias al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,Ajusta el volumen a 30,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, tu peux transformer 20 wons en pesos philippins ?","Hey, ¿puedes convertir 20 wons a pesos filipinos?","20 wons son aproximadamente 0.84 pesos filipinos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Clima Kumasi amanhã,Persona: Clima Kumasi mañana,"Kumasi mañana: soleado, alrededor de 30°C.",Gink (via openai/gpt-oss-120b),yes
+es,Je voudrais connaître la météo de demain à Johannesburg.,Quisiera saber el clima de mañana en Johannesburgo.,"En Johannesburgo mañana: nublado, alrededor de 34 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you convert 25000 rupees to Canadian dollars for me?",,,Gink (via openai/gpt-oss-120b),no
+es,Pessoa: Quanto é 222 vezes 56?,Persona: ¿Cuánto es 222 veces 56?,Gink: Eso es 12.432.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you change 100 Egyptian pounds to euros for me?","Oye, ¿puedes cambiar 100 Egyptian pounds a euros para mí?",100 Egyptian pounds son aproximadamente 1.90 euros al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,What's the weather like in Karachi tomorrow?,¿Cómo estará el clima en Karachi mañana?,"Karachi mañana: soleado, alrededor de 25°C.",Gink (via openai/gpt-oss-120b),yes
+es,Please wake me up at 6 am tomorrow.,"Por favor, despiértame a las 6 am mañana.","Listo, te despertaré a las 6 am.",Gink (via openai/gpt-oss-120b),yes
+es,"Pouvez-vous convertir 10 livres égyptiennes en pesos philippins, s'il vous plaît ?","Persona: ¿Puedes convertir 10 libras egipcias a pesos filipinos, por favor?","Gink: 10 libras egipcias son aproximadamente 11.96 pesos filipinos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Ouvre Spotify s'il te plaît.,"Abre Spotify, por favor.",Spotify está abierto.,Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu sais quel temps il fait à Hanoi en ce moment ?","Hola, ¿sabes qué tiempo hace en Hanoi ahora?","En Hanoi ahora: soleado, alrededor de 22 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu peux me dire rapidement ce que ça donne 25 % de 80000 ?","Person: Hola, ¿puedes decirme rápidamente cuánto es el 25 % de 80000 ?","Gink: Son 20,000.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, could you make sure I’m up by 6:30 am?","Oye, ¿puedes asegurarte de que me levante a las 6:30 am?","Listo, te despertaré a las 6:30 am.",Gink (via openai/gpt-oss-120b),yes
+es,كم يساوي 25000 نايرا بالشلن الكيني؟,¿Cuánto equivale 25000 naira en chelín keniano?,"25000 naira equivale aproximadamente a 2,107.84 chelín keniano según el tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Que tempo está em Lagos hoje?,¿Qué tiempo hace en Lagos hoy?,"En Lagos hoy: nublado, alrededor de 23 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"Excusez-moi, pourriez-vous calculer 25 % de 80000 pour moi ?","Disculpe, ¿podría calcular el 25 % de 80000 para mí?","Da 20,000.",Gink (via openai/gpt-oss-120b),yes
+es,"Bonjour, pourriez-vous me dire la conversion de 250 réaux en dollars canadiens, s'il vous plaît ?","Persona: Hola, ¿podrías decirme la conversión de 250 réaux a dólares canadienses, por favor?","Gink: 250 réaux son aproximadamente 61.16 dólares canadienses, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Combien font 20 % de 250000 ?,¿Cuánto es el 20 % de 250000?,"Son 50,000.",Gink (via openai/gpt-oss-120b),yes
+es,Could you convert 25000 Philippine pesos to lira for me?,¿Podrías convertir 25000 Philippine pesos a lira para mí?,"25000 Philippine pesos son aproximadamente 14,655.17 lira al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Peux-tu lancer WhatsApp ?,¿Puedes abrir WhatsApp?,WhatsApp está abierto.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me the current weather in Mumbai?","Oye, ¿puedes decirme el clima actual en Mumbai?","Mumbai ahora: soleado, alrededor de 29°C.",Gink (via openai/gpt-oss-120b),yes
+es,كم 25 % من 15000؟,¿Cuánto es el 25 % de 15000?,"El resultado es 3,750.",Gink (via openai/gpt-oss-120b),yes
+es,Weather in Dakar tomorrow?,¿El clima en Dakar mañana?,"Dakar mañana: lluvia ligera, alrededor de 30°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Could you calculate 299×23 for me, please?","¿Podrías calcular 299×23 para mí, por favor?","Eso es 6,877.",Gink (via openai/gpt-oss-120b),yes
+es,Peux-tu ouvrir Spotify ?,¿Puedes abrir Spotify?,Spotify está abierto.,Gink (via openai/gpt-oss-120b),yes
+es,"Fais sonner le réveil à 5h45, merci.","Haz sonar la alarma a las 5:45, gracias.",Listo: te despierto a las 5:45.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, fais le change de 50 shillings kényans en nairas.","Hey, haz el cambio de 50 shillings kenyanes a nairas.","50 shillings kenyanes equivalen a aproximadamente 593.02 nairas, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Persona: Abre Calendar,,,Gink (via openai/gpt-oss-120b),no
+es,Peux-tu programmer une alarme pour 6h ?,¿Puedes programar una alarma para las 6h?,Listo: te despierto a las 6h.,Gink (via openai/gpt-oss-120b),yes
+es,"Lance Calendar, s'il te plaît.","Lance Calendar, por favor.",Calendar está abierto.,Gink (via openai/gpt-oss-120b),yes
+es,Please let me know how many rupees equal 100 rand.,"Por favor, dime cuántas rupees equivalen a 100 rand.",100 rand son aproximadamente 461.54 rupees al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,"Excusez‑moi, quel est le montant en pesos pour 100 dollars canadiens ?","Disculpe, ¿cuál es el monto en pesos por 100 dólares canadienses?","100 dólares canadienses son aproximadamente 1,350.36 pesos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,What is 875 times 13?,¿Cuánto es 875 por 13?,"Son 11,375.",Gink (via openai/gpt-oss-120b),yes
+es,Combien font 25 % de 250000 ?,¿Cuánto es el 25 % de 250000?,"Son 62,500.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, peux-tu transformer 25000 réaux en pesos ?","Hola, ¿puedes convertir 25000 réaux a pesos?","25000 réaux son aproximadamente 82,589.29 pesos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me the current weather in Dhaka?","Oye, ¿puedes decirme el clima actual en Dhaka?","Dhaka ahora: soleado, alrededor de 18°C.",Gink (via openai/gpt-oss-120b),yes
+es,Please convert 10 pounds to naira.,,,Gink (via openai/gpt-oss-120b),no
+es,Persona: Calcula 297 por 14,,,Gink (via openai/gpt-oss-120b),no
+es,What's 25 percent of 250000?,¿Cuál es el 25 por ciento de 250000?,"Eso es 62,500.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, c’est quoi la météo à Karachi maintenant ?","Hey, ¿qué tiempo hace en Karachi ahora?","En Karachi ahora: llovizna ligera, alrededor de 24 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Please set an alarm for 9 am.,"Por favor, pon una alarma para 9 am.","Listo, te despertaré a las 9 am.",Gink (via openai/gpt-oss-120b),yes
+es,"Weather London right now, please.",,,Gink (via openai/gpt-oss-120b),no
+es,Can you tell me the current weather for Kinshasa?,Persona: ¿Puedes decirme el clima actual de Kinshasa?,"Kinshasa ahora: soleado, alrededor de 30°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Bonjour, pourriez-vous m'indiquer les conditions météo à Dhaka pour aujourd'hui, s'il vous plaît ?","Hola, ¿podría indicarme las condiciones meteorológicas en Dhaka para hoy, por favor?","En Dhaka hoy: ligera lluvia, alrededor de 22 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Can you tell me the weather for Dhaka today?,,,Gink (via openai/gpt-oss-120b),no
+es,What is 633 times 22?,,,Gink (via openai/gpt-oss-120b),no
+es,Please let me know how much 100 Kenyan shillings equals in reais.,"Por favor, dime cuánto equivale 100 Kenyan shillings en reais.",100 Kenyan shillings son aproximadamente 4.34 reais al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,ما هو 20% من 15000؟,¿Cuál es el 20% de 15000?,"Eso equivale a 3,000.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, c'est quoi le temps à Bangkok aujourd'hui ?","Hey, ¿qué tiempo hace en Bangkok hoy?","En Bangkok hoy: llovizna ligera, alrededor de 22 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Je voudrais savoir combien font 5 % de 15000.,Person: Quisiera saber cuánto es el 5 % de 15000.,Gink: Son 750.,Gink (via openai/gpt-oss-120b),yes
+es,Could you convert 50 yen into euros for me?,¿Podrías convertir 50 yen a euros para mí?,50 yen son aproximadamente 0.30 euros al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,Can you give me the rupee amount for 100 rand?,,,Gink (via openai/gpt-oss-120b),no
+es,Mets une alarme à 6h45,Pon una alarma a las 6h45,"Listo, te despertaré a las 6h45.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, could you tell me what 35 × 29 equals?",,,Gink (via openai/gpt-oss-120b),no
+es,Peux-tu me réveiller à 5h s'il te plaît ?,"¿Puedes despertarme a las 5h, por favor?",Listo: te despierto a las 5h.,Gink (via openai/gpt-oss-120b),yes
+es,Qual é 5% de 15000?,,,Gink (via openai/gpt-oss-120b),no
+es,Abre WhatsApp,,,Gink (via openai/gpt-oss-120b),no
+es,What's 875 multiplied by 13?,Persona: ¿Cuánto es 875 multiplicado por 13?,"Gink: Eso es 11,375.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu sais combien font 1000 rands en yuans ?","Hola, ¿sabes cuántos yuanes son 1000 rands?","1000 rands son aproximadamente 395.60 yuanes, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,حوّل 10 CFA francs إلى euros,Convierte 10 CFA francos a euros,10 CFA francos equivale aproximadamente a 0.02 euros según el tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,كم يساوي 10000 دولار بالنايرا؟,¿Cuánto equivale 10000 dólares en naira?,"10000 dólares equivale a aproximadamente 15,300,000.00 naira según el tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Please open the Calculator app.,"Por favor, abre la app Calculator.",Calculator abierto.,Gink (via openai/gpt-oss-120b),yes
+es,Can you pull up the Calendar for me?,"Person: Can you pull up the Calendar for me?
+Gink: Opened Calendar.","Persona: ¿Puedes abrir el Calendario para mí?
+Gink: Calendario abierto.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me what 5% of 80000 is?","Persona: Oye, ¿puedes decirme cuál es el 5% de 80000?","Gink: Eso es 4,000.",Gink (via openai/gpt-oss-120b),yes
+es,Please calculate 5% of 250000 for me.,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, 1000 livres turques = combien de shillings kényans ?","Hey, 1000 livres turques = ¿cuántos shillings kenyanos?","1000 livres turques son aproximadamente 3,794.12 shillings kenyanos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, could you convert 100 pounds to yen for me?","Oye, ¿puedes convertir 100 libras a yenes para mí?","100 libras son aproximadamente 19,487.18 yenes al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Can you tell me what 50 pounds equals in cedis?,¿Puedes decirme a cuántos cedis equivale 50 libras?,50 libras son aproximadamente 987.18 cedis al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,كم 20 ليون بالدولار؟,¿Cuánto son 20 leones en dólares?,20 leones son aproximadamente 0.88 dólares según el tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,Can you convert 50 yuan to won for me?,¿Puedes convertir 50 yuan a won para mí?,"50 yuan son aproximadamente 9,583.33 won al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Mets une alarme pour 6h45, merci.","Pon una alarma para 6h45, gracias.",Hecho: te despertaré a 6h45.,Gink (via openai/gpt-oss-120b),yes
+es,What's the weather looking like in Conakry tomorrow?,,,Gink (via openai/gpt-oss-120b),no
+es,I need to know the amount of Philippine pesos I get for 25000 Canadian dollars.,Necesito saber cuántos pesos filipinos obtengo por 25000 dólares canadienses.,"25000 dólares canadienses son aproximadamente 1,058,394.16 pesos filipinos al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Launch Calendar, please.","Abre el Calendario, por favor.",Calendario abierto.,Gink (via openai/gpt-oss-120b),yes
+es,Pouvez‑vous faire le calcul 171 fois 10 ?,¿Puedes hacer el cálculo 171 por 10?,"Da 1,710.",Gink (via openai/gpt-oss-120b),yes
+es,What's the weather in Cairo right now?,Persona: ¿Cómo está el tiempo en El Cairo ahora?,"Gink: El Cairo ahora: nublado, alrededor de 35°C.",Gink (via openai/gpt-oss-120b),yes
+es,Please begin a 10 minutes timer.,"Por favor, inicia un temporizador de 10 minutos.",Tu temporizador de 10 minutos está en marcha.,Gink (via openai/gpt-oss-120b),yes
+es,What's 412 times 50?,¿Cuánto es 412 por 50?,"Eso es 20,600.",Gink (via openai/gpt-oss-120b),yes
+es,Calcule 58 por 49,Persona: Calcule 58 por 49,"Da 2,842.",Gink (via openai/gpt-oss-120b),yes
+es,Could you check the weather for Casablanca at this moment?,¿Podrías comprobar el tiempo en Casablanca en este momento?,"Casablanca ahora: nublado, alrededor de 27°C.",Gink (via openai/gpt-oss-120b),yes
+es,What's 25% of 80000?,¿Cuál es el 25% de 80000?,"Eso es 20,000.",Gink (via openai/gpt-oss-120b),yes
+es,Convertis 25000 réaux en pesos,Persona: Convierte 25000 réaux a pesos,"25000 réaux son aproximadamente 82,589.29 pesos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, fais le calcul 58 fois 49.","Hey, haz el cálculo 58 por 49.","Da 2,842.",Gink (via openai/gpt-oss-120b),yes
+es,Can you tell me the weather in Thiès for tomorrow?,¿Puedes decirme el clima en Thiès para mañana?,"Thiès mañana: nublado, alrededor de 21°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, could you tell me the weather in Bangkok today?",,,Gink (via openai/gpt-oss-120b),no
+es,"Veuillez calculer 536 fois 42, s'il vous plaît.","Por favor, calcule 536 por 42.","Da 22,512.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you set the volume to 10?","Oye, ¿puedes poner el volumen a 10?",Volumen ajustado a 10.,Gink (via openai/gpt-oss-120b),yes
+es,"Bonjour, pourriez‑vous me convertir 250 yens en roupies indonésiennes, s’il vous plaît ?",,,Gink (via openai/gpt-oss-120b),no
+es,Pon el volumen a 70,,,Gink (via openai/gpt-oss-120b),no
+es,What's the forecast for Warsaw today?,,,Gink (via openai/gpt-oss-120b),no
+es,Pon un temporizador de 3 minutos,,,Gink (via openai/gpt-oss-120b),no
+es,What's the rate for 100 Kenyan shillings in reais?,Persona: ¿Cuál es el tipo de cambio de 100 Kenyan shillings a reales?,Gink: 100 Kenyan shillings equivale a aproximadamente 4.34 reales al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,Pessoa: Calcule 297 vezes 14,Persona: Calcula 297 veces 14,"Gink: Eso da 4,158.",Gink (via openai/gpt-oss-120b),yes
+es,Quel temps fait-il à Chicago demain ?,¿Qué tiempo hará en Chicago mañana?,"En Chicago mañana: ligera lluvia, alrededor de 26 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Persona: Weather Nairobi tomorrow,,,Gink (via openai/gpt-oss-120b),no
+es,Convierte 5000 euros a libras,Person: Convierte 5000 euros a libras,"Gink: 5000 euros son aproximadamente 4,239.13 libras al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Dhaka weather today, please.","Clima de Dhaka hoy, por favor.","Dhaka hoy: soleado, alrededor de 37°C.",Gink (via openai/gpt-oss-120b),yes
+es,Could you please let me know what the forecast is for Lima tomorrow?,¿Podrías decirme cuál es el pronóstico para Lima mañana?,"Lima mañana: nublado, alrededor de 35°C.",Gink (via openai/gpt-oss-120b),yes
+es,Please let me know how much 5000 Australian dollars is in naira.,"Por favor, dime cuánto son 5000 Australian dollars en naira.","5000 Australian dollars son aproximadamente 5,032,894.74 naira al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,How much is 5000 Australian dollars in naira?,Persona: ¿Cuánto son 5000 Australian dollars en naira?,"Gink: 5000 Australian dollars son aproximadamente 5,032,894.74 naira con la tasa de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Bonjour, pourriez-vous m'indiquer les conditions météorologiques actuelles à Istanbul ?",,,Gink (via openai/gpt-oss-120b),no
+es,Je voudrais savoir quel sera le temps à Conakry demain.,Quisiera saber cómo estará el tiempo en Conakry mañana.,"En Conakry mañana: soleado, alrededor de 19 °C.",Gink (via openai/gpt-oss-120b),yes
+es,What's the weather in Dhaka right now?,Persona: ¿Cuál es el clima en Dhaka ahora?,"Dhaka ahora: soleado, alrededor de 34°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Launch Safari, please.","Persona: Launch Safari, please.",Gink: Opened Safari.,Gink (via openai/gpt-oss-120b),yes
+es,"Calcule 171 fois 10, s'il te plaît.","Persona: Calcula 171 veces 10, por favor.","Gink: Da 1,710.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu peux me convertir 10 dollars australiens en yens ?","Hola, ¿puedes convertirme 10 dólares australianos a yenes?","10 dólares australianos son aproximadamente 1,000.00 yenes, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el 5% de 80000?,,,Gink (via openai/gpt-oss-120b),no
+es,Person: Calcule 58 vezes 49,Persona: Calcule 58 veces 49,"Gink: Eso da 2,842.",Gink (via openai/gpt-oss-120b),yes
+es,"Bonjour, merci de convertir 50 shillings kényans en nairas s'il te plaît.","Hola, gracias por convertir 50 shillings kenyanos a nairas, por favor.","50 shillings kenyanos son aproximadamente 593.02 nairas, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Converte 10000 shillings quenianos em francos CFA,Convierte 10000 shillings quenianos en francos CFA,"10000 shillings quenianos equivalen a cerca de 46,899.22 francos CFA, a la tasa actual.",Gink (via openai/gpt-oss-120b),yes
+es,كم سعر 5000 نايرا بالدولار؟,¿Cuánto cuesta 5000 نايرا en dólares?,5000 نايرا equivalen a aproximadamente 3.27 dólares según el tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,أيقظني الساعة 6 صباحًا,Despiértame a las 6 de la mañana,"Vale, te despertaré a las 6 de la mañana.",Gink (via openai/gpt-oss-120b),yes
+es,Calcule 819 vezes 59,Persona: Calcula 819 veces 59,Gink: Son 48.321.,Gink (via openai/gpt-oss-120b),yes
+es,Could you open the Calendar app for me?,¿Podrías abrir la app Calendar para mí?,Calendar abierto.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, could you open Mail for me?","Oye, ¿puedes abrir Mail para mí?",Mail abierto.,Gink (via openai/gpt-oss-120b),yes
+es,How much is 250 naira in rupees?,¿Cuánto son 250 naira en rupias?,250 naira son aproximadamente 13.73 rupias al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,What's 633 × 22?,Persona: ¿Cuánto es 633 × 22?,"Gink: Eso es 13,926.",Gink (via openai/gpt-oss-120b),yes
+es,Please set the volume to 10.,"Por favor, pon el volumen a 10.",Volumen ajustado a 10.,Gink (via openai/gpt-oss-120b),yes
+es,Qual é 15% de 15000?,¿Cuál es el 15% de 15000?,"Es 2,250.",Gink (via openai/gpt-oss-120b),yes
+es,"Need the answer to 552×5, thanks.","Necesito la respuesta a 552×5, gracias.","Son 2,760.",Gink (via openai/gpt-oss-120b),yes
+es,Quel temps fait-il à Karachi en ce moment ?,¿Qué tiempo hace en Karachi en este momento?,"En Karachi en este momento: soleado, alrededor de 34 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu sais quel temps il fait à Jakarta maintenant ?","Person: Hola, ¿sabes qué tiempo hace en Jakarta ahora?","Gink: En Jakarta en este momento: ligera lluvia, alrededor de 37 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Can you launch Notes?,¿Puedes abrir Notes?,Notes abierto.,Gink (via openai/gpt-oss-120b),yes
+es,J'ai besoin du résultat de 379 multiplié par 27.,Persona: Necesito el resultado de 379 multiplicado por 27.,"Gink: Da 10,233.",Gink (via openai/gpt-oss-120b),yes
+es,"20 CFA francs in euros, please?",,,Gink (via openai/gpt-oss-120b),no
+es,Please convert 100 pounds to yen.,"Por favor, convierta 100 pounds a yen.","100 pounds son aproximadamente 19,487.18 yen al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Combien font 10 shillings kényans en wons ?,¿Cuánto son 10 shillings kényans en wons?,"10 shillings kényans son aproximadamente 106.98 wons, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Person: Can you wake me at 7:15 am?
+Gink: Done, I'll wake you at 7:15 am.","Person: Can you wake me at 7:15 am?
+Gink: Done, I'll wake you at 7:15 am.","Persona: ¿Puedes despertarme a las 7:15 a.m.?
+Gink: Listo, te despertaré a las 7:15 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu sais combien 10 pesos philippins ça donne en wons ?","Hola, ¿sabes cuántos wons son 10 pesos filipinos?","10 pesos filipinos son aproximadamente 237.93 wons, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuántos son 250 yenes en rupias indonesias?,Persona: ¿Cuántos son 250 yenes en rupias indonesias?,"Gink: 250 yenes son aproximadamente 25,986.84 rupias indonesias, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Please let me know the conversion rate for 10 won to euros.,"Por favor, infórmame del tipo de cambio de 10 won a euros.",10 won son aproximadamente 0.01 euros al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,Peux-tu mettre le volume à 30 ?,¿Puedes poner el volumen a 30?,Volumen a 30.,Gink (via openai/gpt-oss-120b),yes
+es,What's the rupee amount for 250 naira?,¿Cuál es la cantidad en rupias para 250 naira?,250 naira son aproximadamente 13.73 rupias al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,What's 275 multiplied by 28?,Persona: ¿Cuánto es 275 multiplicado por 28?,"Gink: Eso es 7,700.",Gink (via openai/gpt-oss-120b),yes
+es,Quel est le résultat de 20 % de 250000 ?,Persona: ¿Cuál es el resultado del 20 % de 250000?,"Gink: Da 50,000.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es 299 por 23?,,,Gink (via openai/gpt-oss-120b),no
+es,"Ouvre WhatsApp, s'il te plaît.","Abre WhatsApp, por favor.",WhatsApp está abierto.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you start a 10 minutes timer?","Oye, ¿puedes iniciar un temporizador de 10 minutos?",Tu temporizador de 10 minutos está en marcha.,Gink (via openai/gpt-oss-120b),yes
+es,كم يساوي 10 نايرا بالفرنك السينيغالي؟,¿Cuánto equivale 10 نايرا al franco senegalés?,"10 نايرا equivale aproximadamente a 3.95 franco senegalés, según el tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Please calculate 5% of 15000 for me.,,,Gink (via openai/gpt-oss-120b),no
+es,I’m curious—how many yen do I get for 1000 euros?,Persona: Tengo curiosidad—¿cuántos yenes obtengo por 1000 euros?,"Gink: 1000 euros son aproximadamente 165,217.39 yenes al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Excusez‑moi, j’ai besoin de savoir le résultat de 18 % de 5000.",,,Gink (via openai/gpt-oss-120b),no
+es,Fais sonner le réveil à 5h45.,Haz sonar la alarma a 5h45.,"Listo, te despierto a 5h45.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu peux me dire ce que ça fait 25 % de 250000 ?","Hola, ¿puedes decirme cuánto es el 25 % de 250000?","Son 62,500.",Gink (via openai/gpt-oss-120b),yes
+es,Qual é a previsão do tempo em Dakar amanhã?,¿Cuál es el pronóstico del tiempo en Dakar mañana?,"Dakar mañana: lluvia ligera, alrededor de 30°C.",Gink (via openai/gpt-oss-120b),yes
+es,الشخص: شغّل Mail,Persona: abre Mail,Gink: Mail abierto.,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en London en este momento?,,,Gink (via openai/gpt-oss-120b),no
+es,"S’il vous plaît, quelle est la météo actuelle à Istanbul ?",,,Gink (via openai/gpt-oss-120b),no
+es,Pouvez‑vous me dire quel temps il fait à Karachi en ce moment ?,¿Puedes decirme qué tiempo hace en Karachi en este momento?,"En Karachi en este momento: soleado, alrededor de 34 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu peux me dire rapidement ce que représente 5 % de 1200 ?",,,Gink (via openai/gpt-oss-120b),no
+es,"Yo, la météo à New York demain, c’est quoi ?",,,Gink (via openai/gpt-oss-120b),no
+es,"I need an alarm at 06:45, thanks.",,,Gink (via openai/gpt-oss-120b),no
+es,Can you tell me the weather in Cairo for tomorrow?,¿Puedes decirme el tiempo en El Cairo para mañana?,"El Cairo mañana: soleado, alrededor de 26°C.",Gink (via openai/gpt-oss-120b),yes
+es,كم يساوي 5000 ليون في الشلن الكيني؟,¿Cuánto equivale 5000 leones en chelín keniano?,"5000 leones equivale aproximadamente a 28,539.82 chelines kenianos según el tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Please calculate 439 times 31 for me.,,,Gink (via openai/gpt-oss-120b),no
+es,Could you give me the result of 506 times 7?,,,Gink (via openai/gpt-oss-120b),no
+es,"Toronto weather today, please.","Clima de Toronto hoy, por favor.","Toronto hoy: soleado, alrededor de 21°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Translate this conversation between a person and the phone assistant Gink into Portuguese. Write it the way a native speaker would naturally say it. Keep every number, time, amount, currency code, place name and app name exactly as written. Answer with JSON only: {""user"": ""..."", ""reply"": ""...""}
+
+Person: Open Notes
+Gink: Opened Notes.","Translate this conversation between a person and the phone assistant Gink into Spanish. Write it the way a native speaker would naturally say it. Keep every number, time, amount, currency code, place name and app name exactly as written. Answer with JSON only: {""user"": ""..."", ""reply"": ""...""}
+
+Person: Open Notes
+Gink: Opened Notes.
+Gink: Pessoa: Abrir Notas
+Gink: Notas abertas.","Persona: Traduce esta conversación entre una persona y el asistente telefónico Gink al español. Escríbela como lo diría un hablante nativo. Mantén todos los números, horas, cantidades, códigos de moneda, nombres de lugares y nombres de aplicaciones exactamente como están escritos. Responde solo con JSON: {""user"": ""..."", ""reply"": ""...""}
+
+Persona: Abrir Notas
+Gink: Notas abiertas.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me the weather in Lima today?",,,Gink (via openai/gpt-oss-120b),no
+es,What’s the amount in leones for 20 euros?,¿Cuánto son 20 euros en leones?,20 euros son aproximadamente 491.30 leones al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,Ajusta el volumen a 40,,,Gink (via openai/gpt-oss-120b),no
+es,"Mets une alarme pour 5h45, s'il te plaît.","Pon una alarma para las 5:45, por favor.",Hecho: te despertaré a las 5:45.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me the weather in Johannesburg right now?",,,Gink (via openai/gpt-oss-120b),no
+es,Persona: ¿Cuál es el clima en Dhaka ahora?,,,Gink (via openai/gpt-oss-120b),no
+es,"Alarm for 6:30 am, thanks.","Alarma para las 6:30 a.m., gracias.","Listo, te despertaré a las 6:30 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,Please check the forecast for Karachi tomorrow.,"Por favor, revisa el pronóstico para Karachi mañana.","Karachi mañana: lluvia ligera, alrededor de 33°C.",Gink (via openai/gpt-oss-120b),yes
+es,Clima em Dakar amanhã,Clima en Dakar mañana,"Dakar mañana: lluvia ligera, alrededor de 31°C.",Gink (via openai/gpt-oss-120b),yes
+es,Set an alarm for 07:00.,Pon una alarma a las 07:00.,"Listo, te despertaré a las 7 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me what 5% of 250000 is?","Oye, ¿puedes decirme cuál es el 5% de 250000?","Eso es 12,500.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, alarm 08:00 please.","Oye, alarma 08:00 por favor.","Listo, te despertaré a las 8 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,I need an alarm at 08:30 tomorrow.,Necesito una alarma a las 08:30 de mañana.,"Listo, te despertaré a las 8:30 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,Pouvez-vous me dire combien représente 5 % de 250000 ?,¿Puedes decirme cuánto es el 5 % de 250000?,"Son 12,500.",Gink (via openai/gpt-oss-120b),yes
+es,"50 reais in Canadian dollars, please?","50 reais en dólares canadienses, por favor?",50 reais son aproximadamente 12.23 dólares canadienses al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, c’est quoi le temps à Conakry en ce moment ?","Hey, ¿qué tiempo hace en Conakry ahora?","En Conakry ahora: ligera lluvia, alrededor de 29 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"Convert 10 pounds to naira, thanks.","Convierte 10 pounds a naira, gracias.","10 pounds son aproximadamente 19,615.38 naira al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Quanto é 25% de 80000?,Person: ¿Cuánto es el 25% de 80000?,Gink: Son 20.000.,Gink (via openai/gpt-oss-120b),yes
+es,Alarme às 08:30,Alarma a las 08:30,"Hecho, te despertaré a las 8:30 de la mañana.",Gink (via openai/gpt-oss-120b),yes
+es,Clima em Bamako hoje,Clima en Bamako hoy,"Bamako hoy: nublado, alrededor de 35°C.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es 875 por 13?,Person: ¿Cuánto es 875 por 13?,"Gink: Son 11,375.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, 10000 dollars, c’est combien en livres égyptiennes ?","Hey, 10000 dollars, ¿cuánto es en libras egipcias?","10000 dollars son aproximadamente 485,000.00 libras egipcias, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Translate this conversation between a person and the phone assistant Gink into Portuguese. Write it the way a native speaker would naturally say it. Keep every number, time, amount, currency code, place name and app name exactly as written. Answer with JSON only: {""user"": ""..."", ""reply"": ""...""}
+
+Person: Launch Spotify
+Gink: Opened Spotify.","Translate this conversation between a person and the phone assistant Gink into Spanish. Write it the way a native speaker would naturally say it. Keep every number, time, amount, currency code, place name and app name exactly as written. Answer with JSON only: {""user"": ""..."", ""reply"": ""...""}
+
+Person: Launch Spotify
+Gink: Opened Spotify.","Persona: Abrir Spotify
+Gink: Spotify abierto.",Gink (via openai/gpt-oss-120b),yes
+es,Weather in Chicago tomorrow?,¿Clima en Chicago mañana?,"Chicago mañana: soleado, alrededor de 23°C.",Gink (via openai/gpt-oss-120b),yes
+es,What's the weather like in Lima tomorrow?,¿Cómo estará el clima en Lima mañana?,"Lima mañana: nublado, alrededor de 35°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Alarme 5h, s’il te plaît.","Alarma 5h, por favor.",Hecho: te despierto a las 5h.,Gink (via openai/gpt-oss-120b),yes
+es,I need to know how much 250 reais is in pounds.,Necesito saber cuánto son 250 reais en libras.,250 reais son aproximadamente 34.82 libras al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,Please schedule an alarm at 7:45 am.,"Por favor, programa una alarma a las 7:45 a.m.","Listo, te despertaré a las 7:45 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,Can you start Chrome right now?,¿Puedes abrir Chrome ahora mismo?,Chrome abierto.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 100000 francos CFA en naira?,Person: ¿Cuánto son 100000 francos CFA en naira?,"Gink: 100000 francos CFA son aproximadamente 252,892.56 naira al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Bonjour, pourriez-vous s'il vous plaît convertir 10 dollars australiens en yens ?","Hola, ¿podría por favor convertir 10 dólares australianos a yenes?","10 dólares australianos son aproximadamente 1,000.00 yenes, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Weather in Casablanca now, please.","Persona: ¿Cuál es el tiempo en Casablanca ahora, por favor?","Gink: Casablanca ahora: nublado, alrededor de 27°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu sais me dire combien 100000 pesos philippins valent en livres égyptiennes ?","Hola, ¿sabes decirme cuánto valen 100000 pesos filipinos en libras egipcias?","100000 pesos filipinos equivalen a aproximadamente 83,620.69 libras egipcias, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 250 francos CFA a libras,Person: Convierte 250 francos CFA a libras,Gink: 250 francos CFA son aproximadamente 0.32 libras al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, could you please convert 100 Kenyan shillings to naira?","Persona: Oye, ¿podrías convertir 100 chelines kenianos a naira?","Gink: 100 chelines kenianos son aproximadamente 1,186.05 naira al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Could you please set an alarm for 6 am?,¿Podrías por favor programar una alarma para las 6 a.m.?,"Listo, te despertaré a las 6 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,"5000 cedis in euros, please?","Persona: 5000 cedis en euros, por favor?",Gink: 5000 cedis son aproximadamente 298.70 euros al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,What’s the amount in Canadian dollars for 50 reais?,,,Gink (via openai/gpt-oss-120b),no
+es,Please convert 100 yuan to pounds.,Por favor convierta 100 yuan a libras.,100 yuan equivalen a aproximadamente 10.83 libras al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,حوّل 25000 يورو إلى دولارات,Convierte 25000 euros a dólares,"25000 euros equivalen aproximadamente a 27,173.91 dólares, según el tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 20 cedis a dólares,Person: Convierte 20 cedis a dólares,Gink: 20 cedis son aproximadamente 1.30 dólares al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,What is 495 times 41?,,,Gink (via openai/gpt-oss-120b),no
+es,¿Cuánto es el 20 % de 15000?,,,Gink (via openai/gpt-oss-120b),no
+es,حوّل 100 سيدي إلى دولارات,Convierte 100 سيدي a dólares,"100 سيدي equivalen aproximadamente a 6.49 dólares, según el tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"100 euros to CFA francs, how much is that?","100 euros a francos CFA, ¿cuánto es eso?","100 euros son aproximadamente 65,760.87 francos CFA al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,How much is 1000 euros in yen?,¿Cuánto son 1000 euros en yen?,"1000 euros son aproximadamente 165,217.39 yen al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Open Calculator, thanks.",,,Gink (via openai/gpt-oss-120b),no
+es,Could you give me the amount in reais for 100 Kenyan shillings?,Persona: ¿Podrías darme la cantidad en reales por 100 chelines kenianos?,Gink: 100 chelines kenianos son aproximadamente 4.34 reales al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,Il fait quel temps à Nairobi aujourd'hui ?,¿Qué tiempo hace en Nairobi hoy?,"En Nairobi hoy: nublado, alrededor de 19 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"Persona: Lance WhatsApp
+Gink: WhatsApp est ouvert.",,,Gink (via openai/gpt-oss-120b),no
+es,Persona: alarma a las 09:30,,,Gink (via openai/gpt-oss-120b),no
+es,"5000 pounds to Philippine pesos, please.","Persona: 5000 libras a pesos filipinos, por favor.","Gink: 5000 libras son aproximadamente 371,794.87 pesos filipinos al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, donne-moi la météo de Jakarta à l'instant.",,,Gink (via openai/gpt-oss-120b),no
+es,¿Cuánto es el 20 % de 250000?,Person: ¿Cuánto es el 20 % de 250000?,"Gink: Son 50,000.",Gink (via openai/gpt-oss-120b),yes
+es,مؤقت 1 ساعة 30 دقيقة,Temporizador 1 hora 30 minutos,El temporizador de 1 hora 30 minutos está en marcha.,Gink (via openai/gpt-oss-120b),yes
+es,"Convertis 25000 shillings kényans en livres sterling, s'il te plaît.","Convierte 25000 shillings kényans a libras esterlinas, por favor.","25000 shillings kényans son aproximadamente 151.16 libras esterlinas, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me what 946 times 4 is?",,,Gink (via openai/gpt-oss-120b),no
+es,Please let me know the forecast for Riyadh for tomorrow.,"Por favor, infórmame del pronóstico para Riyadh mañana.","Riyadh mañana: nublado, alrededor de 35°C.",Gink (via openai/gpt-oss-120b),yes
+es,Could you please let me know what the weather will be like in Casablanca tomorrow?,¿Podrías decirme cómo estará el tiempo en Casablanca mañana?,"Casablanca mañana: lluvia ligera, alrededor de 19°C.",Gink (via openai/gpt-oss-120b),yes
+es,اضبط الصوت على 80,Ajusta el volumen a 80,Volumen a 80.,Gink (via openai/gpt-oss-120b),yes
+es,What's the product of 533 and 5?,Persona: ¿Cuál es el producto de 533 y 5?,"Eso es 2,665.",Gink (via openai/gpt-oss-120b),yes
+es,Pouvez-vous me dire le résultat de 214 fois 4 ?,¿Puedes decirme el resultado de 214 por 4 ?,Son 856.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me what 937 multiplied by 52 is?","Oye, ¿me puedes decir cuánto es 937 multiplicado por 52?","Eso es 48,724.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, c’est quoi le taux pour 100000 pesos philippins en livres égyptiennes ?","Hey, ¿cuál es el tipo de cambio para 100000 pesos filipinos a libras egipcias?","100000 pesos filipinos equivalen a aproximadamente 83,620.69 libras egipcias, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Pouvez-vous me dire la météo à New York pour demain, s'il vous plaît ?","¿Puedes decirme el tiempo en New York para mañana, por favor?","En New York mañana: nublado, alrededor de 21 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Open Spotify now.,Abre Spotify ahora.,Spotify abierto.,Gink (via openai/gpt-oss-120b),yes
+es,21 times 8 = ?,Persona: 21 por 8 = ?,Eso es 168.,Gink (via openai/gpt-oss-120b),yes
+es,Please open the Notes app.,"Por favor, abre la aplicación Notes.",Notas abiertas.,Gink (via openai/gpt-oss-120b),yes
+es,What's 911 x 3?,,,Gink (via openai/gpt-oss-120b),no
+es,Converta 250 CFA francs para Kenyan shillings,Convierte 250 CFA francos a chelines kenianos,"250 CFA francos equivalen a cerca de 53,31 chelines kenianos a la tasa de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Please let me know the conversion for 5000 pounds to Philippine pesos.,"Por favor, indícame la conversión de 5000 pounds a pesos filipinos.","5000 pounds son aproximadamente 371,794.87 pesos filipinos al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Merci de programmer une alarme à 5h.,"Gracias, programa una alarma a las 5h.",Hecho: te despierto a las 5h.,Gink (via openai/gpt-oss-120b),yes
+es,"20 % de 250000, ça donne quoi ?","Persona: 20 % de 250000, ¿qué da?","Gink: Da 50,000.",Gink (via openai/gpt-oss-120b),yes
+es,Calcule 349*29 s'il te plaît.,Persona: Calcula 349*29 por favor.,"Gink: Da 10,121.",Gink (via openai/gpt-oss-120b),yes
+es,What's 506 x 7?,¿Cuánto es 506 x 7?,"Eso es 3,542.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me the conversion for 25000 Philippine pesos to lira?",,,Gink (via openai/gpt-oss-120b),no
+es,What's 343 × 10?,,,Gink (via openai/gpt-oss-120b),no
+es,What’s the rupee amount for 1000 pounds?,¿Cuál es la cantidad en rupias para 1000 libras?,"1000 libras son aproximadamente 107,692.31 rupias al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Persona: Convert 10000 euros a chelines kenianos,,,Gink (via openai/gpt-oss-120b),no
+es,"Bonjour, pourriez‑vous me dire la conversion de 10 shillings kényans en wons, s’il vous plaît ?","Hola, ¿podrías decirme la conversión de 10 shillings kenianos a wons, por favor?","10 shillings kenianos equivalen a aproximadamente 106.98 wons, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Peux‑tu me dire combien fait 20 % de 250000, s’il te plaît ?","¿Puedes decirme cuánto es el 20 % de 250000, por favor?","Son 50,000.",Gink (via openai/gpt-oss-120b),yes
+es,What’s the result of 852 × 26?,¿Cuál es el resultado de 852 × 26?,"Eso es 22,152.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es 160 por 47?,,,Gink (via openai/gpt-oss-120b),no
+es,Peux-tu me réveiller à 8h ?,¿Puedes despertarme a las 8h?,Listo: te despierto a las 8h.,Gink (via openai/gpt-oss-120b),yes
+es,Can you tell me how much 100 Kenyan shillings is in naira?,¿Puedes decirme cuánto son 100 Kenyan shillings en naira?,"100 Kenyan shillings son aproximadamente 1,186.05 naira al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es 412 por 50?,Person: ¿Cuánto es 412 por 50?,"Gink: Eso es 20,600.",Gink (via openai/gpt-oss-120b),yes
+es,Please let me know what the weather will be like in Istanbul tomorrow.,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, what's the weather like in Cairo tomorrow?","Oye, ¿cómo estará el tiempo en Cairo mañana?","Cairo mañana: soleado, alrededor de 26°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Bonjour, pourriez-vous me dire la météo actuelle à Hanoi, s'il vous plaît ?","Persona: Hola, ¿podría decirme el tiempo actual en Hanoi, por favor?","Gink: En Hanoi en este momento: soleado, alrededor de 22 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Could you convert 1000 CFA francs into pounds for me?,¿Podrías convertir 1000 CFA francs en libras para mí?,1000 CFA francs son aproximadamente 1.29 libras al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,إيقظني الساعة 6h15,Despiértame a las 6h15,Hecho: te despertaré a las 6h15.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, adjust the volume to 40.","Oye, ajusta el volumen a 40.",Volumen ajustado a 40.,Gink (via openai/gpt-oss-120b),yes
+es,"Person: Wake me up at 6:30 am
+Gink: Done, I'll wake you at 6:30 am.","Person: Person: Wake me up at 6:30 am
+Gink: Done, I'll wake you at 6:30 am.
+Gink: Pessoa: Me acorde às 6:30 da manhã
+Gink: Pronto, vou acordá‑lo às 6:30 da manhã.","Persona: Despiértame a las 6:30 a.m.
+Gink: Listo, te despertaré a las 6:30 a.m.
+Gink: Pessoa: Me acorde às 6:30 da manhã
+Gink: Pronto, vou acordá‑lo às 6:30 da manhã.",Gink (via openai/gpt-oss-120b),yes
+es,"Pourriez‑vous m’indiquer le résultat de 15 % de 80000, s’il vous plaît ?","¿Podría indicarme el resultado del 15 % de 80000, por favor?","Son 12,000.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, tu peux faire le calcul 498 fois 55 ?","Hey, ¿puedes hacer el cálculo 498 por 55?","Da 27,390.",Gink (via openai/gpt-oss-120b),yes
+es,"Convertis 250 leones en dollars, s'il te plaît.","Convierte 250 leones a dólares, por favor.","250 leones son aproximadamente 11.06 dólares, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, could you tell me the weather in Abidjan today?","Oye, ¿me puedes decir el clima en Abidjan hoy?","Abidjan hoy: lluvia ligera, alrededor de 37°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu sais combien 10000 livres turques ça fait en pesos philippins ?","Hola, ¿sabes cuántos 10000 liras turcas son en pesos filipinos?","10000 liras turcas son aproximadamente 17,058.82 pesos filipinos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Yo, need the 25% of 1200 ASAP.","Yo, necesito el 25% de 1200 ASAP.",Eso es 300.,Gink (via openai/gpt-oss-120b),yes
+es,What’s the result of 5% of 250000?,,,Gink (via openai/gpt-oss-120b),no
+es,¿Qué tiempo hace en Nairobi en este momento?,,,Gink (via openai/gpt-oss-120b),no
+es,Clima Abidjan mañana,,,Gink (via openai/gpt-oss-120b),no
+es,"25% of 15000, please?","25% de 15000, por favor?","Eso es 3,750.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, ça serait top si tu pouvais faire 185 fois 25.","Hey, sería genial si pudieras hacer 185 por 25.","Da 4,625.",Gink (via openai/gpt-oss-120b),yes
+es,Can you give me the result of 675 times 25?,,,Gink (via openai/gpt-oss-120b),no
+es,Please give me the weather for Toronto right now.,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, quelle est la météo à Abidjan en ce moment ?","Hey, ¿cuál es el tiempo en Abidjan en este momento?","En Abidjan en este momento: llovizna ligera, alrededor de 25 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Pouvez-vous me dire le temps qu'il fait à Istanbul aujourd'hui ?,,,Gink (via openai/gpt-oss-120b),no
+es,Pon el volumen a 80,,,Gink (via openai/gpt-oss-120b),no
+es,Abaixe o som,Baja el volumen,Hecho.,Gink (via openai/gpt-oss-120b),yes
+es,هل يمكنك فتح Mail؟,¿Puedes abrir Mail?,Mail abierto.,Gink (via openai/gpt-oss-120b),yes
+es,Open Mail.,"Person: Open Mail.
+Gink: Opened Mail.","Persona: Abre Mail.
+Gink: Mail abierto.",Gink (via openai/gpt-oss-120b),yes
+es,Accra weather right now?,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, can you convert 100 dollars to cedis for me?","Oye, ¿puedes convertir 100 dólares a cedis para mí?","100 dólares son aproximadamente 1,540.00 cedis al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Peux-tu programmer une alarme pour 9h30 ?,¿Puedes programar una alarma para las 9:30?,Listo: te despierto a las 9:30.,Gink (via openai/gpt-oss-120b),yes
+es,Merci de me donner le résultat de 185*25.,Persona: Gracias por darme el resultado de 185*25.,"Gink: Da 4,625.",Gink (via openai/gpt-oss-120b),yes
+es,"Convertis 10 dollars australiens en yens, s'il te plaît.","Convierte 10 dólares australianos a yenes, por favor.","10 dólares australianos son aproximadamente 1,000.00 yenes, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Convertis 100 cedis en dollars, s'il te plaît.","Convierte 100 cedis a dólares, por favor.","100 cedis son aproximadamente 6.49 dólares, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,الشخص: حول 5000 ليون إلى دولارات,Persona: convierte 5000 leones a dólares,"5000 leones equivalen a aproximadamente 221.24 dólares, según el tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Abrir Calculator,Person: Abrir Calculator,Gink: Calculator abierto.,Gink (via openai/gpt-oss-120b),yes
+es,ما هو 248 مضروبًا في 44؟,Persona: ¿Cuál es 248 multiplicado por 44?,"Gink: El resultado es 10,912.",Gink (via openai/gpt-oss-120b),yes
+es,Quel temps il fait à Nairobi maintenant ?,¿Qué tiempo hace en Nairobi ahora?,"En Nairobi en este momento: ligera lluvia, alrededor de 37 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"Alarm at 6 am, please.","Alarma a las 6 a.m., por favor.","Listo, te despertaré a las 6 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,Qual é 722 vezes 22?,¿Cuál es 722 veces 22?,"Es 15,884.",Gink (via openai/gpt-oss-120b),yes
+es,Pouvez-vous calculer 470 fois 6 s'il vous plaît ?,"¿Puedes calcular 470 por 6, por favor?","Da 2,820.",Gink (via openai/gpt-oss-120b),yes
+es,Converter 20 cedis para dólares,Convertir 20 cedis a dólares,"20 cedis son aproximadamente 1,30 dólares al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Calcule 650 por 55,Persona: Calcule 650 por 55,"Gink: Son 35,750.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, tu peux mettre un minuteur de 2 minutes, s'il te plaît ?","Hey, ¿puedes poner un temporizador de 2 minutos, por favor?",Temporizador de 2 minutos activado.,Gink (via openai/gpt-oss-120b),yes
+es,"Convertis 20 wons en pesos philippins, s'il te plaît.","Convierte 20 wons a pesos filipinos, por favor.","20 wons son aproximadamente 0.84 pesos filipinos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Bonjour, pourriez‑vous convertir 100000 pesos philippins en livres égyptiennes, s’il vous plaît ?","Hola, ¿podrías convertir 100000 pesos filipinos a libras egipcias, por favor?","100000 pesos filipinos equivalen a aproximadamente 83,620.69 libras egipcias, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Merci de me calculer 15 % de 80000.,"Gracias, calcúlame el 15 % de 80000.","Eso da 12,000.",Gink (via openai/gpt-oss-120b),yes
+es,"Peux-tu mettre une alarme à 5h, s'il te plaît ?","¿Puedes poner una alarma a las 5h, por favor?","Listo, te despertaré a las 5h.",Gink (via openai/gpt-oss-120b),yes
+es,J’ai besoin de savoir combien représente 20 % de 250000.,Necesito saber cuánto es el 20 % de 250000.,Son 50 000.,Gink (via openai/gpt-oss-120b),yes
+es,Please let me know the conversion for 250 lira to rupiah.,"Por favor, indícame la conversión de 250 lira a rupia.","250 lira son aproximadamente 116,176.47 rupia al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Person: ¿Cuál es el 20% de 15000?,,,Gink (via openai/gpt-oss-120b),no
+es,"Just need the 5% figure of 250000, thanks.","Solo necesito el 5% de 250000, gracias.","Son 12,500.",Gink (via openai/gpt-oss-120b),yes
+es,Can you give me the result of 343 times 10?,¿Puedes darme el resultado de 343 por 10?,"Eso es 3,430.",Gink (via openai/gpt-oss-120b),yes
+es,What's the value of 10 pesos in Kenyan shillings?,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, lance un minuteur de 1 minutes.","Oye, lanza un temporizador de 1 minutos.",Temporizador de 1 minutos lanzado.,Gink (via openai/gpt-oss-120b),yes
+es,Could you quickly give me the result of 412 times 50?,,,Gink (via openai/gpt-oss-120b),no
+es,Please launch the Calendar app.,"Por favor, abre la aplicación Calendar.",Calendario abierto.,Gink (via openai/gpt-oss-120b),yes
+es,"Translate this conversation between a person and the phone assistant Gink into Spanish. Write it the way a native speaker would naturally say it. Keep every number, time, amount, currency code, place name and app name exactly as written. Answer with JSON only: {""user"": ""..."", ""reply"": ""...""}
+
+Person: Open Chrome
+Gink: Opened Chrome.","Translate this conversation between a person and the phone assistant Gink into Spanish. Write it the way a native speaker would naturally say it. Keep every number, time, amount, currency code, place name and app name exactly as written. Answer with JSON only: {""user"": ""..."", ""reply"": ""...""}
+
+Person: Open Chrome
+Gink: Opened Chrome.
+Gink: Persona: Abrir Chrome
+Gink: Chrome abierto.","Persona: Abrir Chrome
+Gink: Chrome abierto.",Gink (via openai/gpt-oss-120b),yes
+es,What's the result of 946 multiplied by 4?,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, can you tell me what 427 times 4 is?",,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, can you set a timer for 1 hour?","Oye, ¿puedes poner un temporizador de 1 hora?",Tu temporizador de 1 hora está en marcha.,Gink (via openai/gpt-oss-120b),yes
+es,Quantos são 100 libras esterlinas em francos CFA?,¿Cuántos son 100 libras esterlinas en francos CFA?,"100 libras esterlinas equivalen a aproximadamente 77,564.10 francos CFA, a la tasa actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Open Notes, please.",,,Gink (via openai/gpt-oss-120b),no
+es,"Excusez‑moi, je voudrais savoir la valeur de 1000 pesos en dollars.","Disculpe, quisiera saber el valor de 1000 pesos en dólares.","1000 pesos son aproximadamente 54.05 dólares, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Convert 250 reais to pounds,Convierte 250 reais a libras,250 reais son aproximadamente 34.82 libras al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,Please let me know how many euros 20 CFA francs equals.,"Por favor, dime cuántos euros son 20 francos CFA.","20 francos CFA son aproximadamente 0,03 euros al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"I need the conversion for 10000 euros into Kenyan shillings, thanks.","Necesito la conversión de 10000 euros a chelines kenianos, gracias.","10000 euros son aproximadamente 1,402,173.91 chelines kenianos al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Weather Cairo right now,Clima en El Cairo ahora,"El Cairo ahora: soleado, alrededor de 37°C.",Gink (via openai/gpt-oss-120b),yes
+es,الشخص: حول 10000 يورو إلى شلن كيني,Persona: convierte 10000 euros a chelines kenianos,"Gink: 10000 euros equivalen aproximadamente a 1,402,173.91 chelines kenianos según el tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me what 25% of 5000 is?",,,Gink (via openai/gpt-oss-120b),no
+es,"Salut, peux-tu calculer 133 fois 23 ?","Hola, ¿puedes calcular 133 veces 23?","Da 3,059.",Gink (via openai/gpt-oss-120b),yes
+es,Can you tell me what 10000 cedis is in pounds?,,,Gink (via openai/gpt-oss-120b),no
+es,¿Cuál es el 15% de 250000?,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, open Calendar.","Person: Hey, open Calendar.
+Gink: Opened Calendar.","Persona: Oye, abre el Calendario.
+Gink: Calendario abierto.",Gink (via openai/gpt-oss-120b),yes
+es,حوّل 1000 دولار إلى النايرا,Convierte 1000 dólares a naira,"1000 dólares son aproximadamente 1,530,000.00 nairas, según el precio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Combien font 10000 dollars en livres égyptiennes ?,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, can you tell me the weather in Warsaw today?",,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, can you tell me the weather forecast for Istanbul tomorrow?",,,Gink (via openai/gpt-oss-120b),no
+es,Despiértame a las 6:30 a.m.,,,Gink (via openai/gpt-oss-120b),no
+es,Pon el volumen a 40,,,Gink (via openai/gpt-oss-120b),no
+es,"Bonjour, pourriez-vous me dire la conversion de 100 dollars canadiens en pesos, s'il vous plaît ?","Hola, ¿podrías decirme la conversión de 100 dólares canadienses a pesos, por favor?","100 dólares canadienses son aproximadamente 1,350.36 pesos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Bonjour, pourriez-vous s'il vous plaît convertir 250 leones en dollars ?","Hola, ¿podría por favor convertir 250 leones a dólares?","250 leones son aproximadamente 11.06 dólares, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 1000 rands en yuanes?,,,Gink (via openai/gpt-oss-120b),no
+es,How much is 100000 Kenyan shillings in Australian dollars?,¿Cuánto son 100000 Kenyan shillings en dólares australianos?,"100000 Kenyan shillings son aproximadamente 1,178.29 dólares australianos al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Can you tell me the weather in São Paulo tomorrow?,¿Puedes decirme el clima en São Paulo mañana?,"São Paulo mañana: soleado, alrededor de 28°C.",Gink (via openai/gpt-oss-120b),yes
+es,What's 10% of 5000?,Person: ¿Cuál es el 10% de 5000?,Gink: Eso es 500.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 10000 euros a libras esterlinas,Person: Convierte 10000 euros a libras esterlinas,"Gink: 10000 euros son aproximadamente 8,478.26 libras esterlinas, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Set the volume to 10,Pon el volumen a 10,Volumen ajustado a 10.,Gink (via openai/gpt-oss-120b),yes
+es,Can you wake me at 5 am?,¿Puedes despertarme a las 5 a.m.?,"Listo, te despertaré a las 5 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,Persona: Convierte 100 leones a chelines kenianos,,,Gink (via openai/gpt-oss-120b),no
+es,Convert 25000 rupees to Canadian dollars,Convierte 25000 rupees a dólares canadienses,25000 rupees son aproximadamente 407.74 dólares canadienses al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,What's the weather looking like in Casablanca tomorrow?,¿Cómo estará el tiempo en Casablanca mañana?,"Casablanca mañana: lluvia ligera, alrededor de 19°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me what 1000 euros equals in yen?",,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, j'aimerais savoir 25 % de 1200, ça donne quoi ?","Hey, me gustaría saber el 25 % de 1200, ¿qué da?",Son 300.,Gink (via openai/gpt-oss-120b),yes
+es,I need the conversion of 100 naira to leones.,Necesito la conversión de 100 naira a leones.,100 naira son aproximadamente 1.48 leones al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,Quel temps fait-il à Berlin aujourd'hui ?,,,Gink (via openai/gpt-oss-120b),no
+es,What is 275 times 28?,,,Gink (via openai/gpt-oss-120b),no
+es,"Bonjour, pourriez-vous me dire la météo prévue à Sydney pour demain, s'il vous plaît ?","Hola, ¿podría decirme el pronóstico del tiempo en Sydney para mañana, por favor?","En Sydney mañana: ligera lluvia, alrededor de 18 °C.",Gink (via openai/gpt-oss-120b),yes
+es,حوّل 10000 يورو إلى جنيه إسترليني,Convierte 10000 euros a libras esterlinas,"10000 euros equivalen aproximadamente a 8,478.26 libras esterlinas, según el tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,احسب 498 × 55,Calcula 498 × 55,"El resultado es 27,390.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, could you tell me what 20% of 250000 is?",,,Gink (via openai/gpt-oss-120b),no
+es,"I need to know the value of 20 euros in leones, thanks.","Necesito saber el valor de 20 euros en leones, gracias.",20 euros son aproximadamente 491.30 leones al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,"Weather in Warsaw today, please.",,,Gink (via openai/gpt-oss-120b),no
+es,Me acorde às 5:30 da manhã,Despiértame a las 5:30 de la mañana,"Hecho, te despertaré a las 5:30 de la mañana.",Gink (via openai/gpt-oss-120b),yes
+es,Convert 50 Canadian dollars to pounds,Persona: Convierte 50 dólares canadienses a libras,Gink: 50 dólares canadienses son aproximadamente 28.47 libras con la tasa de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,Mets une alarme à 5h,Pon una alarma a las 5h,Hecho: te despertaré a las 5h.,Gink (via openai/gpt-oss-120b),yes
+es,Weather São Paulo tomorrow,Clima São Paulo mañana,"São Paulo mañana: soleado, alrededor de 28°C.",Gink (via openai/gpt-oss-120b),yes
+es,Please calculate 875 × 13 for me.,"Por favor, calcula 875 × 13 para mí.","Eso es 11,375.",Gink (via openai/gpt-oss-120b),yes
+es,Ouvre Spotify,Persona: Abre Spotify,Spotify está abierto.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me what 1000 pounds is in rupees?",,,Gink (via openai/gpt-oss-120b),no
+es,What's the value of 100000 CFA francs in leones?,Persona: ¿Cuál es el valor de 100000 CFA francos en leones?,"Gink: 100000 CFA francos son aproximadamente 3,735.54 leones al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,What's the weather in Addis Ababa tomorrow?,¿Qué tiempo hará en Addis Ababa mañana?,"Addis Ababa mañana: nublado, alrededor de 19°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, peux-tu mettre un minuteur de 45 minutes s'il te plaît ?","Hey, ¿puedes poner un temporizador de 45 minutos, por favor?",Temporizador de 45 minutos iniciado.,Gink (via openai/gpt-oss-120b),yes
+es,Converta 1000 dólares em nairas,Convierte 1000 dólares a nairas,"1000 dólares equivalen a aproximadamente 1,530,000.00 nairas, a la tasa actual.",Gink (via openai/gpt-oss-120b),yes
+es,What's the weather in Lima tomorrow?,¿Qué tiempo hará en Lima mañana?,"Lima mañana: nublado, alrededor de 35°C.",Gink (via openai/gpt-oss-120b),yes
+es,Alarm 07:00,,,Gink (via openai/gpt-oss-120b),no
+es,Inicia un temporizador de 3 minutos,,,Gink (via openai/gpt-oss-120b),no
+es,"Calcule 379 fois 27, s'il te plaît.","Calcula 379 por 27, por favor.","Da 10,233.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you launch Calculator?","Oye, ¿puedes abrir Calculator?",Calculator abierto.,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Chicago mañana?,Person: ¿Qué tiempo hará en Chicago mañana?,"Gink: En Chicago mañana: ligera lluvia, alrededor de 26 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Calcule 672 fois 42 s'il te plaît.,"Calcula 672 por 42, por favor.","Son 28,224.",Gink (via openai/gpt-oss-120b),yes
+es,Wandle 100 Cedis in Dollar um,Convierte 100 Cedis a dólares,100 Cedis equivalen a aproximadamente 6.49 dólares al tipo de cambio actual.,Gink (via openai/gpt-oss-120b),yes
+es,"Peux-tu me dire la météo pour demain à Chicago, s'il te plaît ?","¿Puedes decirme el tiempo para mañana en Chicago, por favor?","En Chicago mañana: ligera lluvia, alrededor de 26 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Quantos são 10 nairas em francos CFA?,¿Cuántos son 10 nairas en francos CFA?,"10 nairas son aproximadamente 3.95 francos CFA, a la tasa actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, c’est quoi 25 % de 250000 ?","Hey, ¿qué es el 25 % de 250000?","Son 62,500.",Gink (via openai/gpt-oss-120b),yes
+es,Defina o volume para 60,Ajuste el volumen a 60,Volumen ajustado a 60.,Gink (via openai/gpt-oss-120b),yes
+es,"Volume 60, thanks.","Volumen 60, gracias.",Volumen ajustado a 60.,Gink (via openai/gpt-oss-120b),yes
+es,What is 928 times 22?,,,Gink (via openai/gpt-oss-120b),no
+es,Mets le volume à 30 s'il te plaît.,"Pon el volumen a 30, por favor.",Volumen a 30.,Gink (via openai/gpt-oss-120b),yes
+es,¿Puedes despertarme a las 5:45 a.m.?,,,Gink (via openai/gpt-oss-120b),no
+es,Set a timer for 45 minutes,Pon un temporizador de 45 minutos,Tu temporizador de 45 minutos está en marcha.,Gink (via openai/gpt-oss-120b),yes
+es,Convert 1000 Egyptian pounds to Canadian dollars,,,Gink (via openai/gpt-oss-120b),no
+es,"Bonjour, pourriez-vous me dire la conversion de 1000 pesos en dollars, s'il vous plaît ?","Hola, ¿podrías decirme la conversión de 1000 pesos a dólares, por favor?","1000 pesos son aproximadamente 54.05 dólares, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es 343 por 10?,,,Gink (via openai/gpt-oss-120b),no
+es,Mets le volume à 30,Pon el volumen a 30,Volumen a 30.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me how many rupees 50 Philippine pesos equals?",,,Gink (via openai/gpt-oss-120b),no
+es,Weather Dhaka today,Persona: Weather Dhaka today,"Gink: Dhaka today: sunny, around 37°C.",Gink (via openai/gpt-oss-120b),yes
+es,Please give me the current weather for Johannesburg.,"Por favor, dame el clima actual de Johannesburg.","Johannesburg ahora: lluvia ligera, alrededor de 20°C.",Gink (via openai/gpt-oss-120b),yes
+es,احسب 922 × 45,Calcula 922 × 45,"El resultado es 41,490.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me the weather in Lima tomorrow?","Oye, ¿puedes decirme el clima en Lima mañana?","Lima mañana: nublado, alrededor de 35°C.",Gink (via openai/gpt-oss-120b),yes
+es,Can you open Notes?,Persona: ¿Puedes abrir Notes?,Gink: He abierto Notes.,Gink (via openai/gpt-oss-120b),yes
+es,Peux-tu calculer 588 fois 45 ?,¿Puedes calcular 588 por 45?,"Da 26,460.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu sais combien font 10 shillings kényans en wons ?","Hola, ¿sabes cuánto son 10 shillings kényans en wons?","10 shillings kényans son aproximadamente 106.98 wons, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"I need the result of 911 times 3, thanks.","Persona: Necesito el resultado de 911 por 3, gracias.","Gink: Eso es 2,733.",Gink (via openai/gpt-oss-120b),yes
+es,Quanto são 5000 leões em Kenyan shillings?,Persona: ¿Cuántos son 5000 leões en Kenyan shillings?,"Gink: 5000 leões son aproximadamente 28,539.82 Kenyan shillings a la tasa de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Que tempo vai fazer em Paris amanhã?,,,Gink (via openai/gpt-oss-120b),no
+es,"Réveille-moi à 5h45, s'il te plaît.","Despiértame a las 5:45, por favor.",Listo: te despertaré a las 5:45.,Gink (via openai/gpt-oss-120b),yes
+es,Combien font 250 réaux en dollars canadiens ?,,,Gink (via openai/gpt-oss-120b),no
+es,"Yo, 25% of 5000—what's that?","Yo, el 25% de 5000—¿qué es eso?","Eso es 1,250.",Gink (via openai/gpt-oss-120b),yes
+es,"Set a timer for 30 minutes, please.","Pon un temporizador de 30 minutos, por favor.",Tu temporizador de 30 minutos está en marcha.,Gink (via openai/gpt-oss-120b),yes
+es,Could you please calculate 15% of 1200 for me?,,,Gink (via openai/gpt-oss-120b),no
+es,Weather Berlin tomorrow,,,Gink (via openai/gpt-oss-120b),no
+es,Please set an alarm for 5:30 am.,"Por favor, pon una alarma a las 5:30 a.m.","Listo, te despertaré a las 5:30 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,How much is 10 pesos in Kenyan shillings?,,,Gink (via openai/gpt-oss-120b),no
+es,Can you tell me how many reais 20 won is?,¿Puedes decirme cuántos reais son 20 won?,20 won son aproximadamente 0.08 reais al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu peux me dire quel temps il fait à Istanbul en ce moment ?",,,Gink (via openai/gpt-oss-120b),no
+es,Il fait quoi à Istanbul demain ?,,,Gink (via openai/gpt-oss-120b),no
+es,What's the weather like in Casablanca right now?,¿Cómo está el tiempo en Casablanca ahora?,"Casablanca ahora: nublado, alrededor de 27°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Bonjour, pourriez-vous convertir 1000 leones en dollars, s'il vous plaît ?","Persona: Hola, ¿podría convertir 1000 leones a dólares, por favor?","Gink: 1000 leones son aproximadamente 44.25 dólares, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me the weather in Bamako today?","Oye, ¿puedes decirme el clima en Bamako hoy?","Bamako hoy: lluvia ligera, alrededor de 22°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Could you check the weather for Bangkok tomorrow, thanks?","¿Podrías comprobar el clima para Bangkok mañana, gracias?","Bangkok mañana: lluvia ligera, alrededor de 37°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, need the forecast for Berlin tomorrow.",,,Gink (via openai/gpt-oss-120b),no
+es,What's the weather in Riyadh tomorrow?,¿Qué tiempo hará en Riyadh mañana?,"Riyadh mañana: nublado, alrededor de 35°C.",Gink (via openai/gpt-oss-120b),yes
+es,alarma a las 06:45,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, what's the forecast for Toronto today?",,,Gink (via openai/gpt-oss-120b),no
+es,Wie ist das Wetter in Conakry morgen?,¿Qué tiempo hará en Conakry mañana?,"En Conakry mañana: soleado, alrededor de 19 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Mets une alarme à 6h,Pon una alarma a las 6h,Listo: te despierto a las 6h.,Gink (via openai/gpt-oss-120b),yes
+es,Merci de me dire le résultat de 149 x 51,Persona: Merci de me dire le résultat de 149 x 51,"Gink: Son 7,599.",Gink (via openai/gpt-oss-120b),yes
+es,What's the weather in Chicago today?,¿Qué tiempo hace en Chicago hoy?,"Chicago hoy: soleado, alrededor de 19°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me what 911 multiplied by 3 is?","Persona: Oye, ¿me puedes decir cuánto es 911 multiplicado por 3?","Gink: Eso es 2,733.",Gink (via openai/gpt-oss-120b),yes
+es,Please convert 10 CFA francs to euros.,"Por favor, convierta 10 francos CFA a euros.",10 francos CFA son aproximadamente 0.02 euros al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, could you open Notes for me?","Oye, ¿puedes abrir Notes para mí?",He abierto Notes.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, launch Safari.","Oye, abre Safari.",Safari abierto.,Gink (via openai/gpt-oss-120b),yes
+es,Launch Calendar,"Person: Launch Calendar
+Gink: Opened Calendar","Persona: Abrir Calendario
+Gink: Calendario abierto",Gink (via openai/gpt-oss-120b),yes
+es,I need to know how many euros 100 Egyptian pounds is.,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, 18 % de 5000, c’est quoi exactement ?","Hey, 18 % de 5000, ¿qué es exactamente?",Son 900.,Gink (via openai/gpt-oss-120b),yes
+es,Coloque o volume em 80,Pon el volumen al 80,Volumen al 80.,Gink (via openai/gpt-oss-120b),yes
+es,Mets un minuteur de 15 minutes,Pon un temporizador de 15 minutos,Temporizador de 15 minutos iniciado.,Gink (via openai/gpt-oss-120b),yes
+es,Convertis 25000 shillings kényans en livres sterling,Convierte 25000 chelines kenianos a libras esterlinas,"25000 chelines kenianos equivalen a aproximadamente 151.16 libras esterlinas, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,J'aimerais savoir le résultat de 537 multiplié par 26.,Me gustaría saber el resultado de 537 multiplicado por 26.,"Son 13,962.",Gink (via openai/gpt-oss-120b),yes
+es,Please give me the weather update for Dhaka at this moment.,,,Gink (via openai/gpt-oss-120b),no
+es,Quel temps fera-t-il à New York demain ?,,,Gink (via openai/gpt-oss-120b),no
+es,Sais-tu quel temps il fera à Lagos demain ?,¿Sabes qué tiempo hará en Lagos mañana?,"En Lagos mañana: soleado, alrededor de 22 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Weather Karachi tomorrow,Clima en Karachi mañana,"Karachi mañana: soleado, alrededor de 25°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Timer 1 hour, please.","Temporizador de 1 hora, por favor.",Tu temporizador de 1 hora está en marcha.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you convert 5000 naira to Kenyan shillings for me?","Oye, ¿puedes convertir 5000 naira a chelines kenianos para mí?",5000 naira son aproximadamente 421.57 chelines kenianos al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me the weather in Chicago today?","Oye, ¿puedes decirme el tiempo en Chicago hoy?","Chicago hoy: soleado, alrededor de 19°C.",Gink (via openai/gpt-oss-120b),yes
+es,Calcule 233 fois 7,Persona: Calcula 233 por 7,"Gink: Eso da 1,631.",Gink (via openai/gpt-oss-120b),yes
+es,كم نسبة 5 % من 250000؟,¿Cuál es el 5 % de 250000?,"El resultado es 12,500.",Gink (via openai/gpt-oss-120b),yes
+es,Give me the result of 275 times 28.,,,Gink (via openai/gpt-oss-120b),no
+es,"Bonjour, pourriez‑vous me dire la conversion de 10000 dollars en livres égyptiennes, s'il vous plaît ?","Hola, ¿podrías decirme la conversión de 10000 dólares a libras egipcias, por favor?","10000 dólares equivalen a aproximadamente 485,000.00 libras egipcias, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Kinshasa weather right now?,¿Cómo está el clima en Kinshasa ahora?,"Kinshasa ahora: lluvia ligera, alrededor de 27°C.",Gink (via openai/gpt-oss-120b),yes
+es,Quanto é 5000 naira em dólares?,¿Cuánto son 5000 naira en dólares?,"5000 naira son aproximadamente 3,27 dólares al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,What's the current weather in Bangkok?,¿Cuál es el clima actual en Bangkok?,"Bangkok ahora: lluvia ligera, alrededor de 35°C.",Gink (via openai/gpt-oss-120b),yes
+es,Convert 100 pounds to yen,Convierte 100 libras a yen,"100 libras son aproximadamente 19,487.18 yenes al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Weather update for Jakarta at the moment?,,,Gink (via openai/gpt-oss-120b),no
+es,Quel temps fait-il à Jakarta en ce moment ?,¿Qué tiempo hace en Jakarta ahora?,"En Jakarta ahora: ligera lluvia, alrededor de 37 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Je voudrais savoir le résultat de 599 multiplié par 50.,Persona: Quisiera saber el resultado de 599 multiplicado por 50.,"Gink: Son 29,950.",Gink (via openai/gpt-oss-120b),yes
+es,Quanto são 100000 francos CFA em naira?,¿Cuánto son 100000 francos CFA en naira?,"100000 francos CFA equivalen a aproximadamente 252,892.56 naira según la tasa de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Você pode abrir o Mail?,¿Puedes abrir el Mail?,Mail abierto.,Gink (via openai/gpt-oss-120b),yes
+es,Could you please calculate 911 times 3 for me?,,,Gink (via openai/gpt-oss-120b),no
+es,"Salut, peux-tu convertir 1000 dollars en nairas ?","Person: Hola, ¿puedes convertir 1000 dólares a nairas?","Gink: 1000 dólares equivalen a aproximadamente 1,530,000.00 nairas, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,965 times 15 = ?,965 por 15 = ?,"Eso es 14,475.",Gink (via openai/gpt-oss-120b),yes
+es,Quel temps fait-il à Dhaka aujourd'hui ?,¿Qué tiempo hace en Dhaka hoy?,"En Dhaka hoy: ligera lluvia, alrededor de 22 °C.",Gink (via openai/gpt-oss-120b),yes
+es,تنبيه الساعة 09:30,Alarma a las 09:30,"Listo, te despertaré a las 9:30 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,Can you launch Calendar?,¿Puedes abrir Calendar?,Calendar abierto.,Gink (via openai/gpt-oss-120b),yes
+es,What's the weather in Chicago right now?,¿Qué tiempo hace en Chicago ahora?,"Chicago ahora: lluvia ligera, alrededor de 25°C.",Gink (via openai/gpt-oss-120b),yes
+es,C’est quoi 18% de 250000 ?,Person: ¿Qué es el 18% de 250000 ?,"Gink: Son 45,000.",Gink (via openai/gpt-oss-120b),yes
+es,What's the weather like in Kinshasa right now?,¿Cómo está el tiempo en Kinshasa ahora?,"Kinshasa ahora: llovizna ligera, alrededor de 27°C.",Gink (via openai/gpt-oss-120b),yes
+es,Mets un minuteur de 45 minutes,Pon un temporizador de 45 minutos,Temporizador de 45 minutos iniciado.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me how many euros 5000 cedis equals?",,,Gink (via openai/gpt-oss-120b),no
+es,Could you please let me know what the weather will be like in London tomorrow?,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, besoin d’un rapide calcul : 250 yens = combien de roupies indonésiennes ?","Hey, necesito un cálculo rápido: 250 yenes = ¿cuántas rupias indonesias?","250 yenes son aproximadamente 25,986.84 rupias indonesias, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, règle le volume à 70 quand tu as une seconde.","Hey, ajusta el volumen a 70 cuando tengas un segundo.",Volumen a 70.,Gink (via openai/gpt-oss-120b),yes
+es,حوّل 20 يورو إلى النيرة,Convierte 20 euros a la lira,"20 euros son aproximadamente 33,260.87 liras según el tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Combien font 1000 pesos en dollars ?,¿Cuánto son 1000 pesos en dólares?,"1000 pesos son aproximadamente 54.05 dólares, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Person: Wie ist das Wetter heute in Nairobi?,Persona: ¿Cómo está el tiempo hoy en Nairobi?,"Gink: En Nairobi hoy: nublado, alrededor de 28 °C.",Gink (via openai/gpt-oss-120b),yes
+es,What's the product of 21 and 8?,Person: ¿Cuál es el producto de 21 y 8?,Gink: Eso es 168.,Gink (via openai/gpt-oss-120b),yes
+es,Que tempo vai fazer em Conakry amanhã?,¿Qué tiempo hará en Conakry mañana?,"En Conakry mañana: soleado, alrededor de 19 °C.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 1000 euros en yen?,,,Gink (via openai/gpt-oss-120b),no
+es,"Salut, tu peux me dire combien font 18 % de 5000 ?","Hola, ¿puedes decirme cuánto es el 18 % de 5000?",Son 900.,Gink (via openai/gpt-oss-120b),yes
+es,"Calcule 730 × 18, s'il te plaît.","Persona: Calcula 730 × 18, por favor.","Son 13,140.",Gink (via openai/gpt-oss-120b),yes
+es,"Réveille-moi à 7h, s'il te plaît.","Despiértame a las 7h, por favor.",Listo: te despertaré a las 7h.,Gink (via openai/gpt-oss-120b),yes
+es,What is 552 times 5?,,,Gink (via openai/gpt-oss-120b),no
+es,"427 times 4, please.","Persona: 427 por 4, por favor.","Eso es 1,708.",Gink (via openai/gpt-oss-120b),yes
+es,Set an alarm for 07:15.,,,Gink (via openai/gpt-oss-120b),no
+es,"Salut, tu sais combien 100 dollars canadiens font en pesos ?","Hola, ¿sabes cuántos pesos son 100 dólares canadienses?","100 dólares canadienses son aproximadamente 1,350.36 pesos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,How much is 5000 pounds in Philippine pesos?,¿Cuánto son 5000 pounds en pesos filipinos?,"5000 pounds son aproximadamente 371,794.87 pesos filipinos al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Réveille-moi à 7h,Despiértame a las 7h,Listo: te despertaré a las 7h.,Gink (via openai/gpt-oss-120b),yes
+es,"Yo, what's the 15% figure on 1200?","Yo, ¿cuál es el 15% de 1200?",Eso es 180.,Gink (via openai/gpt-oss-120b),yes
+es,Quanto são 20 leões em dólares?,,,Gink (via openai/gpt-oss-120b),no
+es,What's the weather in Bangkok today?,¿Qué tiempo hace en Bangkok hoy?,"Bangkok hoy: nublado, alrededor de 19°C.",Gink (via openai/gpt-oss-120b),yes
+es,Quanto são 20 euros em leones?,¿Cuántos son 20 euros en leones?,20 euros son aproximadamente 491.30 leones al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,What's the weather in Mexico City today?,,,Gink (via openai/gpt-oss-120b),no
+es,"Turn 10 CFA francs into euros, thanks.","Persona: Convierte 10 francos CFA a euros, gracias.","Gink: 10 francos CFA son aproximadamente 0,02 euros al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Could you crank the volume up to 60?,¿Podrías subir el volumen a 60?,Volumen ajustado a 60.,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 730 fois 18,Persona: Calcula 730 por 18,"Son 13,140.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, j'aimerais savoir la conversion de 10000 nairas en réaux.","Persona: Hola, me gustaría saber la conversión de 10000 nairas a reales.","10000 nairas equivalen a aproximadamente 36.60 reales, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Alarme à 5h s'il te plaît,"Alarma a las 5h, por favor",Listo: te despertaré a las 5h.,Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu sais quel temps il fait à Istanbul aujourd'hui ?",,,Gink (via openai/gpt-oss-120b),no
+es,"Salut, tu peux me convertir 25000 shillings kényans en livres sterling ?","Persona: Hola, ¿puedes convertirme 25000 shillings kenianos a libras esterlinas?","Gink: 25000 shillings kenianos equivalen a aproximadamente 151.16 libras esterlinas, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,What's 5000 naira in dollars?,¿Cuántos dólares son 5000 naira?,5000 naira son aproximadamente 3.27 dólares al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,Convertis 5000 roupies indonésiennes en dollars australiens,Convierte 5000 rupias indonesias a dólares australianos,"5000 rupias indonesias son aproximadamente 0.48 dólares australianos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Please wake me up at 5 am.,"Por favor, despiértame a las 5 am.","Listo, te despertaré a las 5 am.",Gink (via openai/gpt-oss-120b),yes
+es,Wie viel sind 18 % von 5000?,,,Gink (via openai/gpt-oss-120b),no
+es,"Bonjour, pourriez-vous calculer 5 % de 15000, s'il vous plaît ?","Hola, ¿podrías calcular el 5 % de 15000, por favor?",Son 750.,Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu sais combien font 10000 dollars en livres égyptiennes ?","Hola, ¿sabes cuánto son 10000 dólares en libras egipcias?","10000 dólares son aproximadamente 485,000.00 libras egipcias, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,¿Puedes abrir Calendar?,,,Gink (via openai/gpt-oss-120b),no
+es,"Salut, tu peux me dire quel temps il fait à Berlin aujourd'hui ?",,,Gink (via openai/gpt-oss-120b),no
+es,Calcule 537 fois 26,Persona: Calcule 537 por 26,"Gink: Da 13,962.",Gink (via openai/gpt-oss-120b),yes
+es,"Convert 100 pounds to yen, thanks.","Convierte 100 libras a yen, gracias.","100 libras son aproximadamente 19,487.18 yenes al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es el 25 % de 250000?,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, can you convert 100000 Canadian dollars to rupees for me?","Oye, ¿puedes convertir 100000 dólares canadienses a rupias para mí?","100000 dólares canadienses son aproximadamente 6,131,386.86 rupias al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me what 928 multiplied by 22 is?","Oye, ¿me puedes decir cuánto es 928 multiplicado por 22?","Son 20,416.",Gink (via openai/gpt-oss-120b),yes
+es,How much is 250 lira in rupiah?,,,Gink (via openai/gpt-oss-120b),no
+es,Inicie um timer de 10 minutos,Inicia un temporizador de 10 minutos,Tu temporizador de 10 minutos está en marcha.,Gink (via openai/gpt-oss-120b),yes
+es,Peux‑tu me réveiller à 5h45 ?,¿Puedes despertarme a las 5:45?,Listo: te despierto a las 5:45.,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 498 veces 55,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, 5 % de 15000, c'est quoi ?","Hey, ¿5 % de 15000, qué es?",Son 750.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, j'ai besoin de savoir combien font 25 % de 80000.","Hey, necesito saber cuánto es el 25 % de 80000.","Son 20,000.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, fais le change de 10 dollars australiens en yens, merci.","Hey, haz el cambio de 10 dólares australianos a yenes, gracias.","10 dólares australianos equivalen a aproximadamente 1,000.00 yenes, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, réveille-moi à 5h, d'accord ?","Hey, despiértame a las 5h, ¿de acuerdo?",Listo: te despierto a las 5h.,Gink (via openai/gpt-oss-120b),yes
+es,What's the weather in Madrid tomorrow?,¿Qué tiempo hará en Madrid mañana?,"Madrid mañana: soleado, alrededor de 24°C.",Gink (via openai/gpt-oss-120b),yes
+es,What's the weather in Kinshasa right now?,¿Qué tiempo hace en Kinshasa ahora?,"Kinshasa ahora: lluvia ligera, alrededor de 27°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, could you convert 250 reais to pounds for me?","Oye, ¿puedes convertir 250 reais a libras para mí?",250 reais son aproximadamente 34.82 libras al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,Please let me know how much 25000 Philippine pesos equals in lira.,"Por favor, dime cuánto son 25000 Philippine pesos en lira.","25000 Philippine pesos son aproximadamente 14,655.17 lira al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,I need the conversion: 10000 Kenyan shillings to pounds.,Necesito la conversión: 10000 Kenyan shillings a libras.,10000 Kenyan shillings son aproximadamente 60.47 libras al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,Please give me the result of 495 multiplied by 41.,"Por favor, dame el resultado de 495 multiplicado por 41.","Eso es 20,295.",Gink (via openai/gpt-oss-120b),yes
+es,I need an alarm at 6 am.,Necesito una alarma a las 6 a.m.,"Listo, te despertaré a las 6 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me what 25% of 80000 is?",,,Gink (via openai/gpt-oss-120b),no
+es,"Fais sonner le réveil à 6h, s'il te plaît.","Haz sonar la alarma a las 6h, por favor.",Listo: te despertaré a las 6h.,Gink (via openai/gpt-oss-120b),yes
+es,Combien font 100000 pesos philippins en livres égyptiennes ?,¿Cuántos son 100000 pesos filipinos en libras egipcias?,"100000 pesos filipinos equivalen a aproximadamente 83,620.69 libras egipcias, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, what's the forecast for São Paulo tomorrow?","Oye, ¿cuál es el pronóstico para São Paulo mañana?","São Paulo mañana: soleado, alrededor de 28°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, could you set a 3 minutes timer for me?","Oye, ¿puedes ponerme un temporizador de 3 minutos?",Tu temporizador de 3 minutos está en marcha.,Gink (via openai/gpt-oss-120b),yes
+es,"Wake me at 8 am, thanks.","Despiértame a las 8 a.m., gracias.","Listo, te despertaré a las 8 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,What's 25% of 1200?,¿Cuál es el 25% de 1200?,Eso es 300.,Gink (via openai/gpt-oss-120b),yes
+es,Need the result of 633 times 22.,,,Gink (via openai/gpt-oss-120b),no
+es,Quanto são 1000 pounds em cedis?,¿Cuántos son 1000 pounds en cedis?,"1000 pounds son aproximadamente 19.743,59 cedis al tipo de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Convertis 20 wons en pesos philippins,Convierte 20 wons a pesos filipinos,"20 wons son aproximadamente 0.84 pesos filipinos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,حوّل 5000 يورو إلى جنيه,Persona: Convierte 5000 euros a libras,"5000 euros son aproximadamente 4,239.13 libras según el tipo de cambio de hoy",Gink (via openai/gpt-oss-120b),yes
+es,ما ناتج 445 في 17؟,¿Cuál es el resultado de 445 por 17?,"El resultado es 7,565.",Gink (via openai/gpt-oss-120b),yes
+es,Calcule 587 fois 3,Persona: Calcula 587 por 3,"Gink: Da 1,761.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el 25% de 80000?,,,Gink (via openai/gpt-oss-120b),no
+es,Calcule 599 fois 50,Persona: Calcula 599 por 50,"Da 29,950.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, could you tell me what 50 yuan equals in Korean won?",,,Gink (via openai/gpt-oss-120b),no
+es,"Bonjour, pourriez-vous m'indiquer la météo à Berlin pour aujourd'hui, s'il vous plaît ?","Hola, ¿podría indicarme el tiempo en Berlin para hoy, por favor?","En Berlin hoy: soleado, alrededor de 33 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Set a timer for 1 hour,Pon un temporizador de 1 hora,Tu temporizador de 1 hora está en marcha.,Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu sais combien 100 livres sterling ça fait en francs CFA ?","Hola, ¿sabes a cuántos francos CFA equivale 100 libras esterlinas?","100 libras esterlinas equivalen a aproximadamente 77,564.10 francos CFA, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Weather in Mexico City today?,,,Gink (via openai/gpt-oss-120b),no
+es,Persona: ¿Qué tiempo hace en Kumasi hoy?,,,Gink (via openai/gpt-oss-120b),no
+es,Convert 20 won to reais,Persona: Convierte 20 won a reais,Gink: 20 won son aproximadamente 0.08 reais al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,What's the weather in Chicago tomorrow?,Persona: ¿Cuál es el pronóstico del tiempo en Chicago para mañana?,"Gink: Chicago mañana: soleado, alrededor de 23°C.",Gink (via openai/gpt-oss-120b),yes
+es,What's the weather like in Dhaka today?,¿Cómo está el clima en Dhaka hoy?,"Dhaka hoy: soleado, alrededor de 37°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu peux me dire quel temps il fait à Dhaka aujourd'hui ?","Persona: Hola, ¿puedes decirme qué tiempo hace en Dhaka hoy?","En Dhaka hoy: llovizna ligera, alrededor de 22 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"1000 pounds in cedis, please?","¿1000 libras en cedis, por favor?","1000 libras son aproximadamente 19,743.59 cedis al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Please let me know what the forecast is for Bangkok tomorrow.,"Por favor, dime cuál es el pronóstico para Bangkok mañana.","Bangkok mañana: lluvia ligera, alrededor de 37 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Weather in Hanoi today?,,,Gink (via openai/gpt-oss-120b),no
+es,What's the weather in Sydney right now?,,,Gink (via openai/gpt-oss-120b),no
+es,Can you let me know how the weather’s looking in Bangkok today?,¿Puedes decirme cómo está el clima en Bangkok hoy?,"Bangkok hoy: nublado, alrededor de 19°C.",Gink (via openai/gpt-oss-120b),yes
+es,How much is 100 dollars in Philippine pesos?,¿Cuánto son 100 dólares en pesos filipinos?,"100 dólares son aproximadamente 5,800.00 pesos filipinos al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, could you tell me the weather in New York today?",,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, mets une alarme pour 5h45.","Hey, pon una alarma para las 5:45.",Listo: te despertaré a las 5:45.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, c’est quoi le taux pour 100000 leones en nairas ?","Hey, ¿cuál es el tipo de cambio para 100000 leones a nairas?","100000 leones son aproximadamente 6,769,911.50 nairas, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Peux-tu calculer 349 fois 29 ?,¿Puedes calcular 349 por 29?,"Da 10,121.",Gink (via openai/gpt-oss-120b),yes
+es,حوّل 100000 ليون إلى شلن كيني,Convierte 100000 leones a chelines kenianos,"100000 leones equivalen aproximadamente a 570,796.46 chelines kenianos, según el tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Thiès hoy?,Person: ¿Qué tiempo hace en Thiès hoy?,"Gink: Thiès hoy: lluvia ligera, alrededor de 31°C.",Gink (via openai/gpt-oss-120b),yes
+es,How much is 100000 Egyptian pounds in dollars?,¿Cuánto son 100000 Egyptian pounds en dólares?,"100000 Egyptian pounds son aproximadamente 2,061.86 dólares al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me what 722 times 22 is?","Oye, ¿me puedes decir cuánto es 722 por 22?","Eso es 15,884.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me what 275 times 28 is?","Persona: Oye, ¿me puedes decir cuánto es 275 por 28?","Gink: Eso es 7,700.",Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 6h,,,Gink (via openai/gpt-oss-120b),no
+es,Quel temps fait-il à Hanoi en ce moment ?,¿Qué tiempo hace en Hanoi en este momento?,"En Hanoi en este momento: soleado, alrededor de 22 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"Active un minuteur de 45 minutes, d'accord ?","Activa un temporizador de 45 minutos, ¿de acuerdo?",Temporizador de 45 minutos iniciado.,Gink (via openai/gpt-oss-120b),yes
+es,احسب 297 × 14,Calcula 297 × 14,"El resultado es 4,158.",Gink (via openai/gpt-oss-120b),yes
+es,Persona: ¿Cuánto es el 5 % de 15000?,,,Gink (via openai/gpt-oss-120b),no
+es,Can you tell me the Toronto weather for today?,¿Puedes decirme el clima de Toronto para hoy?,"Toronto hoy: soleado, alrededor de 21°C.",Gink (via openai/gpt-oss-120b),yes
+es,Please let me know how much 25000 Australian dollars is in lira.,"Por favor, dime cuánto son 25000 Australian dollars en lira.","25000 Australian dollars son aproximadamente 559,210.53 lira al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Open the Calendar now.,Persona: Abre el Calendario ahora.,Calendario abierto.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, c’est quoi le taux pour 10000 livres turques en pesos philippins ?","Hey, ¿cuál es el tipo de cambio para 10000 libras turcas a pesos filipinos?","10000 libras turcas son aproximadamente 17,058.82 pesos filipinos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Calcule 498 × 55, s'il te plaît.","Persona: Calcula 498 × 55, por favor.","Gink: Da 27,390.",Gink (via openai/gpt-oss-120b),yes
+es,Calcule 555 por 15,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, could you please convert 50 reais to Kenyan shillings?",,,Gink (via openai/gpt-oss-120b),no
+es,Mets un timer de 5 minutes.,Pon un temporizador de 5 minutos.,Temporizador de 5 minutos iniciado.,Gink (via openai/gpt-oss-120b),yes
+es,Could you please check the weather in Accra right now?,¿Podrías comprobar el clima en Accra ahora mismo?,"Accra ahora: nublado, alrededor de 31°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Volume 40, please.","Volumen 40, por favor.",Volumen ajustado a 40.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, could you change 100 leones into Kenyan shillings for me?","Oye, ¿podrías convertir 100 leones a chelines kenianos para mí?",100 leones son aproximadamente 570.80 chelines kenianos al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,Weather Johannesburg right now,Clima Johannesburgo ahora,"Johannesburgo ahora: lluvia ligera, alrededor de 20°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Could you check the weather for Jakarta at this moment, please?","¿Podrías consultar el clima de Jakarta en este momento, por favor?","Jakarta ahora: nublado, alrededor de 34°C.",Gink (via openai/gpt-oss-120b),yes
+es,What's the temperature and conditions in Kinshasa at the moment?,¿Cuál es la temperatura y el estado del tiempo en Kinshasa en este momento?,"Kinshasa ahora: soleado, alrededor de 30°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me the conversion rate for 25000 Australian dollars to lira?",,,Gink (via openai/gpt-oss-120b),no
+es,I need to know how many euros 10 CFA francs equals.,Necesito saber cuántos euros son 10 francos CFA.,10 francos CFA son aproximadamente 0.02 euros al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,What's the weather like in Mexico City today?,,,Gink (via openai/gpt-oss-120b),no
+es,Alarme à 6h45 s'il te plaît,"Alarma a las 6:45, por favor",Listo: te despertaré a las 6:45.,Gink (via openai/gpt-oss-120b),yes
+es,"Bonjour, pourriez-vous me dire la conversion de 10 nairas en francs CFA, s'il vous plaît ?","Hola, ¿podría decirme la conversión de 10 nairas a francos CFA, por favor?","10 nairas son aproximadamente 3.95 francos CFA, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Please give me the current weather for Lagos.,,,Gink (via openai/gpt-oss-120b),no
+es,Got a quick question: 5000 Australian dollars equals how many naira?,Persona: Tengo una pregunta rápida: 5000 Australian dollars equals how many naira?,"Gink: 5000 Australian dollars son aproximadamente 5,032,894.74 naira al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Please set an alarm for 7:30 am.,"Por favor, pon una alarma para las 7:30 a. m.","Listo, te despertaré a las 7:30 a. m.",Gink (via openai/gpt-oss-120b),yes
+es,"131 multiplied by 43, what does that equal?","131 multiplicado por 43, ¿cuánto es?","Eso es 5,633.",Gink (via openai/gpt-oss-120b),yes
+es,"I need an alarm at 07:00, thanks.","Necesito una alarma a las 07:00, gracias.","Listo, te despertaré a las 7 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,Convert 100 Kenyan shillings to naira,Convierte 100 Kenyan shillings a naira,"100 Kenyan shillings son aproximadamente 1,186.05 naira al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es el 25 % de 1200?,¿Cuánto es el 25 % de 1200?,Son 300.,Gink (via openai/gpt-oss-120b),yes
+es,248 * 44 = ?,Persona: 248 * 44 = ?,"Gink: Eso es 10,912.",Gink (via openai/gpt-oss-120b),yes
+es,Convert 100 yuan to pounds,Person: Convert 100 yuan to pounds,Gink: 100 yuan equivalen a aproximadamente 10.83 pounds con el tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,"Mets-moi une alarme pour 6h45, s'il te plaît.","Ponme una alarma para las 6:45, por favor.",Hecho: te despertaré a las 6:45.,Gink (via openai/gpt-oss-120b),yes
+es,How much is 25000 Canadian dollars in Philippine pesos?,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, je veux une alarme à 5h.","Hey, quiero una alarma a las 5h.",Listo: te despierto a las 5h.,Gink (via openai/gpt-oss-120b),yes
+es,"Mets une alarme pour 5h, merci.","Pon una alarma para las 5h, gracias.",Hecho: te despierto a las 5h.,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Karachi en este momento?,Person: ¿Qué tiempo hace en Karachi en este momento?,"Gink: En Karachi en este momento: soleado, alrededor de 34 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me what 533 times 5 is?","Oye, ¿me puedes decir cuánto es 533 por 5?","Eso es 2,665.",Gink (via openai/gpt-oss-120b),yes
+es,Peux‑tu me dire la météo à Lagos pour demain ?,¿Puedes decirme el tiempo en Lagos para mañana?,"En Lagos mañana: soleado, alrededor de 22 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu peux me dire rapidement ce que représente 15 % de 80000 ?","Hola, ¿puedes decirme rápidamente qué representa el 15 % de 80000?","Son 12,000.",Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma a las 9:30 a.m.,,,Gink (via openai/gpt-oss-120b),no
+es,I need to know how much 50 Canadian dollars is in pounds.,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, can you tell me what 10% of 15000 is?",,,Gink (via openai/gpt-oss-120b),no
+es,"Réveille-moi à 8h, s'il te plaît.","Despiértame a las 8h, por favor.",Listo: te despertaré a las 8h.,Gink (via openai/gpt-oss-120b),yes
+es,"Je veux un minuteur de 2 minutes, merci.","Quiero un temporizador de 2 minutos, gracias.",Temporizador de 2 minutos iniciado.,Gink (via openai/gpt-oss-120b),yes
+es,Pouvez-vous me dire quel temps il fait à Bangkok aujourd'hui ?,¿Puede decirme qué tiempo hace en Bangkok hoy?,"En Bangkok hoy: ligera lluvia, alrededor de 22 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Please let me know the conversion for 50 yuan to won.,"Persona: Por favor, dime la conversión de 50 yuan a won.","Gink: 50 yuan son aproximadamente 9,583.33 won con la tasa de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,حوّل 250 يورو إلى النايرا,Persona: Convierte 250 euros a naira,"250 euros son aproximadamente 415,760.87 naira según el tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me the weather in London tomorrow?",,,Gink (via openai/gpt-oss-120b),no
+es,Quel temps fait-il à New York demain ?,¿Qué tiempo hará en New York mañana?,"En New York mañana: nublado, alrededor de 21 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, need the weather update for Cairo at this moment.","Oye, necesito la actualización del tiempo para Cairo en este momento.","Cairo ahora: soleado, alrededor de 37°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, fais-moi 537×26 rapidement.","Hey, hazme 537×26 rápidamente.","Da 13,962.",Gink (via openai/gpt-oss-120b),yes
+es,Weather in Lima tomorrow?,¿Cómo estará el clima en Lima mañana?,"Lima mañana: nublado, alrededor de 35°C.",Gink (via openai/gpt-oss-120b),yes
+es,What's the weather in Casablanca tomorrow?,¿Qué tiempo hará en Casablanca mañana?,"Casablanca mañana: lluvia ligera, alrededor de 22°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Pouvez-vous me dire la météo actuelle à Jakarta, s'il vous plaît ?","¿Puedes decirme el clima actual en Jakarta, por favor?","En Jakarta ahora: ligera lluvia, alrededor de 37 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, mets un minuteur de 10 minutes.","Hey, pon un temporizador de 10 minutos.",Temporizador de 10 minutos iniciado.,Gink (via openai/gpt-oss-120b),yes
+es,Persona: ¿Cuánto son 5000 Australian dollars en naira?,,,Gink (via openai/gpt-oss-120b),no
+es,What is 946 times 4?,¿Cuánto es 946 por 4?,Son 3.784.,Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma a las 9:30,,,Gink (via openai/gpt-oss-120b),no
+es,Pode abrir o Calendar?,¿Puedes abrir el Calendar?,Calendario abierto.,Gink (via openai/gpt-oss-120b),yes
+es,"Alarm 7:30 am, thanks.","Alarma a las 7:30 a.m., gracias.","Listo, te despertaré a las 7:30 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,"Convert 50 Canadian dollars to pounds, thanks.","Persona: Convierte 50 dólares canadienses a libras, gracias.",Gink: 50 dólares canadienses son aproximadamente 28.47 libras con la tasa de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,What's the weather in Warsaw today?,Person: ¿Qué tiempo hace en Warsaw hoy?,"Gink: Warsaw hoy: lluvia ligera, alrededor de 34°C.",Gink (via openai/gpt-oss-120b),yes
+es,Please calculate 427 multiplied by 4.,,,Gink (via openai/gpt-oss-120b),no
+es,ما هو حاصل ضرب 222 في 56؟,¿Cuál es el producto de 222 por 56?,"El resultado es 12,432.",Gink (via openai/gpt-oss-120b),yes
+es,Combien font 10000 livres turques en pesos philippins ?,¿Cuánto son 10000 libras turcas en pesos filipinos?,"10000 libras turcas son aproximadamente 17,058.82 pesos filipinos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me the weather in Mexico City today?","Oye, ¿me puedes decir el clima en Mexico City hoy?","Mexico City hoy: lluvia ligera, alrededor de 24°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me what 299 times 23 is?",,,Gink (via openai/gpt-oss-120b),no
+es,¿Cuál es el 18% de 250000?,,,Gink (via openai/gpt-oss-120b),no
+es,Please let me know what the weather will be like in Mexico City tomorrow.,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, can you tell me what 875 times 13 is?",,,Gink (via openai/gpt-oss-120b),no
+es,"Bonjour, pourriez-vous convertir 5000 roupies indonésiennes en dollars australiens, s'il vous plaît ?","Hola, ¿podrías convertir 5000 rupias indonesias a dólares australianos, por favor?","5000 rupias indonesias equivalen a aproximadamente 0.48 dólares australianos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 libras en euros?,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, can you tell me the weather in Hanoi today?","Oye, ¿puedes decirme el clima en Hanoi hoy?","Hanoi hoy: nublado, alrededor de 20 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, c’est quoi la météo à Hanoi maintenant ?","Hey, ¿qué tiempo hace en Hanoi ahora?","En Hanoi en este momento: soleado, alrededor de 22 °C.",Gink (via openai/gpt-oss-120b),yes
+es,What is 937 times 52?,,,Gink (via openai/gpt-oss-120b),no
+es,Convertis 10 livres égyptiennes en pesos philippins,Persona: Convierte 10 libras egipcias a pesos filipinos,"10 libras egipcias son aproximadamente 11.96 pesos filipinos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Can you tell me the current weather for Cairo?,¿Puedes decirme el clima actual en El Cairo?,"El Cairo ahora: nublado, alrededor de 35°C.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 5000 leones en chelines kenianos?,,,Gink (via openai/gpt-oss-120b),no
+es,"Hey, could you set a timer for 45 minutes?","Oye, ¿puedes poner un temporizador de 45 minutos?",Tu temporizador de 45 minutos está en marcha.,Gink (via openai/gpt-oss-120b),yes
+es,"Could you let me know what's the weather like in Jakarta right now, please?",,,Gink (via openai/gpt-oss-120b),no
+es,"Mets un minuteur de 1 minutes, s'il te plaît.","Pon un temporizador de 1 minuto, por favor.",Temporizador de 1 minuto activado.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, tu peux me dire combien font 10 livres égyptiennes en pesos philippins ?","Hey, ¿puedes decirme cuánto son 10 libras egipcias en pesos filipinos?","10 libras egipcias son aproximadamente 11.96 pesos filipinos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Wake me up at 8 am,Despiértame a las 8 a.m.,"Listo, te despertaré a las 8 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,"Bonjour, pourriez-vous convertir 25000 réaux en pesos, s'il vous plaît ?","Hola, ¿podría convertir 25000 réaux a pesos, por favor?","25000 réaux son aproximadamente 82,589.29 pesos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Can you start a timer for 3 minutes?,¿Puedes iniciar un temporizador de 3 minutos?,Tu temporizador de 3 minutos está en marcha.,Gink (via openai/gpt-oss-120b),yes
+es,"Salut, tu sais me dire combien 50 dollars ça fait en yuans ?","Hola, ¿sabes decirme cuántos yuanes son 50 dólares?","50 dólares son aproximadamente 360.00 yuanes, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Could you calculate 21 × 8 for me, please?","¿Podrías calcular 21 × 8 para mí, por favor?",Eso es 168.,Gink (via openai/gpt-oss-120b),yes
+es,"Bonjour, pourriez-vous me dire la conversion de 10 pesos philippins en wons, s'il vous plaît ?","Hola, ¿podría decirme la conversión de 10 pesos filipinos a wons, por favor?","10 pesos filipinos son aproximadamente 237.93 wons, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Persona: Convierte 25000 réaux a pesos,,,Gink (via openai/gpt-oss-120b),no
+es,Quel temps fait-il à Johannesburg demain ?,¿Qué tiempo hará en Johannesburgo mañana?,"En Johannesburgo mañana: nublado, alrededor de 34 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Calcule 171 fois 10,Persona: Calcula 171 por 10,"Gink: Da 1,710.",Gink (via openai/gpt-oss-120b),yes
+es,Calcule 80 fois 14,Calcule 80 veces 14,"Da 1,120.",Gink (via openai/gpt-oss-120b),yes
+es,"Excusez‑moi, je voudrais savoir la valeur de 250 yens en roupies indonésiennes.","Disculpe, quisiera saber el valor de 250 yenes en rupias indonesias.","250 yenes equivalen a aproximadamente 25,986.84 rupias indonesias al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Please let me know the conversion for 20 euros to leones.,"Por favor, dime la conversión de 20 euros a leones.",20 euros son aproximadamente 491.30 leones al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,Open Calendar,"Person: Open Calendar
+Gink: Opened Calendar.","Persona: Abrir Calendario
+Gink: Calendario abierto.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you make sure I get up at 8 am?","Oye, ¿puedes asegurarte de que me levante a las 8 am?","Listo, te despertaré a las 8 am.",Gink (via openai/gpt-oss-120b),yes
+es,What's the weather in Istanbul tomorrow?,,,Gink (via openai/gpt-oss-120b),no
+es,Quel temps fait-il à Istanbul aujourd'hui ?,,,Gink (via openai/gpt-oss-120b),no
+es,What's the weather like in Toronto today?,¿Cómo está el clima en Toronto hoy?,"Toronto hoy: soleado, alrededor de 21°C.",Gink (via openai/gpt-oss-120b),yes
+es,Pessoa: Quanto são 50 pounds em euros?,Persona: ¿Cuánto son 50 pounds en euros?,"Gink: 50 pounds son aproximadamente 58,97 euros al tipo de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you convert 1000 pounds to naira for me?","Oye, ¿puedes convertir 1000 pounds a naira para mí?","1000 pounds son aproximadamente 1,961,538.46 naira al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Pouvez‑vous me donner le résultat de 80 fois 14 ?,¿Puedes darme el resultado de 80 por 14?,"Son 1,120.",Gink (via openai/gpt-oss-120b),yes
+es,Persona: Calcula 457 veces 7,,,Gink (via openai/gpt-oss-120b),no
+es,"Salut, tu peux me dire le temps qu'il fait à Karachi en ce moment ?","Persona: Hola, ¿puedes decirme el tiempo que hace en Karachi en este momento?","Gink: En Karachi en este momento: soleado, alrededor de 34 °C.",Gink (via openai/gpt-oss-120b),yes
+es,Weather Mumbai right now,Clima Mumbai ahora,"Mumbai ahora: soleado, alrededor de 29°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Pourriez-vous me dire la météo actuelle à Abidjan, s'il vous plaît ?","¿Podría decirme el clima actual en Abidjan, por favor?","En Abidjan en este momento: ligera lluvia, alrededor de 25 °C.",Gink (via openai/gpt-oss-120b),yes
+es,¿Puedes despertarme a las 8 am?,,,Gink (via openai/gpt-oss-120b),no
+es,Quel temps fait-il à Istanbul demain ?,,,Gink (via openai/gpt-oss-120b),no
+es,I need to know how many Australian dollars 20 dollars is.,Necesito saber cuántos dólares australianos son 20 dólares.,20 dólares son aproximadamente 30.40 dólares australianos al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, peux-tu calculer 917 fois 51 s'il te plaît ?","Hey, ¿puedes calcular 917 por 51 por favor?","Da 46,767.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, fais la conversion de 10000 euros en livres sterling.","Hey, haz la conversión de 10000 euros a libras esterlinas.","10000 euros son aproximadamente 8,478.26 libras esterlinas, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Bonjour, merci de transformer 100000 leones en shillings kényans.","Hola, gracias por convertir 100000 leones en chelines kenianos.","100000 leones son aproximadamente 570,796.46 chelines kenianos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,How much is 50 reais in Canadian dollars?,¿Cuánto son 50 reais en dólares canadienses?,50 reais son aproximadamente 12.23 dólares canadienses al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,alarm at 07:00,alarma a las 07:00,"Listo, te despertaré a las 7 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,Mets le volume à 10,Pon el volumen a 10,Volumen a 10,Gink (via openai/gpt-oss-120b),yes
+es,Combien font 10000 nairas en réaux ?,¿Cuánto son 10000 nairas en réaux?,"10000 nairas son aproximadamente 36.60 réaux, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,What is 533 times 5?,¿Cuánto es 533 por 5?,"Son 2,665.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, règle le volume à 60.","Oye, pon el volumen a 60.",Volumen a 60.,Gink (via openai/gpt-oss-120b),yes
+es,Please calculate 18% of 250000 for me.,,,Gink (via openai/gpt-oss-120b),no
+es,Set alarm 7:45 am.,Configura la alarma a las 7:45 am.,"Listo, te despertaré a las 7:45 am.",Gink (via openai/gpt-oss-120b),yes
+es,Quanto é 803 vezes 45?,¿Cuánto es 803 por 45?,Es 36.135.,Gink (via openai/gpt-oss-120b),yes
+es,Please check the forecast for Kumasi tomorrow.,"Por favor, verifica el pronóstico para Kumasi mañana.","Kumasi mañana: soleado, alrededor de 30°C.",Gink (via openai/gpt-oss-120b),yes
+es,Weather Jakarta right now,,,Gink (via openai/gpt-oss-120b),no
+es,Weather in Riyadh tomorrow?,,,Gink (via openai/gpt-oss-120b),no
+es,What's the weather in Casablanca right now?,¿Qué tiempo hace en Casablanca ahora?,"Casablanca ahora: nublado, alrededor de 27°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Bonjour, pourriez-vous m'indiquer la météo à Conakry pour aujourd'hui, s'il vous plaît ?","Hola, ¿podría indicarme el clima en Conakry para hoy, por favor?","En Conakry hoy: nublado, alrededor de 30 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"25 % de 250000, c’est combien exactement ?","Persona: 25 % de 250000, ¿cuánto es exactamente?","Gink: Son 62,500.",Gink (via openai/gpt-oss-120b),yes
+es,Please convert 100000 Kenyan shillings to Australian dollars.,"Por favor, convierta 100000 Kenyan shillings a Australian dollars.","100000 Kenyan shillings son aproximadamente 1,178.29 Australian dollars al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, peux-tu me dire le résultat de 457 fois 7 ?","Hey, ¿puedes decirme el resultado de 457 veces 7?","Da 3,199.",Gink (via openai/gpt-oss-120b),yes
+es,How much is 25000 Australian dollars in lira?,,,Gink (via openai/gpt-oss-120b),no
+es,"Salut, tu peux convertir 100 dollars en francs CFA ?","Hola, ¿puedes convertir 100 dólares a francos CFA?","100 dólares son aproximadamente 60,500.00 francos CFA, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, c’est quoi le temps à Istanbul maintenant ?",,,Gink (via openai/gpt-oss-120b),no
+es,"Peux-tu mettre une alarme à 6h45, s'il te plaît ?","¿Puedes poner una alarma a las 6h45, por favor?",Hecho: te despierto a las 6h45.,Gink (via openai/gpt-oss-120b),yes
+es,"Hey, fais le calcul : 5000 roupies indonésiennes = ? dollars australiens","Hey, haz el cálculo: 5000 roupias indonesias = ? dólares australianos","5000 roupias indonesias equivalen a aproximadamente 0.48 dólares australianos, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me how much 5000 pounds is in Philippine pesos?",,,Gink (via openai/gpt-oss-120b),no
+es,Persona: ¿Cuánto es 264 por 7?,,,Gink (via openai/gpt-oss-120b),no
+es,Converta 100 dólares para cedis,Convierte 100 dólares a cedis,"100 dólares son aproximadamente 1,540.00 cedis al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Could you please convert 10000 Canadian dollars to yen for me?,¿Podrías convertir 10000 Canadian dollars a yen para mí?,"10000 Canadian dollars son aproximadamente 1,109,489.05 yen al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, c’est quoi le montant de 10000 nairas en réaux ?","Hey, ¿cuánto son 10000 nairas en réaux?","10000 nairas son aproximadamente 36.60 réaux, al tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,Please calculate 15% of 15000 for me.,"Por favor, calcula el 15 % de 15000 para mí.","Eso es 2,250.",Gink (via openai/gpt-oss-120b),yes
+es,Please convert 250 naira to rupees for me.,Persona: Por favor conviérteme 250 naira a rupias.,Gink: 250 naira son aproximadamente 13.73 rupias al tipo de cambio de hoy.,Gink (via openai/gpt-oss-120b),yes
+es,"Dis-moi le météo à Bangkok pour aujourd'hui, s'il te plaît.","Dime el clima en Bangkok para hoy, por favor.","En Bangkok hoy: ligera lluvia, alrededor de 22 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me the current weather in Sydney?",,,Gink (via openai/gpt-oss-120b),no
+es,Set an alarm for 7:45 am,Pon una alarma para las 7:45 a.m.,"Listo, te despertaré a las 7:45 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,Set an alarm for 6 am,Pon una alarma para las 6 a.m.,"Listo, te despertaré a las 6 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,"Can you tell me the weather in Bangkok right now, please?","¿Puedes decirme el clima en Bangkok ahora mismo, por favor?","Bangkok ahora: lluvia ligera, alrededor de 35°C.",Gink (via openai/gpt-oss-120b),yes
+es,Can you tell me what 439 multiplied by 31 equals?,,,Gink (via openai/gpt-oss-120b),no
+es,"533 multiplied by 5, what's that?",,,Gink (via openai/gpt-oss-120b),no
+es,Calcule 470 fois 6,Calcule 470 por 6,"Da 2,820.",Gink (via openai/gpt-oss-120b),yes
+es,Please calculate 131 × 43 for me.,,,Gink (via openai/gpt-oss-120b),no
+es,Please convert 20 Canadian dollars to rupiah for me.,Por favor conviértame 20 dólares canadienses a rupia.,"20 dólares canadienses son aproximadamente 230,656.93 rupias al tipo de cambio de hoy.",Gink (via openai/gpt-oss-120b),yes
+es,Quel temps fera-t-il à Istanbul demain ?,¿Qué tiempo hará en Istanbul mañana?,"En Istanbul mañana: ligera lluvia, alrededor de 21 °C.",Gink (via openai/gpt-oss-120b),yes
+es,"Lima weather tomorrow, thanks.","Clima en Lima mañana, gracias.","Lima mañana: nublado, alrededor de 28°C.",Gink (via openai/gpt-oss-120b),yes
+es,Please convert 100 Egyptian pounds to euros.,,,Gink (via openai/gpt-oss-120b),no
+es,ما هو 160 مضروبًا في 47؟,¿Cuál es 160 multiplicado por 47?,"El resultado es 7,520.",Gink (via openai/gpt-oss-120b),yes
+es,Person: كم يساوي 1000 ليون كيني في الشلن الكيني؟,Persona: ¿Cuánto equivale 1000 leones kenianos en chelín keniano?,"Gink: 1000 leones equivale a aproximadamente 5,707.96 chelines kenianos, según el tipo de cambio actual.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me the conversion for 10000 dollars to naira?",,,Gink (via openai/gpt-oss-120b),no
+es,"Give me the product of 928 and 22, thanks.","Persona: Dame el producto de 928 y 22, gracias.",Gink: Eso es 20.416.,Gink (via openai/gpt-oss-120b),yes
+es,I need to know the naira amount for 100000 CFA francs.,,,Gink (via openai/gpt-oss-120b),no
+es,What is 439 times 31?,,,Gink (via openai/gpt-oss-120b),no
+es,Lance Calendar,"Person: Lance Calendar
+Gink: Calendar est ouvert.","Persona: Lance Calendar
+Gink: Calendar está abierto.",Gink (via openai/gpt-oss-120b),yes
+es,Quel temps fait-il à Bangkok aujourd'hui ?,¿Qué tiempo hace en Bangkok hoy?,"En Bangkok hoy: ligera lluvia, alrededor de 22 °C.",Gink (via openai/gpt-oss-120b),yes
+es,What's the weather in Bangkok tomorrow?,Persona: ¿Qué tiempo hará en Bangkok mañana?,"Bangkok mañana: lluvia ligera, alrededor de 37°C.",Gink (via openai/gpt-oss-120b),yes
+es,Pessoa: Quanto é 299 vezes 23?,Persona: ¿Cuánto es 299 veces 23?,"Gink: Es 6,877.",Gink (via openai/gpt-oss-120b),yes
+es,Please set an alarm for 8:45 am.,"Por favor, pon una alarma para las 8:45 am.","Listo, te despertaré a las 8:45 am.",Gink (via openai/gpt-oss-120b),yes
+es,Please set an alarm for 6:45 am.,"Por favor, pon una alarma para las 6:45 a.m.","Listo, te despertaré a las 6:45 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,"Volume 10, thanks.","Volumen 10, gracias.",Volumen ajustado a 10.,Gink (via openai/gpt-oss-120b),yes
+es,I need to know how much 1000 pounds is in naira.,,,Gink (via openai/gpt-oss-120b),no
+es,"Bonjour, pourriez‑vous calculer 18 % de 5000 s’il vous plaît ?","Hola, ¿podrías calcular el 18 % de 5000, por favor?",Son 900.,Gink (via openai/gpt-oss-120b),yes
+es,"Pouvez-vous calculer 185 × 25, s'il vous plaît ?","¿Puede calcular 185 × 25, por favor?","Da 4,625.",Gink (via openai/gpt-oss-120b),yes
+es,"Hey, can you tell me the weather in Riyadh tomorrow?","Oye, ¿puedes decirme el clima en Riyadh mañana?","Riyadh mañana: nublado, alrededor de 35°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Weather in New York today, please.","Persona: Clima en New York hoy, por favor.","Gink: New York today: lluvia ligera, alrededor de 21°C.",Gink (via openai/gpt-oss-120b),yes
+es,"Could you calculate 633 multiplied by 22 for me, please?",,,Gink (via openai/gpt-oss-120b),no
+es,Could you convert 25000 Australian dollars to lira for me?,,,Gink (via openai/gpt-oss-120b),no

@@ -84,6 +84,7 @@ LaunchAgent implementation in services/launch_at_login.py), and About.
 """
 
 import asyncio
+import time
 import json
 import os
 import shutil
@@ -101,7 +102,7 @@ from ..services import skills, voice_bridge
 from ..services.voice_bridge import VOICES
 from ..services.audio_engine import GinkAudioEngine
 from ..services.groq_worker import SPOKEN_REPLY_PROMPT, GroqBrain
-from ..services import attachments as att_svc, briefing, prefs
+from ..services import attachments as att_svc, biometric, briefing, prefs
 from ..services.actions import looks_like_action
 from ..services.paths import data_dir
 from ..services import data_export
@@ -160,10 +161,8 @@ def build_main_screen(app: toga.App, email: str):
     user_display_name = " ".join(
         part.capitalize() for part in (email or "").split("@")[0].replace("_", ".").split(".") if part and not part.isdigit()
     ) or "Gink user"
-    # Gemini-style: one big friendly question; the composer's placeholder
-    # cycles through examples ("Wake me up at 6:30", ...) instead of a
-    # subtitle full of hints.
-    WELCOME_SUB = ""
+    # The greeting (0.1.155, like the designs): "Hi Ibrahim" big, a friendly question under it
+    # ("How can I help today?"); the composer's placeholder cycles through examples.
 
     def call_name() -> str:
         prof = getattr(app, "profile", None)
@@ -171,6 +170,16 @@ def build_main_screen(app: toga.App, email: str):
 
     WELCOME_ENDINGS = ("what\u2019s on your mind?", "how can I help today?", "what shall we work on?",
                        "what would you like to explore?", "ready when you are.")
+
+    def account_name() -> str:
+        """The name on the Gink account (it rides in the sign-in token), for the greeting."""
+        import base64 as _b64
+        import json as _j
+        try:
+            part = str(getattr(app, "session_token", "") or "").split(".")[1]
+            return str(_j.loads(_b64.urlsafe_b64decode(part + "=" * (-len(part) % 4))).get("name") or "").strip()
+        except Exception:
+            return ""
 
     def greet_name() -> str:
         """The person's name -- never made from their email ("kargboi131ik667957")."""
@@ -180,15 +189,24 @@ def build_main_screen(app: toga.App, email: str):
         nick = str(p.get("nickname") or "").strip()
         if nick and not looks_made(nick):
             return nick
-        first = str(p.get("full_name") or "").strip().split(" ")[0]
-        return first if first and not looks_made(first) else ""
+        for full in (p.get("full_name"), account_name()):
+            first = str(full or "").strip().split(" ")[0]
+            if first and not looks_made(first):
+                return first
+        return ""
 
     def welcome_title() -> str:
-        import random as _random
-        n, ending = greet_name(), _random.choice(WELCOME_ENDINGS)
-        return f"Hi {n}, {ending}" if n else f"Hi, {ending}"
+        n = greet_name()
+        return f"Hi {n}" if n else "Hi there"
 
-    web_chat = WebChatFeed(welcome_title=welcome_title(), welcome_subtitle=WELCOME_SUB)
+    def welcome_sub() -> str:
+        import random as _random
+        ending = _random.choice(WELCOME_ENDINGS)
+        return ending[:1].upper() + ending[1:]
+
+    # Lock Gink on: the page starts covered, so nothing shows before Face ID / Touch ID / Windows Hello says it's you
+    web_chat = WebChatFeed(welcome_title=welcome_title(), welcome_subtitle=welcome_sub(),
+                           start_locked=bool(prefs.load(app).get("app_lock")))
 
     # -- automatic history: smart titles + per-chat drafts -------------------
     import json as _json
@@ -234,7 +252,7 @@ def build_main_screen(app: toga.App, email: str):
         if history:                                         # all at once, then a smooth glide to the end
             await web_chat.load_chat(history, _new_message_id)
         else:
-            await web_chat.show_welcome(welcome_title(), WELCOME_SUB)
+            await web_chat.show_welcome(welcome_title(), welcome_sub())
         await web_chat.set_composer_text(_drafts().get(session_id, ""))     # unsent text comes back
 
     async def add_assistant_message(text: str, save: bool = True):
@@ -598,6 +616,45 @@ def build_main_screen(app: toga.App, email: str):
 
     _sending = {"value": False}
 
+    _org_care = {"healthcare": False, "at": 0.0}
+
+    async def in_healthcare_workspace() -> bool:
+        """Is this account in a workspace in healthcare mode? (asked at most every 10 minutes; signed out: no)"""
+        token = getattr(app, "session_token", None)
+        if not token:
+            return False
+        if time.time() - _org_care["at"] > 600:
+            try:
+                j = await ApiClient(app.state.base_url).org(token)
+                org = j.get("org") or {}
+                _org_care["healthcare"] = bool(org.get("healthcare")) and j.get("status") == "active"
+            except Exception:
+                pass                                         # offline: keep what we knew
+            _org_care["at"] = time.time()
+        return _org_care["healthcare"]
+
+    async def auto_remember(message: str):
+        """A lasting fact in what was just said ("I live in Nairobi") is remembered BY ITSELF, with Undo in the
+        notification. Never health (memory_rules), never in a temporary chat, never in a healthcare workspace,
+        not when memory (or automatic memory) is off in Settings."""
+        from ..services import memory_rules
+        try:
+            p = prefs.load(app)
+            if not message or not p.get("use_memory", True) or not p.get("memory_suggest", True):
+                return
+            if brain.history.is_temporary(current_session["id"]) or await in_healthcare_workspace():
+                return
+            fact = memory_rules.suggest(message, [x["text"] for x in app.memory.list()])
+            if not fact:
+                return
+            saved = app.memory.add(fact)
+            await web_chat.notify("Updated" if saved.get("replaced") else "Remembered", saved["text"], icon="\U0001F9E0",
+                                  timeout=6000, nid="mem-auto",
+                                  actions=[{"label": "Undo", "emit": "memory_undo",
+                                            "value": {"uid": saved.get("uid", ""), "replaced": saved.get("replaced", "")}}])
+        except Exception:
+            pass                                             # memory must never break a chat
+
     async def send_query(text: str):
         # One message at a time. (The old "every message twice" report came from the
         # Toga text box + button era, long replaced by the HTML composer; page events are
@@ -619,6 +676,14 @@ def build_main_screen(app: toga.App, email: str):
                 has_photo = any(a.kind == "image" for a in attachments)
                 route = ("__ASK_AGENT__" if message and not has_photo and looks_like_action(message)
                          else "__ASK_BRAIN__")
+                photos = [a.data_url for a in attachments if a.kind == "image" and a.data_url
+                          and not str(a.name or "").startswith("live-")]          # never Live frames
+                if photos and not brain.history.is_temporary(current_session["id"]):
+                    if await people_on():                  # People: faces grouped on this device, by themselves
+                        for data_url in photos:
+                            await web_chat.people_auto(data_url)
+                    elif not await in_healthcare_workspace():
+                        await web_chat.people_pending(photos)       # off: Gink offers once; a yes groups these too
             else:
                 route = await resolve_reply(message)
                 if route is None:
@@ -631,6 +696,8 @@ def build_main_screen(app: toga.App, email: str):
                     await web_chat.show_recalled(recalled)
             reply = await answer(message, route, attachments=attachments)
             asyncio.create_task(maybe_auto_title(current_session["id"], message, reply))
+            if route == "__ASK_BRAIN__" and reply and not str(reply).startswith("[error]"):
+                await auto_remember(message)                # a lasting fact they mentioned: remembered by itself
         except Exception as exc:
             reply = f"[error] {exc}"
             await add_assistant_message(reply, save=False)
@@ -1067,8 +1134,159 @@ def build_main_screen(app: toga.App, email: str):
         await web_chat.set_models([_model_entry(m) for m in ids], brain.preferred_model)
         asyncio.create_task(add_own_models())
 
+    # ---- Lock Gink (Settings > Privacy): the DEVICE checks it's you -- Face ID, Touch ID, Optic ID, Windows Hello, the
+    # phone's face/fingerprint/PIN, or a fingerprint reader -- and says only yes or no (services/biometric.py).
+    lock = {"locked": bool(prefs.load(app).get("app_lock")), "prompting": False, "away": None, "kind": "", "quiet_until": 0.0}
+
+    def lock_after():
+        """Seconds away before Gink locks again (None: only when Gink opens)."""
+        value = str(prefs.load(app).get("app_lock_after") or "1")
+        return None if value == "launch" else float(value if value in ("1", "5", "15", "60") else "1") * 60
+
+    async def lock_kind() -> str:
+        if not lock["kind"]:
+            lock["kind"] = await biometric.kind(app)
+            settings.lock_kind = lock["kind"]
+        return lock["kind"]
+
+    async def lock_now(message: str = ""):
+        """Cover everything and ask the device straight away (like Apple's apps)."""
+        lock["locked"] = True
+        try:
+            if app.main_window.content is not root_box:
+                app.main_window.content = root_box          # the lock lives on the chat page
+        except Exception:
+            pass
+        if viewer.is_open:
+            viewer.close()
+        await web_chat.app_lock(True, await lock_kind() or "your device", message)
+        await unlock()
+
+    async def unlock():
+        if not lock["locked"] or lock["prompting"]:
+            return
+        lock["prompting"] = True
+        label = await lock_kind() or "your device"
+        await web_chat.app_lock(True, label, busy=True)
+        try:
+            ok, message = await biometric.authenticate("Unlock Gink", app)
+        finally:
+            lock["prompting"] = False
+        if ok:
+            lock.update(locked=False, away=None, quiet_until=time.time() + 3)   # the system sheet took the focus
+            await web_chat.app_lock(False)
+        else:
+            await web_chat.app_lock(True, label, message)
+
+    def went_away(*_args, **_kwargs):
+        if lock["prompting"] or lock["locked"] or time.time() < lock["quiet_until"]:
+            return
+        if lock["away"] is None:
+            lock["away"] = time.time()
+
+    def came_back(*_args, **_kwargs):
+        away, lock["away"] = lock["away"], None
+        if away is None or lock["locked"] or lock["prompting"] or not prefs.load(app).get("app_lock"):
+            return
+        after = lock_after()
+        if after is not None and time.time() - away >= after:
+            asyncio.create_task(lock_now())
+
+    async def check_lock_setting(turning_on: bool):
+        """Settings > Privacy > Lock Gink: proves it works before it's switched on (and that it's you, to switch it off)."""
+        if not await lock_kind():
+            return False, biometric.NONE_SET_UP.get(biometric.platform(), biometric.UNAVAILABLE)
+        lock["prompting"] = True
+        try:
+            ok, message = await biometric.authenticate("Turn on Lock Gink" if turning_on else "Turn off Lock Gink", app)
+        finally:
+            lock["prompting"] = False
+            lock["quiet_until"] = time.time() + 3
+        return ok, message
+
+    LOCKED_OK = {"unlock", "lock_signout", "page_visibility"}       # all that works while Gink is locked
+
+    # ---- People: faces grouped ON THIS DEVICE (the page runs the face model; this keeps people.json in the app's
+    # data folder -- never synced, never sent anywhere). Off until turned on; never in a healthcare workspace.
+    people_path = data_dir(app) / "people.json"
+
+    async def people_on() -> bool:
+        return bool(prefs.load(app).get("people_on")) and not await in_healthcare_workspace()
+
+    async def people_start():
+        await web_chat.people_configure(app.state.base_url.rstrip("/") + "/app/faces/")
+        try:
+            data = json.loads(people_path.read_text(encoding="utf-8"))
+        except Exception:
+            data = {}
+        await web_chat.people_load(data, await people_on())
+
+    def people_write(text: str):
+        if len(text) > 40_000_000:                     # far beyond 400 small photos: something's wrong, keep the old file
+            return
+        tmp = people_path.with_suffix(".tmp")
+        tmp.write_text(text, encoding="utf-8")
+        os.replace(tmp, people_path)
+
+    async def people_delete_all():
+        await web_chat.people_delete_all()
+        try:
+            people_path.unlink()
+        except OSError:
+            pass
+
+    def people_photo(path) -> dict:
+        """A photo chosen for People, made smaller (1,280 px) as JPEG -- read here, looked at in the page."""
+        import base64
+        import io
+        from PIL import Image, ImageOps
+        with Image.open(path) as im:
+            im = ImageOps.exif_transpose(im).convert("RGB")
+            im.thumbnail((1280, 1280))
+            buf = io.BytesIO()
+            im.save(buf, "JPEG", quality=88)
+        return {"name": os.path.basename(str(path)), "data": "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()}
+
+    async def people_pick():
+        exts = ["jpg", "jpeg", "png", "webp", "heic", "heif", "bmp", "gif"]
+        try:
+            paths = await app.main_window.dialog(toga.OpenFileDialog("Add photos to People", file_types=exts, multiple_select=True))
+        except Exception as exc:
+            return set_voice_status(f"Couldn't open the photo picker ({exc.__class__.__name__}).")
+        if not paths:
+            return
+        paths = list(paths) if isinstance(paths, (list, tuple)) else [paths]
+        loop = asyncio.get_running_loop()
+        batch = []
+        for path in paths[:200]:
+            try:
+                batch.append(await loop.run_in_executor(None, people_photo, path))
+            except Exception:
+                continue                                   # not a photo this device can read
+            if len(batch) == 4:                            # a few at a time: the page starts while the rest load
+                await web_chat.people_add_photos(batch)
+                batch = []
+        if batch:
+            await web_chat.people_add_photos(batch)
+
     async def handle_composer_event(event: dict):
         kind, value = event.get("type"), event.get("value")
+        if kind == "bars" and isinstance(value, dict):    # Android: the status bar takes the page's colour (lock screen too)
+            from ..services import android_chrome
+            return android_chrome.set_bars(app, value.get("bg"), bool(value.get("dark")))
+        if lock["locked"] and kind not in LOCKED_OK:
+            return                                     # covered: nothing behind the lock can be used
+        if kind == "unlock":
+            return await unlock()
+        if kind == "lock_signout":
+            lock["locked"] = False
+            return on_log_out()
+        if kind == "page_visibility":
+            return went_away() if value == "hidden" else came_back()
+        if kind == "people_save" and isinstance(value, str):
+            return await asyncio.get_running_loop().run_in_executor(None, people_write, value)
+        if kind == "people_pick":
+            return await people_pick()
         if kind == "send":
             await send_query(value or "")
         elif kind == "voice_toggle":
@@ -1120,6 +1338,12 @@ def build_main_screen(app: toga.App, email: str):
             await web_chat.set_attachments([a.chip() for a in pending_attachments])
         elif kind == "play_video" and isinstance(value, dict) and value.get("id"):
             viewer.show(watch_url(value["id"]), value.get("title") or "Video")
+        elif kind == "memory_undo" and isinstance(value, dict):   # "Remembered" -> Undo
+            if value.get("replaced"):
+                app.memory.add(str(value["replaced"]))     # the old fact takes its place back
+            elif value.get("uid"):
+                app.memory.forget(str(value["uid"]))
+            await web_chat.notify("Undone", "Gink won't remember that.", icon="\u21A9\uFE0F", timeout=2500, nid="mem-auto")
         elif kind == "item_done" and value:            # a reminder's notification: Done
             app.task_store.set_done(int(value), True)
             refresh_home()
@@ -1202,6 +1426,11 @@ def build_main_screen(app: toga.App, email: str):
         elif kind == "open":
             {"settings": open_settings, "tasks": open_tasks, "media": open_media_studio,
              "livetv": open_live_tv, "pro": open_pro, "genie": open_genie}.get(value, lambda: None)()
+        elif kind == "live_ask" and isinstance(value, dict) and value.get("data"):   # Live camera: this frame + question
+            await add_attachment(lambda: att_svc.load_data_url(value["data"], value.get("name") or "live.jpg"))
+            await send_query(str(value.get("question") or "What is this?")[:2000])
+        elif kind == "camera":                          # Live can't run here: one photo (the page wrote the request)
+            await take_photo(str(value or "ask"))
         elif kind == "menu":
             if value == "tasks":
                 open_tasks()
@@ -1233,6 +1462,45 @@ def build_main_screen(app: toga.App, email: str):
         except Exception as exc:
             set_voice_status(f"Couldn't attach that file ({exc.__class__.__name__}).")
         await web_chat.set_attachments([a.chip() for a in pending_attachments])
+
+    async def take_photo(mode: str = "ask"):
+        """Camera where Live can't run in this window: the system camera takes one photo, attached like any picture
+        (the page has already written the automatic request into the message box)."""
+        camera = getattr(app, "camera", None)
+        try:
+            if camera is None:
+                raise NotImplementedError
+            if not camera.has_permission:
+                await camera.request_permission()
+            if not camera.has_permission:
+                set_voice_status("Gink isn't allowed to use the camera. Allow it in your device's settings, or attach a photo instead.")
+                return
+            photo = await camera.take_photo()
+        except NotImplementedError:
+            set_voice_status("The camera isn't available in this app on this device yet \u2014 choose a photo instead.")
+            return await pick_files()
+        except PermissionError:
+            set_voice_status("Gink isn't allowed to use the camera. Allow it in your device's settings, or attach a photo instead.")
+            return
+        except Exception as exc:
+            set_voice_status(f"The camera didn't open ({exc.__class__.__name__}) \u2014 choose a photo instead.")
+            return await pick_files()
+        if photo is None:                                    # cancelled
+            return
+
+        def load():
+            import tempfile
+            fd, path = tempfile.mkstemp(prefix="gink-photo-", suffix=".png")
+            os.close(fd)
+            try:
+                photo.save(path)
+                return att_svc.load_path(path)
+            finally:
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+        await add_attachment(load)
 
     async def pick_files():
         exts = sorted(e.lstrip(".") for e in att_svc.IMAGE_EXT | att_svc.TEXT_EXT | {".pdf", ".docx"})
@@ -1483,6 +1751,12 @@ def build_main_screen(app: toga.App, email: str):
         sync_fn=lambda: sync_service.sync_once(), open_url=lambda u: open_external(u),
     )
     settings.on_profile_change = push_user
+    settings.lock_check = check_lock_setting               # Lock Gink: the device proves it works first
+
+    async def people_change(on: bool):
+        await web_chat.people_set_on(on and not await in_healthcare_workspace())
+    settings.on_people_change = people_change
+    settings.on_people_delete = people_delete_all
 
     # -- "Hey Gink" wake word (services/wake_word.py + ui/wake_ui.py) ---------
     from ..services import wake_word
@@ -1553,6 +1827,7 @@ def build_main_screen(app: toga.App, email: str):
                 paused_since = None
                 continue
             idle = not voice_session["active"] and not wake["busy"] and not audio_engine._is_listening
+            await push_wake_chip()                            # e.g. "Hey Gink can't hear you" (a silent microphone)
             if not lst.running and idle:                      # the listening thread stopped (mic error...)
                 wake["listener"] = None
                 await configure_wake()
@@ -1788,7 +2063,16 @@ def build_main_screen(app: toga.App, email: str):
             await check_status()
 
     async def check_status():
-        """Gink's status (/status): a thin bar while something on Gink's side isn't working (every 5 minutes)."""
+        """Gink's status (/status): a thin bar while something on Gink's side isn't working (every 5 minutes).
+        Also: is this account in a healthcare workspace? (the Live camera's patient-privacy reminder)"""
+        try:
+            care = await in_healthcare_workspace()
+            settings.care = care
+            await web_chat.set_care_mode(care)
+            if care:
+                await web_chat.people_set_on(False)      # never in a healthcare workspace
+        except Exception:
+            pass
         import httpx
         try:
             async with httpx.AsyncClient(timeout=10) as client:
@@ -1867,6 +2151,18 @@ def build_main_screen(app: toga.App, email: str):
         asyncio.create_task(check_family())          # age question / a parent's voice setting
         asyncio.create_task(configure_offline_model())
         asyncio.create_task(check_status())
+        try:                                             # Lock Gink: away from the window, then back
+            app.main_window.on_lose_focus = went_away
+            app.main_window.on_gain_focus = came_back
+            app.main_window.on_hide = went_away
+            app.main_window.on_show = came_back
+        except Exception:
+            pass
+        if lock["locked"]:
+            asyncio.create_task(lock_now())             # opened locked: ask the device straight away
+        asyncio.create_task(web_chat.set_server(app.state.base_url))   # the sources' real logos come from Gink's server
+        asyncio.create_task(people_start())
+        asyncio.create_task(lock_kind())                 # Settings > Privacy names it: Face ID, Touch ID, Windows Hello...
         asyncio.create_task(status_loop())
         asyncio.create_task(wake_watchdog())             # Hey Gink comes back by itself if it got stuck
         while getattr(app, "_main_screen_token", None) is screen_token:
@@ -2030,8 +2326,15 @@ def build_main_screen(app: toga.App, email: str):
         ]
         rows.sort(key=lambda r: r[0], reverse=True)
         meta = brain.history.get_meta()
+        import calendar as _cal
+
+        def _when(ts) -> int:                     # history keeps UTC times; the page groups by day (Today, Yesterday...)
+            try:
+                return int(_cal.timegm(ts.timetuple()) * 1000) if ts and ts.year > 1 else 0
+            except Exception:
+                return 0
         items = [{"id": sid, "title": (meta.get(sid, {}).get("title") or _chat_title(msgs)),
-                  "pinned": meta.get(sid, {}).get("pinned", False), "current": sid == current_session["id"]}
+                  "pinned": meta.get(sid, {}).get("pinned", False), "current": sid == current_session["id"], "when": _when(_ts)}
                  for _ts, sid, msgs in rows
                  if not meta.get(sid, {}).get("archived") or sid == current_session["id"]]   # archived: not in Recents
         asyncio.create_task(web_chat.set_sessions(items))

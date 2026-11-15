@@ -52,7 +52,7 @@ def test_apps_search_by_themselves_and_answer_anyway_over_the_limit(tmp_path, mo
                                    json={"model": "openai/gpt-oss-20b", "messages": [{"role": "user", "content": text}], **x})
     assert ask("Who won the election in Ghana?").status_code == 200
     assert sent[-1]["tools"] == [{"type": "browser_search"}] and sent[-1]["model"] == b.SEARCH_MODEL
-    assert "Prefer official and primary sources" in sent[-1]["messages"][0]["content"]
+    assert "Find the OFFICIAL source first" in sent[-1]["messages"][0]["content"]
     ask("Who won the election in Ghana?", gink_web=False)
     assert "tools" not in sent[-1] and "gink_web" not in sent[-1]                    # turned off: no search
     ask("Explain photosynthesis")

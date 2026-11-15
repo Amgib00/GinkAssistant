@@ -45,6 +45,9 @@ wheels/
 models/
 llama.cpp/
 llama_cpp/
+# ...except People's face model (about 8 MB): the server sends it to the apps and browsers, which run it on the device
+!src/ginkassistant/services/web_app/faces/models/
+!src/ginkassistant/services/web_app/faces/models/*.bin
 
 # --- editors / OS ---
 .idea/
@@ -63,3 +66,6 @@ genie_training.jsonl
 # the JavaScript SDK: never commit installs made while trying it
 sdk/js/node_modules/
 sdk/js/package-lock.json
+
+# generated test recordings for the Hey Gink bench
+tools/wake_bench/recordings/

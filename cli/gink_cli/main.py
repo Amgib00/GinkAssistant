@@ -5,17 +5,21 @@ gink -- Gink in your terminal (the Gink Developer API, OpenAI-compatible).
     gink                            a chat (type /help inside)
     cat file | gink "summarise"     send a file's text with the question
     gink -s "question"              search the web (answers list their sources)
+    gink see PHOTO ["question"]     about a photo: Gink reads it, finds what's wrong, solves it... (Gink Pro)
     gink --image "prompt" -o x.png  make an image
     gink agent "task"               a managed agent does it in a workspace that persists (--env ID, --continue)
-    gink env list | new NAME | files ID | pull ID [DIR] | push ID DIR | rm ID
+    gink env list | new NAME | files ID | check ID [--fix] | pull ID [DIR] | push ID DIR | rm ID
     gink schedule add "task" --every daily --at 08:00 [--env ID] | list | run ID | pause ID | resume ID | rm ID
                                     scheduled agents (the time is your computer's time zone)
     gink export [FILE]              everything Gink's server keeps for you, as a ZIP
+    gink remember "fact" | memories | forget ID   what Gink remembers about you
+    gink workspace [safety --days 30]   your workspace; admins: healthcare mode's safety report (counts only)
     gink status                     is Gink working right now?
     gink webhook secret             the secret Gink signs webhooks with (schedule add --webhook URL)
     gink ideas                      ready-made image looks: gink --image "my dog" --idea statue --photo dog.jpg
                                     the agents' workspaces (the same projects as Gink Genie)
-    gink login                      sign in through your browser (or: gink login --key to paste a key)
+    gink login                      sign in through your browser -- a passkey works (Face ID, Touch ID, Windows Hello)
+                                    (or: gink login --key to paste a key)
     gink logout | models | version
 """
 import argparse
@@ -214,7 +218,8 @@ def run_agent(key: str, base: str, task: str, env: str = "remote", previous: str
                     raise _explain(r)
                 it = r.json()
                 for step in it.get("steps", [])[shown:]:
-                    what = step.get("query") or step.get("path") or ""
+                    what = step.get("query") or step.get("path") or (
+                        str(step.get("result") or "")[:140] if step.get("tool") == "check" else "")   # "2 problems found -- fixing"
                     print(f"  \u2022 {step.get('tool')} {what}".rstrip(), file=sys.stderr)
                 shown = len(it.get("steps", []))
     except httpx.HTTPError as exc:
@@ -249,6 +254,22 @@ def env_command(key: str, base: str, args: list) -> int:
     if len(args) < 2:
         raise GinkError("say which environment (its id from 'gink env list')")
     env = args[1]
+    if what == "check":                                    # the whole project; --fix asks an agent to fix it all
+        r = _env_call(key, base, "GET", f"/environments/{env}/check").json()
+        if r["ok"]:
+            print(f"All good: {r['files']} files checked.")
+            return 0
+        print(f"{len(r['problems'])} problem" + ("s" if len(r["problems"]) != 1 else "") + f" in {r['files']} files:")
+        for p in r["problems"]:
+            print(f"  - {p}")
+        if "--fix" in args[2:]:
+            print("Fixing them all...")
+            run_agent(key, base, r["fix_request"], env, max_steps=30)        # shows each step as it happens
+            after = _env_call(key, base, "GET", f"/environments/{env}/check").json()
+            print("All fixed." if after["ok"] else f"{len(after['problems'])} still left: gink env check {env} --fix")
+            return 0 if after["ok"] else 1
+        print(f"Fix them all: gink env check {env} --fix")
+        return 1
     if what == "files":
         for f in _env_call(key, base, "GET", f"/environments/{env}").json()["files"]:
             print(f"{f['size']:>9}  {f['path']}")
@@ -283,7 +304,7 @@ def env_command(key: str, base: str, args: list) -> int:
         _env_call(key, base, "DELETE", f"/environments/{env}")
         print(f"Deleted {env}")
         return 0
-    raise GinkError("gink env list | new NAME | files ID | pull ID [DIR] | push ID DIR | rm ID")
+    raise GinkError("gink env list | new NAME | files ID | check ID [--fix] | pull ID [DIR] | push ID DIR | rm ID")
 
 
 def schedule_command(key: str, base: str, args: list) -> int:
@@ -427,6 +448,7 @@ def device_login(base: str, open_browser: bool = True, sleep=time.sleep, say=pri
                 except Exception:
                     pass
             say("Waiting for you to approve in the browser\u2026  (Ctrl+C to cancel)")
+            say("(Signing in there with a passkey works too: Face ID, Touch ID, Windows Hello or your phone.)")
             deadline = time.time() + int(d.get("expires_in", 600))
             while time.time() < deadline:
                 sleep(int(d.get("interval", 5)))
@@ -490,12 +512,59 @@ def main(argv=None) -> int:
             ag.add_argument("--max-steps", type=int, default=15)
             b = ag.parse_args(argv[1:])
             return show_agent_result(run_agent(key, base, " ".join(b.task), b.env, b.previous, b.max_steps))
+        if argv[:1] == ["workspace"]:                 # your workspace; admins: healthcare mode's safety report
+            if argv[1:2] == ["safety"]:
+                days = 30
+                if "--days" in argv:
+                    try:
+                        days = int(argv[argv.index("--days") + 1])
+                    except (IndexError, ValueError):
+                        raise GinkError("gink workspace safety --days 30")
+                r = _env_call(key, base, "GET", f"/workspace/safety?days={days}").json()
+                t = r["totals"]
+                print(f"{r['workspace']['name']} \u2014 last {r['days']} days (counts only, never words)")
+                print(f"  patient details removed   {t['patient_details_removed']}")
+                print(f"  messages stopped          {t['patient_details_stopped']}")
+                print(f"  photos checked            {t['photo_checked']}")
+                for p in r["by_person"]:
+                    bits = [f"{p[k]} {w}" for k, w in (("patient_details_removed", "removed"), ("patient_details_stopped", "stopped"),
+                                                      ("photo_checked", "photos")) if p.get(k)]
+                    print(f"    {p['name'] or p['account']}: " + ", ".join(bits))
+                return 0
+            r = _env_call(key, base, "GET", "/workspace").json()
+            w = r.get("workspace")
+            if not w:
+                print("You're not in a workspace (create or join one in Gink > Settings > Workspace).")
+                return 0
+            mode = ("on \u2014 " + ("messages with patient details are stopped" if w["patient_details"] == "stop"
+                                    else "patient details are removed automatically")) if w["healthcare"] else "off"
+            print(f"{w['name']}  ({r.get('role')}, {r.get('status')})\n  healthcare mode: {mode}")
+            if w["healthcare"] and r.get("role") == "admin":
+                print("  safety report: gink workspace safety [--days 30]")
+            return 0
+        if argv[:1] == ["see"]:                       # a photo: Gink works out what it needs (like the Live camera)
+            if len(argv) < 2:
+                raise GinkError('gink see PHOTO ["question"]   e.g. gink see label.jpg "what does this say?"')
+            try:
+                from gink.client import image_data_url
+                url = image_data_url(argv[1])
+            except OSError:
+                raise GinkError(f"can't read the photo {argv[1]}")
+            except Exception as exc:                          # not a photo Gink can look at
+                raise GinkError(str(exc))
+            question = " ".join(argv[2:]).strip() or "What's this?"
+            stream_answer(key, base, [{"role": "user", "content": [{"type": "text", "text": question},
+                                                                   {"type": "image_url", "image_url": {"url": url}}]}])
+            return 0
         if argv[:1] == ["ideas"]:                     # Media Studio's looks, for --image --idea
             import httpx
             with httpx.Client(timeout=30) as c:
                 cat = c.get(base + "/images/ideas").json()
             for i in cat["ideas"]:
                 print(f"{i['id']:<11} {i['title']:<18} e.g. gink --image \"{i['example_subject']}\" --idea {i['id']}")
+            if cat.get("looks"):                       # picked by themselves from the words
+                print("automatic: " + ", ".join(i["title"] for i in cat["looks"])
+                      + ' -- just say it: gink --image "an x-ray of my camera"')
             print("styles: " + ", ".join(s["id"] for s in cat["styles"]))
             return 0
         if argv[:1] == ["status"]:                      # is Gink working right now? (no key needed)
@@ -506,6 +575,25 @@ def main(argv=None) -> int:
             for k, v in st.get("components", {}).items():
                 print(f"  {k:<8} {v}")
             return 0 if st["status"] in ("ok", "notice") else 1
+        if argv[:1] in (["remember"], ["memories"], ["forget"]):    # what Gink remembers (the same as the apps)
+            if argv[0] == "remember":
+                if len(argv) < 2:
+                    raise GinkError('gink remember "I live in Nairobi"')
+                m = _env_call(key, base, "POST", "/memories", json={"text": " ".join(argv[1:])}).json()
+                print(("Updated: " if m.get("replaced") else "Remembered: ") + m["text"]
+                      + (f"   (replaces: {m['replaced']})" if m.get("replaced") else ""))
+            elif argv[0] == "forget":
+                if len(argv) < 2:
+                    raise GinkError("gink forget ID   (ids: gink memories)")
+                _env_call(key, base, "DELETE", f"/memories/{argv[1]}")
+                print("Forgotten.")
+            else:
+                rows = _env_call(key, base, "GET", "/memories").json()["data"]
+                for m in rows:
+                    print(f"{m['id'][:8]}  {m['text']}")
+                if not rows:
+                    print('Nothing yet. Add one: gink remember "I prefer short answers"')
+            return 0
         if argv[:1] == ["export"]:                      # everything on the server, as a ZIP
             out = argv[1] if len(argv) > 1 else f"gink-data-{time.strftime('%Y-%m-%d')}.zip"
             data = _env_call(key, base, "GET", "/account/export.zip").content

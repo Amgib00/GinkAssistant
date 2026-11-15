@@ -1,7 +1,10 @@
 <style>
-  #web-signin { position: fixed; inset: 0; z-index: 200; background: var(--bg); display: none; align-items: center; justify-content: center; padding: 20px; }
+  /* a short phone screen scrolls the sign-in page instead of cutting the card off */
+  #web-signin { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 200; background: var(--bg); display: none; align-items: flex-start; justify-content: center;
+    padding: calc(20px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 0px)); overflow-y: auto;
+    -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
   #web-signin.open { display: flex; }
-  .ws-card { width: 100%; max-width: 380px; text-align: center; }
+  .ws-card { width: 100%; max-width: 380px; text-align: center; margin: auto 0; }
   .ws-card img { width: 64px; height: 64px; border-radius: 16px; }
   .ws-card h1 { font-size: 26px; margin: 16px 0 6px; }
   .ws-card p.ws-sub { color: var(--text-muted); margin: 0 0 22px; font-size: 15px; }
@@ -19,8 +22,9 @@
   .ws-card .ws-go[disabled] { opacity: 0.6; cursor: default; }
   .ws-err { color: #C42B1C; font-size: 14px; min-height: 20px; margin: 4px 0 0; }
   .ws-note { color: var(--text-muted); font-size: 13px; margin-top: 18px; }
-  .ws-or { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 13px; margin: 18px 0 12px; }
+  .ws-or { display: flex; align-items: center; color: var(--text-muted); font-size: 13px; margin: 18px 0 12px; }
   .ws-or::before, .ws-or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .ws-or::before { margin-right: 10px; } .ws-or::after { margin-left: 10px; }
   .ws-social { display: grid; gap: 8px; }
   .ws-social button { padding: 11px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg);
     color: var(--text-main); font: inherit; font-weight: 600; font-size: 15px; cursor: pointer; }

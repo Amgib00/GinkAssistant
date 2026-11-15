@@ -1132,6 +1132,162 @@ def sync(request: Request, data: dict = Body(...)):
     return {"now": now, "changes": changes}
 
 
+# ---- Memory on the server: the same synced memories the apps keep (sync_docs kind "memories"), with the apps' rules
+# (services/memory_rules.py) -- for the web app (signed in) and for developers (API key: /v1/memories, SDKs, CLI).
+#   POST /memory/suggest  {"text"} -> {"fact" | null}   a lasting fact worth OFFERING to remember (nothing is saved)
+#   POST /memory/remember {"text"} -> {"id", "text", "replaced"}   a single fact said again replaces the old one
+#   GET /v1/memories   POST /v1/memories {"text"}   DELETE /v1/memories/{id}   POST /v1/memories/suggest {"text"}
+MEMORY_MAX = 500
+
+
+def _memory_rules():
+    try:
+        from . import memory_rules
+    except ImportError:
+        import memory_rules
+    return memory_rules
+
+
+def _memory_docs(con, email: str) -> list:
+    rows = con.execute("SELECT doc_id, payload, updated FROM sync_docs WHERE email=? AND kind='memories' AND deleted=0 "
+                       "ORDER BY updated", (email,)).fetchall()
+    out = []
+    for doc_id, payload, updated in rows:
+        try:
+            p = _json.loads(payload) or {}
+        except ValueError:
+            p = {}
+        if p.get("text"):
+            out.append({"id": doc_id, "text": str(p["text"]), "created": int(p.get("created") or updated or 0)})
+    return out
+
+
+def _memory_list(email: str) -> list:
+    with _db_lock:
+        con = _sync_db()
+        try:
+            return _memory_docs(con, email)
+        finally:
+            con.close()
+
+
+def _memory_add(email: str, raw: str) -> dict:
+    rules = _memory_rules()
+    text = " ".join(str(raw or "").split()).strip().rstrip(".")[:300]
+    if not text:
+        raise HTTPException(status_code=400, detail="Nothing to remember.")
+    text = text[0].upper() + text[1:]
+    about, now, replaced = rules.subject(text), time.time(), None
+    with _db_lock:
+        con = _sync_db()
+        try:
+            docs = _memory_docs(con, email)
+            for d in docs:
+                if rules.norm(d["text"]) == rules.norm(text):
+                    return {"id": d["id"], "text": d["text"], "replaced": None}      # already remembered
+            if len(docs) >= MEMORY_MAX:
+                raise HTTPException(status_code=409, detail="Gink's memory is full. Forget something in Settings > Memory first.")
+            if about:
+                replaced = next((d for d in docs if rules.subject(d["text"]) == about), None)
+            if replaced:                                    # the same single thing, said again: the new one takes its place
+                con.execute("UPDATE sync_docs SET payload='{}', deleted=1, updated=?, server_ts=? WHERE email=? AND kind='memories' AND doc_id=?",
+                            (now, now, email, replaced["id"]))
+            doc_id = secrets.token_hex(16)
+            con.execute("INSERT INTO sync_docs (email, kind, doc_id, payload, updated, deleted, server_ts) VALUES (?, 'memories', ?, ?, ?, 0, ?)",
+                        (email, doc_id, _json.dumps({"text": text, "created": now}), now, now))
+            con.commit()
+        finally:
+            con.close()
+    return {"id": doc_id, "text": text, "replaced": replaced["text"] if replaced else None}
+
+
+def _memory_forget(email: str, doc_id: str) -> bool:
+    now = time.time()
+    with _db_lock:
+        con = _sync_db()
+        try:
+            n = con.execute("UPDATE sync_docs SET payload='{}', deleted=1, updated=?, server_ts=? WHERE email=? AND kind='memories' "
+                            "AND doc_id=? AND deleted=0", (now, now, email, str(doc_id)[:200])).rowcount
+            con.commit()
+        finally:
+            con.close()
+    return bool(n)
+
+
+def _memory_suggest_for(email: str, text: str):
+    rules = _org_rules(email)
+    if rules and rules.get("healthcare"):              # hospitals and clinics: Gink never remembers anything by itself
+        return None
+    known = [d["text"] for d in _memory_list(email)]
+    return _memory_rules().suggest(str(text or "")[:2000], known)
+
+
+@app.post("/memory/suggest")
+def memory_suggest(request: Request, data: dict = Body(...)):
+    return {"fact": _memory_suggest_for(_email_from_auth(request), data.get("text"))}
+
+
+@app.post("/memory/remember")
+def memory_remember(request: Request, data: dict = Body(...)):
+    return _memory_add(_email_from_auth(request), data.get("text"))
+
+
+@app.post("/memory/auto")
+def memory_auto(request: Request, data: dict = Body(...)):
+    """The web app, after each answer: a lasting fact in what they said is remembered by itself (no button).
+    Never health, never in a healthcare workspace; the web app shows "Remembered" with Undo."""
+    email = _email_from_auth(request)
+    fact = _memory_suggest_for(email, data.get("text"))
+    if not fact:
+        return {"saved": None}
+    try:
+        return {"saved": _memory_add(email, fact)}
+    except HTTPException:
+        return {"saved": None}                           # memory full: say nothing, the chat goes on
+
+
+@app.post("/memory/forget")
+def memory_forget(request: Request, data: dict = Body(...)):
+    return {"deleted": _memory_forget(_email_from_auth(request), str(data.get("id") or ""))}
+
+
+@app.get("/v1/memories")
+def api_memories(request: Request):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    return {"object": "list", "data": [dict(d, object="memory") for d in _memory_list(owner[0])]}
+
+
+@app.post("/v1/memories")
+def api_memory_add(request: Request, data: dict = Body(...)):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    try:
+        return dict(_memory_add(owner[0], data.get("text")), object="memory")
+    except HTTPException as exc:
+        return _api_error(exc.status_code, str(exc.detail), "invalid_memory" if exc.status_code == 400 else "memory_full")
+
+
+@app.delete("/v1/memories/{doc_id}")
+def api_memory_forget(doc_id: str, request: Request):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    if not _memory_forget(owner[0], doc_id):
+        return _api_error(404, "No memory with that id.", "not_found")
+    return {"id": doc_id, "object": "memory", "deleted": True}
+
+
+@app.post("/v1/memories/suggest")
+def api_memory_suggest(request: Request, data: dict = Body(...)):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    return {"fact": _memory_suggest_for(owner[0], data.get("text"))}
+
+
 # =====================================================================
 # Billing: Gink Pro, paid with the right method for the user's country.
 #
@@ -1592,6 +1748,22 @@ def _count_call(email: str, turn: str, plan: str, teen_limit: int = 0):
         finally:
             con.close()
     return None
+
+
+def _vision_rules():
+    try:
+        from . import vision_rules
+    except ImportError:
+        import vision_rules
+    return vision_rules
+
+
+def _last_user_has_image(messages) -> bool:
+    for m in reversed(messages or []):
+        if isinstance(m, dict) and m.get("role") == "user":
+            c = m.get("content")
+            return isinstance(c, list) and any(isinstance(p, dict) and p.get("type") == "image_url" for p in c)
+    return False
 
 
 def _has_images(messages) -> bool:
@@ -2072,9 +2244,10 @@ def _needs_search(text: str) -> bool:
     return bool(_SEARCH_NEEDS.search(t) or _SEARCH_LINK.search(t))
 
 
-_SEARCH_NOTE = ("Search the web for this. Prefer official and primary sources (government sites, the organisation's own "
-                "website, official documentation and statistics), then reputable news outlets. Check the information is "
-                "current, give dates where they matter, and say when sources disagree.")
+_SEARCH_NOTE = ("Search the web for this. Find the OFFICIAL source first and use it: the government body in charge (the "
+                "ministry, the electoral commission, the statistics office, the central bank), the international body, or "
+                "the organisation's own website -- not a site that only repeats them. Then reputable news outlets. Check the "
+                "information is current, give dates where they matter, and say when sources disagree.")
 # "Official" = a government or an international public body, or the website of the organisation the
 # question is about (asking about Wave? wave.com is its own site). Universities and news are good sources,
 # but not "official". Before 0.1.110 universities counted, the UN, the World Bank and the EU didn't, and the
@@ -2084,6 +2257,11 @@ _GOV_HOST = re.compile(r"\.(gov|mil|int)$|(^|\.)(gov|gouv|gob|go|govt|gv|gub|gc|
 INTERNATIONAL = {"un.org", "who.int", "worldbank.org", "imf.org", "unicef.org", "unesco.org", "unhcr.org", "undp.org",
                  "wfp.org", "fao.org", "ilo.org", "oecd.org", "wto.org", "afdb.org", "unaids.org", "gavi.org",
                  "icrc.org", "ifrc.org", "iaea.org", "itu.int", "wipo.int", "unep.org", "canada.ca"}
+# National bodies whose sites aren't on a government domain (0.1.156): electoral commissions, central banks and
+# statistics offices -- official for any question (an "elections tracker" repeating them is not).
+OFFICIAL_SITES = {"cena.sn", "ansd.sn", "elections.org.za", "resbank.co.za", "elections.ca", "bankofcanada.ca",
+                  "electoralcommission.org.uk", "bankofengland.co.uk", "rbi.org.in", "snb.ch", "bundesbank.de",
+                  "banque-france.fr", "insee.fr", "destatis.de", "istat.it", "boj.or.jp"}
 _NOT_A_NAME = {"news", "info", "world", "today", "best", "guide", "review", "reviews", "wiki", "wikipedia", "online",
                "blog", "home", "free", "times", "post", "daily", "media", "global", "africa", "france", "music",
                "health", "money", "travel", "sport", "sports", "weather", "google", "youtube", "facebook", "reddit"}
@@ -2097,7 +2275,7 @@ def _host(url: str) -> str:
 
 def _is_official(url: str, question: str = "") -> bool:
     host = _host(url)
-    if _GOV_HOST.search(host) or any(host == d or host.endswith("." + d) for d in INTERNATIONAL):
+    if _GOV_HOST.search(host) or any(host == d or host.endswith("." + d) for d in INTERNATIONAL | OFFICIAL_SITES):
         return True
     parts = host.split(".")
     name = parts[-3] if len(parts) >= 3 and len(parts[-2]) <= 3 and len(parts[-1]) == 2 else (parts[-2] if len(parts) >= 2 else "")
@@ -2154,6 +2332,13 @@ def _sources_md(sources: list) -> str:
     return "\n\n**Sources**\n" + "\n".join(lines)
 
 
+def _source_list(sources: list) -> list:
+    """The answer's sources for apps and developers: official ones first, each with its site's logo (GET /icon/{host})."""
+    base = (_env("GINK_PUBLIC_URL") or "https://gink-server.onrender.com").rstrip("/")
+    return [{"title": s["title"], "url": s["url"], "official": bool(s.get("official")),
+             "icon": f"{base}/icon/{_host(s['url'])}"} for s in _rank_sources(sources)[:8]]
+
+
 def _tidy_search_answer(data: dict):
     try:
         msg = data["choices"][0]["message"]
@@ -2161,6 +2346,8 @@ def _tidy_search_answer(data: dict):
         return
     sources = _find_sources(msg.get("executed_tools") or data.get("executed_tools") or [])
     msg["content"] = _clean_cites(msg.get("content") or "").strip() + _sources_md(sources)
+    if sources:
+        data["sources"] = _source_list(sources)        # also as data (OpenAI clients ignore an extra field)
 
 
 class _SearchStream:
@@ -2504,8 +2691,48 @@ async def _add_live_context(body: dict) -> None:
         body["messages"].insert(0, {"role": "system", "content": note})
 
 
+_removed_kinds = contextvars.ContextVar("gink_patient_details_removed", default=None)
+
+
 @app.post("/ai/openai/v1/chat/completions")
 async def ai_chat(request: Request):
+    """The one AI pipeline (apps, web app, API, batches). When a healthcare workspace's rules removed a patient's
+    details from the newest message, the answer starts with a short notice saying so (and, for developers, the
+    X-Gink-Patient-Details-Removed header and "gink": {"patient_details_removed": [...]} in JSON answers)."""
+    _removed_kinds.set(None)
+    response = await _ai_chat(request)
+    kinds = _removed_kinds.get()
+    return _with_removed_note(response, kinds) if kinds and getattr(response, "status_code", 200) == 200 else response
+
+
+def _with_removed_note(response, kinds):
+    from fastapi.responses import JSONResponse, StreamingResponse
+    note, header = _removed_note(kinds), ",".join(kinds)
+    if isinstance(response, StreamingResponse):
+        inner = response.body_iterator
+
+        async def first_the_note():
+            yield "data: " + _json.dumps({"id": "gink-note", "object": "chat.completion.chunk", "created": int(time.time()),
+                                          "model": "gink", "choices": [{"index": 0, "delta": {"role": "assistant", "content": note}}],
+                                          "gink": {"patient_details_removed": kinds}}) + "\n\n"
+            async for chunk in inner:
+                yield chunk
+        response.body_iterator = first_the_note()
+        response.headers["X-Gink-Patient-Details-Removed"] = header
+        return response
+    try:
+        data = _json.loads(bytes(response.body))
+        msg = ((data.get("choices") or [{}])[0].get("message")) or {}
+        if isinstance(msg.get("content"), str):
+            msg["content"] = note + msg["content"]
+        data["gink"] = dict(data.get("gink") or {}, patient_details_removed=kinds)
+        return JSONResponse(status_code=response.status_code, content=data,
+                            headers={"X-Gink-Patient-Details-Removed": header})
+    except Exception:
+        return response
+
+
+async def _ai_chat(request: Request):
     email = _email_from_auth(request)
     _client_place.set(_client_place_from(request))     # their own country, automatically (time zone + region)
     if not _env("GROQ_API_KEY"):
@@ -2520,6 +2747,14 @@ async def ai_chat(request: Request):
         body["model"] = "gink-crystal"                 # no model given: Gink's default (GPT-OSS 120B)
     if len(_json.dumps(body)) > 12_000_000:
         return _ai_error(413, "That message is too large.", "too_large")
+    # workspace rules FIRST (healthcare mode): a patient's details are removed before anything else sees the words --
+    # live data, web search, safety checks, the AI -- or the message is stopped, if the admins chose that
+    org = _org_rules(email)
+    org_text, body["messages"], removed, org_refusal = _org_check_messages(email, body["messages"], "chat", org)
+    if org_refusal:
+        return _ai_error(422, org_refusal, "patient_data")
+    if removed:
+        _removed_kinds.set(removed)
     plan = _plan_status(email)["plan"]
     if _has_images(body["messages"]) and plan != "pro":
         return _ai_error(403, "Looking at photos is part of Gink Pro.", "pro_required")
@@ -2556,11 +2791,13 @@ async def ai_chat(request: Request):
     wants_own = bool(own) and str(body["model"]).lower() == own["name"] and not web
     body["model"] = GINK_MODEL_NAMES.get(str(body["model"]).lower(), body["model"])   # "gink-frost" -> Claude Sonnet
     await _add_live_context(body)                    # today's date; live data (weather...) when asked
-    org_text, org_refusal = _org_guard(email, _last_user_text(body["messages"]))   # workspace rules (healthcare mode)
-    if org_refusal:
-        return _ai_error(422, org_refusal, "patient_data")
     if org_text:
         body["messages"] = [{"role": "system", "content": org_text}] + list(body["messages"])
+    if _has_images(body["messages"]):                # a photo: work out what it needs; careful with health; patients
+        care = bool((org or {}).get("healthcare"))
+        if care and _last_user_has_image(body["messages"]):
+            _safety_note(org.get("id"), email, "photo_checked", "chat")
+        body["messages"] = [{"role": "system", "content": _vision_rules().rules_for(care)}] + list(body["messages"])
     if family:
         if family.get("parent"):                     # safety notices: the kind of risk, never the words
             _start_safety_check(email, family["parent"], _last_user_text(body["messages"]))
@@ -2700,7 +2937,7 @@ async def ai_chat(request: Request):
 #                             and everything synced; payment records are kept
 #                             for accounting but no longer linked to the person.
 # =====================================================================
-POLICIES_UPDATED = "2026-11-09"            # bump with an important change to privacy.html / terms.html
+POLICIES_UPDATED = "2026-11-15"            # bump with an important change to privacy.html / terms.html
 
 
 @app.get("/info")
@@ -3009,6 +3246,10 @@ async def media_image(request: Request):
         except KeyError:
             return _ai_error(422, "Unknown idea. See GET /v1/images/ideas.", "bad_request")
         prompt, style, aspect = idea_text, style or idea_style, aspect or idea_aspect
+    elif prompt and ideas.auto_look(prompt):            # "an x-ray of my camera": the X-ray look by itself, no card
+        _key, prompt, style, look_aspect = ideas.auto_look(prompt)
+        aspect = aspect or look_aspect
+    prompt = ideas.medical_prompt(prompt)               # a body "x-ray"/scan: always marked as an illustration
     if not prompt:
         return _ai_error(422, "Describe the image you want.", "bad_request")
     if aspect not in IMAGE_ASPECTS:
@@ -3293,7 +3534,7 @@ _WEB_HEADERS = {
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "no-referrer",
     "X-Frame-Options": "DENY",
-    "Permissions-Policy": "microphone=(self), camera=()",
+    "Permissions-Policy": "microphone=(self), camera=(self)",        # camera: the + menu's Camera (only when chosen)
     "Cache-Control": "no-cache",
 }
 
@@ -3306,6 +3547,112 @@ def web_app_page():
         return HTMLResponse("Gink on the web isn't built yet: run  python tools/build_web_app.py", status_code=503)
     with open(path, encoding="utf-8") as f:
         return HTMLResponse(f.read(), headers=_WEB_HEADERS)
+
+
+@app.get("/app/lock.js")
+def web_lock_script():
+    """Lock Gink in this browser (Gink Genie, the developer console): web_app/lock.js."""
+    from fastapi.responses import Response
+    with open(os.path.join(WEB_APP_DIR, "lock.js"), encoding="utf-8") as f:
+        return Response(f.read(), media_type="application/javascript; charset=utf-8",
+                        headers={"Cache-Control": "no-cache", "X-Content-Type-Options": "nosniff"})
+
+
+FACE_FILES = {"face-api.js": "application/javascript; charset=utf-8", "LICENSE": "text/plain; charset=utf-8",
+              "README.txt": "text/plain; charset=utf-8"}
+
+
+@app.get("/app/faces/{name}")
+@app.get("/app/faces/models/{name}")
+def face_model_file(name: str, request: Request):
+    """People's face model (web_app/faces/): SENT to the apps and browsers, which run it on the device. Nothing here
+    ever receives a face. Any origin may load it (the apps' page isn't on this site); cached for a year."""
+    from fastapi.responses import FileResponse
+    in_models = "/models/" in request.url.path
+    folder = os.path.join(WEB_APP_DIR, "faces", "models") if in_models else os.path.join(WEB_APP_DIR, "faces")
+    if in_models:
+        ok = re.fullmatch(r"[a-z0-9_]+(?:-weights_manifest\.json|\.bin)", name or "")
+        kind = "application/json" if name.endswith(".json") else "application/octet-stream"
+    else:
+        ok, kind = name in FACE_FILES, FACE_FILES.get(name, "")
+    path = os.path.join(folder, name)
+    if not ok or not os.path.isfile(path):
+        raise HTTPException(status_code=404, detail="Not found.")
+    return FileResponse(path, media_type=kind, headers={"Access-Control-Allow-Origin": "*", "X-Content-Type-Options": "nosniff",
+                                                        "Cache-Control": "public, max-age=31536000, immutable"})
+
+
+# ---- Source logos (0.1.156): the real logo of each site an answer used, next to its name. Fetched HERE, from public
+# favicon services at fixed addresses (never an address the caller chooses), so a user's device doesn't contact a third
+# party -- or the site -- just to show a logo. Only real images (PNG, ICO, GIF, JPEG, WebP; never SVG, which could run
+# script), at most 100 KB, cached a week (a miss for an hour); a device can ask for 120 new ones per 10 minutes.
+ICON_SOURCES = ("https://www.google.com/s2/favicons?domain={host}&sz=64", "https://icons.duckduckgo.com/ip3/{host}.ico")
+_ICON_NAME = re.compile(r"^(?=.{3,253}$)(?!-)[a-z0-9-]{1,63}(?:\.(?!-)[a-z0-9-]{1,63})+$")
+_ICON_CACHE: dict = {}
+_ICON_ASKS: dict = {}
+_ICON_LOCK = threading.Lock()
+
+
+def _icon_kind(data: bytes) -> str:
+    if data[:8] == b"\x89PNG\r\n\x1a\n":
+        return "image/png"
+    if data[:4] in (b"\x00\x00\x01\x00", b"\x00\x00\x02\x00"):
+        return "image/x-icon"
+    if data[:4] == b"GIF8":
+        return "image/gif"
+    if data[:3] == b"\xff\xd8\xff":
+        return "image/jpeg"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    return ""
+
+
+async def _fetch_icon(host: str) -> tuple:
+    """(content_type, bytes) from the first service that has a real logo for host; ("", b"") when none does."""
+    import httpx
+    async with httpx.AsyncClient(timeout=6, follow_redirects=True, headers={"User-Agent": "GinkServer/1.0"}) as client:
+        for template in ICON_SOURCES:
+            try:
+                r = await client.get(template.format(host=host))
+            except Exception:
+                continue
+            kind = _icon_kind(r.content[:16])
+            if r.status_code == 200 and kind and 40 < len(r.content) <= 100_000:
+                return kind, r.content
+    return "", b""
+
+
+@app.get("/icon/{host}")
+async def source_icon(host: str, request: Request):
+    """The logo of a website (a source of an answer): the apps and the web app show it next to the source."""
+    from fastapi.responses import Response
+    host = (host or "").strip().lower().rstrip(".")
+    host = host[4:] if host.startswith("www.") else host
+    if not _ICON_NAME.match(host) or re.fullmatch(r"[0-9.]+", host):
+        raise HTTPException(status_code=404, detail="Not found.")
+    now = time.time()
+    with _ICON_LOCK:
+        hit = _ICON_CACHE.get(host)
+    if hit is None or now - hit[2] > (7 * 86400 if hit[0] else 3600):
+        ip = (request.client.host if request.client else "") or "?"
+        with _ICON_LOCK:
+            asks = [t for t in _ICON_ASKS.get(ip, []) if now - t < 600]
+            if len(asks) >= 120:
+                raise HTTPException(status_code=429, detail="Too many new logos. Please try again in a few minutes.")
+            _ICON_ASKS[ip] = asks + [now]
+            if len(_ICON_ASKS) > 5000:
+                _ICON_ASKS.clear()
+        kind, data = await _fetch_icon(host)
+        hit = (kind, data, now)
+        with _ICON_LOCK:
+            _ICON_CACHE[host] = hit
+            while len(_ICON_CACHE) > 3000:
+                _ICON_CACHE.pop(next(iter(_ICON_CACHE)))
+    if not hit[0]:
+        raise HTTPException(status_code=404, detail="No logo.")
+    return Response(content=hit[1], media_type=hit[0], headers={
+        "Cache-Control": "public, max-age=604800", "Access-Control-Allow-Origin": "*", "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": "default-src 'none'"})
 
 
 @app.get("/genie", response_class=HTMLResponse)
@@ -3723,12 +4070,15 @@ def _family_refusal(email: str, feature: str = "", quiet: bool = False):
     return ""
 
 
-def _family_teen_messages(email: str, messages: list, words: str) -> list:
+def _family_teen_messages(email: str, messages: list, words: str, feature: str = "website") -> list:
     """For AI features outside chat (websites...): every teen gets the stricter guidance, and a linked
-    teen's own words get the safety check, as in chat; a workspace's rules apply too."""
-    org_text, org_refusal = _org_guard(email, words)
+    teen's own words get the safety check, as in chat; a workspace's rules apply too (healthcare mode: a patient's
+    details are removed from every message first -- or the request is stopped, in "stop" workspaces)."""
+    org_text, words, _removed, org_refusal = _org_check(email, words, feature)
     if org_refusal:
         raise HTTPException(status_code=422, detail=org_refusal)
+    if _removed:
+        messages = [m if m.get("role") == "system" else _redact_message(m)[0] for m in messages]
     if org_text:
         messages = messages[:1] + [{"role": "system", "content": org_text}] + messages[1:]
     rules = _family_rules(email)
@@ -4423,10 +4773,13 @@ async def admin_social(request: Request):
 #   The admin sees members and today's message counts -- never chats -- and sets shared instructions
 #   that Gink follows for everyone in the workspace (chat, Genie, websites).
 #   Healthcare mode (for hospitals and clinics): Gink helps staff with non-clinical work and general
-#   medical information for professionals, never diagnoses or decides treatment, and REFUSES messages
-#   that look like they contain a patient's identifying details (names with "patient", record numbers,
-#   dates of birth, phone numbers...) -- the workspace is for work WITHOUT patient data. (Patient data
-#   would need agreements with each AI provider, an agreed data location and audit logs: not this.)
+#   medical information for professionals, never diagnoses or decides treatment, and keeps a patient's
+#   identifying details (names with "patient", record numbers, ID numbers, dates of birth, phone numbers,
+#   emails...) OUT: they're removed automatically before anything reaches the AI, a search or a stored
+#   name (or, if the admins choose "stop", the message is stopped) -- the workspace is for work WITHOUT
+#   patient data. Admins get a safety report: counts only (removed, stopped, photos checked), never words.
+#   (Patient data itself would need agreements with each AI provider, an agreed data location and audit
+#   logs: not this.)
 #     GET /org   POST /org {name, healthcare}   POST /org/invite {email}   POST /org/respond {accept}
 #     POST /org/leave   POST /org/remove {email}   PUT /org/settings {name, instructions, healthcare}
 #     POST /org/delete
@@ -4436,6 +4789,9 @@ ORG_TABLES = (
     "healthcare INTEGER NOT NULL DEFAULT 0)",
     "CREATE TABLE IF NOT EXISTS org_members (org_id TEXT, email TEXT PRIMARY KEY, role TEXT, status TEXT, invited REAL, "
     "joined REAL)",
+    # healthcare mode's safety report: COUNTS per person, day, kind and feature -- never words, photos or patients
+    "CREATE TABLE IF NOT EXISTS org_safety (org_id TEXT, email TEXT, day TEXT, kind TEXT, feature TEXT, "
+    "n INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (org_id, email, day, kind, feature))",
 )
 ORG_MAX_MEMBERS = int(os.environ.get("GINK_ORG_MAX_MEMBERS") or 500)
 HEALTHCARE_RULES = (
@@ -4445,20 +4801,85 @@ HEALTHCARE_RULES = (
     "patient's treatment or dose, and say that clinical decisions belong to qualified staff following local "
     "protocols. If someone shares details that could identify a patient (name, record number, date of birth, "
     "address, phone), don't repeat them; remind them this workspace must not be used with patient data. "
-    "In an emergency, tell them to follow their hospital's emergency procedure immediately."
+    "In an emergency, tell them to follow their hospital's emergency procedure immediately. Words in square brackets "
+    "like [patient name] or [record number] replaced a patient's details automatically: keep them as they are, and "
+    "never guess or invent the details."
 )
-PATIENT_DATA = [
-    re.compile(r"\b(mrn|medical record|record number|hospital number|patient (?:id|number|no\.?)|n[°o]\s*dossier|"
-               r"num[ée]ro de dossier|ipp|nhs number)\b[\s:#n°.-]*[A-Z0-9-]{4,}", re.I),
-    re.compile(r"\b(dob|d\.o\.b\.?|date of birth|born on|n[ée]e? le|date de naissance)\b[\s:.-]*"
-               r"\d{1,4}[/.-]\d{1,2}[/.-]\d{1,4}", re.I),
-    re.compile(r"\b(patient|patiente|pt)\b[\s:,-]+(?:(?:mr|mrs|ms|miss|mme|m\.)\.?\s+)?[A-Z][a-z\u00C0-\u017F]+\s+[A-Z][a-z\u00C0-\u017F]+"),
-    re.compile(r"\b(patient|patiente)\b[^.\n]{0,60}\+?\d[\d\s().-]{7,}\d"),
+# A patient's identifying details, found by their labels ("patient", "MRN", "DOB", "né le"...) -- in healthcare
+# workspaces they're REMOVED before anything reaches the AI (or the message is stopped, if the admins chose that).
+# Each pattern: (kind, regex with a "label" group kept as it is and a "v" group replaced by a placeholder).
+_UP, _LOW = r"[A-Z\u00C0-\u00DE]", r"[a-z\u00DF-\u00FF\u0100-\u017F']"
+_NAME_PART = (_UP + r"(?:'" + _UP + r")?" + _LOW + r"+(?:" + _UP + _LOW + r"+)?"    # Awa, A\u00efssatou, O'Neill, McDonald
+              r"(?:-" + _UP + _LOW + r"+)*")                                               # Jean-Pierre
+PATIENT_PATTERNS = [
+    ("record number", re.compile(r"(?P<label>\b(?:mrn|medical record(?: number| no\.?)?|record number|hospital number|"
+                                 r"patient (?:id|number|no\.?)|n[°o]\s*(?:de\s+)?dossier|num[ée]ro de dossier|ipp|nhs number)\b"
+                                 r"[\s:#n°.-]*)(?P<v>(?=[A-Z-]*\d)[A-Z0-9][A-Z0-9-]{3,})", re.I)),
+    ("ID number", re.compile(r"(?P<label>\b(?:ssn|social security(?: number| no\.?)?|national id(?: number)?|id number|"
+                             r"passport(?: number| no\.?)?|nir|cni|num[ée]ro de s[ée]curit[ée] sociale|n[°o] de s[ée]curit[ée] sociale)\b"
+                             r"[\s:#n°.-]*)(?P<v>[A-Z]{0,3}\d[\d -]{3,}\d)", re.I)),
+    ("date of birth", re.compile(r"(?P<label>\b(?:dob|d\.o\.b\.?|date of birth|born on|n[ée]e? le|date de naissance)\b[\s:.-]*)"
+                                 r"(?P<v>\d{1,4}[/.-]\d{1,2}[/.-]\d{1,4}|\d{1,2}(?:st|nd|rd|th|er)?\s+(?:jan|feb|mar|apr|may|jun|"
+                                 r"jul|aug|sep|oct|nov|dec|janv|f[ée]vr|mars|avr|mai|juin|juil|ao[uû]t|sept|d[ée]c)[a-zà-ÿ]*"
+                                 r"\.?\s+\d{2,4})", re.I)),
+    ("name", re.compile(r"(?P<label>\b(?i:patient|patiente|pt)\b[\s:,-]+(?:(?i:named|called|nomm[ée]e?|appel[ée]e?)\s+)?"
+                        r"(?:(?i:mr|mrs|ms|miss|mme|mlle|m)\.?\s+)?)(?P<v>" + _NAME_PART + r"(?:\s+" + _NAME_PART + r"){1,2})")),
+    ("phone number", re.compile(r"(?P<label>\b(?:patient|patiente)\b[^.\n]{0,60}?)(?P<v>\+?\d[\d\s().-]{7,}\d)", re.I)),
+    ("email address", re.compile(r"(?P<label>\b(?:patient|patiente)\b[^\n]{0,80}?)(?P<v>[\w.+-]+@[\w-]+(?:\.[\w-]+)+)", re.I)),
 ]
+PATIENT_PLACEHOLDERS = {"record number": "[record number]", "ID number": "[ID number]", "date of birth": "[date of birth]",
+                        "name": "[patient name]", "phone number": "[phone number]", "email address": "[email address]"}
+# "Patient Safety Week", "PT Department": capitalised words after "patient" that aren't anyone's name
+_NOT_A_PATIENT_NAME = {
+    "safety", "experience", "care", "services", "service", "advice", "liaison", "information", "transport", "records",
+    "record", "portal", "access", "flow", "day", "week", "month", "charter", "rights", "group", "forum", "council",
+    "panel", "feedback", "survey", "satisfaction", "education", "leaflet", "leaflets", "pathway", "journey", "centre",
+    "center", "support", "relations", "advocacy", "partnership", "participation", "involvement", "engagement",
+    "admission", "admissions", "discharge", "transfer", "handover", "identification", "number", "name", "department",
+    "session", "sessions", "team", "unit", "ward", "clinic", "office", "program", "programme", "plan", "policy", "guide",
+    "guidelines", "training", "meeting", "room", "list", "lists", "data", "privacy", "consent", "notes", "summary",
+    "letter", "letters", "handbook", "manual", "board", "committee", "assessment", "assessments", "monitoring",
+    "registration", "reception", "waiting", "visitor", "visitors", "family", "families", "the", "a", "an",
+    "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "january", "february", "march",
+    "april", "may", "june", "july", "august", "september", "october", "november", "december", "lundi", "mardi",
+    "mercredi", "jeudi", "vendredi", "samedi", "dimanche", "janvier", "f\u00e9vrier", "mars", "avril", "mai", "juin",
+    "juillet", "ao\u00fbt", "septembre", "octobre", "novembre", "d\u00e9cembre", "today", "tomorrow", "yesterday",
+}
+
+
+def _redact_patient_data(text: str):
+    """-> (the text with a patient's identifying details replaced by [patient name], [record number]...,
+    [the kinds removed, in order]). The same name said again later ("Mr Diallo", "Awa") is removed too."""
+    if not text or not isinstance(text, str):
+        return text, []
+    kinds, names = [], []
+    for kind, rx in PATIENT_PATTERNS:
+        def swap(m, kind=kind):
+            if kind == "name":
+                if m.group("v").split()[0].lower() in _NOT_A_PATIENT_NAME:
+                    return m.group(0)
+                names.append(m.group("v"))
+            kinds.append(kind)
+            return m.group("label") + PATIENT_PLACEHOLDERS[kind]
+        text = rx.sub(swap, text)
+    for full in names:                                # everywhere else in the text, the whole name and each part of it
+        for piece in [full] + [p for p in full.split() if len(p) >= 3]:
+            text = re.sub(r"(?<![\w\[])" + re.escape(piece) + r"(?![\w\]])", "[patient name]", text)
+    return text, list(dict.fromkeys(kinds))
 
 
 def _looks_like_patient_data(text: str) -> bool:
-    return any(p.search(text or "") for p in PATIENT_DATA)
+    return bool(_redact_patient_data(text)[1])
+
+
+def _removed_words(kinds) -> str:
+    """["name", "record number"] -> "a name and a record number" (for the notice under the answer)."""
+    words = [("an " if k[0] in "aeiouAEIOU" else "a ") + k for k in kinds]
+    return words[0] if len(words) == 1 else ", ".join(words[:-1]) + " and " + words[-1]
+
+
+def _removed_note(kinds) -> str:
+    return f"_\U0001F512 Patient details were removed before Gink read this ({_removed_words(kinds)})._\n\n"
 
 
 def _org_db(fn):
@@ -4467,6 +4888,8 @@ def _org_db(fn):
         try:
             for t in ORG_TABLES:
                 con.execute(t)
+            if "patient_details" not in {r[1] for r in con.execute("PRAGMA table_info(orgs)").fetchall()}:
+                con.execute("ALTER TABLE orgs ADD COLUMN patient_details TEXT NOT NULL DEFAULT 'remove'")
             out = fn(con)
             con.commit()
             return out
@@ -4480,10 +4903,11 @@ def _org_of(email: str):
         m = con.execute("SELECT org_id, role, status FROM org_members WHERE email=?", (email,)).fetchone()
         if not m:
             return None, "", ""
-        o = con.execute("SELECT id, name, owner, created, instructions, healthcare FROM orgs WHERE id=?", (m[0],)).fetchone()
+        o = con.execute("SELECT id, name, owner, created, instructions, healthcare, patient_details FROM orgs WHERE id=?",
+                        (m[0],)).fetchone()
         if not o:
             return None, "", ""
-        return dict(zip(("id", "name", "owner", "created", "instructions", "healthcare"), o)), m[1], m[2]
+        return dict(zip(("id", "name", "owner", "created", "instructions", "healthcare", "patient_details"), o)), m[1], m[2]
     return _org_db(read)
 
 
@@ -4492,7 +4916,8 @@ def _org_rules(email: str):
     org, _role, status = _org_of(email)
     if not org or status != "active":
         return None
-    return {"name": org["name"], "instructions": org["instructions"] or "", "healthcare": bool(org["healthcare"])}
+    return {"id": org["id"], "name": org["name"], "instructions": org["instructions"] or "", "healthcare": bool(org["healthcare"]),
+            "patient_details": "stop" if org.get("patient_details") == "stop" else "remove"}
 
 
 def _org_system(rules) -> str:
@@ -4510,14 +4935,114 @@ PATIENT_DATA_MSG = ("This looks like it contains a patient's details (a name, re
                     "and ask again.")
 
 
-def _org_guard(email: str, text: str):
-    """(system text to add, refusal message or "")."""
-    rules = _org_rules(email)
+SAFETY_KINDS = ("patient_details_removed", "patient_details_stopped", "photo_checked")
+SAFETY_KEEP_DAYS = 400
+
+
+def _safety_note(org_id: str, email: str, kind: str, feature: str = "chat"):
+    """One more in the workspace's safety report: a COUNT (person, day, kind, feature) -- never words or photos."""
+    if not org_id or kind not in SAFETY_KINDS:
+        return
+    day, old = _today(), time.strftime("%Y-%m-%d", time.gmtime(time.time() - SAFETY_KEEP_DAYS * 86400))
+    try:
+        _org_db(lambda con: (con.execute("INSERT INTO org_safety (org_id, email, day, kind, feature, n) VALUES (?, ?, ?, ?, ?, 1) "
+                                         "ON CONFLICT(org_id, email, day, kind, feature) DO UPDATE SET n=n+1",
+                                         (org_id, email, day, kind, str(feature or "chat")[:20])),
+                             con.execute("DELETE FROM org_safety WHERE day<?", (old,))))
+    except sqlite3.Error as exc:                          # a report must never stop someone's work
+        print(f"[gink] safety report: {type(exc).__name__}", flush=True)
+
+
+def _org_check(email: str, text: str, feature: str = "chat", rules="?"):
+    """A workspace's rules for one piece of someone's text -> (system text, the text to use, kinds removed, refusal).
+    Healthcare mode: a patient's identifying details are REMOVED before anything reaches the AI, a search or a stored
+    name -- or the whole message is stopped, if the workspace's admins chose that. Each time is counted for the
+    admins' safety report (never the words)."""
+    rules = _org_rules(email) if rules == "?" else rules
     if not rules:
-        return "", ""
-    if rules["healthcare"] and _looks_like_patient_data(text):
-        return "", PATIENT_DATA_MSG
-    return _org_system(rules), ""
+        return "", text, [], ""
+    if rules.get("healthcare"):
+        clean, kinds = _redact_patient_data(text)
+        if kinds:
+            if rules.get("patient_details") == "stop":
+                _safety_note(rules.get("id"), email, "patient_details_stopped", feature)
+                return "", text, kinds, PATIENT_DATA_MSG
+            _safety_note(rules.get("id"), email, "patient_details_removed", feature)
+            return _org_system(rules), clean, kinds, ""
+    return _org_system(rules), text, [], ""
+
+
+def _org_redacted(email: str, text: str) -> str:
+    """The text without a patient's details, if this account is in a healthcare workspace (nothing counted: for
+    names and copies kept on the server, alongside an _org_check of the same words)."""
+    rules = _org_rules(email)
+    return _redact_patient_data(text)[0] if rules and rules.get("healthcare") else text
+
+
+def _redact_message(m: dict):
+    """One chat message (text, or text parts beside photos) -> (message, kinds removed)."""
+    c = m.get("content")
+    if isinstance(c, str):
+        clean, kinds = _redact_patient_data(c)
+        return (dict(m, content=clean) if kinds else m), kinds
+    if isinstance(c, list):
+        parts, kinds = [], []
+        for p in c:
+            if isinstance(p, dict) and p.get("type") == "text" and isinstance(p.get("text"), str):
+                t, k = _redact_patient_data(p["text"])
+                kinds += k
+                parts.append(dict(p, text=t) if k else p)
+            else:
+                parts.append(p)
+        return (dict(m, content=parts) if kinds else m), list(dict.fromkeys(kinds))
+    return m, []
+
+
+def _org_check_messages(email: str, messages: list, feature: str = "chat", rules="?"):
+    """_org_check for a whole conversation -> (system text, messages, kinds removed from the NEWEST message, refusal).
+    Every earlier message is cleaned too (an older message may still hold details from before), quietly; only the
+    newest one is reported, counted -- or stopped, in "stop" workspaces."""
+    rules = _org_rules(email) if rules == "?" else rules
+    if not rules:
+        return "", messages, [], ""
+    if not rules.get("healthcare"):
+        return _org_system(rules), messages, [], ""
+    last = max((i for i, m in enumerate(messages) if isinstance(m, dict) and m.get("role") == "user"), default=-1)
+    out, newest = [], []
+    for i, m in enumerate(messages):
+        if isinstance(m, dict) and m.get("role") in ("user", "assistant"):
+            m, kinds = _redact_message(m)
+            if i == last:
+                newest = kinds
+        out.append(m)
+    if newest:
+        if rules.get("patient_details") == "stop":
+            _safety_note(rules.get("id"), email, "patient_details_stopped", feature)
+            return "", messages, newest, PATIENT_DATA_MSG
+        _safety_note(rules.get("id"), email, "patient_details_removed", feature)
+    return _org_system(rules), out, newest, ""
+
+
+def _org_safety(org_id: str, days: int = 30) -> dict:
+    """The admins' safety report: how often patient details were removed or stopped, and photos checked with the
+    patient-privacy rules -- by day, person and feature. Counts only."""
+    days = max(1, min(int(days or 30), 366))
+    first = time.strftime("%Y-%m-%d", time.gmtime(time.time() - (days - 1) * 86400))
+    rows = _org_db(lambda con: con.execute("SELECT email, day, kind, feature, n FROM org_safety WHERE org_id=? AND day>=? "
+                                           "ORDER BY day", (org_id, first)).fetchall())
+    totals = {k: 0 for k in SAFETY_KINDS}
+    by_day, by_person, by_feature = {}, {}, {}
+    for e, day, kind, feature, n in rows:
+        if kind not in totals:
+            continue
+        totals[kind] += n
+        by_day.setdefault(day, {k: 0 for k in SAFETY_KINDS})[kind] += n
+        by_person.setdefault(e, {k: 0 for k in SAFETY_KINDS})[kind] += n
+        by_feature[feature] = by_feature.get(feature, 0) + n
+    people = [{"account": _account_label(e), "name": (_get_user(e) or {}).get("name") or "", **counts}
+              for e, counts in sorted(by_person.items(), key=lambda kv: (-sum(kv[1].values()), kv[0]))]
+    return {"object": "safety_report", "days": days, "since": first, "totals": totals,
+            "by_day": [dict(day=d, **c) for d, c in sorted(by_day.items())], "by_person": people, "by_feature": by_feature}
 
 
 def _org_admin(email: str):
@@ -4534,9 +5059,12 @@ def org_get(request: Request):
     if not org:
         return {"org": None}
     out = {"org": {"id": org["id"], "name": org["name"], "healthcare": bool(org["healthcare"]),
+                   "patient_details": "stop" if org.get("patient_details") == "stop" else "remove",
                    "instructions": org["instructions"] or "", "owner": _account_label(org["owner"])},
            "role": role, "status": status}
     if role == "admin" and status == "active":
+        if org["healthcare"]:
+            out["safety"] = _org_safety(org["id"], 30)     # counts only: never words, photos or patients
         day = _today()
         rows = _org_db(lambda con: con.execute("SELECT email, role, status FROM org_members WHERE org_id=? ORDER BY role, email",
                                                (org["id"],)).fetchall())
@@ -4568,7 +5096,8 @@ def org_create(request: Request, data: dict = Body(...)):
     if not name:
         raise HTTPException(status_code=422, detail="Give the workspace a name.")
     oid, now = "org_" + secrets.token_hex(6), time.time()
-    _org_db(lambda con: (con.execute("INSERT INTO orgs VALUES (?, ?, ?, ?, '', ?)", (oid, name, email, now, int(bool(data.get("healthcare"))))),
+    _org_db(lambda con: (con.execute("INSERT INTO orgs (id, name, owner, created, instructions, healthcare) VALUES (?, ?, ?, ?, '', ?)",
+                                     (oid, name, email, now, int(bool(data.get("healthcare"))))),
                          con.execute("INSERT INTO org_members VALUES (?, ?, 'admin', 'active', ?, ?)", (oid, email, now, now))))
     return org_get(request)
 
@@ -4617,9 +5146,11 @@ def org_leave(request: Request):
         members = _org_db(lambda con: con.execute("SELECT COUNT(*) FROM org_members WHERE org_id=?", (org["id"],)).fetchone()[0])
         if admins <= 1 and members > 1:
             raise HTTPException(status_code=409, detail="You're the only admin: make someone else admin, or delete the workspace.")
-    _org_db(lambda con: con.execute("DELETE FROM org_members WHERE email=?", (email,)))
+    _org_db(lambda con: (con.execute("DELETE FROM org_members WHERE email=?", (email,)),
+                         con.execute("DELETE FROM org_safety WHERE org_id=? AND email=?", (org["id"], email))))
     if role == "admin" and _org_db(lambda con: con.execute("SELECT COUNT(*) FROM org_members WHERE org_id=?", (org["id"],)).fetchone()[0]) == 0:
-        _org_db(lambda con: con.execute("DELETE FROM orgs WHERE id=?", (org["id"],)))
+        _org_db(lambda con: (con.execute("DELETE FROM orgs WHERE id=?", (org["id"],)),
+                             con.execute("DELETE FROM org_safety WHERE org_id=?", (org["id"],))))
     return {"org": None}
 
 
@@ -4633,6 +5164,7 @@ def org_remove(request: Request, data: dict = Body(...)):
     n = _org_db(lambda con: con.execute("DELETE FROM org_members WHERE org_id=? AND email=?", (org["id"], target)).rowcount)
     if not n:
         raise HTTPException(status_code=404, detail="That person isn't in this workspace.")
+    _org_db(lambda con: con.execute("DELETE FROM org_safety WHERE org_id=? AND email=?", (org["id"], target)))
     return org_get(request)
 
 
@@ -4681,6 +5213,66 @@ def org_usage_csv(request: Request, days: int = 30):
                     headers={"Content-Disposition": f'attachment; filename="gink-{name}-usage.csv"'})
 
 
+SAFETY_WORDS = {"patient_details_removed": "patient details removed", "patient_details_stopped": "message stopped (patient details)",
+                "photo_checked": "photo checked (patient-privacy rules)"}
+
+
+@app.get("/org/safety")
+def org_safety(request: Request, days: int = 30):
+    """Admins: healthcare mode's safety report -- counts only (never words, photos or patients)."""
+    org = _org_admin(_email_from_auth(request))
+    return _org_safety(org["id"], days)
+
+
+@app.get("/org/safety.csv")
+def org_safety_csv(request: Request, days: int = 30):
+    """Admins: the safety report as a spreadsheet file -- date, person, what happened, where, how many times."""
+    import csv
+    import io
+    from fastapi.responses import Response
+    org = _org_admin(_email_from_auth(request))
+    days = max(1, min(int(days or 30), 366))
+    first = time.strftime("%Y-%m-%d", time.gmtime(time.time() - (days - 1) * 86400))
+    rows = _org_db(lambda con: con.execute("SELECT day, email, kind, feature, n FROM org_safety WHERE org_id=? AND day>=? "
+                                           "ORDER BY day, email, kind", (org["id"], first)).fetchall())
+    names = {e: (_get_user(e) or {}).get("name") or "" for e in {r[1] for r in rows}}   # outside the lock (not re-entrant)
+    out = io.StringIO()
+    w = csv.writer(out)
+    w.writerow(["date", "name", "account", "what", "where", "times"])
+    for day, e, kind, feature, n in rows:
+        w.writerow([day, names[e], _account_label(e), SAFETY_WORDS.get(kind, kind), feature, n])
+    name = re.sub(r"[^A-Za-z0-9-]+", "-", org["name"]).strip("-")[:40] or "workspace"
+    return Response(out.getvalue(), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="gink-{name}-safety.csv"'})
+
+
+@app.get("/v1/workspace")
+def api_workspace(request: Request):
+    """The workspace this API key's account is in (any member), or {"workspace": null}."""
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    org, role, status = _org_of(owner[0])
+    if not org:
+        return {"object": "workspace", "workspace": None}
+    return {"object": "workspace", "workspace": {"id": org["id"], "name": org["name"], "healthcare": bool(org["healthcare"]),
+            "patient_details": "stop" if org.get("patient_details") == "stop" else "remove"}, "role": role, "status": status}
+
+
+@app.get("/v1/workspace/safety")
+def api_workspace_safety(request: Request, days: int = 30):
+    """Healthcare mode's safety report for an admin's API key -- counts only."""
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    org, role, status = _org_of(owner[0])
+    if not org:
+        return _api_error(404, "This account isn't in a workspace.", "not_found")
+    if role != "admin" or status != "active":
+        return _api_error(403, "Only the workspace's admins can see its safety report.", "not_admin")
+    return dict(_org_safety(org["id"], days), workspace={"id": org["id"], "name": org["name"], "healthcare": bool(org["healthcare"])})
+
+
 @app.put("/org/settings")
 def org_settings(request: Request, data: dict = Body(...)):
     email = _email_from_auth(request)
@@ -4688,8 +5280,11 @@ def org_settings(request: Request, data: dict = Body(...)):
     name = " ".join(str(data.get("name", org["name"]) or "").split())[:80] or org["name"]
     instructions = str(data.get("instructions", org["instructions"] or ""))[:4000]
     healthcare = int(bool(data.get("healthcare", org["healthcare"])))
-    _org_db(lambda con: con.execute("UPDATE orgs SET name=?, instructions=?, healthcare=? WHERE id=?",
-                                    (name, instructions, healthcare, org["id"])))
+    details = str(data.get("patient_details", org.get("patient_details") or "remove"))
+    if details not in ("remove", "stop"):
+        raise HTTPException(status_code=422, detail='patient_details must be "remove" or "stop".')
+    _org_db(lambda con: con.execute("UPDATE orgs SET name=?, instructions=?, healthcare=?, patient_details=? WHERE id=?",
+                                    (name, instructions, healthcare, details, org["id"])))
     return org_get(request)
 
 
@@ -4700,6 +5295,7 @@ def org_delete(request: Request, data: dict = Body(default={})):
     if (data or {}).get("confirm") != org["name"]:
         raise HTTPException(status_code=422, detail="Type the workspace's name to confirm.")
     _org_db(lambda con: (con.execute("DELETE FROM org_members WHERE org_id=?", (org["id"],)),
+                         con.execute("DELETE FROM org_safety WHERE org_id=?", (org["id"],)),
                          con.execute("DELETE FROM orgs WHERE id=?", (org["id"],))))
     return {"org": None}
 
@@ -4994,8 +5590,11 @@ def _env_for(email: str, env: str, name_hint: str = "") -> str:
     return env
 
 
+AGENT_AUTOFIX_ROUNDS = 4           # extra rounds an agent gets to fix what's broken anywhere in its environment
+
+
 async def _agent_loop(iid: str, email: str, env_id: str, messages: list, tools_allowed: set, max_steps: int, org_text: str,
-                      teen: bool):
+                      teen: bool, removed: list = None):
     """Runs the agent to the end, saving progress (steps, status, output) as it goes."""
     import httpx
     tools = (_agent_file_tools() if "files" in tools_allowed else []) + ([AGENT_SEARCH_TOOL] if "web_search" in tools_allowed else [])
@@ -5005,6 +5604,10 @@ async def _agent_loop(iid: str, email: str, env_id: str, messages: list, tools_a
     system = [{"role": "system", "content": AGENT_SYSTEM}] + live + ([{"role": "system", "content": TEEN_SAFETY}] if teen else []) \
         + ([{"role": "system", "content": org_text}] if org_text else [])
     steps, changes = [], []
+    if removed:                                       # healthcare workspace: said in the steps, like any other step
+        steps.append({"tool": "privacy", "result": f"Patient details were removed before the agent read the task "
+                                                   f"({_removed_words(removed)})."})
+    fixes, last_problems = 0, None
     plan = _plan_status(email)["plan"]
     try:
         _genie_checkpoint(env_id, "Before agent interaction " + iid)
@@ -5030,6 +5633,21 @@ async def _agent_loop(iid: str, email: str, env_id: str, messages: list, tools_a
             calls = msg.get("tool_calls") or []
             if not calls:
                 text = (msg.get("content") or "").strip()
+                if changes and "files" in tools_allowed and fixes < AGENT_AUTOFIX_ROUNDS:
+                    check = _genie_project_check(env_id)    # the WHOLE environment, by itself, before finishing
+                    if check["problems"]:
+                        fixes += 1
+                        again = check["problems"] == last_problems
+                        last_problems = check["problems"]
+                        n = len(check["problems"])
+                        steps.append({"tool": "check", "result": (f"{n} problem" + ("s" if n > 1 else "") + " found \u2014 fixing: "
+                                                                  + "; ".join(check["problems"]))[:300]})
+                        _agent_save(iid, steps=_json.dumps(steps))
+                        messages.append({"role": "assistant", "content": text})
+                        messages.append({"role": "user", "content": "Before you finish: " + _genie_fix_all_text(check) + (
+                            "\n\nThese are the SAME problems as after your last attempt, so that fix didn't work. Read the "
+                            "files again from the top, find the real cause and fix it a different way." if again else "")})
+                        continue
                 messages.append({"role": "assistant", "content": text})
                 _agent_to_genie(env_id, messages, steps, text)
                 return _agent_save(iid, status="completed", output_text=text, steps=_json.dumps(steps),
@@ -5090,7 +5708,7 @@ async def _interaction_start(email: str, key_id, data: dict, place: dict = None)
         return _api_error(503, "Agents aren't set up on this server yet.", "not_configured")
     try:
         family, _controls = _genie_family_gate(email)
-        org_text, org_refusal = _org_guard(email, text)
+        org_text, text, removed, org_refusal = _org_check(email, text, "agent")   # healthcare: details removed first
     except HTTPException as exc:
         return _api_error(exc.status_code, str(exc.detail), "not_allowed")
     if org_refusal:
@@ -5127,6 +5745,8 @@ async def _interaction_start(email: str, key_id, data: dict, place: dict = None)
         except HTTPException as exc:
             return _api_error(400, str(exc.detail), "invalid_webhook_url")
     iid = "int_" + secrets.token_hex(10)
+    if (_org_rules(email) or {}).get("healthcare"):    # an earlier interaction's words: no patient details either
+        history = [_redact_message(m)[0] if isinstance(m, dict) and m.get("role") in ("user", "assistant") else m for m in history]
     messages = history + [{"role": "user", "content": text[:20000]}]
     _agent_db(lambda con: con.execute("INSERT INTO agent_interactions (id, email, key_id, env_id, status, input, steps, messages, "
                                       "previous_id, created) VALUES (?, ?, ?, ?, 'running', ?, '[]', ?, ?, ?)",
@@ -5137,7 +5757,7 @@ async def _interaction_start(email: str, key_id, data: dict, place: dict = None)
         _agent_db(lambda con: con.execute("UPDATE agent_interactions SET notify_email=1 WHERE id=?", (iid,)))
     _agent_tasks[iid] = "running"
     _client_place.set(place or {})                     # the background task copies this context
-    run = _agent_loop(iid, email, env_id, messages, tools, max_steps, org_text, bool(family))
+    run = _agent_loop(iid, email, env_id, messages, tools, max_steps, org_text, bool(family), removed)
     if data.get("stream"):                          # live: each step as it happens (server-sent events)
         task = asyncio.get_running_loop().create_task(run)
         _safety_tasks.add(task)
@@ -5277,6 +5897,22 @@ async def api_env_put(pid: str, path: str, request: Request):
     except ValueError as exc:
         return _api_error(400, str(exc), "invalid_file")
     return _env_public(request, owner[0], pid)
+
+
+@app.get("/v1/environments/{pid}/check")
+def api_env_check(pid: str, request: Request):
+    """The whole environment checked: missing linked files and .json/.py files that don't parse (nothing runs).
+    To fix them, start an interaction with the returned fix_request (environment=pid)."""
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    try:
+        _genie_project(owner[0], pid)
+    except HTTPException:
+        return _api_error(404, "No environment with that id.", "not_found")
+    out = _genie_project_check(pid)
+    out["fix_request"] = _genie_fix_all_text(out) if out["problems"] else ""
+    return out
 
 
 @app.delete("/v1/environments/{pid}")
@@ -5434,7 +6070,7 @@ def _sched_create(email: str, key_id, data: dict, place: dict) -> dict:
         raise HTTPException(status_code=400, detail="Unknown timezone (use names like Europe/Paris).")
     tools = sorted(set(data.get("tools") or ["files", "web_search"]) & {"files", "web_search"})
     _genie_family_gate(email)
-    org_text, refusal = _org_guard(email, text)
+    org_text, text, _removed, refusal = _org_check(email, text, "schedule")   # healthcare: the saved task has no details
     if refusal:
         raise HTTPException(status_code=422, detail=refusal)
     n = _sched_db(lambda con: con.execute("SELECT COUNT(*) FROM agent_schedules WHERE email=?", (email,)).fetchone()[0])
@@ -6247,9 +6883,14 @@ def _developer_openapi(base_url: str) -> dict:
                         "stream": {"type": "boolean", "default": False, "description": "Server-sent events, OpenAI chunk format."},
                         "max_tokens": {"type": "integer"}, "temperature": {"type": "number"},
                         "tools": {"type": "array", "items": {"type": "object"}, "description": "OpenAI function tools."}}}}}},
-                "responses": {"200": {"description": "A chat completion (or an event stream when stream is true)."},
+                "responses": {"200": {"description": "A chat completion (or an event stream when stream is true). In a "
+                                                      "workspace in healthcare mode, a patient's details are removed before "
+                                                      "anything is sent: the answer then starts with a short notice.",
+                                      "headers": {"X-Gink-Patient-Details-Removed": {"schema": {"type": "string"},
+                                                  "description": "What was removed, e.g. \"name,record number\"."}}},
                               "401": err("Missing, invalid or revoked API key."),
                               "403": err("This model needs Gink Pro."),
+                              "422": err("patient_data: a healthcare workspace set to stop messages with a patient's details."),
                               "429": err("Daily allowance or per-minute limit reached (see Retry-After).")}}},
             "/models": {"get": {
                 "summary": "Models you can use", "operationId": "listModels",
@@ -6385,8 +7026,9 @@ async def site_create(request: Request, data: dict = Body(...)):
     except ValueError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
     site_id, now = secrets.token_urlsafe(6).replace("_", "x").replace("-", "y"), time.time()
+    kept = _org_redacted(email, prompt)              # healthcare workspaces: no patient details kept with the site
     _sites_db(lambda con: con.execute("INSERT INTO sites (id, email, title, prompt, html, created, updated) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                                      (site_id, email, title, prompt, html, now, now)))
+                                      (site_id, email, title, kept, html, now, now)))
     return {"id": site_id, "title": title, "url": _site_url(request, site_id)}
 
 
@@ -7428,6 +8070,46 @@ def passkey_delete(pid: str, request: Request):
     return {"ok": True}
 
 
+# ---- Lock Gink in a browser (the web app, Genie, the console): the SIGNED-IN person proves it's them with one of
+# their own passkeys (Face ID, Touch ID, Windows Hello, their phone). Nothing changes on the account; the page uncovers.
+@app.post("/account/passkeys/verify/begin")
+def passkey_verify_begin(request: Request):
+    import webauthn
+    from webauthn.helpers import structs
+    email = _email_from_auth(request)
+    rows = _pk_db(lambda con: con.execute("SELECT id FROM passkeys WHERE email=?", (email,)).fetchall())
+    if not rows:
+        raise HTTPException(status_code=409, detail="Add a passkey first: Settings > Account > Passkeys.")
+    rp_id, _origin = _rp(request)
+    options = webauthn.generate_authentication_options(
+        rp_id=rp_id, user_verification=structs.UserVerificationRequirement.REQUIRED,
+        allow_credentials=[structs.PublicKeyCredentialDescriptor(id=webauthn.base64url_to_bytes(r[0])) for r in rows])
+    request_id = secrets.token_urlsafe(18)
+    _pk_remember("verify:" + request_id, options.challenge, email)
+    return {"request_id": request_id, "options": _json.loads(webauthn.options_to_json(options))}
+
+
+@app.post("/account/passkeys/verify/finish")
+def passkey_verify_finish(request: Request, data: dict = Body(...)):
+    import webauthn
+    email = _email_from_auth(request)
+    challenge, owner, _t = _pk_take("verify:" + str(data.get("request_id") or ""))
+    credential = data.get("credential") or {}
+    cid = str(credential.get("id") or "")
+    row = _pk_db(lambda con: con.execute("SELECT email, public_key, sign_count FROM passkeys WHERE id=?", (cid,)).fetchone())
+    if owner != email or not row or row[0] != email:                  # only your own passkey unlocks your Gink
+        raise HTTPException(status_code=401, detail="That passkey isn\u2019t one of yours.")
+    rp_id, origin = _rp(request)
+    try:
+        v = webauthn.verify_authentication_response(credential=credential, expected_challenge=challenge, expected_rp_id=rp_id,
+                                                    expected_origin=origin, credential_public_key=webauthn.base64url_to_bytes(row[1]),
+                                                    credential_current_sign_count=row[2], require_user_verification=True)
+    except Exception as exc:
+        raise HTTPException(status_code=401, detail=f"That didn\u2019t work ({type(exc).__name__}). Try again.")
+    _pk_db(lambda con: con.execute("UPDATE passkeys SET sign_count=?, last_used=? WHERE id=?", (v.new_sign_count, time.time(), cid)))
+    return {"ok": True, "verified": int(time.time())}
+
+
 @app.post("/auth/passkey/signin/begin")   # not /auth/passkey/begin: /auth/{provider}/begin would catch it
 def passkey_signin_begin(request: Request):
     """Discoverable sign-in: the browser shows the person's Gink passkeys; nobody types an email."""
@@ -8328,19 +9010,32 @@ async def _genie_drive(state: dict) -> dict:
             msg = ((r.json().get("choices") or [{}])[0].get("message")) or {}
             calls = msg.get("tool_calls") or []
             if not calls:
-                missing = _genie_missing_refs(state["pid"]) if state.get("mode") != "plan" and state["changes"] else []
-                if missing and state.get("autofix", 0) < GENIE_AUTOFIX_ROUNDS:      # finish the job before answering
+                checking = state.get("mode") != "plan" and state["changes"]
+                missing = _genie_missing_refs(state["pid"]) if checking else []
+                broken = _genie_project_check(state["pid"])["broken"] if checking else []   # the WHOLE project, by itself
+                if (missing or broken) and state.get("autofix", 0) < GENIE_AUTOFIX_ROUNDS:   # finish the job before answering
                     state["autofix"] = state.get("autofix", 0) + 1
-                    state["steps"].append({"kind": "check", "title": f"Checked the links: {len(missing)} missing file"
-                                           + ("s" if len(missing) > 1 else "") + " \u2014 fixing",
-                                           "output": "\n".join(missing)})
+                    n = len(missing) + len(broken)
+                    title = (f"Checked the links: {len(missing)} missing file" + ("s" if len(missing) > 1 else "")) if not broken else \
+                        (f"Checked the project: {n} problem" + ("s" if n > 1 else ""))
+                    state["steps"].append({"kind": "check", "title": title + " \u2014 fixing", "output": "\n".join(missing + broken)})
                     _genie_report(state)
+                    again = state.get("autofix_seen") == (missing, broken)          # the same problems as last round
+                    state["autofix_seen"] = (missing, broken)
+                    parts = []
+                    if missing:
+                        parts.append("The project links to files that don't exist, so the page breaks:\n" + "\n".join(f"- {m}" for m in missing)
+                                     + "\nCreate each one with write_file (complete, working content that fits the page), or "
+                                       "change the link if it was a mistake.")
+                    if broken:
+                        parts.append("These project files can't be read by their language (checked across the whole project):\n" + "\n".join(f"- {b_}" for b_ in broken)
+                                     + "\nRead each file around that line and correct it.")
+                    if again:
+                        parts.append("These are the SAME problems as after your last attempt, so that fix didn't work. Read the "
+                                     "files again from the top, find the real cause and fix it a different way.")
                     state["messages"].append({"role": "assistant", "content": msg.get("content") or ""})
-                    state["messages"].append({"role": "user", "content": (
-                        "Before you finish: the project links to files that don't exist, so the page breaks:\n"
-                        + "\n".join(f"- {m}" for m in missing)
-                        + "\nCreate each one now with write_file (complete, working content that fits the page), or "
-                          "change the link if it was a mistake. Then finish with your answer.")})
+                    state["messages"].append({"role": "user", "content": "Before you finish:\n\n" + "\n\n".join(parts)
+                                              + "\n\nThen finish with your answer."})
                     continue
                 reply = (msg.get("content") or "").strip() or "Done."
                 _genie_remember(state, reply)
@@ -8354,7 +9049,52 @@ async def _genie_drive(state: dict) -> dict:
             state["queue"] = list(calls)
 
 
-GENIE_AUTOFIX_ROUNDS = 2                  # extra rounds Genie gets to create files its pages link to but are missing
+GENIE_AUTOFIX_ROUNDS = 6                  # extra rounds Genie gets to finish: missing linked files, files that don't parse
+
+
+def _genie_file_problems(pid: str, changes: list) -> list:
+    """Changed files that their own language can't read: JSON that doesn't parse, Python with a syntax error.
+    (Checked without running anything: compile() only reads the code. JavaScript and CSS are checked by the live
+    preview in the browser, which really runs them.)"""
+    files = _genie_texts(pid)
+    out = []
+    for path in sorted({str(c.get("path") or "") if isinstance(c, dict) else str(c) for c in changes}):
+        text = files.get(path)
+        if text is None or len(text) > 400_000:
+            continue
+        try:
+            if path.endswith(".json"):
+                _json.loads(text)
+            elif path.endswith(".py"):
+                compile(text, path, "exec", dont_inherit=True)
+        except ValueError as exc:                                  # json.JSONDecodeError
+            out.append(f"{path}: not valid JSON \u2014 {getattr(exc, 'msg', exc)} (line {getattr(exc, 'lineno', '?')})")
+        except SyntaxError as exc:
+            out.append(f"{path}: Python syntax error \u2014 {exc.msg} (line {exc.lineno})")
+    return out[:12]
+
+
+def _genie_project_check(pid: str) -> dict:
+    """The WHOLE project, not just what changed: every linked file that's missing, every .json/.py file that its
+    language can't read. Reads only (nothing runs). Used by Genie's "Check whole project", the API, the SDKs and the CLI."""
+    files = _genie_texts(pid)
+    missing = _genie_missing_refs(pid)
+    skip = ("node_modules/", "venv/", ".venv/", "site-packages/", "dist/", "build/", "vendor/", "__pycache__/")
+    mine = [p for p, t in files.items() if p.endswith((".json", ".py")) and not any(s in "/" + p for s in ("/" + x for x in skip))
+            and not (p.endswith(".json") and ("{{" in t or "{%" in t))]       # templates aren't meant to parse yet
+    broken = _genie_file_problems(pid, mine)
+    return {"object": "check", "ok": not (missing or broken), "files": len(_genie_files(pid, raw=True)),
+            "missing": missing, "broken": broken, "problems": missing + broken}
+
+
+def _genie_fix_all_text(check: dict) -> str:
+    """The request Genie gets for "Fix all": every problem, and how to finish."""
+    lines = [f"- {p}" for p in check["problems"]]
+    return ("Check the whole project and fix every problem below. Read each file before changing it; create missing "
+            "files with complete, working content that fits the project (or correct the link if it was a mistake); keep "
+            "everything else working. Then tell me in a few lines what you fixed.\n\n" + "\n".join(lines))
+
+
 _REF_RES = [re.compile(r'<(?:link|script|img|source|audio|video|iframe)\b[^>]*?\b(?:href|src)\s*=\s*["\']([^"\'#?]+)', re.I),
             re.compile(r'url\(\s*["\']?([^"\')#?]+)', re.I),
             re.compile(r'(?:import\s[^"\']*?from\s*|import\s*\(\s*)["\'](\.{1,2}/[^"\']+)["\']')]
@@ -8385,14 +9125,18 @@ def _genie_missing_refs(pid: str) -> list:
 
 
 async def _genie_run(email: str, pid: str, instruction: str, progress: str = "", mode: str = "auto",
-                     teen: bool = False, org_text: str = "") -> dict:
+                     teen: bool = False, org_text: str = "", removed: list = None) -> dict:
     """The AI coding loop for one request (it pauses while the browser runs a command)."""
     files = _genie_summary(pid)
     listing = "\n".join(f"- {f['path']} ({f['size']} bytes)" for f in files) or "(empty project)"
     earlier = _genie_db(lambda con: con.execute(
         "SELECT role, text FROM genie_chat WHERE project_id=? ORDER BY id DESC LIMIT ?", (pid, GENIE_MEMORY * 2)).fetchall())[::-1]
-    history = [{"role": "user" if r == "user" else "assistant", "content": t[:1500]} for r, t in earlier]
-    state = {"email": email, "pid": pid, "instruction": instruction, "changes": [], "steps": [], "rounds": 0, "queue": [],
+    care = bool((_org_rules(email) or {}).get("healthcare"))    # earlier requests: no patient details either
+    history = [{"role": "user" if r == "user" else "assistant", "content": _redact_patient_data(t[:1500])[0] if care else t[:1500]}
+               for r, t in earlier]
+    first = [{"kind": "note", "title": f"\U0001F512 Patient details were removed before Genie read this ({_removed_words(removed)})."}] \
+        if removed else []
+    state = {"email": email, "pid": pid, "instruction": instruction, "changes": [], "steps": first, "rounds": 0, "queue": [],
              "checkpoint": _genie_checkpoint(pid, instruction),
              "progress": re.sub(r"[^A-Za-z0-9_-]", "", str(progress or ""))[:40],
              "mode": "plan" if mode == "plan" else "auto",
@@ -8437,12 +9181,13 @@ async def _genie_ask(request: Request, email: str, pid: str, instruction: str, p
     if blocked is not None:
         detail = _json.loads(bytes(blocked.body))["error"]["message"]
         raise HTTPException(status_code=429, detail=detail)
-    org_text, org_refusal = _org_guard(email, instruction)
+    org_text, instruction, removed, org_refusal = _org_check(email, instruction, "genie")   # healthcare: details removed
     if org_refusal:
         raise HTTPException(status_code=422, detail=org_refusal)
     if family and family.get("parent"):
         _start_safety_check(email, family["parent"], instruction)
-    return await _genie_run(email, pid, instruction, progress, mode, teen=bool(family), org_text=org_text)
+    return await _genie_run(email, pid, instruction, progress, mode, teen=bool(family), org_text=org_text,
+                            removed=removed)
 
 
 def _genie_family_gate(email: str):
@@ -8482,7 +9227,7 @@ async def genie_create(request: Request, data: dict = Body(default={})):
         raise HTTPException(status_code=409, detail=f"You have {GENIE_MAX_PROJECTS} projects. Delete one to start another.")
     _genie_family_gate(email)
     prompt = str((data or {}).get("prompt") or "").strip()
-    name = " ".join(str((data or {}).get("name") or prompt[:50] or "My project").split())[:60] or "My project"
+    name = " ".join(_org_redacted(email, str((data or {}).get("name") or prompt[:50] or "My project")).split())[:60] or "My project"
     pid, now = "gp_" + secrets.token_hex(6), time.time()
     _genie_db(lambda con: con.execute("INSERT INTO genie_projects (id, email, name, preview_key, created, updated) VALUES (?, ?, ?, ?, ?, ?)",
                                       (pid, email, name, secrets.token_urlsafe(16), now, now)))
@@ -8691,6 +9436,16 @@ def genie_file_delete(pid: str, request: Request, path: str = ""):
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     return {"files": _genie_summary(pid)}
+
+
+@app.get("/genie/projects/{pid}/check")
+def genie_check(pid: str, request: Request):
+    """Genie > Check whole project: what's broken anywhere in the project (missing files, files that don't parse)."""
+    email = _email_from_auth(request)
+    _genie_project(email, pid)
+    out = _genie_project_check(pid)
+    out["fix_request"] = _genie_fix_all_text(out) if out["problems"] else ""
+    return out
 
 
 @app.get("/genie/projects/{pid}/all")
@@ -9242,7 +9997,7 @@ SYNCED_PREFS = frozenset({
     "theme", "chat_font", "motion", "style_base", "style_warmth", "style_enthusiasm", "style_emoji", "style_headers",
     "reply_language", "voice_speed", "read_aloud", "speech_lang", "web_search", "use_memory", "video_suggestions",
     "notify_reminders", "agent_confirm", "send_key", "briefing_enabled", "briefing_time", "briefing_city",
-    "briefing_speak", "wake_followup", "voice", "model", "genie_mode", "instructions", "effort",
+    "briefing_speak", "wake_followup", "voice", "model", "genie_mode", "instructions", "effort", "memory_suggest",
 })
 _PREFS_TABLE = "CREATE TABLE IF NOT EXISTS account_preferences (email TEXT PRIMARY KEY, data TEXT NOT NULL, updated REAL NOT NULL)"
 

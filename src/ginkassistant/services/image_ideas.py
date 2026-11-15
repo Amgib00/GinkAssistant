@@ -3,6 +3,7 @@ Image looks and ideas, shared by Media Studio (apps), the web app, the server's 
 /v1/images/generations (API), the SDKs and the CLI -- so "statue", "3d" or "football figurine" mean the same
 everywhere. The server image copies this file flat (deploy/Dockerfile), so it imports nothing from the package.
 """
+import re
 
 STYLES = {
     "": "No style",
@@ -49,8 +50,63 @@ def style_text(style: str) -> str:
     return STYLES[s.lower()] if s and s.lower() in STYLES else s
 
 
+# Looks Gink picks BY ITSELF from the words ("an x-ray of my camera", "exploded view of a drone") -- no cards to tap.
+# X-ray vision: an ILLUSTRATION of what's inside (from what's generally known), never a real scan.
+LOOKS = [
+    ("xray", "X-ray", "a glowing blue X-ray style cutaway illustration of {subject}, see-through outer shell revealing the inner parts, "
+     "components and layers clearly visible, dark background, technical and beautiful, labelled callouts",
+     "a vintage film camera", "illustration", "4:3", "#0B1E3F,#38BDF8", "\U0001FA7B"),
+    ("exploded", "Exploded view", "a clean exploded-view technical illustration of {subject}, every part floating apart in order along "
+     "its axis with thin guide lines and small labels, white background, product-design blueprint",
+     "a wireless mouse", "illustration", "4:3", "#334155,#E2E8F0", "\U0001F9E9"),
+    ("cutaway", "Cutaway", "a detailed cutaway cross-section of {subject}, one quarter sliced open to show the inside, "
+     "museum-quality educational illustration, soft lighting, labelled parts",
+     "a modern house", "3d", "16:9", "#7C3AED,#FDE68A", "\U0001F52C"),
+]
+
+_LOOK_WORDS = [
+    ("exploded", re.compile(r"\b(?:exploded[- ]?view|exploded|taken apart|take (?:it )?apart|every part|all (?:the|its) parts)\b", re.I)),
+    ("cutaway", re.compile(r"\b(?:cut[- ]?away|cross[- ]?section|sliced open|cut in half)\b", re.I)),
+    ("xray", re.compile(r"\b(?:x[- ]?ray(?:ed)?|see[- ]through|see inside|what'?s inside|inside of|insides)\b", re.I)),
+]
+# People's bodies are never drawn as "x-rays": a picture like that could be taken for a real medical image.
+_BODY = re.compile(r"\b(?:body|bod(?:y|ies)|chest|lungs?|heart|brain|skull|head|spine|bones?|skeleton|ribs?|pelvis|hip|knee|"
+                   r"ankle|wrist|hand|foot|feet|arm|leg|tooth|teeth|jaw|abdomen|stomach|belly|kidneys?|liver|womb|uterus|"
+                   r"baby|fetus|foetus|patient|person|man|woman|child|boy|girl|my self|myself|(?:of|inside) (?:me|him|her|them|us)|scan|mri|ct|"
+                   r"ultrasound|fracture|tumou?r)\b", re.I)
+MEDICAL_NOTE = ("clearly an educational illustration, not a real medical image, with the word ILLUSTRATION written small in a corner")
+
+
+def auto_look(prompt: str):
+    """(look id, prompt to use, style key, aspect) when the words ask for an x-ray / exploded / cutaway picture of a
+    THING; None otherwise. A person's body gets no x-ray look (see medical_prompt)."""
+    text = str(prompt or "")
+    if _BODY.search(text):
+        return None
+    for key, rx in _LOOK_WORDS:
+        if rx.search(text):
+            subject = rx.sub(" ", text)
+            if re.search(r"\bof\b", subject, re.I):          # "make an x-ray image OF the engine" -> "the engine"
+                subject = re.split(r"\bof\b", subject, maxsplit=1, flags=re.I)[1]
+            subject = re.sub(r"^\W*(?:(?:make|draw|create|generate|show)(?: me)?\W+)?(?:an?\W+(?=image|picture|illustration))?(?:image|picture|illustration)?\W*",
+                             "", subject.strip(), flags=re.I)
+            subject = " ".join(subject.split()).strip(" ,.-") or None
+            p, style, aspect = idea_prompt(key, subject or "")
+            return key, p, style, aspect
+    return None
+
+
+def medical_prompt(prompt: str) -> str:
+    """An x-ray / scan-like picture of a body: always clearly marked as an illustration."""
+    text = str(prompt or "")
+    if _BODY.search(text) and any(rx.search(text) for _k, rx in _LOOK_WORDS) or re.search(r"\b(?:mri|ct scan|ultrasound|scan)\b", text, re.I):
+        return text + ", " + MEDICAL_NOTE
+    return text
+
+
 def idea(idea_id: str):
-    return next((i for i in IDEAS if i[0] == str(idea_id or "").strip().lower()), None)
+    key = str(idea_id or "").strip().lower()
+    return next((i for i in IDEAS + LOOKS if i[0] == key), None)
 
 
 def idea_prompt(idea_id: str, subject: str = "") -> tuple:
@@ -65,4 +121,7 @@ def catalog() -> dict:
     """For the API (GET /v1/images/ideas) and the SDKs."""
     return {"styles": [{"id": k, "description": v} for k, v in STYLES.items() if k],
             "ideas": [{"id": i[0], "title": i[1], "prompt": i[2], "example_subject": i[3], "style": i[4], "aspect_ratio": i[5]}
-                      for i in IDEAS]}
+                      for i in IDEAS],
+            # picked by themselves from the words ("an x-ray of my camera"); developers can also name them as an idea
+            "looks": [{"id": i[0], "title": i[1], "prompt": i[2], "example_subject": i[3], "style": i[4], "aspect_ratio": i[5]}
+                      for i in LOOKS]}

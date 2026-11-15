@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # Must be a valid package name (letters, digits, "-", "_", "."; no spaces).
 # Briefcase 0.4.6+ reads this name, so "gink ai assistant" could break builds.
 name = "ginkassistant"
-version = "0.1.148"
+version = "0.1.157"
 description = "Your AI assistant for work, study and everyday life"
 readme = "README.md"
 requires-python = ">=3.11"            # 3.10 reached end of life (Oct 2026); 32-bit Android stops at 3.11
@@ -22,7 +22,7 @@ license = "MIT"          # Briefcase 0.3.15 reads this one (it can't read the [p
 # "Gink Ai Assistant" will become an error). Users see formal_name ("Gink") below.
 project_name = "ginkassistant"
 bundle = "com.amgib"
-version = "0.1.148"
+version = "0.1.157"
 url = "https://github.com/amgib00/ginkassistant"
 author = "Amgib00"
 author_email = "kargboi131ik667957@gmail.com"
@@ -110,6 +110,7 @@ requires = [
 
 [tool.briefcase.app.ginkassistant.macOS.permission]      # singular: Briefcase ignores "permissions" (the Mac app had NO microphone)
 microphone = "Gink uses the microphone for voice conversations, dictation and \u201cHey Gink\u201d."
+camera = "Gink uses the camera when you choose Camera, to take a photo you want to ask about."
 # No camera permission: nothing in Gink uses the camera (App Store reviewers check this).
 
 
@@ -141,6 +142,10 @@ requires = [
     "tzlocal",              # time zone -> country detection on Windows (services/device_region.py)
     "llama-cpp-python",     # needs a C++ build toolchain on Windows
     "pillow-heif",
+    # Lock Gink with Windows Hello (services/biometric.py): Windows' own face, fingerprint or PIN check
+    "winrt-runtime",
+    "winrt-Windows.Foundation",
+    "winrt-Windows.Security.Credentials.UI",
 ]
 
 
@@ -261,6 +266,12 @@ android_manifest_application_extra_content = """
             android:stopWithTask="true" />
 """
 splash_background_color = "#151D23"     # the icon's dark colour; also the adaptive-icon background
+# No teal "Gink" title bar: the chat page has its own header (services/android_chrome.py also colours the
+# status bar like the page and makes room for the keyboard). Gink's colours instead of the template's teal.
+base_theme = "Theme.AppCompat.Light.NoActionBar"
+primary_color = "#3F8212"
+primary_color_dark = "#151D23"
+accent_color = "#3F8212"
 # Only what Gink's Android code uses. pydantic v1 is pure Python (v2 needs
 # pydantic-core, which has no real Android build); groq accepts pydantic>=1.9.
 # 1.10.26 (last 1.x): 1.10.12 crashes on Python 3.12.4+/3.13 (ForwardRef._evaluate).
@@ -291,6 +302,7 @@ chaquopy.defaultConfig.staticProxy("ginkassistant.services.android_fgs")
 "android.permission.FOREGROUND_SERVICE" = "Lets Gink keep listening for \u201cHey Gink\u201d in the background, when you switch it on."
 "android.permission.FOREGROUND_SERVICE_MICROPHONE" = "Android 14+: the microphone kind of background listening."
 "android.permission.POST_NOTIFICATIONS" = "Shows the notification while Gink listens in the background."
+"android.permission.CAMERA" = "Lets you take a photo to ask Gink about, when you choose Camera."
 
 
 # --- iOS --------------------------------------------------------------------
@@ -307,6 +319,10 @@ requires = [
 
 [tool.briefcase.app.ginkassistant.iOS.permission]        # singular: Briefcase ignores "permissions"
 microphone = "Gink uses the microphone for voice conversations and dictation."
+camera = "Gink uses the camera when you choose Camera, to take a photo you want to ask about."
+
+[tool.briefcase.app.ginkassistant.iOS.info]              # Info.plist: without this, iOS stops an app that asks for Face ID
+NSFaceIDUsageDescription = "Gink uses Face ID only when you turn on Lock Gink, to check it’s you. Your face never leaves your device."
 
 
 # --- Web --------------------------------------------------------------------
@@ -338,7 +354,7 @@ requires = ["toga-cocoa", "std-nslog"]
 
 [tool.briefcase.app.ginkgenie.windows]
 console = false
-requires = ["toga-winforms"]
+requires = ["toga-winforms", "winrt-runtime", "winrt-Windows.Foundation", "winrt-Windows.Security.Credentials.UI"]   # Lock: Windows Hello
 
 [tool.briefcase.app.ginkgenie.linux]
 requires = ["toga-gtk"]
@@ -353,6 +369,10 @@ system_runtime_requires = [
 [tool.briefcase.app.ginkgenie.android]
 splash_background_color = "#151D23"
 requires = ["toga-android"]
+# Gink's dark instead of the template's teal (the bar stays: it holds Home, Back, Reload, Open in browser)
+primary_color = "#151D23"
+primary_color_dark = "#0E1611"
+accent_color = "#3F8212"
 
 [tool.briefcase.app.ginkgenie.android.permission]
 "android.permission.INTERNET" = "Gink Genie works with your Gink server."

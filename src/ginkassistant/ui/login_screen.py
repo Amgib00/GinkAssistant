@@ -71,15 +71,17 @@ def clear_saved_session(app: toga.App):
 
 _LOGIN_HTML = r"""<!DOCTYPE html>
 <html><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
 <style>
   :root { __THEME__ --soft: #EDF0E9; --soft-dark: #D3D9CC; --soft-light: #FFFFFF; }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
+  /* the PAGE scrolls when the card is taller than the screen (a phone, the keyboard up) -- the card is never cut off */
   body {
     font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; color: var(--text-main);
-    background: var(--soft); display: flex; align-items: center; justify-content: center;
-    overflow: hidden; -webkit-font-smoothing: antialiased;
+    background: var(--soft); display: flex; align-items: flex-start; justify-content: center;
+    overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; -webkit-font-smoothing: antialiased;
+    padding: calc(16px + env(safe-area-inset-top, 0px)) 0 calc(16px + env(safe-area-inset-bottom, 0px));
   }
   /* floating soft bubbles in the background */
   .bubble {
@@ -101,13 +103,11 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
   @keyframes drift { from { transform: translate(-30%, -20%); } to { transform: translate(25%, 18%); } }
 
   .card {
-    position: relative; z-index: 2; width: 392px; max-width: calc(100vw - 32px);
-    max-height: calc(100vh - 32px); overflow-y: auto; scrollbar-width: none;
+    position: relative; z-index: 2; width: 392px; max-width: calc(100vw - 32px); margin: auto 0;
     background: var(--soft); border-radius: 34px; padding: 30px 30px 24px;
     box-shadow: 22px 22px 48px var(--soft-dark), -22px -22px 48px var(--soft-light);
     animation: card-in 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   }
-  .card::-webkit-scrollbar { display: none; }
   @keyframes card-in { from { opacity: 0; transform: translateY(18px) scale(0.98); } to { opacity: 1; transform: none; } }
   .card.shake { animation: shake 0.42s; }
   @keyframes shake { 20%,60% { transform: translateX(-7px); } 40%,80% { transform: translateX(7px); } }
@@ -234,6 +234,16 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
   .wait .spin { width: 64px; height: 64px; margin: 6px auto 14px; }
   .wait .spin img { width: 64px; height: 64px; }
   @media (max-width: 420px) { .card { padding: 24px 20px 20px; border-radius: 28px; } .codes input { width: 40px; height: 50px; } .soc { margin: 0 4px; } }
+  /* a short screen: a little tighter, so the whole card usually fits without scrolling */
+  @media (max-height: 760px) {
+    .card { padding-top: 20px; padding-bottom: 18px; }
+    .badge { width: 60px; height: 60px; margin-bottom: 10px; } .badge img { width: 38px; height: 38px; }
+    h1 { font-size: 22px; } .sub { margin: 4px 0 14px; }
+    .field { margin-bottom: 10px; } .field input { padding: 12px 14px; }
+    .row-between { margin-bottom: 12px; } .divider { margin: 14px 0 10px; } .alt { margin-top: 10px; } .foot { margin-top: 12px; }
+  }
+  /* phones: 16px text in the boxes, or iPhone zooms the page in when you tap one */
+  @media (hover: none) and (pointer: coarse) { .field input { font-size: 16px; } }
   @media (prefers-reduced-motion: reduce) { .bubble, .glow { animation: none; } }
 </style></head>
 <body>
@@ -634,9 +644,10 @@ def _login_page_html() -> str:
         f'{svg}<span class="tip">{_SOCIAL_LABELS[p]}</span></button>'
         for p, svg in _SOCIAL_ICONS.items()
     )
-    return (_LOGIN_HTML.replace("__THEME__", css_vars()).replace("__LOGO__", LOGO_SPINNER_DATA_URI)
-            .replace("__SOCIALS__", socials).replace("__EYE_JS__", _EYE.replace("'", "\\'"))
-            .replace("__EYE_OFF_JS__", _EYE_OFF.replace("'", "\\'")).replace("__EYE__", _EYE))
+    from .compat import inject
+    return inject(_LOGIN_HTML.replace("__THEME__", css_vars()).replace("__LOGO__", LOGO_SPINNER_DATA_URI)
+                  .replace("__SOCIALS__", socials).replace("__EYE_JS__", _EYE.replace("'", "\\'"))
+                  .replace("__EYE_OFF_JS__", _EYE_OFF.replace("'", "\\'")).replace("__EYE__", _EYE))
 
 
 def _open_in_browser(app, url: str) -> bool:

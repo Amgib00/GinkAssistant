@@ -41,6 +41,16 @@ export class Gink {
     this.interactions = new Interactions(this);
     this.environments = new Environments(this);
     this.schedules = new Schedules(this);
+    this.memories = {                                  // what Gink remembers about you (the same as your apps)
+      list: async () => (await this.request("GET", "/memories")).data || [],
+      add: (text) => this.request("POST", "/memories", { json: { text } }),
+      forget: (id) => this.request("DELETE", `/memories/${encodeURIComponent(id)}`),
+      suggest: async (text) => (await this.request("POST", "/memories/suggest", { json: { text } })).fact || null,
+    };
+    this.workspace = {                                 // your workspace; admins: healthcare mode's safety report (counts only)
+      get: () => this.request("GET", "/workspace"),
+      safety: ({ days = 30 } = {}) => this.request("GET", `/workspace/safety?days=${encodeURIComponent(days)}`),
+    };
     this.webhooks = {
       secret: async () => (await this.request("GET", "/webhooks/secret")).secret,
       rotate: async () => (await this.request("POST", "/webhooks/secret/rotate")).secret,
@@ -60,14 +70,40 @@ export class Gink {
     return raw ? res : res.json();
   }
 
-  async chat(message, { model, system, ...extra } = {}) {
+  async _chatData(message, { model, system, ...extra } = {}) {
     const messages = Array.isArray(message) ? message
       : [...(system ? [{ role: "system", content: system }] : []), { role: "user", content: String(message) }];
-    const data = await this.request("POST", "/chat/completions", { json: { messages, ...(model ? { model } : {}), ...extra } });
+    return this.request("POST", "/chat/completions", { json: { messages, ...(model ? { model } : {}), ...extra } });
+  }
+
+  async chat(message, options = {}) {
+    const data = await this._chatData(message, options);
     return (((data.choices || [])[0] || {}).message || {}).content || "";
   }
 
-  search(question) { return this.chat(question, { model: "gink-search" }); }
+  // An answer from the web, its sources listed (official ones first). { withSources: true } ->
+  // { answer, sources: [{ title, url, host, official, icon }] } -- icon: the site's real logo, served by Gink.
+  async search(question, { withSources = false } = {}) {
+    const data = await this._chatData(question, { model: "gink-search" });
+    const text = (((data.choices || [])[0] || {}).message || {}).content || "";
+    if (!withSources) return text;
+    const found = sources(text, this.baseURL), byUrl = new Map(found.map((s) => [s.url, s]));
+    for (const s of data.sources || []) {                     // the server's own list, when it sent one
+      const f = s && byUrl.get(s.url);
+      if (f) { f.official = !!s.official; f.icon = s.icon || f.icon; }
+    }
+    return { answer: text, sources: found.sort((a, b) => (b.official ? 1 : 0) - (a.official ? 1 : 0)) };
+  }
+
+  sources(text) { return sources(text, this.baseURL); }
+
+  // An answer about a photo -- like the Live camera: Gink works out what it needs (reads text, finds what's wrong,
+  // solves sums...) and is careful with anything about health. photo: Uint8Array, base64 or a data URL. (Gink Pro)
+  see(photo, { question, model, ...extra } = {}) {
+    const content = [{ type: "text", text: String(question || "").trim() || "What's this?" },
+                     { type: "image_url", image_url: { url: imageDataURL(photo) } }];
+    return this.chat([{ role: "user", content }], { model, ...extra });
+  }
 
   // { idea, subject, style, aspect_ratio, photo } -- photo: Uint8Array or base64, to start from someone's own photo
   async image(prompt = "", { idea, subject, style, aspect_ratio, photo } = {}) {
@@ -92,6 +128,34 @@ export class Gink {
 
   // Everything Gink's server keeps for this account, as a ZIP (bytes). At most once every 10 minutes.
   async exportAccount() { return new Uint8Array(await (await this.request("GET", "/account/export.zip", { raw: true })).arrayBuffer()); }
+}
+
+// Uint8Array, base64 or a data URL -> a data URL Gink can look at (JPEG, PNG, WebP or GIF)
+// The sources under a web answer's "Sources" (gink-search), official ones first:
+// [{ title, url, host, official, icon }] -- icon: the site's real logo, served by Gink (<server>/icon/<host>).
+export function sources(text, baseURL = DEFAULT_BASE_URL) {
+  const root = String(baseURL || DEFAULT_BASE_URL).replace(/\/+$/, "").replace(/\/v1$/, "");
+  const part = String(text || "").split("**Sources**");
+  const out = [];
+  for (const line of (part.length > 1 ? part[1] : "").split("\n")) {
+    const m = /^\s*[-*]\s*\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)(.*)$/.exec(line);
+    if (!m) continue;
+    let host = "";
+    try { host = new URL(m[2]).hostname.toLowerCase().replace(/^www\./, ""); } catch (e) { host = ""; }
+    out.push({ title: m[1].trim() || host, url: m[2], host, official: /\u00b7\s*official\s*$/.test(m[3]),
+               icon: host ? `${root}/icon/${host}` : "" });
+  }
+  return out.sort((a, b) => (b.official ? 1 : 0) - (a.official ? 1 : 0));
+}
+
+export function imageDataURL(photo) {
+  if (typeof photo === "string" && photo.startsWith("data:image/")) return photo;
+  const bytes = typeof photo === "string" ? base64ToBytes(photo) : new Uint8Array(photo);
+  const is = (sig, at = 0) => sig.every((b, i) => bytes[at + i] === b);
+  const mime = is([0xff, 0xd8, 0xff]) ? "image/jpeg" : is([0x89, 0x50, 0x4e, 0x47]) ? "image/png"
+    : is([0x52, 0x49, 0x46, 0x46]) && is([0x57, 0x45, 0x42, 0x50], 8) ? "image/webp" : is([0x47, 0x49, 0x46, 0x38]) ? "image/gif" : "";
+  if (!mime) throw new GinkAPIError("That isn't a JPEG, PNG, WebP or GIF photo.", 400, "invalid_image");
+  return `data:${mime};base64,` + (typeof photo === "string" ? photo : bytesToBase64(bytes));
 }
 
 async function toError(res) {
@@ -175,6 +239,8 @@ export class Environment {
   }
   async download(path) { return new Uint8Array(await (await this._c.request("GET", this.path(path), { raw: true })).arrayBuffer()); }
   async text(path) { return new TextDecoder().decode(await this.download(path)); }
+  // the whole environment checked (nothing runs): { ok, problems, missing, broken, fix_request }
+  check() { return this._c.request("GET", `/environments/${encodeURIComponent(this.id)}/check`); }
   async refresh() { Object.assign(this, await this._c.request("GET", `/environments/${encodeURIComponent(this.id)}`)); return this; }
   delete() { return this._c.request("DELETE", `/environments/${encodeURIComponent(this.id)}`); }
 }

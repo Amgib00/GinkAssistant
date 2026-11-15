@@ -26,6 +26,7 @@ DEFAULTS = {
     "reply_language": "auto",     # auto | en | fr | wo | kri | ar | pt | es
     "notify_reminders": True,     # system notifications for due reminders/alarms
     "use_memory": True,           # use saved memories in answers
+    "memory_suggest": True,       # offer to remember lasting facts the person mentions ("Remember this?")
     "web_search": True,           # let Gink search the web
     "video_suggestions": True,    # add YouTube guides to how-to answers
     "speech_lang": "auto",        # Settings -> Voice -> Language (speech recognition); auto = any language
@@ -40,6 +41,11 @@ DEFAULTS = {
     "wake_short": True,           # Hey Gink: also wake on just "Gink"
     "policy_seen": "",            # the policies' date this device said OK to (the notice shows once per change)          # Settings > Privacy: tell the server when something breaks (services/error_reports.py)
     "briefing_projects": True,    # briefing: "pick up where you left off" (tasks, chats, recent files)
+    # this device only (never synced): Lock Gink with Face ID / Touch ID / Windows Hello / the phone's own unlock,
+    # and People (faces grouped on this device)
+    "app_lock": False,
+    "app_lock_after": "1",        # minutes away before it locks again: 1 | 5 | 15 | 60 | launch (only when Gink opens)
+    "people_on": False,           # off until the person turns it on (faces are personal)
 }
 
 
@@ -60,7 +66,7 @@ def load(app) -> dict:
 # Hey Gink on/off (this device's microphone), location access, and internal markers.
 SYNCED = frozenset({
     "theme", "chat_font", "motion", "style_base", "style_warmth", "style_enthusiasm", "style_emoji", "style_headers",
-    "reply_language", "voice_speed", "read_aloud", "speech_lang", "web_search", "use_memory", "video_suggestions",
+    "reply_language", "voice_speed", "read_aloud", "speech_lang", "web_search", "use_memory", "memory_suggest", "video_suggestions",
     "notify_reminders", "agent_confirm", "send_key", "briefing_enabled", "briefing_time", "briefing_city",
     "briefing_speak", "wake_followup", "voice", "model", "genie_mode", "instructions", "effort",
 })

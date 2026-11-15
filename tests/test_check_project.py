@@ -107,7 +107,7 @@ def test_old_briefcase_is_spotted(monkeypatch):
 
 def test_briefcase_from_another_place_is_spotted(monkeypatch):
     import check_project as cp
-    _fake_env(monkeypatch, cp, "0.4.4", "/usr/local/bin/briefcase", "0.3.10")
+    _fake_env(monkeypatch, cp, "0.4.4", "/opt/some-other-python/bin/briefcase", "0.3.10")
     lines = []
     assert cp.check_briefcase(lines.append) == 1
     assert any("NOT the one in this environment" in l and "0.3.10" in l for l in lines)

@@ -26,6 +26,7 @@ from ..services.api_client import ApiClient, ApiError
 from ..services.image_service import ASPECTS, STYLES, ImageService
 from ..services.image_ideas import IDEAS
 from ..services.paths import data_dir
+from . import compat
 from .theme import css_vars
 
 STYLE_LABELS = {"": "None", "photo": "Photo", "illustration": "Illustration", "3d": "3D", "sticker": "Sticker",
@@ -236,7 +237,7 @@ class MediaStudio:
                 .replace("__ASPECTS__", json.dumps([[a, ASPECT_LABELS[a]] for a in ASPECTS]))
                 .replace("__IDEAS__", json.dumps(IDEAS)))
         self.web = toga.WebView(style=Pack(flex=1))
-        self.web.set_content("https://gink.local/media", page)
+        self.web.set_content("https://gink.local/media", compat.inject(page))
         self.token = object()
         app._media_studio_token = self.token
         self.view = toga.Box(children=[self.web], style=Pack(direction=COLUMN, flex=1))

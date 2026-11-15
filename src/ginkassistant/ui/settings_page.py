@@ -73,8 +73,7 @@ SETTINGS_CSS = r"""
   }
 
   /* ---------- account menu ---------- */
-  .side-foot { cursor: pointer; border-radius: 0; }
-  .side-foot:hover .who #who { text-decoration: underline; text-decoration-color: var(--border); }
+  .side-foot { cursor: pointer; }
   #acct-menu {
     position: fixed; left: 12px; bottom: 64px; width: 248px; z-index: 45;
     background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 6px;
@@ -297,7 +296,7 @@ SETTINGS_JS = r"""
                   : 'Say \u201cHey Gink\u201d to ask something hands-free. Listening for it happens entirely on this device \u2014 nothing is sent anywhere until you say it.') +
                  (info.wake_supported === false ? ' (Not available on this device yet.)' : '')},
           {type: 'info', label: 'Status', value: info.wake_status || 'Off'},
-          {type: 'toggle', key: 'wake_short', label: 'Also wake on just \u201cGink\u201d', desc: 'Say \u201cGink, what time is it?\u201d without \u201cHey\u201d. Turn it off if Gink wakes up when nobody called it.'},
+          {type: 'toggle', key: 'wake_short', label: 'Also wake on just \u201cGink\u201d', desc: 'Say \u201cGink\u201d (or \u201cJink\u201d) without \u201cHey\u201d. On a computer, say it, pause a moment, then ask. Turn it off if Gink wakes up when nobody called it.'},
           {type: 'toggle', key: 'wake_followup', label: 'Keep listening for a follow-up', desc: 'After answering, Gink listens a few more seconds so you can carry on without saying \u201cHey Gink\u201d again.'},
           info.wake_android
             ? {apps: true, type: 'toggle', key: 'wake_background', label: 'Keep listening in the background',
@@ -352,6 +351,17 @@ SETTINGS_JS = r"""
       {id: 'workspace', group: 'Settings', title: 'Workspace', sections: workspaceSections(info.org, info.org_error)},
       {id: 'schedules', group: 'Settings', title: 'Scheduled tasks', sections: scheduleSections(info.schedules, info.schedules_error)},
       {id: 'privacy', group: 'Settings', title: 'Privacy', sections: [
+        {title: info.web ? 'Lock Gink in this browser' : 'Lock Gink', rows: info.web ? [
+          {type: 'toggle', key: 'app_lock', label: 'Lock with a passkey', desc: 'Gink covers itself when it opens and after you\u2019ve been away, until you unlock with Face ID, Touch ID, Windows Hello or your phone \u2014 a passkey (Account > Passkeys). Gink Genie and the developer console in this browser lock too.'},
+          {type: 'select', key: 'app_lock_after', label: 'Lock again', options: LOCK_AFTER}]
+          : info.lock_kind ? [
+          {type: 'toggle', key: 'app_lock', label: 'Require ' + info.lock_kind + ' to open Gink', desc: 'Gink locks when it opens and after you\u2019ve been away. Your device checks it\u2019s you and tells Gink only yes or no \u2014 Gink never sees your face or fingerprint.'},
+          {type: 'select', key: 'app_lock_after', label: 'Lock again', options: LOCK_AFTER}]
+          : [{type: 'note', text: 'Set up Face ID, Touch ID, Windows Hello, or a screen lock (face, fingerprint or PIN) on this device, and Gink can lock with it.'}]},
+        {title: 'People', rows: info.care ? [{type: 'note', text: 'Off in healthcare workspaces: patients\u2019 faces must never be grouped or kept.'}] : [
+          {type: 'toggle', key: 'people_on', label: 'Find people in your photos', desc: 'Like Photos on iPhone: the faces in photos you share with Gink are grouped on this device, by themselves. Ask \u201cshow me photos of Awa\u201d or \u201cshow my people\u201d and People opens. Faces never leave this device \u2014 not to Gink\u2019s server, the AI or your other devices.'},
+          {type: 'button', label: 'People', desc: 'See the people in your photos and name them.', action: 'people_open', text: 'Open'},
+          {type: 'button', label: 'Delete People data', desc: 'Every face group, name and photo People kept on this device.', action: 'people_delete', text: 'Delete', style: 'danger-ghost'}]},
         {title: 'Your data', rows: [
           {apps: true, type: 'toggle', key: 'use_memory', label: 'Use memories in answers', desc: 'When off, Gink ignores what you asked it to remember (they stay saved \u2014 manage them under Memory).'},
           {type: 'toggle', key: 'send_errors', label: 'Send error reports', desc: 'When something breaks, Gink tells its team what went wrong and where in Gink\u2019s code \u2014 never your chats, files or what you typed. It helps fix problems faster.'},
@@ -404,7 +414,9 @@ SETTINGS_JS = r"""
           {type: 'textarea', key: 'instructions', label: 'Gink will keep these in mind in every chat, on all your devices.',
            placeholder: 'e.g. Keep answers short. When I learn something new, analogies help me. I study medicine.',
            action: 'save_instructions', text: 'Save'}]},
-        {title: 'What Gink remembers', rows: [{apps: true, type: 'list', items: (L.memories || []).map(function (m) {
+        {title: 'What Gink remembers', rows: [
+          {type: 'toggle', key: 'memory_suggest', label: 'Remember things automatically', desc: 'When you mention something lasting about yourself (\u201cI live in\u2026\u201d, \u201cI\u2019m vegetarian\u201d), Gink remembers it by itself and tells you, with Undo. Never anything about health, never in temporary chats, and never in a healthcare workspace.'},
+          {apps: true, type: 'list', items: (L.memories || []).map(function (m) {
             return {t: m.text, button: {text: 'Forget', action: 'forget_memory', value: m.uid}}; }),
           empty: 'Nothing yet. Say \u201cremember that my exams start on 12 November\u201d in the chat.'}].concat(
           (L.memories || []).length ? [{apps: true, type: 'button', label: 'Forget everything', action: 'forget_all', text: 'Forget all', style: 'danger-ghost'}] : [])}]},
@@ -588,9 +600,34 @@ SETTINGS_JS = r"""
     try { var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
           return /\//.test(tz) && !/^(Etc|UTC|GMT)/.test(tz) ? tz.split('/').pop().replace(/_/g, ' ') : ''; } catch (e) { return ''; }
   })();
+  var LOCK_AFTER = [['1', 'After 1 minute away'], ['5', 'After 5 minutes away'], ['15', 'After 15 minutes away'],
+                    ['60', 'After 1 hour away'], ['launch', 'Only when Gink opens']];
   // Settings > Workspace (server: /org): hospitals, schools, businesses. Admins see members and today's
   // message counts -- never chats -- and set instructions Gink follows for everyone; healthcare mode keeps
-  // patient data out (messages that look like a patient's details are refused).
+  // patient data out (a patient's details are removed automatically -- or the message stopped, if the admins
+  // chose that) and gives admins a safety report: counts only, never words or photos.
+  function safetyRows(sf) {
+    var t = (sf && sf.totals) || {};
+    var rows = [
+      {type: 'info', label: 'Patient details removed automatically', value: String(t.patient_details_removed || 0)},
+      {type: 'info', label: 'Messages stopped (patient details)', value: String(t.patient_details_stopped || 0)},
+      {type: 'info', label: 'Photos checked with the patient-privacy rules', value: String(t.photo_checked || 0)},
+      {type: 'list', items: ((sf && sf.by_person) || []).map(function (p) {
+        var bits = [];
+        if (p.patient_details_removed) bits.push(p.patient_details_removed + ' removed');
+        if (p.patient_details_stopped) bits.push(p.patient_details_stopped + ' stopped');
+        if (p.photo_checked) bits.push(p.photo_checked + (p.photo_checked === 1 ? ' photo' : ' photos'));
+        return {t: p.name || p.account, m: bits.join(' \u00b7 ')}; }),
+       empty: 'Nothing in the last 30 days.'},
+      {type: 'note', text: 'Counts only \u2014 never what anyone wrote or photographed. Use it to see where a reminder about patient privacy could help.'},
+      {type: 'button', label: 'Download the safety report', desc: 'Date, person, what happened, where (chat, Genie, agents\u2026) and how many times, for the last 30 days (a spreadsheet file).', action: 'org_safety', text: 'Download'}];
+    return rows;
+  }
+  function detailsChoice(org) {
+    var opt = function (v, label) { return '<option value="' + v + '"' + ((org.patient_details || 'remove') === v ? ' selected' : '') + '>' + label + '</option>'; };
+    return '<select class="s-select" data-org="patient_details" aria-label="When patient details are typed">' +
+      opt('remove', 'Remove automatically') + opt('stop', 'Stop the message') + '</select>';
+  }
   function workspaceSections(o, err) {
     if (!o) return [{title: 'Workspace', rows: [{type: 'list', items: [], empty: err || 'Loading\u2026'}]}];
     if (!o.org) return [{title: 'Create a workspace', rows: [
@@ -599,18 +636,22 @@ SETTINGS_JS = r"""
     var org = o.org, admin = o.role === 'admin' && o.status === 'active', out = [];
     if (admin && S.values.org_instructions === undefined) S.values.org_instructions = org.instructions || '';
     if (o.status === 'invited') return [{title: 'Invitation', rows: [
-      {type: 'note', text: org.name + ' invited you to its workspace. Its admins would see your name and how many messages you send each day \u2014 never your chats \u2014 and Gink would follow the workspace\u2019s instructions.' + (org.healthcare ? ' It\u2019s in healthcare mode: no patient details may be typed.' : '')},
+      {type: 'note', text: org.name + ' invited you to its workspace. Its admins would see your name and how many messages you send each day \u2014 never your chats \u2014 and Gink would follow the workspace\u2019s instructions.' + (org.healthcare ? ' It\u2019s in healthcare mode: a patient\u2019s details are kept out of Gink (' + (org.patient_details === 'stop' ? 'messages with them are stopped' : 'removed automatically') + '), and admins see how many times that happened for each person \u2014 never what was written.' : '')},
       {type: 'button', label: 'Accept', action: 'org_accept', text: 'Accept', style: 'primary'},
       {type: 'button', label: 'Decline', action: 'org_decline', text: 'Decline', style: 'danger-ghost'}]}];
     out.push({title: org.name, rows: [
       {type: 'info', label: 'You are', value: admin ? 'An admin' : 'A member'}]
-      .concat(admin ? [] : [{type: 'info', label: 'Healthcare mode', value: org.healthcare ? 'On \u2014 no patient details' : 'Off'}])
+      .concat(admin ? [] : [{type: 'info', label: 'Healthcare mode', value: org.healthcare ? (org.patient_details === 'stop' ? 'On \u2014 messages with patient details are stopped' : 'On \u2014 patient details are removed automatically') : 'Off'}])
+      .concat(admin || !org.healthcare ? [] : [{type: 'note', text: 'Your admins see how many times patient details were removed or stopped for each person, and how many photos were checked with the patient-privacy rules \u2014 never what anyone wrote or photographed.'}])
       .concat(admin ? [
-        {type: 'html', label: 'Healthcare mode', desc: 'For hospitals and clinics: Gink won\u2019t diagnose or decide treatment, and refuses messages that look like a patient\u2019s details (name, record number, date of birth, phone).',
-         html: '<label class="sw"><input type="checkbox" data-org="healthcare"' + (org.healthcare ? ' checked' : '') + '><i></i></label>'},
-        {type: 'textarea', key: 'org_instructions', label: 'Instructions Gink follows for everyone in the workspace', placeholder: 'e.g. Use plain language. Mention our ward names. Answer in the language staff write in.', action: 'org_instructions', text: 'Save'}] :
+        {type: 'html', label: 'Healthcare mode', desc: 'For hospitals and clinics: Gink won\u2019t diagnose or decide treatment, and keeps a patient\u2019s details out (name, record or ID number, date of birth, phone, email) everywhere \u2014 chat, photos, Genie, agents, websites.',
+         html: '<label class="sw"><input type="checkbox" data-org="healthcare"' + (org.healthcare ? ' checked' : '') + '><i></i></label>'}]
+      .concat(org.healthcare ? [{type: 'html', label: 'When a patient\u2019s details are typed', desc: 'Remove automatically (recommended): Gink takes them out before anything is sent and says so above its answer. Stop the message: it isn\u2019t sent, and the person is asked to take them out.', html: detailsChoice(org)}] : [])
+      .concat([
+        {type: 'textarea', key: 'org_instructions', label: 'Instructions Gink follows for everyone in the workspace', placeholder: 'e.g. Use plain language. Mention our ward names. Answer in the language staff write in.', action: 'org_instructions', text: 'Save'}]) :
         (org.instructions ? [{type: 'note', text: 'Workspace instructions: ' + org.instructions}] : []))
       .concat([{type: 'button', label: 'Leave the workspace', action: 'org_leave', text: 'Leave', style: 'danger-ghost'}])});
+    if (admin && org.healthcare) out.push({title: 'Safety \u2014 last 30 days', rows: safetyRows(o.safety)});
     if (admin) {
       out.push({title: 'People', rows: [
         {type: 'button', label: 'Download usage', desc: 'Messages, images and songs per person per day for the last 30 days (a spreadsheet file). Never chats.', action: 'org_usage', text: 'Download'},
@@ -812,6 +853,7 @@ SETTINGS_JS = r"""
     document.body.classList.toggle('font-mono', appearance.font === 'mono');
     var reduced = appearance.motion === 'reduced' || (appearance.motion === 'system' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     document.body.classList.toggle('reduced-motion', !!reduced);
+    if (window.syncBars) syncBars();                 // the phone's status bar follows light / dark
   }
   if (darkQuery && darkQuery.addEventListener) darkQuery.addEventListener('change', function () { setAppearance(appearance.theme, appearance.font, appearance.motion); });
 
@@ -859,8 +901,9 @@ SETTINGS_JS = r"""
     var body = document.getElementById('s-body');
     body.addEventListener('change', function (e) {
       var t = e.target, fk = t.getAttribute('data-fam') || t.getAttribute('data-famtime') || t.getAttribute('data-famnum');
-      if (t.getAttribute('data-org')) {          // Workspace: healthcare mode
-        ginkEmit('settings_action', {name: 'org_set', value: JSON.stringify({key: t.getAttribute('data-org'), value: t.checked})});
+      if (t.getAttribute('data-org')) {          // Workspace: healthcare mode, and what happens to patient details
+        ginkEmit('settings_action', {name: 'org_set', value: JSON.stringify({key: t.getAttribute('data-org'),
+                                                                            value: t.type === 'checkbox' ? t.checked : t.value})});
         return;
       }
       if (fk) {                                    // Parental controls: one teen's setting
@@ -886,6 +929,7 @@ SETTINGS_JS = r"""
       var name = b.getAttribute('data-act'), from = b.getAttribute('data-from'), value = b.getAttribute('data-value');
       if (from) { var inp = document.querySelector('[data-input="' + from + '"]'); value = inp ? inp.value : ''; }
       if (name === 'upgrade') { closeSettings(); ginkEmit('open', 'pro'); return; }
+      if (name === 'people_open') { closeSettings(); if (window.openPeople) openPeople(); return; }   // People lives in the page
       if (name === 'sch_add') {                       // Scheduled tasks: the task, how often and when, together
         var q = function (k) { var x = document.querySelector('[data-input="' + k + '"]'); return x ? x.value : ''; };
         var em = document.querySelector('[data-sch-email]');
@@ -975,7 +1019,7 @@ SETTINGS_JS = r"""
       back = document.createElement('div');
       back.id = 'aby-back';
       back.setAttribute('role', 'dialog'); back.setAttribute('aria-modal', 'true'); back.setAttribute('aria-labelledby', 'aby-title');
-      back.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(28,33,29,0.28);display:flex;align-items:center;justify-content:center;padding:20px';
+      back.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:60;background:rgba(28,33,29,0.28);display:flex;align-items:center;justify-content:center;padding:20px';
       document.body.appendChild(back);
     }
     back.innerHTML = '<div class="modal"><h3 id="aby-title"></h3><p class="sub" id="aby-msg" style="font-size:14.5px;color:var(--text-main)"></p>' +

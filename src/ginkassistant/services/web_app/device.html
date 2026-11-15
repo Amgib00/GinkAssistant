@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
 <meta name="robots" content="noindex">
 <title>Connect a device to Gink</title>
 <style>
@@ -22,6 +22,8 @@
   .warn { background:var(--warnbg); color:var(--warn); border-radius:12px; padding:12px 14px; font-size:14px; margin:16px 0 4px; }
   .who { font-size:17px; font-weight:700; } .msg { min-height:22px; margin-top:12px; font-size:14px; } .err { color:var(--bad); } .ok { color:var(--ok); }
   [hidden] { display:none !important; }
+  /* phones: 16px text in boxes, or iPhone zooms the page in when you tap one (and stays zoomed) */
+  @media (hover: none) and (pointer: coarse) { input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]), textarea, select { font-size: 16px !important; } }
 </style>
 </head>
 <body>

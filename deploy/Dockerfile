@@ -17,6 +17,10 @@ COPY src/ginkassistant/services/live_info.py ./live_info.py
 COPY src/ginkassistant/services/blob_store.py ./blob_store.py
 # Media Studio's looks and ideas, the same in the apps, the web app and the API
 COPY src/ginkassistant/services/image_ideas.py ./image_ideas.py
+# what counts as a memory worth offering, and which facts replace older ones (web app, API)
+COPY src/ginkassistant/services/memory_rules.py ./memory_rules.py
+# what Gink does with a photo (every client): works out what it needs, careful with health and patients
+COPY src/ginkassistant/services/vision_rules.py ./vision_rules.py
 COPY src/ginkassistant/services/web_app ./web_app
 ENV PORT=8000
 EXPOSE 8000

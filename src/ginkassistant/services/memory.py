@@ -21,6 +21,9 @@ from typing import List
 MAX_MEMORIES_IN_PROMPT = 60
 
 
+from .memory_rules import subject, suggest  # noqa: F401  (shared with the server)
+
+
 def _norm(text: str) -> str:
     return re.sub(r"[^a-z0-9 ]", "", " ".join((text or "").lower().split()))
 
@@ -53,17 +56,26 @@ class MemoryStore:
             raise ValueError("Nothing to remember.")
         text = text[0].upper() + text[1:]
         key = _norm(text)
+        about = subject(text)
+        replaced = None
         for m in self.list():
             if _norm(m["text"]) == key:
                 return m                              # already remembered
+            if about and replaced is None and subject(m["text"]) == about:
+                replaced = m                          # the same single thing, said again: the new one takes its place
         now = time.time()
         uid = uuid.uuid4().hex
         with self._lock:
+            if replaced:
+                self._db.execute("UPDATE memories SET deleted=1, updated=? WHERE uid=?", (now, replaced["uid"]))
             self._db.execute("INSERT INTO memories (uid, text, created, updated, deleted) VALUES (?,?,?,?,0)",
                              (uid, text, now, now))
             self._db.commit()
         self._changed()
-        return {"uid": uid, "text": text}
+        out = {"uid": uid, "text": text}
+        if replaced:
+            out["replaced"] = replaced["text"]
+        return out
 
     def forget(self, query: str) -> List[dict]:
         """Forget by uid, or every memory whose text contains all the words

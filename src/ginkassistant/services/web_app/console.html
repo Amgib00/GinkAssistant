@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
 <title>Gink Developer Console</title>
 <style>
   :root { --bg:#F6F7F4; --side:#EEF1EC; --card:#FFFFFF; --text:#151D23; --muted:#5D6B64; --line:#E1E5E0; --accent:#3F7D12;
@@ -57,7 +57,10 @@
   [hidden] { display:none !important; }
   @media (max-width: 860px) { .shell { grid-template-columns:1fr; } aside { position:static; height:auto; flex-direction:row; flex-wrap:wrap; }
     .who { display:none; } main { padding:18px; } .pg { grid-template-columns:1fr; } nav { display:flex; flex-wrap:wrap; } nav .grp { display:none; } }
+  /* phones: 16px text in boxes, or iPhone zooms the page in when you tap one (and stays zoomed) */
+  @media (hover: none) and (pointer: coarse) { input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]), textarea, select { font-size: 16px !important; } }
 </style>
+<script src="/app/lock.js"></script><!-- Lock Gink in this browser (a passkey): the same setting as the web app -->
 </head>
 <body>
 <div class="shell">
@@ -240,16 +243,18 @@
         <div class="scroll"><table><tbody>
           <tr><td><code>POST /v1/chat/completions</code></td><td>Chat. <code>stream: true</code> for word-by-word answers. Without <code>model</code>: Gink Crystal.</td></tr>
           <tr><td><code>GET /v1/models</code></td><td>Models you can use. <code>gink-search</code> searches the web and lists sources.</td></tr>
-          <tr><td><code>POST /v1/images/generations</code></td><td><code>{"prompt"}</code> &rarr; <code>data[0].b64_json</code> (PNG).</td></tr>
           <tr><td><code>POST /v1/images/generations</code></td><td><code>{"prompt"}</code>, plus <code>"size"</code> or <code>"aspect_ratio"</code>, <code>"style"</code> (<code>3d</code>, <code>photo</code>&hellip; or your words), <code>"idea"</code> + <code>"subject"</code> (Media Studio&rsquo;s looks: <code>GET /v1/images/ideas</code>), <code>"photo"</code> (base64) to start from someone&rsquo;s photo.</td></tr>
           <tr><td><code>POST /v1/interactions</code></td><td>Managed agent: <code>{"agent": "gink-agent", "input", "environment": "remote"}</code> &rarr; <code>output_text</code>, <code>steps</code>, <code>files_changed</code>. Environments: <code>/v1/environments</code>. <a href="/developers/agents">Guide</a>.</td></tr>
           <tr><td><code>POST /v1/batches</code></td><td><code>{"requests": [{"custom_id", "body"}], "name"}</code>, up to 100. Then <code>GET /v1/batches/{id}</code>, <code>/results</code> (JSONL), <code>/cancel</code>.</td></tr>
+          <tr><td>Photos</td><td>Send an <code>image_url</code> part in <code>/v1/chat/completions</code> (Gink Pro): Gink works out what the photo needs and is careful with anything about health. SDKs: <code>see(photo, question)</code>; terminal: <code>gink see photo.jpg</code>.</td></tr>
+          <tr><td><code>GET /v1/memories</code></td><td>What Gink remembers about you (the same as your apps): <code>POST {"text"}</code>, <code>DELETE /v1/memories/{id}</code>, <code>POST /v1/memories/suggest</code>.</td></tr>
+          <tr><td><code>GET /v1/workspace</code></td><td>Your workspace (hospital, school, business) and your role. Admins: <code>GET /v1/workspace/safety?days=30</code> &mdash; healthcare mode&rsquo;s safety report, counts only (patient details removed or stopped, photos checked), never words.</td></tr>
         </tbody></table></div>
         <h2>Errors</h2>
         <div class="scroll"><table><tbody>
           <tr><td><code>401</code></td><td>Missing, invalid or revoked key.</td></tr>
           <tr><td><code>403</code></td><td>The model needs Gink Pro.</td></tr>
-          <tr><td><code>422</code></td><td>The request is malformed (the message says what to fix).</td></tr>
+          <tr><td><code>422</code></td><td>The request is malformed (the message says what to fix) &mdash; or, in a workspace in healthcare mode set to &ldquo;stop&rdquo;, it contains a patient&rsquo;s details (<code>patient_data</code>). Set to &ldquo;remove&rdquo; (the default), the details are taken out before anything is sent: the answer starts with a short notice, and the <code>X-Gink-Patient-Details-Removed</code> header lists what was removed.</td></tr>
           <tr><td><code>429</code></td><td>Daily allowance or per-minute limit reached (see <code>Retry-After</code>).</td></tr>
           <tr><td><code>502 / 503</code></td><td>The AI service had a problem, or the server is waking up. Retry after a moment.</td></tr>
         </tbody></table></div>
@@ -514,7 +519,8 @@ cat notes.txt | gink "summarise this"</code></pre>
       .catch(function (e) { if (e.message !== "signed out") $("ag-err").textContent = e.message; });
   }
   function agStep(st) {
-    var li = el("li", "", (st.tool || "step") + (st.path ? " " + st.path : st.query ? " \u201c" + st.query + "\u201d" : ""));
+    var li = el("li", "", (st.tool || "step") + (st.path ? " " + st.path : st.query ? " \u201c" + st.query + "\u201d"
+                : st.tool === "check" && st.result ? " \u2014 " + st.result : ""));          // the agent checked its whole workspace
     $("ag-steps").appendChild(li);
   }
   function runAgent() {

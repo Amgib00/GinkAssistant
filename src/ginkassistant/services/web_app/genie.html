@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
 <title>Gink Genie</title>
 <style>
   :root { --bg:#F6F7F4; --panel:#FFFFFF; --side:#EEF1EC; --text:#151D23; --muted:#5D6B64; --line:#E1E5E0; --accent:#3F7D12;
@@ -120,7 +120,7 @@
   .step.note { padding:8px 11px; color:var(--muted); font-size:13.5px; }
   .step pre .dl { display:block; padding:0 4px; } .step pre .add { background:rgba(63,125,18,.16); }
   .step pre .del { background:rgba(196,43,28,.14); } .step pre .hunk { color:var(--muted); }
-  .drop { position:fixed; inset:0; z-index:50; display:grid; place-items:center; background:rgba(63,125,18,.12);
+  .drop { position:fixed; top:0;right:0;bottom:0;left:0; z-index:50; display:grid; place-items:center; background:rgba(63,125,18,.12);
           border:3px dashed var(--accent); font-size:20px; font-weight:700; pointer-events:none; }
   .working { display:flex; align-items:center; gap:8px; color:var(--muted); }
   .dot { width:9px; height:9px; border-radius:50%; background:var(--accent); animation:p 1s infinite ease-in-out; }
@@ -217,7 +217,7 @@
   .card { position:relative; height:150px; border-radius:16px; overflow:hidden; text-align:left; padding:0; color:#fff; box-shadow:0 0 0 1px var(--line);
           transition:transform .2s, box-shadow .2s; background:#151D23; }
   .card.big { grid-column:1 / span 2; height:190px; }
-  .card .art { position:absolute; inset:0; }
+  .card .art { position:absolute; top:0;right:0;bottom:0;left:0; }
   .card.c1 .art { background:radial-gradient(circle at 75% 30%, #A8F03C 0 18%, transparent 19%), linear-gradient(135deg, #1d2b36, #0f1a12); }
   .card.c2 .art { background:radial-gradient(circle at 30% 35%, #7fd3ff 0 22%, transparent 23%), linear-gradient(135deg, #2a2440, #13202b); }
   .card.c3 .art { background:repeating-linear-gradient(90deg, #A8F03C 0 14px, transparent 14px 20px) 20% 62%/60% 14px no-repeat, linear-gradient(135deg, #10251a, #0d1a24); }
@@ -232,7 +232,10 @@
   [hidden] { display:none !important; }
   @media (max-width: 900px) { main { grid-template-columns:1fr; grid-template-rows:auto 45vh auto; } .files { max-height:160px; border-right:0; border-bottom:1px solid var(--line); }
     .editor { border-right:0; } .chat { min-height:380px; } }
+  /* phones: 16px text in boxes, or iPhone zooms the page in when you tap one (and stays zoomed) */
+  @media (hover: none) and (pointer: coarse) { input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]), textarea, select { font-size: 16px !important; } }
 </style>
+<script src="/app/lock.js"></script><!-- Lock Gink: Touch ID / Face ID / Windows Hello in the app, a passkey in a browser -->
 </head>
 <body>
 <nav id="side" aria-label="Projects">
@@ -321,6 +324,7 @@
     <div id="tree"></div>
     <div class="rs"><div class="t">Settings</div>
       <div class="rs-row"><span>Fix preview errors</span><button class="ghost" type="button" id="autofix-btn" aria-pressed="true" title="After each change Genie checks the live preview and fixes errors by itself (up to 3 times)">Auto</button></div>
+      <div class="rs-row"><span>Lock</span><button class="ghost" type="button" id="lock-btn" aria-pressed="false" title="Lock Genie with Touch ID, Face ID or Windows Hello (the app) or a passkey (a browser)">Off</button></div>
       <div class="rs-row"><span>Mode</span><button class="ghost mode-btn" type="button" aria-pressed="false" title="Plan first: Genie proposes a plan before changing anything">Auto</button></div>
       <div class="rs-row"><span>Model</span><span class="note">Gink Crystal</span></div>
       <div class="rs-row"><span>Runs in</span><span class="note">Browser sandbox</span></div></div>
@@ -474,9 +478,19 @@
   var previewTimer = null;
   // ---- errors in the preview reach Genie: a bar and "Ask Genie to fix" -- and, unless switched off, Genie checks the
   // preview after each change and fixes errors by itself: at most AUTOFIX_MAX rounds per request of yours (no loops)
-  var AUTOFIX_MAX = 3, AUTOFIX = { on: true, rounds: 0, timer: 0 };
-  try { AUTOFIX.on = localStorage.getItem("genie_autofix") !== "off"; } catch (e) {}
-  function autofixLabel() { var b = $("autofix-btn"); if (b) { b.textContent = AUTOFIX.on ? "Auto" : "Off"; b.setAttribute("aria-pressed", AUTOFIX.on ? "true" : "false"); } }
+  // Three levels: Off, Auto (up to 3 tries per request of yours) and Deep (up to 8: for big projects and stubborn errors)
+  var AUTOFIX_LEVELS = { off: 0, on: 3, deep: 8 }, AUTOFIX = { level: "on", on: true, rounds: 0, timer: 0, last: "" }, AUTOFIX_MAX = 3;
+  function autofixSet(level) {
+    AUTOFIX.level = AUTOFIX_LEVELS.hasOwnProperty(level) ? level : "on";
+    AUTOFIX.on = AUTOFIX.level !== "off"; AUTOFIX_MAX = AUTOFIX_LEVELS[AUTOFIX.level] || 3;
+  }
+  try { autofixSet(localStorage.getItem("genie_autofix") || "on"); } catch (e) {}
+  function autofixLabel() {
+    var b = $("autofix-btn"); if (!b) return;
+    b.textContent = { off: "Off", on: "Auto", deep: "Deep" }[AUTOFIX.level]; b.setAttribute("aria-pressed", AUTOFIX.on ? "true" : "false");
+    b.title = { off: "Genie doesn\u2019t check the preview by itself", on: "After each change Genie checks the live preview and fixes errors by itself (up to 3 times)",
+                deep: "Keeps checking and fixing up to 8 times, changing its approach if the same error comes back" }[AUTOFIX.level];
+  }
   function fixText() {
     return "The live preview shows these errors. Find the cause in the code and fix it:\n" +
       PERR.list.map(function (x) { return "- " + x.kind + ": " + x.message + (x.where ? " (" + x.where + ")" : "") + (x.page ? " [page " + x.page + "]" : ""); }).join("\n");
@@ -493,7 +507,9 @@
         AUTOFIX.rounds = 0; return;
       }
       AUTOFIX.rounds++;
-      var text = fixText(); clearPerr();
+      var text = fixText(), same = text === AUTOFIX.last; AUTOFIX.last = text; clearPerr();
+      if (same) text += "\n\nThese are the SAME errors as after your last fix, so it didn\u2019t work. Read the files named in the errors again " +
+        "from the top, find the real cause and fix it a different way \u2014 don\u2019t repeat the same change.";
       if (PHONE_TAB()) tab("chat"); else dview("chat");
       sendToGenie("(Automatic check " + AUTOFIX.rounds + " of " + AUTOFIX_MAX + ") " + text);
     }, 3000);
@@ -551,6 +567,7 @@
       }).catch(function () {});
       var first = S.files.filter(function (f) { return f.path === "index.html"; })[0] || S.files[0];
       if (first) loadFile(first.path);                  // quietly: on phones Genie stays the open tab
+      if (S.files.length) quietCheck(id);
     });
   }
   function renderTree() {
@@ -878,9 +895,21 @@
       });
     }).catch(function (e) { working(false); if (e.message !== "signed out") say(e.message, true); });
   }
+  // The whole project is checked BY ITSELF: when you open it (reading only -- nothing changes), and after every
+  // request, when Genie fixes every missing file and file that doesn't parse before it answers (server side).
+  function quietCheck(id) {
+    api("/genie/projects/" + encodeURIComponent(id) + "/check").then(function (j) {
+      if (j.ok || !S.project || S.project.id !== id) return;
+      var n = j.problems.length, text = n + " problem" + (n > 1 ? "s" : "") + " found in this project (" +
+        j.problems.slice(0, 3).map(function (p) { return p.split(" ")[0]; }).join(", ") + (n > 3 ? "\u2026" : "") +
+        "). Genie fixes them automatically with your next request.";
+      if (typeof ginkNotify === "function") ginkNotify({ id: "genie-check", title: "Project checked", body: text, icon: "\uD83E\uDE7A", timeout: 9000 });
+      else say(text);
+    }).catch(function () {});
+  }
   function ask() {
     var text = $("instr").value.trim(); if (!text || S.busy || !S.project) return;
-    AUTOFIX.rounds = 0;                               // a new request of yours: automatic fixes start again from 0
+    AUTOFIX.rounds = 0; AUTOFIX.last = "";            // a new request of yours: automatic fixes start again from 0
     if (dirty()) saveFile();
     $("instr").value = "";
     var repo = githubRepo(text);
@@ -1007,9 +1036,19 @@
   $("side-new").onclick = function () { $("new").click(); };
   $("preload").onclick = reloadPreview;
   $("perr-x").onclick = function () { PERR.hidden = true; showPerr(); };
-  $("autofix-btn").onclick = function () {
-    AUTOFIX.on = !AUTOFIX.on; autofixLabel();
-    try { localStorage.setItem("genie_autofix", AUTOFIX.on ? "on" : "off"); } catch (e) {}
+  function lockLabel() {                                    // Lock Gink (web_app/lock.js): shared with the web app's setting
+    var b = $("lock-btn"); if (!b || !window.GinkLock) return;
+    var on = GinkLock.enabled(); b.textContent = on ? "On" : "Off"; b.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+  $("lock-btn").onclick = function () {
+    if (!window.GinkLock) return;
+    var on = !GinkLock.enabled();
+    GinkLock.toggle(on, function (ok, message) { lockLabel(); if (!ok && message) say(message, true); });
+  };
+  setTimeout(lockLabel, 0);
+  $("autofix-btn").onclick = function () {                 // Auto -> Deep -> Off -> Auto
+    autofixSet({ on: "deep", deep: "off", off: "on" }[AUTOFIX.level]); autofixLabel();
+    try { localStorage.setItem("genie_autofix", AUTOFIX.level); } catch (e) {}
   };
   autofixLabel();
   $("perr-fix").onclick = function () {
@@ -1385,5 +1424,228 @@
     check(); setInterval(check, 300000);
   })();
 </script>
+<!-- gink:compat (a copy of FLEX_GAP_JS in src/ginkassistant/ui/compat.py: flex gap for older web engines) -->
+<script>
+/* Gink: flex "gap" for web engines without it (ui/compat.py) */
+(function () {
+  'use strict';
+  var w = window, d = document;
+  if (w.__ginkGapFix) return;
+  w.__ginkGapFix = true;
+  var FORCE = !!w.GINK_GAP_POLYFILL, started = false;
+  function probe() {          // a column of two 1px boxes 1px apart: 3 = gap works, 2 = it doesn't, 0 = no layout yet
+    var t = d.createElement('div');
+    t.style.cssText = 'display:flex;flex-direction:column;row-gap:1px;position:absolute;left:-9999px;top:0;visibility:hidden';
+    for (var i = 0; i < 2; i++) { var c = d.createElement('div'); c.style.height = '1px'; t.appendChild(c); }
+    (d.body || d.documentElement).appendChild(t);
+    var h = t.scrollHeight;
+    t.parentNode.removeChild(t);
+    return h;
+  }
+  function decide() {
+    if (started) return;
+    var h = 3;
+    try { h = probe(); } catch (e) {}
+    if (h === 2) start();
+    else if (h !== 3) {                                     // hidden for now: decide once the page shows
+      var again = function () { w.removeEventListener('load', again); w.removeEventListener('resize', again); decide(); };
+      w.addEventListener('load', again); w.addEventListener('resize', again);
+    }
+  }
+  if (FORCE) start(); else decide();
+
+  function start() {
+  started = true;
+  d.documentElement.className += ' no-flex-gap';
+  var EP = w.Element && w.Element.prototype;
+  var matchesFn = EP && (EP.matches || EP.webkitMatchesSelector || EP.msMatchesSelector);
+  function matches(el, s) { try { return !!matchesFn && matchesFn.call(el, s); } catch (e) { return false; } }
+  function px(v) { v = parseFloat(v); return isFinite(v) ? v : 0; }
+  function cs(el) { try { return w.getComputedStyle(el); } catch (e) { return null; } }
+
+  // ---- the page's CSS: which rules set a gap (where to look) and which set auto margins (never replace)
+  var sheetCount = -1, AUTO = [], GAPSEL = '';
+  function clean(sel) {
+    return sel.replace(/::?(before|after|placeholder|selection|marker|first-line|first-letter|backdrop|-webkit-[\w-]+|-moz-[\w-]+)(\([^)]*\))?/g, '')
+              .replace(/:(hover|focus-within|focus-visible|focus|active|visited)\b/g, '').replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+  }
+  function readSheets() {
+    if (d.styleSheets.length === sheetCount) return;
+    sheetCount = d.styleSheets.length; AUTO = [];
+    var gaps = [];
+    function walk(rules) {
+      for (var i = 0; i < rules.length; i++) {
+        var r = rules[i];
+        if (!r.selectorText) { if (r.cssRules) { try { walk(r.cssRules); } catch (e) {} } continue; }
+        var st = r.style; if (!st) continue;
+        var a = {s: r.selectorText, marginLeft: st.marginLeft === 'auto', marginRight: st.marginRight === 'auto',
+                 marginTop: st.marginTop === 'auto', marginBottom: st.marginBottom === 'auto'};
+        if (a.marginLeft || a.marginRight || a.marginTop || a.marginBottom) AUTO.push(a);
+        if (st.columnGap || st.rowGap || st.getPropertyValue('gap')) {
+          var parts = r.selectorText.split(',');
+          for (var k = 0; k < parts.length; k++) {
+            var c = clean(parts[k]);
+            if (!c || gaps.indexOf(c) >= 0) continue;
+            try { d.querySelector(c); gaps.push(c); } catch (e) {}
+          }
+        }
+      }
+    }
+    for (var i = 0; i < d.styleSheets.length; i++) { try { walk(d.styleSheets[i].cssRules || []); } catch (e) {} }
+    GAPSEL = gaps.join(',');
+  }
+  function isAuto(el, side) {
+    if (el.style && el.style[side] === 'auto') return true;
+    for (var i = 0; i < AUTO.length; i++) if (AUTO[i][side] && matches(el, AUTO[i].s)) return true;
+    return false;
+  }
+
+  // ---- one container: undo what we did, measure again, space its items with margins
+  function remember(el, prop, owner) {
+    var o = el.__ggOrig || (el.__ggOrig = {});
+    if (!(prop in o)) o[prop] = el.style[prop];
+    var list = owner.__ggItems || (owner.__ggItems = []);
+    if (list.indexOf(el) < 0) list.push(el);
+  }
+  function addMargin(el, side, gap, owner) {
+    var s = cs(el); if (!s) return;
+    var base = px(s[side]);
+    remember(el, side, owner);
+    el.style[side] = (base + gap) + 'px';
+  }
+  function undo(box) {
+    var list = box.__ggItems || [];
+    for (var i = 0; i < list.length; i++) {
+      var el = list[i], o = el.__ggOrig;
+      if (!o) continue;
+      for (var p in o) if (o.hasOwnProperty(p)) el.style[p] = o[p];
+      el.__ggOrig = null;
+    }
+    box.__ggItems = null;
+    if (box.__ggBox) { box.style.columnGap = box.__ggBox[0]; box.style.rowGap = box.__ggBox[1]; box.__ggBox = null; }
+  }
+  function itemsOf(box) {
+    var out = [];
+    for (var n = box.firstChild; n; n = n.nextSibling) {
+      if (n.nodeType === 1) {
+        var s = cs(n);
+        if (!s || s.display === 'none' || s.position === 'absolute' || s.position === 'fixed') continue;
+        out.push(n);
+      } else if (n.nodeType === 3 && /\S/.test(n.nodeValue)) out.push(n);
+    }
+    return out;
+  }
+  function fix(box) {
+    undo(box);
+    var s = cs(box);
+    if (!s || (s.display !== 'flex' && s.display !== 'inline-flex')) return false;
+    var cg = px(s.columnGap), rg = px(s.rowGap);
+    if (cg <= 0 && rg <= 0) return false;
+    if (FORCE) { box.__ggBox = [box.style.columnGap, box.style.rowGap]; box.style.columnGap = '0px'; box.style.rowGap = '0px'; }
+    var dir = s.flexDirection || 'row', col = dir.indexOf('column') === 0, rev = dir.indexOf('reverse') > 0;
+    var rtl = s.direction === 'rtl', wrap = !!s.flexWrap && s.flexWrap !== 'nowrap';
+    var after = col ? (rev ? 'marginTop' : 'marginBottom') : ((rtl !== rev) ? 'marginLeft' : 'marginRight');
+    var before = col ? (rev ? 'marginBottom' : 'marginTop') : ((rtl !== rev) ? 'marginRight' : 'marginLeft');
+    var main = col ? rg : cg, cross = col ? cg : rg;
+    var items = itemsOf(box), i;
+    if (main > 0) {
+      for (i = 0; i + 1 < items.length; i++) {
+        var A = items[i], B = items[i + 1], aEl = A.nodeType === 1, bEl = B.nodeType === 1;
+        if ((aEl && isAuto(A, after)) || (bEl && isAuto(B, before))) continue;     // an auto margin already holds them apart
+        if (aEl) addMargin(A, after, main, box);              // the first item's far side...
+        else if (bEl) addMargin(B, before, main, box);        // ...or, after a bit of text, the next item's near side
+      }
+    }
+    if (wrap && cross > 0) {                       // the gap between wrapped lines: measured after the spacing above
+      var els = [], lines = [], edge = null;
+      for (i = 0; i < items.length; i++) if (items[i].nodeType === 1) els.push(items[i]);
+      for (i = 0; i < els.length; i++) {
+        var r = els[i].getBoundingClientRect();
+        var start = col ? (rtl ? -r.right : r.left) : r.top, end = col ? (rtl ? -r.left : r.right) : r.bottom;
+        if (edge === null) { edge = end; lines.push(0); continue; }
+        if (start >= edge - 0.5) { lines.push(lines[lines.length - 1] + 1); edge = end; }
+        else { lines.push(lines[lines.length - 1]); if (end > edge) edge = end; }
+      }
+      var side = col ? (rtl ? 'marginRight' : 'marginLeft') : (s.flexWrap === 'wrap-reverse' ? 'marginBottom' : 'marginTop');
+      for (i = 0; i < els.length; i++) if (lines[i] > 0) addMargin(els[i], side, cross, box);
+    }
+    return true;
+  }
+
+  // ---- when: once now, then whenever the page changes (batched)
+  var touched = [], queue = [], full = false, timer = 0, mo = null;
+  var stats = w.ginkGapStats = {runs: 0, ms: 0, boxes: 0};          // how much work it does (tests watch it)
+  function collect(root, out) {
+    if (!root || root.nodeType !== 1) return;
+    if ((GAPSEL && matches(root, GAPSEL)) || /gap/.test(root.getAttribute('style') || '')) out.push(root);
+    var list;
+    try { list = root.querySelectorAll((GAPSEL ? GAPSEL + ',' : '') + '[style*="gap"]'); } catch (e) { list = []; }
+    for (var i = 0; i < list.length; i++) out.push(list[i]);
+  }
+  function run() {
+    timer = 0;
+    var all = full, list = queue, boxes = [], i, t0 = Date.now();
+    full = false; queue = [];
+    if (mo) mo.disconnect();
+    try {
+      readSheets();
+      if (all) { collect(d.body, boxes); boxes = boxes.concat(touched); }
+      else for (i = 0; i < list.length; i++) {
+        var el = list[i];
+        if (!el || el.nodeType !== 1 || !d.documentElement.contains(el)) continue;
+        collect(el, boxes);
+        if (el.parentNode && el.parentNode.nodeType === 1) boxes.push(el.parentNode);
+      }
+      boxes.sort(function (a, b) {                       // document order...
+        if (a === b) return 0;
+        var p = a.compareDocumentPosition(b);
+        return (p & 4) ? -1 : (p & 2) ? 1 : 0;
+      });
+      var seen = [];
+      for (i = boxes.length - 1; i >= 0; i--) {         // ...backwards: inner containers first (the outer ones measure them)
+        var b = boxes[i];
+        if (seen.indexOf(b) >= 0) continue;
+        seen.push(b);
+        var at = touched.indexOf(b);
+        if (fix(b)) { if (at < 0) touched.push(b); }
+        else if (at >= 0) touched.splice(at, 1);
+      }
+      stats.boxes = touched.length;
+    } catch (e) {}
+    stats.runs++; stats.ms += Date.now() - t0;
+    if (mo) observe();
+  }
+  function later(el) {
+    if (el) { if (queue.indexOf(el) < 0) queue.push(el); } else full = true;
+    if (!timer) timer = setTimeout(run, 50);
+  }
+  function observe() {
+    try {
+      mo.observe(d.documentElement, {childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'open']});
+    } catch (e) {}
+  }
+  if (w.MutationObserver) {
+    mo = new MutationObserver(function (records) {
+      for (var i = 0; i < records.length; i++) {
+        var r = records[i], t = r.target;
+        if (r.type === 'childList') {
+          later(t.nodeType === 1 ? t : t.parentNode);
+          for (var j = 0; j < r.addedNodes.length; j++) if (r.addedNodes[j].nodeType === 1) later(r.addedNodes[j]);
+        } else if (t === d.body || t === d.documentElement) {
+          if (r.attributeName !== 'style') later(null);      // a page state (home, a theme...); its style is only sizes
+        } else later(t);
+      }
+    });
+    observe();
+  }
+  w.addEventListener('load', function () { later(null); });
+  var rz = 0;
+  w.addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(function () { later(null); }, 120); });
+  w.ginkGapFix = function () { later(null); };
+  later(null);
+  }
+})();
+</script>
+<!-- /gink:compat -->
 </body>
 </html>

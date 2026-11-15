@@ -70,7 +70,8 @@ def test_code_viewer_wiring():
     root = os.path.join(os.path.dirname(__file__), "..")
     extras = open(os.path.join(root, "src", "ginkassistant", "ui", "chat_extras.py"), encoding="utf-8").read()
     for part in ("window.openCodeViewer", "window.autoOpenCode", 'data-code="open"', "ginkEmit('save_code', {name: CV.name",
-                 "#codeview .cvbody code { font-size: inherit; line-height: inherit; }", "body.viewer-open { padding-right"):
+                 "#codeview .cvbody code { font-size: inherit; line-height: inherit; }",
+                 "body.viewer-open #shell { right: min(50vw, 780px); }"):     # the chat makes room for the viewer
         assert part in extras, part
     page = open(os.path.join(root, "src", "ginkassistant", "ui", "web_chat_view.py"), encoding="utf-8").read()
     assert "if (!LOADING_CHAT && window.autoOpenCode) autoOpenCode(el);" in page and "window.__sentAt = Date.now();" in page
