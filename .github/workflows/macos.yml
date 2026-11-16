@@ -17,6 +17,9 @@ on:
   workflow_dispatch:
   workflow_call:          # used by release.yml
 
+permissions:
+  contents: read
+
 jobs:
   mac:
     strategy:
