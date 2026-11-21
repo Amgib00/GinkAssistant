@@ -1,0 +1,138 @@
+# Pull requests, step 2 of 2 (after "Pull requests", pull-requests.yml): only collaborators may open them; every
+# accepted one is labelled from its files, assigned, put in the "Next release" milestone, added to the project (when
+# set up) and sent for review (.github/CODEOWNERS asks the owner automatically).
+#
+# SAFETY: workflow_run runs this file as it is on the default branch, with write access. It NEVER checks out or runs
+# the pull request's code: it reads one number from step 1 (kept only if it's a number) and asks GitHub for the rest.
+# Its checks belong to the default branch, so a hiccup here (an expired project token: "Bad credentials") never turns
+# a pull request red -- and the project step only warns.
+name: Pull request triage
+
+on:
+  workflow_run:
+    workflows: ["Pull requests"]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read          # the number step 1 saved
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: pr-triage-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    name: Only collaborators
+    if: github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-24.04
+    outputs:
+      allowed: ${{ steps.check.outputs.allowed }}
+      pr: ${{ steps.which.outputs.pr }}
+      action: ${{ steps.which.outputs.action }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: pull-request
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: pr
+      - name: Which pull request (only a number is kept)
+        id: which
+        run: |
+          pr=$(sed -n 1p pr/pull-request.txt | tr -cd '0-9' | head -c 9)
+          action=$(sed -n 2p pr/pull-request.txt | tr -cd 'a-z_' | head -c 30)
+          if [ -z "$pr" ]; then echo "::error::No pull request number was saved."; exit 1; fi
+          case "$action" in opened|reopened|ready_for_review|synchronize) ;; *) action=synchronize ;; esac
+          echo "pr=$pr" >> "$GITHUB_OUTPUT"
+          echo "action=$action" >> "$GITHUB_OUTPUT"
+      - name: Is the author a collaborator?
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ steps.which.outputs.pr }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          AUTHOR="${AUTHOR:-$(gh api "repos/$REPO/pulls/$PR" --jq .user.login)}"
+          allowed=false
+          case "$AUTHOR" in
+            "dependabot[bot]"|"github-actions[bot]"|"$OWNER") allowed=true ;;
+            *)
+              perm=$(gh api "repos/$REPO/collaborators/$AUTHOR/permission" --jq .permission 2>/dev/null || echo none)
+              case "$perm" in admin|maintain|write) allowed=true ;; esac ;;
+          esac
+          if [ "$allowed" != true ]; then
+            gh pr comment "$PR" -R "$REPO" --body "Thanks for your interest in Gink! Pull requests here can only be opened by the project's collaborators, so this one is being closed. Ideas and bug reports are very welcome as an issue instead."
+            gh pr close "$PR" -R "$REPO"
+            echo "Closed: $AUTHOR isn't a collaborator."
+          fi
+          echo "allowed=$allowed" >> "$GITHUB_OUTPUT"
+
+  triage:
+    name: Labels, assignee, milestone, project
+    needs: gate
+    if: needs.gate.outputs.allowed == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Make sure the labels exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          while IFS='|' read -r name color text; do
+            gh label create "$name" -R "$REPO" --color "$color" --description "$text" --force >/dev/null
+          done << 'LABELS'
+          app|1f6feb|The Gink apps (desktop and phone)
+          server|8250df|The Gink server
+          web|0e8a16|The web app
+          genie|a8f03c|Gink Genie
+          tests|fbca04|Tests
+          docs|c5def5|Documentation and specs
+          ci|5319e7|Builds, releases and tools
+          website|bfdadc|The website
+          dependencies|0366d6|Package updates
+          LABELS
+
+      - name: Labels from the changed files
+        uses: actions/labeler@v7
+        with:
+          configuration-path: .github/labeler.yml
+          sync-labels: false
+          pr-number: ${{ needs.gate.outputs.pr }}
+
+      - name: Assignee and milestone
+        if: needs.gate.outputs.action == 'opened' || needs.gate.outputs.action == 'reopened'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ needs.gate.outputs.pr }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          # REST calls: the gh "pr edit" command also asks about classic Projects (retired by GitHub) and fails
+          gh api -X POST "repos/$REPO/issues/$PR/assignees" -f "assignees[]=$OWNER" >/dev/null
+          no=$(gh api "repos/$REPO/milestones?state=open" --jq '.[] | select(.title=="Next release") | .number')
+          if [ -z "$no" ]; then
+            no=$(gh api "repos/$REPO/milestones" -f title="Next release" -f description="Changes going into the next Gink release" --jq .number)
+          fi
+          gh api -X PATCH "repos/$REPO/issues/$PR" -F "milestone=$no" >/dev/null
+
+      - name: Add to the project
+        # Needs: Settings > Secrets and variables > Actions: variable GINK_PROJECT_URL (the project's link, like
+        # https://github.com/users/<you>/projects/1) and secret GINK_PROJECT_TOKEN (a token with "project" access).
+        # Skipped until both exist; an expired token only warns ("Bad credentials" turned the checks red before).
+        if: (needs.gate.outputs.action == 'opened' || needs.gate.outputs.action == 'reopened') && vars.GINK_PROJECT_URL != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GINK_PROJECT_TOKEN }}
+          PROJECT_URL: ${{ vars.GINK_PROJECT_URL }}
+          PR_URL: https://github.com/${{ github.repository }}/pull/${{ needs.gate.outputs.pr }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then echo "::notice::The GINK_PROJECT_TOKEN secret isn't set: not added to the project."; exit 0; fi
+          owner=$(printf '%s' "$PROJECT_URL" | sed -E 's#^.*/(users|orgs)/([^/]+)/projects/[0-9]+.*$#\2#')
+          number=$(printf '%s' "$PROJECT_URL" | sed -E 's#^.*/projects/([0-9]+).*$#\1#')
+          if ! gh project item-add "$number" --owner "$owner" --url "$PR_URL" 2> why.txt; then
+            echo "::warning::Not added to the project: $(head -c 200 why.txt). 'Bad credentials' means the GINK_PROJECT_TOKEN secret has expired: make a new token with project access and save it under Settings > Secrets and variables > Actions."
+          fi

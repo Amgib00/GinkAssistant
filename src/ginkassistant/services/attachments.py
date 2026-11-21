@@ -19,13 +19,18 @@ import io
 import os
 import re
 import zipfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 MAX_FILE_BYTES = 20 * 1024 * 1024
 MAX_IMAGE_SIDE = 1568           # plenty for reading text in photos, keeps requests small
 MAX_TEXT_CHARS = 60_000         # per document, before it reaches the prompt
 IMAGE_EXT = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".heic", ".heif"}
+# Videos (0.1.162): the chat page takes a few frames from the video (the browser engine decodes it: no extra library),
+# and those go to the AI as pictures, in order, with a sentence saying what they are. The video itself never leaves.
+VIDEO_EXT = {".mp4", ".mov", ".m4v", ".webm", ".3gp", ".avi", ".mkv"}
+MAX_VIDEO_HANDOVER = 25 * 1024 * 1024   # the apps' file picker hands the file to the page (dragging has no limit)
+MAX_PICTURES = 5                        # pictures in one question (Groq's vision models): photos first, then frames
 TEXT_EXT = {".txt", ".md", ".markdown", ".csv", ".tsv", ".json", ".xml", ".yaml", ".yml", ".ini", ".toml",
             ".py", ".js", ".ts", ".jsx", ".tsx", ".java", ".kt", ".c", ".h", ".cpp", ".cs", ".go", ".rs",
             ".rb", ".php", ".swift", ".sql", ".html", ".htm", ".css", ".sh", ".log", ".srt"}
@@ -35,19 +40,96 @@ class AttachmentError(Exception):
     pass
 
 
+class VideoFile(AttachmentError):
+    """A video picked in the file dialog: the chat page takes its frames (main_screen hands it over)."""
+
+    def __init__(self, path: str):
+        super().__init__(os.path.basename(path))
+        self.path = path
+
+
 @dataclass
 class Attachment:
     name: str
-    kind: str                        # "image" or "text"
+    kind: str                        # "image", "text" or "video"
     data_url: str = ""               # images: full-size (resized) JPEG for the AI
-    thumb: str = ""                  # images: small preview for the UI
+    thumb: str = ""                  # images and videos: small preview for the UI
     text: str = ""                   # documents: extracted text
-    note: str = ""                   # e.g. "first 60,000 characters"
+    note: str = ""                   # e.g. "first 60,000 characters", "5 frames \u00b7 0:12"
     pages: Optional[int] = None
+    frames: list = field(default_factory=list)     # videos: [{"at": seconds, "data": JPEG data URL}], in order
+    duration: float = 0.0                          # videos: seconds
 
     def chip(self) -> dict:
         return {"name": self.name, "kind": self.kind, "thumb": self.thumb,
                 "note": f"{self.pages} pages" if self.pages else self.note}
+
+
+def _mmss(seconds) -> str:
+    t = int(max(0.0, float(seconds or 0)) + 0.5)          # halves round up, like JavaScript's Math.round
+    return f"{t // 60}:{t % 60:02d}"
+
+
+def video_attachment(name: str, duration, frames) -> Attachment:
+    """A video as the chat page sent it: its frames (JPEG data URLs, in order) and its length."""
+    name = os.path.basename(str(name or "video"))[:120] or "video"
+    good = []
+    for f in frames if isinstance(frames, list) else []:
+        data = str((f or {}).get("data") or "") if isinstance(f, dict) else ""
+        if re.match(r"data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$", data) and len(data) < 3_000_000:
+            try:
+                at = max(0.0, float(f.get("at") or 0))
+            except (TypeError, ValueError):
+                at = 0.0
+            good.append({"at": round(at, 1), "data": data})
+    if not good:
+        raise AttachmentError(f"Gink couldn't read {name}. Try an .mp4 video, or send a photo of what you want to show.")
+    try:
+        length = max(0.0, float(duration or 0))
+    except (TypeError, ValueError):
+        length = 0.0
+    good = sorted(good, key=lambda f: f["at"])[:MAX_PICTURES]
+    try:
+        thumb = _image_from_bytes(base64.b64decode(good[0]["data"].split(",", 1)[1]), name + ".jpg").thumb
+    except Exception:
+        thumb = good[0]["data"]
+    return Attachment(name=name, kind="video", thumb=thumb, frames=good, duration=length,
+                      note=f"{len(good)} frames \u00b7 {_mmss(length)}" if length else f"{len(good)} frames")
+
+
+def video_problem(name: str, error: str) -> str:
+    """Why the page couldn't take frames from a video, in plain words."""
+    if error == "slow":
+        return f"{name} took too long to open. Try a shorter clip."
+    return f"Gink couldn't play {name} here (its format). Try an .mp4 video, or send a photo of what you want to show."
+
+
+def video_note(a: Attachment, count: int) -> str:
+    """The sentence that tells the AI what a video's pictures are."""
+    times = ", ".join(_mmss(f["at"]) for f in a.frames[:count])
+    length = f" ({_mmss(a.duration)} long)" if a.duration else ""
+    return (f"The video \u201c{a.name}\u201d{length} is attached as {count} pictures: frames taken from it in order, at "
+            f"{times}. Treat them as one moving scene and describe what happens across them.")
+
+
+def picture_parts(text: str, attachments) -> list:
+    """The message for a vision model: the text (with what any video frames are), then the pictures -- photos first,
+    then each video's frames in order, MAX_PICTURES at most."""
+    budget, urls, notes = MAX_PICTURES, [], []
+    for a in attachments:
+        if a.kind == "image" and a.data_url and budget:
+            urls.append(a.data_url)
+            budget -= 1
+    for a in attachments:
+        if a.kind == "video" and a.frames and budget:
+            take = a.frames[:budget]
+            budget -= len(take)
+            notes.append(video_note(a, len(take)))
+            urls += [f["data"] for f in take]
+    photos = any(a.kind == "image" for a in attachments)
+    asked = text or ("What happens in this video?" if notes and not photos else "What's in this image?")
+    parts = [{"type": "text", "text": "\n\n".join(notes + [asked]) if notes else asked}]
+    return parts + [{"type": "image_url", "image_url": {"url": u}} for u in urls]
 
 
 _IMAGE_MAGIC = ((b"\xff\xd8\xff", "image/jpeg"), (b"\x89PNG\r\n\x1a\n", "image/png"), (b"GIF8", "image/gif"))
@@ -167,6 +249,8 @@ def load_bytes(raw: bytes, name: str) -> Attachment:
         return _pdf_text(raw, name)
     if ext == ".docx":
         return _docx_text(raw, name)
+    if ext in VIDEO_EXT:
+        raise AttachmentError(f"Drag {name} into the message box: Gink takes a few frames from a video there.")
     if ext in TEXT_EXT or not ext:
         try:
             text = raw.decode("utf-8")
@@ -183,6 +267,8 @@ def load_bytes(raw: bytes, name: str) -> Attachment:
 
 def load_path(path: str) -> Attachment:
     path = str(path)
+    if os.path.splitext(path.lower())[1] in VIDEO_EXT:
+        raise VideoFile(path)                       # the chat page takes its frames (main_screen.hand_video)
     try:
         with open(path, "rb") as f:
             raw = f.read(MAX_FILE_BYTES + 1)

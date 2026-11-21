@@ -9,6 +9,7 @@
 .github/workflows/linux.yml
 .github/workflows/macos-catalina.yml
 .github/workflows/macos.yml
+.github/workflows/pull-request-triage.yml
 .github/workflows/pull-requests.yml
 .github/workflows/release.yml
 .github/workflows/sdk-js.yml
@@ -197,6 +198,12 @@ openspec/changes/archive/2026-11-21-add-scheduled-tasks-artifacts/specs/develope
 openspec/changes/archive/2026-11-21-add-scheduled-tasks-artifacts/specs/scheduled-tasks/spec.md
 openspec/changes/archive/2026-11-21-add-scheduled-tasks-artifacts/specs/web-search/spec.md
 openspec/changes/archive/2026-11-21-add-scheduled-tasks-artifacts/tasks.md
+openspec/changes/archive/2026-11-21-fix-tool-slips-add-device-notifications/proposal.md
+openspec/changes/archive/2026-11-21-fix-tool-slips-add-device-notifications/specs/agent-mode/spec.md
+openspec/changes/archive/2026-11-21-fix-tool-slips-add-device-notifications/specs/chats-storage-limits/spec.md
+openspec/changes/archive/2026-11-21-fix-tool-slips-add-device-notifications/specs/developer-api/spec.md
+openspec/changes/archive/2026-11-21-fix-tool-slips-add-device-notifications/specs/device-notifications/spec.md
+openspec/changes/archive/2026-11-21-fix-tool-slips-add-device-notifications/tasks.md
 openspec/config.yaml
 openspec/specs/accounts-security/spec.md
 openspec/specs/agent-mode/spec.md
@@ -204,6 +211,7 @@ openspec/specs/app-updates/spec.md
 openspec/specs/artifacts/spec.md
 openspec/specs/chats-storage-limits/spec.md
 openspec/specs/developer-api/spec.md
+openspec/specs/device-notifications/spec.md
 openspec/specs/email-delivery/spec.md
 openspec/specs/gink-genie/spec.md
 openspec/specs/languages-voice/spec.md
@@ -287,6 +295,8 @@ src/ginkassistant/services/skills.py
 src/ginkassistant/services/song_recognition.py
 src/ginkassistant/services/storage.py
 src/ginkassistant/services/sync.py
+src/ginkassistant/services/system_notify.py
+src/ginkassistant/services/tool_slips.py
 src/ginkassistant/services/updates.py
 src/ginkassistant/services/video_search.py
 src/ginkassistant/services/vision_rules.py
@@ -369,6 +379,7 @@ tests/test_app_lock.py
 tests/test_archive_storage_limits.py
 tests/test_artifacts.py
 tests/test_auto_search_sources.py
+tests/test_automatic_tools.py
 tests/test_billing.py
 tests/test_blob_store.py
 tests/test_camera.py
@@ -388,6 +399,7 @@ tests/test_db_lock.py
 tests/test_dev_platform.py
 tests/test_developer_api.py
 tests/test_device_awareness_fixes.py
+tests/test_device_notifications.py
 tests/test_device_signin.py
 tests/test_email_delivery.py
 tests/test_error_reports.py
@@ -474,12 +486,14 @@ tests/test_song_server.py
 tests/test_status.py
 tests/test_sync_attach_memory_briefing.py
 tests/test_temporary_chat.py
+tests/test_tool_slips.py
 tests/test_translate_dataset.py
 tests/test_two_step.py
 tests/test_ui.py
 tests/test_unreachable.py
 tests/test_updates.py
 tests/test_video_and_live_tv.py
+tests/test_video_attachments.py
 tests/test_viewer_and_skeletons.py
 tests/test_voice_and_stop.py
 tests/test_wake_listener.py
@@ -499,6 +513,7 @@ tools/build_web_app.py
 tools/build_website.py
 tools/check_mac_min_os.py
 tools/check_project.py
+tools/close_fixed_alert_prs.py
 tools/close_scanner_prs.sh
 tools/gink_dataset/README.md
 tools/gink_dataset/evaluate.py

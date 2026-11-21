@@ -50,7 +50,9 @@ def server(tmp_path_factory):
     b._groq_models.update(ids=set(), at=0.0); b._models_cache.update(data=None, at=0.0)
 
 
-def gink(args, key, stdin=None, tmp="/tmp/gink-cli-home"):
+def gink(args, key, stdin=None, tmp=None):
+    import tempfile
+    tmp = tmp or tempfile.mkdtemp(prefix="gink-cli-")            # its own folder: never a shared one in /tmp
     env = dict(os.environ, GINK_API_KEY=key, GINK_BASE_URL=f"http://127.0.0.1:{PORT}/v1", XDG_CONFIG_HOME=tmp,
                PYTHONPATH=os.path.join(HERE, "..", "cli"))
     return subprocess.run([sys.executable, "-m", "gink_cli"] + args, input=stdin, capture_output=True, text=True,
@@ -77,7 +79,7 @@ def test_piped_text_and_web_search(server):
 def test_wrong_key_is_explained(server):
     r = gink(["hi"], "gink_live_not-a-real-key", stdin="")
     assert r.returncode == 1 and "isn't valid" in r.stderr and "gink login" in r.stderr
-    r = gink(["hi"], "", stdin="", tmp="/tmp/gink-cli-empty")
+    r = gink(["hi"], "", stdin="")
     assert r.returncode == 1 and "not signed in yet" in r.stderr and "gink login" in r.stderr
 
 

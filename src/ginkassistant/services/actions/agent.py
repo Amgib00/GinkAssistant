@@ -146,9 +146,24 @@ _ACTION_WORDS = re.compile(
     re.I)
 
 
+# Something on the device that isn't working, or a check to run (0.1.162: "can you run some check for why my camera is
+# not working" went to the chat, which can't look at the device): Gink's tools take it.
+_DEVICE_PARTS = (r"camera|webcam|microphone|\bmic\b|speakers?|sound|audio|bluetooth|wi-?fi|internet|keyboard|trackpad|"
+                 r"touchpad|mouse|screen|display|monitor|usb|printer|headphones|headset|airpods|charger|charging|fan")
+_DEVICE_TROUBLE = re.compile(
+    r"\brun (?:some |a |an |the |my )?(?:quick |full |few )?(?:checks?|tests?|diagnos\w*|scans?)\b"
+    r"|\bcheck (?:why|what(?:'s| is) wrong|if|whether)\b|\btroubleshoot\w*"
+    r"|(?:" + _DEVICE_PARTS + r")\b[^.?!]{0,30}?\b(?:not|isn'?t|is not|won'?t|doesn'?t|does not|stopped|can'?t|cannot|"
+    r"no longer|keeps?)\b[^.?!]{0,20}?\b(?:work\w*|connect\w*|turn\w* on|show\w* up|detect\w*|charg\w*|"
+    r"recogni[sz]\w*|disconnect\w*|cutting out)"
+    r"|\b(?:why|how come)\b[^.?!]{0,25}?\b(?:my|the)\s+(?:" + _DEVICE_PARTS + r")\b"
+    r"|\bfix (?:my |the )?(?:" + _DEVICE_PARTS + r"|computer|laptop|mac|pc|phone)\b", re.I)
+
+
 def looks_like_action(text: str) -> bool:
-    """Cheap pre-check so normal chit-chat keeps your existing fast streaming path."""
-    return bool(_ACTION_WORDS.search(text or ""))
+    """Cheap pre-check so normal chit-chat keeps your existing fast streaming path. (The chat's AI can still hand a
+    request to the tools by itself: groq_worker.UseTools.)"""
+    return bool(_ACTION_WORDS.search(text or "") or _DEVICE_TROUBLE.search(text or ""))
 
 
 @dataclass
@@ -202,6 +217,9 @@ How to work:
 - "Check my computer", "do a check", "why is it so slow", battery, storage or security questions: call device_check
   (updates=true if they mention updates), then explain what's fine and what needs attention in plain words, and offer
   what you can do about it (close the busiest app, open Storage settings...). Never ask which device or system they use.
+  A camera or microphone that isn't working ("run a check for why my camera isn't working"): device_check with
+  focus "camera" or "microphone", then say what you found and the most likely fix first (an app holding it, access
+  turned off, not detected), and offer to open the right settings page or close the app that holds it.
 - Code projects on this computer: project_overview maps one (languages, files, scripts, git); search_code finds where
   something is; read_text_file then edit_text_file change it (a backup is kept); run_project_check runs the project's
   own tests, linter or build to check the change. To fix or change code: overview -> search -> read -> edit -> check,
@@ -232,11 +250,15 @@ class TaskAgent:
 
     async def _chat(self, messages, use_tools=True):
         import httpx
-        body = {"model": self.model, "messages": messages, "temperature": 0.3}
+        from .. import tool_slips
         if use_tools:
             off = getattr(self.runner, "disabled_tools", set())
-            body["tools"] = [PLAN_SPEC] + [t for t in TOOL_SPECS if t["function"]["name"] not in off]
-            body["tool_choice"] = "auto"
+            body = {"model": self.model, "messages": messages, "temperature": 0.3,
+                    "tools": [PLAN_SPEC] + [t for t in TOOL_SPECS if t["function"]["name"] not in off], "tool_choice": "auto"}
+        else:
+            # the last word: no tools at all and what they found as text (0.1.162). Tool calls in the conversation
+            # but no tool list made GPT-OSS slip: "Tool choice is none, but model called a tool".
+            body = {"model": self.model, "messages": tool_slips.without_tools(messages), "temperature": 0.3}
         client = self._http or httpx.AsyncClient(timeout=60)
         headers = {"Authorization": f"Bearer {self.api_key}"}
         if getattr(self, "_turn", None):
@@ -244,6 +266,10 @@ class TaskAgent:
             headers["X-Gink-Agent"] = "1"            # Gink Cloud: a long agent turn counts one message per 10 rounds
         try:
             r = await client.post(self.base_url, json=body, headers=headers)
+            if r.status_code == 400 and tool_slips.is_slip(r.text):     # the model slipped on a tool call: once more
+                again = (dict(body, messages=list(body["messages"]) + [{"role": "system", "content": tool_slips.TOOL_RETRY_NOTE}])
+                         if use_tools else dict(body, messages=tool_slips.without_tools(body["messages"])))
+                r = await client.post(self.base_url, json=again, headers=headers)
         finally:
             if self._http is None:
                 await client.aclose()
@@ -394,9 +420,9 @@ class TaskAgent:
                 result = await self.runner.execute(name, args)
                 return AgentReply(_summarise(name, result),
                                   [{"tool": name, "args": args, "result": result}], used_ai=False)
+            from .. import tool_slips
             done = "; ".join(a["result"].get("message", a["tool"]) for a in actions if a["result"].get("ok"))
-            return AgentReply(f"I hit a problem reaching the AI ({e})."
-                              + (f" Already done: {done}." if done else ""), actions)
+            return AgentReply(tool_slips.friendly(e) + (f" Already done: {done}." if done else ""), actions)
 
 
 def _clean_plan(steps) -> list:

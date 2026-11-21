@@ -177,6 +177,12 @@ export class Gink {
     return this.chat([{ role: "user", content }], { model, ...extra });
   }
 
+  // An answer about a video, like the apps' (0.1.162): frames in order (Uint8Array, base64 or data URLs -- in a
+  // browser, videoFrames(file) takes them), with { question, name, duration, times }. (Gink Pro)
+  watch(frames, { question, model, name, duration, times, ...extra } = {}) {
+    return this.chat([{ role: "user", content: videoParts(frames, { question, name, duration, times }) }], { model, ...extra });
+  }
+
   // { idea, subject, style, aspect_ratio, photo } -- photo: Uint8Array or base64, to start from someone's own photo
   async image(prompt = "", { idea, subject, style, aspect_ratio, photo } = {}) {
     const body = { prompt };
@@ -272,6 +278,52 @@ export function schedulesIn(text) {
     out.push(s);
   }
   return out;
+}
+
+const MAX_PICTURES = 5;               // pictures in one question: photos first, then a video's frames
+const mmss = (t) => { t = Math.max(0, Math.round(Number(t) || 0)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`; };
+
+// A video as Gink's apps send it (0.1.162): a sentence saying what the pictures are, then up to five frames in order.
+// frames: Uint8Array, base64 or data URLs; times: their moments in seconds (default: spread over duration).
+export function videoParts(frames, { question = "", name = "video", duration = 0, times } = {}) {
+  const list = Array.from(frames || []).slice(0, MAX_PICTURES);
+  if (!list.length) throw new GinkAPIError("A video needs at least one frame.", 400, "invalid_video");
+  const at = times || list.map((_, i) => (duration ? (i + 0.5) * duration / list.length : i));
+  const note = `The video \u201c${name}\u201d${duration ? ` (${mmss(duration)} long)` : ""} is attached as ${list.length} pictures: ` +
+    `frames taken from it in order, at ${at.slice(0, list.length).map(mmss).join(", ")}. Treat them as one moving scene and ` +
+    "describe what happens across them.";
+  return [{ type: "text", text: note + "\n\n" + (String(question || "").trim() || "What happens in this video?") }]
+    .concat(list.map((f) => ({ type: "image_url", image_url: { url: imageDataURL(f) } })));
+}
+
+// In a browser: frames from a video File, Blob or URL, the way Gink's chat page takes them (<video> + canvas).
+// -> { frames: [data URLs], times: [seconds], duration }. Only in a browser (Node has no video decoder).
+export function videoFrames(video, { count = MAX_PICTURES } = {}) {
+  if (typeof document === "undefined") return Promise.reject(new GinkAPIError("videoFrames() works in a browser.", 0, "no_browser"));
+  return new Promise((resolve, reject) => {
+    const v = document.createElement("video"), url = typeof video === "string" ? video : URL.createObjectURL(video);
+    const frames = [], times = []; let k = 0;
+    const done = (err) => {
+      if (typeof video !== "string") URL.revokeObjectURL(url);
+      if (err) reject(new GinkAPIError(err, 400, "invalid_video"));
+      else resolve({ frames, times: times.slice(0, frames.length), duration: Number.isFinite(v.duration) ? v.duration : 0 });
+    };
+    v.muted = true; v.playsInline = true; v.preload = "auto";
+    v.onerror = () => done("That video can't be played here (its format).");
+    v.onloadedmetadata = () => {
+      const d = Number.isFinite(v.duration) && v.duration > 0 ? v.duration : 1, n = Math.max(1, Math.min(MAX_PICTURES, count));
+      for (let i = 0; i < n; i++) times.push(Math.min(Math.max(0, d - 0.1), (i + 0.5) * d / n));
+      v.currentTime = times[0];
+    };
+    v.onseeked = () => {
+      const s = Math.min(1, 960 / Math.max(v.videoWidth, v.videoHeight)), c = document.createElement("canvas");
+      c.width = Math.round(v.videoWidth * s); c.height = Math.round(v.videoHeight * s);
+      c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+      frames.push(c.toDataURL("image/jpeg", 0.82));
+      if (++k < times.length) v.currentTime = times[k]; else done();
+    };
+    v.src = url;
+  });
 }
 
 export function imageDataURL(photo) {

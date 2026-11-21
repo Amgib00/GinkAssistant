@@ -37,10 +37,16 @@ except ImportError:
     NotFoundError = Exception
     BadRequestError = Exception
 
+from . import tool_slips
 from .history import HistoryStore
 from .local_llm import LocalLLM, LocalLLMUnavailable
 
 logger = logging.getLogger("GroqBrain")
+
+
+class UseTools(Exception):
+    """The AI handed this request to Gink's own tools (the server's {"gink_status": "use_tools"}, 0.1.162): the app's
+    agent does it, in the same reply."""
 
 DEFAULT_FALLBACKS = {
     "llama-3.3-70b-versatile": "openai/gpt-oss-120b",
@@ -192,6 +198,7 @@ class GroqBrain:
         self.local_llm = LocalLLM(app)
 
         self.api_key = os.environ.get("GROQ_API_KEY", "").strip()
+        self.actions_ok = False         # set per answer by the chat: the AI may hand it to Gink's tools (UseTools)
         self.client = None
         self.active_models: List[str] = []
         # Settable from the Settings screen -- was hardcoded inline in
@@ -390,8 +397,8 @@ class GroqBrain:
         if self.client and self.api_key:
             return await self._cloud_reply(query, on_token, system_prompt, attachments, save_user, on_status=on_status)
 
-        if any(a.kind == "image" for a in attachments):
-            return await self._emit("Looking at photos needs the Groq connection (`GROQ_API_KEY`), "
+        if any(a.kind in ("image", "video") for a in attachments):
+            return await self._emit("Looking at photos and videos needs the Groq connection (`GROQ_API_KEY`), "
                                     "which isn't available right now.", on_token)
         from .attachments import build_prompt_text, history_text
         saved_query, query = history_text(query, attachments), build_prompt_text(query, attachments)
@@ -431,7 +438,7 @@ class GroqBrain:
     ) -> str:
         from .attachments import build_prompt_text, history_text
         attachments = attachments or []
-        images = [a for a in attachments if a.kind == "image"]
+        images = [a for a in attachments if a.kind in ("image", "video")]      # a video: its frames (0.1.162)
         prompt_text = build_prompt_text(query, attachments)
         saved_query = history_text(query, attachments)
 
@@ -441,9 +448,8 @@ class GroqBrain:
         messages = [{"role": "system", "content": system_prompt}]
         messages.extend(history)
         if images:
-            content = [{"type": "text", "text": prompt_text or "What's in this image?"}]
-            content += [{"type": "image_url", "image_url": {"url": a.data_url}} for a in images[:5]]
-            messages.append({"role": "user", "content": content})
+            from .attachments import picture_parts
+            messages.append({"role": "user", "content": picture_parts(prompt_text, attachments)})
         else:
             messages.append({"role": "user", "content": prompt_text})
 
@@ -459,31 +465,41 @@ class GroqBrain:
         import uuid as _uuid
         turn = {"X-Gink-Turn": _uuid.uuid4().hex}
         self.last_turn = turn["X-Gink-Turn"]
+        if getattr(self, "actions_ok", False) and not images:
+            turn["X-Gink-Actions"] = "1"            # the AI may hand this to Gink's tools (UseTools, 0.1.162)
+        plain = {"used": False}                     # asked again without tools after a slip (once)
+
+        async def open_stream(model, msgs):
+            return await self.client.chat.completions.create(
+                model=model, messages=msgs, temperature=0.8, stream=True, extra_headers=turn, **self._effort_args(model))
+
         try:
-            stream = await self.client.chat.completions.create(
-                model=active_model, messages=messages, temperature=0.8, stream=True, extra_headers=turn,
-                **self._effort_args(active_model),
-            )
+            stream = await open_stream(active_model, messages)
         except APIStatusError as err:
-            friendly = _limit_message(err)
-            if friendly:
-                return await self._emit(friendly, on_token)
-            if getattr(err, "status_code", 0) == 429:       # the server already tried other models: say why
-                return await self._emit(_problem_message(err), on_token)
-            if images:
-                return await self._emit(f"The photo couldn't be read by `{active_model}` ({err}). "
-                                        "Try again, or set `GINK_VISION_MODEL` in `.env`.", on_token)
-            logger.warning(f"'{active_model}' failed ({err}), retrying with a fallback model...")
-            await self.refresh_active_models()
-            retry_model = await self.resolve_model(DEFAULT_FALLBACKS["_global_default"])
-            try:
-                stream = await self.client.chat.completions.create(
-                    model=retry_model, messages=messages, temperature=0.8, stream=True, extra_headers=turn,
-                    **self._effort_args(retry_model),
-                )
-            except APIStatusError as err2:
-                logger.warning(f"fallback '{retry_model}' failed too ({err2})")
-                return await self._emit(_limit_message(err2) or _problem_message(err2), on_token)
+            if tool_slips.is_slip(err):              # it called a tool it wasn't given (Groq directly, an older server)
+                plain["used"] = True
+                try:
+                    stream = await open_stream(active_model, tool_slips.without_tools(messages))
+                except Exception as err2:
+                    logger.warning(f"'{active_model}' slipped twice ({err2})")
+                    return await self._emit(tool_slips.NO_ANSWER, on_token)
+            else:
+                friendly = _limit_message(err)
+                if friendly:
+                    return await self._emit(friendly, on_token)
+                if getattr(err, "status_code", 0) == 429:       # the server already tried other models: say why
+                    return await self._emit(_problem_message(err), on_token)
+                if images:
+                    return await self._emit(f"The photo couldn't be read by `{active_model}` ({err}). "
+                                            "Try again, or set `GINK_VISION_MODEL` in `.env`.", on_token)
+                logger.warning(f"'{active_model}' failed ({err}), retrying with a fallback model...")
+                await self.refresh_active_models()
+                retry_model = await self.resolve_model(DEFAULT_FALLBACKS["_global_default"])
+                try:
+                    stream = await open_stream(retry_model, messages)
+                except APIStatusError as err2:
+                    logger.warning(f"fallback '{retry_model}' failed too ({err2})")
+                    return await self._emit(_limit_message(err2) or _problem_message(err2), on_token)
         except (BadRequestError, NotFoundError, APIError) as err:
             # network problems land here (not APIStatusError)
             if images:
@@ -504,19 +520,46 @@ class GroqBrain:
                                         "connection and try again.", on_token)
 
         full_response = ""
-        async for chunk in stream:
-            status = getattr(chunk, "gink_status", None)          # the server: "searching" (the web)
-            if status == "searching" and on_status:
-                try:
-                    on_status("Searching the web\u2026")
-                except Exception:
-                    pass
-            if chunk.choices and chunk.choices[0].delta:
-                token = chunk.choices[0].delta.content
-                if token:
-                    full_response += token
-                    if on_token:
-                        await on_token(token)
+        while True:
+            try:
+                async for chunk in stream:
+                    status = getattr(chunk, "gink_status", None)          # the server: "searching" (the web)
+                    if status == "use_tools" and "X-Gink-Actions" in turn:   # ...or: Gink's tools should do this
+                        try:
+                            await stream.close()
+                        except Exception:
+                            pass
+                        raise UseTools()
+                    if status == "searching" and on_status:
+                        try:
+                            on_status("Searching the web\u2026")
+                        except Exception:
+                            pass
+                    if chunk.choices and chunk.choices[0].delta:
+                        token = chunk.choices[0].delta.content
+                        if token:
+                            full_response += token
+                            if on_token:
+                                await on_token(token)
+                break
+            except UseTools:
+                raise
+            except Exception as err:
+                # inside the answer: the AI service stopped, or the model slipped on a tool call. Never an
+                # "[error] ..." line and a spinner that never stops: once more without tools, else a plain sentence.
+                logger.warning(f"the answer stopped ({err})")
+                if not full_response and not plain["used"] and tool_slips.is_slip(err):
+                    plain["used"] = True
+                    try:
+                        stream = await open_stream(active_model, tool_slips.without_tools(messages))
+                        continue
+                    except Exception as err2:
+                        logger.warning(f"asking again didn't work either ({err2})")
+                note = tool_slips.STOPPED_EARLY if full_response.strip() else tool_slips.NO_ANSWER
+                full_response += note
+                if on_token:
+                    await on_token(note)
+                break
 
         if full_response:
             if save_user:

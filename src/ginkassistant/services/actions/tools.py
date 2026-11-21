@@ -74,8 +74,12 @@ TOOL_SPECS = [
         "security updates, time since the last restart, processor load and the busiest apps, memory, storage, battery "
         "charge and health, and protections (disk encryption, firewall, antivirus). Use it when the user asks to check, "
         "scan or diagnose their device, why it's slow, about its battery, storage or security, or what device they have "
-        "-- never ask them which device or system they use, and never hand them steps to check it themselves.",
-        {"updates": {"type": "boolean", "description": "also look for waiting system updates (slow; when they ask about updates)"}}, []),
+        "-- never ask them which device or system they use, and never hand them steps to check it themselves. For a "
+        "camera or microphone that isn't working, focus on it: whether the system sees it, reports a problem, has "
+        "access turned off, and which open apps may be holding it.",
+        {"updates": {"type": "boolean", "description": "also look for waiting system updates (slow; when they ask about updates)"},
+         "focus": {**S, "enum": ["all", "camera", "microphone"],
+                   "description": "camera or microphone: check that device (with the system basics); all: everything"}}, []),
     _fn("open_folder", "Open a folder in Finder / the file manager: Downloads, Documents, Desktop, home, or any "
         "folder by name (e.g. a project folder).", {"name": {**S, "description": "e.g. 'downloads' or 'GinkAssistant'"}}, ["name"]),
     _fn("reveal_in_finder", "Show a file in Finder (a number or name from the last file list).", {"which": S}, []),
@@ -358,9 +362,10 @@ class ToolRunner:
     def _t_system_status(self):
         return self._pc().system_status()
 
-    def _t_device_check(self, updates=False):
+    def _t_device_check(self, updates=False, focus="all"):
         from .health import check_device
-        return check_device(bool(updates))
+        focus = str(focus or "all").lower()
+        return check_device(bool(updates)) if focus == "all" else check_device(bool(updates), focus=focus)
 
     def _t_open_folder(self, name="home"):
         return self._pc().open_folder(name)

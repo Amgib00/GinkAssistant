@@ -827,6 +827,8 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
   .att.pic { position: relative; padding: 0; border-radius: 16px; overflow: hidden; background: transparent; }
   .att.pic img { width: 96px; height: 96px; margin: 0; border-radius: 16px; }
   .att.pic .meta { display: none; }
+  .att.pic .vbadge { position: absolute; left: 6px; bottom: 6px; padding: 1px 7px; border-radius: 999px; background: rgba(0, 0, 0, .6);
+                     color: #fff; font-size: 11px; font-weight: 600; line-height: 17px; pointer-events: none; }
   .att.pic .x { position: absolute; top: 5px; right: 5px; margin: 0; background: rgba(0, 0, 0, .55); color: #fff; border-radius: 50%; }
   .att.pic .x:hover { background: rgba(0, 0, 0, .75); color: #fff; }
   body.home #composer { position: relative; }
@@ -1349,6 +1351,10 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     var ext = (a.name.split('.').pop() || 'file').slice(0, 4);
     if (a.thumb) { var im = document.createElement('img'); im.src = a.thumb; d.appendChild(im); }
     else { var f = document.createElement('div'); f.className = 'ficon'; f.textContent = ext; d.appendChild(f); }
+    if (a.kind === 'video' && a.thumb && removable) {       // a video's first frame: a play mark and its length
+      var vb = document.createElement('span'); vb.className = 'vbadge';
+      vb.textContent = '\u25b6 ' + String(a.note || '').split('\u00b7').pop().trim(); d.appendChild(vb);
+    }
     if (removable || a.kind !== 'image') {
       var meta = document.createElement('span'); meta.className = 'meta';
       var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = a.name; meta.appendChild(nm);
@@ -1371,7 +1377,54 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     var comp = document.getElementById('composer'); if (comp) comp.classList.toggle('with-atts', composerAtts.length > 0);
     refreshSend();
   }
+  // ---- videos (0.1.162): a few frames, in order, go to the AI as pictures -- the video itself stays here. The
+  // browser engine plays it (no extra library): <video> + canvas, at evenly spaced moments.
+  var VIDEO_RE = /\\.(mp4|mov|m4v|webm|3gp|avi|mkv)$/i;
+  function isVideo(file) { return /^video\\//.test(file.type || '') || VIDEO_RE.test(file.name || ''); }
+  function videoFrames(src, done) {
+    var v = document.createElement('video'), frames = [], times = [], k = 0, over = false;
+    v.muted = true; v.playsInline = true; v.preload = 'auto';
+    function end(err) {
+      if (over) return; over = true; clearTimeout(timer);
+      var d = v.duration;
+      try { v.removeAttribute('src'); v.load(); } catch (e) {}
+      done(err, frames, isFinite(d) ? d : 0);
+    }
+    var timer = setTimeout(function () { end(frames.length ? null : 'slow'); }, 25000);
+    v.onerror = function () { end('unreadable'); };
+    v.onloadedmetadata = function () {
+      var d = isFinite(v.duration) && v.duration > 0 ? v.duration : 1, n = d < 3 ? 2 : d < 15 ? 4 : 5;
+      for (var i = 0; i < n; i++) times.push(Math.min(Math.max(0, d - 0.1), (i + 0.5) * d / n));
+      v.currentTime = times[0];
+    };
+    v.onseeked = function () {
+      try {
+        var w = v.videoWidth, h = v.videoHeight;
+        if (!w || !h) return end('unreadable');
+        var sc = Math.min(1, 960 / Math.max(w, h)), c = document.createElement('canvas');
+        c.width = Math.round(w * sc); c.height = Math.round(h * sc);
+        c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+        frames.push({at: Math.round(times[k] * 10) / 10, data: c.toDataURL('image/jpeg', 0.82)});
+      } catch (e) { return end('unreadable'); }
+      k++;
+      if (k < times.length) v.currentTime = times[k]; else end(null);
+    };
+    v.src = src;
+  }
+  function videoToChat(src, name, after) {
+    setAttachments(composerAtts.concat([{name: name, kind: 'file', loading: true}]));
+    videoFrames(src, function (err, frames, duration) {
+      if (after) after();
+      ginkEmit('attach_video', err || !frames.length ? {name: name, error: err || 'unreadable'}
+                                                     : {name: name, duration: duration, frames: frames});
+    });
+  }
+  window.videoFromData = function (dataUrl, name) { videoToChat(dataUrl, name); };   // the apps' file picker
   function readAndEmit(file) {
+    if (isVideo(file)) {                                   // only its frames leave the page: no 20 MB limit here
+      var vurl = URL.createObjectURL(file);
+      return videoToChat(vurl, file.name || ('video-' + Date.now() + '.mp4'), function () { URL.revokeObjectURL(vurl); });
+    }
     if (file.size > 20 * 1024 * 1024) { setStatus(file.name + ' is over 20 MB.'); return; }
     var name = file.name || ('pasted-' + Date.now() + '.png');
     setAttachments(composerAtts.concat([{name: name, kind: 'file', loading: true}]));
@@ -1825,7 +1878,7 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     var asked = true;
     try { asked = !!localStorage.getItem('gink-people-offered'); localStorage.setItem('gink-people-offered', '1'); } catch (e) {}
     if (asked) return;
-    ginkNotify({id: 'people-offer', icon: '\U0001F465', title: 'Group the people in your photos?', timeout: 0,
+    ginkNotify({id: 'people-offer', system: false, icon: '\U0001F465', title: 'Group the people in your photos?', timeout: 0,
                 body: 'Like Photos on iPhone: Gink finds the faces in photos you share and groups them by person \u2014 on this device only. Then ask \u201cshow me photos of Awa\u201d.',
                 actions: [{label: 'Not now'}, {label: 'Turn on', primary: true,
                            run: function () { ginkEmit('setting', {key: 'people_on', value: true}); }}]});
@@ -2242,6 +2295,9 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     n.addEventListener('touchmove', function (e) { if (x0 !== null) n.style.transform = 'translateX(' + Math.max(0, e.touches[0].clientX - x0) + 'px)'; }, {passive: true});
     n.addEventListener('touchend', function (e) { var dx = (e.changedTouches[0].clientX - (x0 || 0)); x0 = null;
       if (dx > 80) ginkDismiss(id); else n.style.transform = ''; });
+    // on the device too when Gink isn't in front (0.1.162): the web app's browser notifications. (The apps post
+    // their own from Python: services/system_notify.py.) system: false = a quick confirmation, the page only.
+    if (o.system !== false && typeof window.ginkSystemNotify === 'function') { try { window.ginkSystemNotify(o); } catch (e) {} }
     return id;
   }
   // Gink's status (GET /status): a notification while something on Gink's side isn't working; gone when it's fixed
@@ -2683,6 +2739,8 @@ class WebChatFeed:
 
     async def show_update(self, version: str):
         await self._js(f"showUpdate({json.dumps(version)})")
+        self._device_too(f"Gink {str(version).lstrip('v')} is available", "Download the new version when you\u2019re ready.",
+                         "update")
 
     async def hide_update(self):
         await self._js("hideUpdate()")
@@ -2842,19 +2900,40 @@ class WebChatFeed:
         """Small chip under the centred welcome bar ("Next alarm 06:30 today")."""
         await self._js(f"setToday({json.dumps(text or '')})")
 
+    # The device's own notification too (0.1.162): main_screen sets this to services/system_notify.post (Notification
+    # Center on a Mac...), which shows it only when Gink isn't in front. (title, body, id) -> None
+    on_system_notify = None
+
+    def _device_too(self, title: str, body: str, nid: str = ""):
+        if self.on_system_notify is not None:
+            try:
+                self.on_system_notify(title, body, nid)
+            except Exception:
+                pass                                       # a notification must never break the chat
+
+    async def video_from_data(self, data_url: str, name: str):
+        """A video from the apps' file picker: the page takes its frames (videoFromData), then sends attach_video."""
+        await self._js(f"window.videoFromData && videoFromData({json.dumps(data_url)}, {json.dumps(name)})")
+
     async def notify(self, title: str, body: str = "", icon: str = "", kind: str = "", timeout: int = 6000,
-                     actions: list = None, nid: str = ""):
-        """An Apple-style notification card in the window (ui: ginkNotify)."""
+                     actions: list = None, nid: str = "", system: bool = True):
+        """An Apple-style notification card in the window (ui: ginkNotify) -- and on the device when Gink isn't in
+        front (system=False: a quick confirmation of something the person just did)."""
         opts = {"title": title, "body": body, "icon": icon, "kind": kind, "timeout": timeout, "actions": actions or []}
         if nid:
             opts["id"] = nid
         await self._js(f"ginkNotify({json.dumps(opts)})")
+        if system:
+            self._device_too(title, body, nid)
 
     async def status_bar(self, status: str, message: str):
         await self._js(f"statusBar({json.dumps(status)}, {json.dumps(message)})")
+        if message and status not in ("ok", ""):
+            self._device_too("Notice" if status == "notice" else "Gink is having trouble", message, "status")
 
     async def policy_notice(self, date: str, privacy: str, terms: str):
         await self._js(f"policyNotice({json.dumps(date)}, {json.dumps(privacy)}, {json.dumps(terms)})")
+        self._device_too("Privacy policy and terms updated", "What Gink does with your data, in plain words.", "policy")
 
     async def set_models(self, models: list, current_id: str):
         await self._js(f"setModels({json.dumps(models)}, {json.dumps(current_id)})")

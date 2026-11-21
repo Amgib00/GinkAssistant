@@ -58,6 +58,12 @@ export interface InteractionParams {
 
 /** Uint8Array, base64 or a data URL -> a data URL Gink can look at (JPEG, PNG, WebP or GIF). */
 export declare function imageDataURL(photo: Uint8Array | ArrayBuffer | string): string;
+/** A video as Gink's apps send it (0.1.162): a sentence saying what the pictures are, then up to five frames in order. */
+export declare function videoParts(frames: Array<Uint8Array | ArrayBuffer | string>,
+                                   options?: { question?: string; name?: string; duration?: number; times?: number[] }): unknown[];
+/** In a browser: frames from a video File, Blob or URL (<video> + canvas), as data URLs, with their moments. */
+export declare function videoFrames(video: Blob | string, options?: { count?: number }):
+  Promise<{ frames: string[]; times: number[]; duration: number }>;
 /** A source of a web answer: official = a government, an international body or the organisation's own site;
  *  icon = the site's real logo, served by Gink (<server>/icon/<host>). */
 export interface Source { title: string; url: string; host: string; official: boolean; icon: string }
@@ -206,6 +212,9 @@ export declare class Gink {
   sources(text: string): Source[];
   /** An answer about a photo (like the Live camera); careful with anything about health. Gink Pro. */
   see(photo: Uint8Array | ArrayBuffer | string, options?: { question?: string; model?: string }): Promise<string>;
+  /** An answer about a video from its frames (in a browser, videoFrames() takes them). Gink Pro. */
+  watch(frames: Array<Uint8Array | ArrayBuffer | string>,
+        options?: { question?: string; model?: string; name?: string; duration?: number; times?: number[] }): Promise<string>;
   image(prompt?: string, options?: { idea?: string; subject?: string; style?: string;
     aspect_ratio?: "1:1" | "16:9" | "9:16" | "4:3" | "3:4"; photo?: Uint8Array | string }): Promise<Uint8Array>;
   imageIdeas(): Promise<{ styles: Array<{ id: string; description: string }>;

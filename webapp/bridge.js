@@ -377,7 +377,7 @@
            (voice ? "" : " " + "When you genuinely need the person's preferences or details before you can help well (planning a trip, recommending something, a workout plan...), you may ask 1 to 3 short questions as tappable choices: write one short sentence, then a fenced code block with the language ask containing JSON like {\"questions\": [{\"q\": \"Your question?\", \"options\": [\"Choice 1\", \"Choice 2\", \"Choice 3\"]}]} (2 to 4 short options each). The person can also type their own answer. Their reply starts with \"My answers:\" and lists each question with what they chose: those are answers about them and their situation, so carry on with what they asked for. Don't use it for simple questions, facts, or when they already said what they want.");
   }
   // What Gink knows about itself: the same words as services/about_gink.py (a test keeps them equal)
-  var ABOUT_GINK = "About you: you are Gink, an AI assistant made by Gink AI (developer: Amgib00), with apps for Mac, Windows, Linux and Android, a web app and Gink Genie for building apps and websites. Your website is https://amgib00.github.io/GinkAssistant/ (downloads at https://amgib00.github.io/GinkAssistant/download.html), your source code is on GitHub at https://github.com/Amgib00/GinkAssistant, the developer platform (API keys, docs) is https://gink-server.onrender.com/developers and support is gink@ginkaisupport.com. When asked about Gink, its website, repository, download or support, give these exact links -- never a placeholder. What you can do now (0.1.161): scheduled tasks -- Gink's server does a task later or on a repeat by itself and the result arrives in its own chat (made from a chat or Settings > Scheduled tasks; Free has 3, Gink Pro 25 and hourly ones); artifacts -- pages, small apps, SVGs, diagrams, documents and code files open beside the chat with their versions; you read the pages people link and search the web when an answer needs it; you read GitHub repositories, and on a computer you can work on code projects and run their tests.";
+  var ABOUT_GINK = "About you: you are Gink, an AI assistant made by Gink AI (developer: Amgib00), with apps for Mac, Windows, Linux and Android, a web app and Gink Genie for building apps and websites. Your website is https://amgib00.github.io/GinkAssistant/ (downloads at https://amgib00.github.io/GinkAssistant/download.html), your source code is on GitHub at https://github.com/Amgib00/GinkAssistant, the developer platform (API keys, docs) is https://gink-server.onrender.com/developers and support is gink@ginkaisupport.com. When asked about Gink, its website, repository, download or support, give these exact links -- never a placeholder. What you can do now (0.1.162): scheduled tasks -- Gink's server does a task later or on a repeat by itself and the result arrives in its own chat (made from a chat or Settings > Scheduled tasks; Free has 3, Gink Pro 25 and hourly ones); artifacts -- pages, small apps, SVGs, diagrams, documents and code files open beside the chat with their versions; you read the pages people link and search the web when an answer needs it; you read GitHub repositories, and on a computer you can work on code projects and run their tests; you watch videos people attach (a few frames, in order); in the Gink apps, something to do on the device -- a check of the camera, microphone or the whole device, an alarm, an app to open -- goes to Gink's own tools by itself, and Gink's notifications also show in the device's notifications. Your logo: a lime-green snowflake with six rounded arms on a dark navy rounded square -- the same snowflake turns while you work and marks the end of your answers. A picture of it is Gink's logo (you), not Snowflake Inc.'s (theirs is a light-blue snowflake).";
   // Which device the person is on, from their browser -- "which device am I using?" gets an answer, not a question
   function deviceNote() {
     var ua = navigator.userAgent || "", touch = (navigator.maxTouchPoints || 0) > 1;
@@ -406,17 +406,30 @@
   function historyText(msg, atts) {             // synced history keeps file NAMES, never contents
     return atts.length ? (msg ? msg + "\n\n" : "") + "\uD83D\uDCCE " + atts.map(function (a) { return a.name; }).join(", ") : msg;
   }
-  function buildContent(msg, atts) {             // what the AI receives (same format as the desktop app)
+  function mmss(t) { t = Math.max(0, Math.round(t || 0)); return Math.floor(t / 60) + ":" + ("0" + (t % 60)).slice(-2); }
+  function buildContent(msg, atts) {             // what the AI receives (same format as the apps: attachments.picture_parts)
     var docs = atts.filter(function (a) { return a.kind === "text"; }), imgs = atts.filter(function (a) { return a.kind === "image"; });
+    var vids = atts.filter(function (a) { return a.kind === "video" && a.frames && a.frames.length; });
     var t = msg;
     if (docs.length) {
       t = docs.map(function (a) {
         return '<attached_file name="' + a.name.replace(/"/g, "'") + '"' + (a.note ? " (" + a.note + ")" : "") + ">\n" + a.text + "\n</attached_file>";
       }).join("\n\n") + "\n\n" + (msg || "Please read the attached file(s) and summarise the important points.");
     }
-    if (!imgs.length) return t;
-    return [{ type: "text", text: t || "What's in this picture?" }].concat(imgs.map(function (a) {
-      return { type: "image_url", image_url: { url: a.data_url } };
+    if (!imgs.length && !vids.length) return t;
+    var budget = 5, urls = [], notes = [];        // photos first, then each video's frames in order: 5 pictures at most
+    imgs.forEach(function (a) { if (budget && a.data_url) { urls.push(a.data_url); budget--; } });
+    vids.forEach(function (a) {
+      if (!budget) return;
+      var take = a.frames.slice(0, budget); budget -= take.length;
+      notes.push("The video \u201c" + a.name + "\u201d" + (a.duration ? " (" + mmss(a.duration) + " long)" : "") + " is attached as " +
+                 take.length + " pictures: frames taken from it in order, at " + take.map(function (f) { return mmss(f.at); }).join(", ") +
+                 ". Treat them as one moving scene and describe what happens across them.");
+      take.forEach(function (f) { urls.push(f.data); });
+    });
+    var asked = t || (notes.length && !imgs.length ? "What happens in this video?" : "What's in this image?");
+    return [{ type: "text", text: notes.length ? notes.concat([asked]).join("\n\n") : asked }].concat(urls.map(function (u) {
+      return { type: "image_url", image_url: { url: u } };
     }));
   }
 
@@ -542,7 +555,14 @@
             if (!data || data === "[DONE]") return;
             try {
               var d = JSON.parse(data);
-              if (d.error) { text += (text ? "\n\n" : "") + (d.error.message || "The AI service had a problem."); setPlainText(aid, text); return; }
+              if (d.error) {                // the server says these in plain words now; an older one: never the raw slip
+                var em = String(d.error.message || "") + " " + String(d.error.code || "");
+                text += text ? "\n\n*The answer stopped early because the AI service had a problem. Ask again to get the rest.*"
+                  : /tool_use_failed|tool choice is none|called a tool/i.test(em)
+                    ? "The AI service tripped over that one. Please ask again — it usually works the second time."
+                    : (d.error.message || "The AI service had a problem.");
+                setPlainText(aid, text); return;
+              }
               if (d.gink_status === "searching") setSpinLabel(aid, "Searching the web\u2026");   // automatic searches too
               var piece = d.choices && d.choices[0] && d.choices[0].delta && d.choices[0].delta.content;
               if (piece) { text += piece; setPlainText(aid, narrow(text)); }
@@ -850,30 +870,37 @@
       if (W.openAfterSync) {                                                   // "Open its chat": here now
         var want = W.openAfterSync; W.openAfterSync = "";
         if (W.sessions[want] && !W.sessions[want].deleted) openSession(want);
-        else ginkNotify({ id: "task-action", icon: "\u23f0", title: "Scheduled task", body: "Its chat isn\u2019t here yet \u2014 try again in a moment.", timeout: 4000 });
+        else ginkNotify({ id: "task-action", icon: "\u23f0", title: "Scheduled task", body: "Its chat isn\u2019t here yet \u2014 try again in a moment.", timeout: 4000, system: false });
       }
       if (news.length) loadTasks();
     }).catch(function () {}).then(function () { W.syncing = false; });
   }
 
-  // A scheduled task's new result: a notification in the page, and the browser's own when Gink isn't in front
+  // A scheduled task's new result: a notification in the page -- and the browser's own when Gink isn't in front
+  // (ginkSystemNotify, below)
   function taskNews(n) {
     if (n.id === W.current && !document.hidden) return;                     // on screen already
     var body = String(n.text || "").replace(/^\*\*\u23f0[^\n]*\n+/, "").replace(/[*#>`_]+/g, " ").replace(/\s+/g, " ").trim();
     body = body.length > 140 ? body.slice(0, 140) + "\u2026" : body;
-    ginkNotify({ id: "task-" + n.id, icon: "\u23f0", title: n.title, body: body, timeout: 12000,
+    ginkNotify({ id: "task-" + n.id, icon: "\u23f0", title: n.title, body: body || "A new result is ready.", timeout: 12000, open: n.id,
                  actions: [{ label: "Open", emit: "select_session", value: n.id, primary: true }] });
-    try {
-      if (document.hidden && window.Notification && Notification.permission === "granted") {
-        var note = new Notification(n.title, { body: body || "A new result is ready.", tag: "gink-" + n.id });
-        note.onclick = function () { window.focus(); openSession(n.id); note.close(); };
-      }
-    } catch (e) {}
   }
+  // Every notification card also shows on the device when this tab isn't in front (0.1.162): the browser's own
+  // notification (Notification Center on a Mac), if it's allowed and Settings > Notifications says so. The page's
+  // ginkNotify calls this; system: false cards (quick confirmations) don't.
+  window.ginkSystemNotify = function (o) {
+    try {
+      if (!document.hidden || W.prefs.notify_system === false || !window.Notification || Notification.permission !== "granted") return;
+      var note = new Notification(o.title || "Gink", { body: o.body || "", tag: "gink-" + (o.id || o.title || "") });
+      note.onclick = function () { window.focus(); if (o.open) openSession(o.open); note.close(); };
+    } catch (e) {}
+  };
 
   // ---------------------------------------------------------------- settings (web subset)
   function pushSettings(lists, extra) {
-    setSettingsState({ values: Object.assign({}, W.prefs, { model: W.model }),
+    var shown = false;                             // "Browser notifications": on when wanted AND the browser allows them
+    try { shown = W.prefs.notify_system !== false && !!window.Notification && Notification.permission === "granted"; } catch (e) {}
+    setSettingsState({ values: Object.assign({}, W.prefs, { model: W.model, notify_system: shown }),
                        info: Object.assign({ name: W.name, email: W.email, version: "web", plan: W.plan || "free", voices: [], models: W.models, web: true,
                                              care: !!W.care, teen: !!W.teen,
                                              wake_supported: !!(window.SpeechRecognition || window.webkitSpeechRecognition), wake_web: true,
@@ -1178,10 +1205,10 @@
                  taskCall("PATCH", "/tasks/" + id, { enabled: a === "resume" });
       call.then(function () {
         if (a === "run") taskSoon();
-        ginkNotify({ id: "task-action", icon: "\u23f0", title: "Scheduled task", timeout: 3500,
+        ginkNotify({ id: "task-action", icon: "\u23f0", title: "Scheduled task", timeout: 3500, system: false,
                      body: a === "delete" ? "Deleted. Its results stay in its chat." : a === "run" ? "Running now \u2014 the result will be in its chat in a minute." :
                            a === "pause" ? "Paused." : "Resumed." });
-      }).catch(function (err) { ginkNotify({ id: "task-action", icon: "\u23f0", title: "Scheduled task", body: err.message, timeout: 5000 }); })
+      }).catch(function (err) { ginkNotify({ id: "task-action", icon: "\u23f0", title: "Scheduled task", body: err.message, timeout: 5000, system: false }); })
         .then(loadTasks);
     },
     task_open: function (v) { if (v && v.chat_id) openTaskChat(String(v.chat_id)); },
@@ -1247,7 +1274,7 @@
         var all = W.memories || {}; delete all[v.id];
         if (v.replaced && j && j.id) all[j.id] = { text: j.text, created: Date.now() / 1000 };
         W.memories = all; save("gink_memories", all);
-        if (typeof ginkNotify === "function") ginkNotify({ id: "mem-auto", title: "Undone", body: "Gink won\u2019t remember that.", icon: "\u21A9\uFE0F", timeout: 2500 });
+        if (typeof ginkNotify === "function") ginkNotify({ id: "mem-auto", title: "Undone", body: "Gink won\u2019t remember that.", icon: "\u21A9\uFE0F", timeout: 2500, system: false });
       }).catch(function () {});
     },
     policy_seen: function (d) { try { LS.setItem("gink_policy_seen", String(d || "").slice(0, 20)); } catch (e) {} },
@@ -1279,6 +1306,15 @@
       if (/^(theme|chat_font|motion)$/.test(v.key)) applyAppearance();
       if (v.key === "model") HANDLERS.model(v.value);
       if (v.key === "wake_enabled") { WK.blocked = false; if (v.value) wakeStart(); else { wakeStop(); wakeStatus("Off"); } }
+      if (v.key === "notify_system" && v.value) {        // the browser asks first; a "no" there is the browser's to change
+        try {
+          if (window.Notification && Notification.permission === "default") {
+            var asked = Notification.requestPermission(function () { pushSettings(); });      // older Safari: a callback
+            if (asked && asked.then) asked.then(function () { pushSettings(); });
+          }
+        } catch (e) {}
+        try { if (window.Notification && Notification.permission === "denied") settingsToast("Your browser blocks Gink\u2019s notifications: allow them in the site\u2019s settings (the icon by the address).", "err"); } catch (e) {}
+      }
       pushSettings();
     },
     settings_action: function (v) {
@@ -1565,6 +1601,21 @@
         setStatus((e && e.message && e.message !== "signed out") ? e.message : "Gink can't read " + name + ".");
         setTimeout(function () { setStatus(""); }, 4500);
       });
+    },
+    attach_video: function (v) {                    // the page took a few frames from a video (0.1.162)
+      if (!v) return;
+      var name = String(v.name || "video");
+      if (v.error || !v.frames || !v.frames.length) {
+        showAtts();
+        setStatus(v.error === "slow" ? name + " took too long to open. Try a shorter clip."
+                  : "Gink couldn\u2019t play " + name + " here (its format). Try an .mp4 video, or send a photo of what you want to show.");
+        setTimeout(function () { setStatus(""); }, 5000);
+        return;
+      }
+      var frames = v.frames.filter(function (f) { return f && /^data:image\/(jpeg|png|webp);base64,/.test(String(f.data || "")); }).slice(0, 5);
+      W.atts.push({ name: name, kind: "video", thumb: frames[0].data, frames: frames, duration: Number(v.duration) || 0,
+                    note: frames.length + " frames" + (v.duration ? " \u00b7 " + mmss(v.duration) : "") });
+      showAtts();
     },
     remove_attachment: function (i) { W.atts.splice(Number(i), 1); showAtts(); },
     voice_start: function (v) {

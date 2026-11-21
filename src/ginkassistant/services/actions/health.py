@@ -337,18 +337,164 @@ def _phone(report: dict, issues: list) -> None:
             pass
 
 
-def check_device(updates: bool = False) -> Dict:
-    """Read-only health check of this device. -> {"ok", "message", "report", "issues"}"""
+# ---- Camera and microphone (0.1.162): "why is my camera not working?" -- is one there at all, does the system say
+# it has a problem, is camera access turned off for apps, which open apps usually hold it. Read-only, like the rest.
+CALL_APPS = ("zoom", "teams", "facetime", "photo booth", "skype", "webex", "obs", "discord", "slack", "whatsapp",
+             "meet", "loom", "snap camera", "camo", "messenger")
+
+
+def _call_apps_open() -> List[str]:
+    """Open apps that usually take the camera and microphone (video calls, recording)."""
+    names = set()
+    if MAC or sys.platform.startswith("linux"):
+        ok, out = run(["ps", "-Ao", "comm"] if MAC else ["ps", "-eo", "comm"], timeout=6)
+        procs = [os.path.basename(x.strip()).lower() for x in (out.splitlines()[1:] if ok else [])]
+    else:
+        ps = _psutil()
+        procs = []
+        if ps:
+            try:
+                procs = [(p.info.get("name") or "").lower() for p in ps.process_iter(["name"])]
+            except Exception:
+                procs = []
+    for proc in procs:
+        for app in CALL_APPS:
+            if app.replace(" ", "") in proc.replace(" ", "").replace(".", "").replace("-", ""):
+                names.add(app.title() if app not in ("obs",) else "OBS")
+    return sorted(names)
+
+
+def _mac_av_permission(kind: str) -> str:
+    """Gink's own camera / microphone permission on a Mac (the built app only): allowed, denied, not asked yet."""
+    try:
+        from rubicon.objc import ObjCClass
+        from rubicon.objc.runtime import load_library
+        load_library("AVFoundation")
+        media = "vide" if kind == "camera" else "soun"           # AVMediaTypeVideo / AVMediaTypeAudio
+        state = int(ObjCClass("AVCaptureDevice").authorizationStatusForMediaType_(media))
+        return {0: "not asked yet", 1: "restricted", 2: "denied", 3: "allowed"}.get(state, "")
+    except Exception:
+        return ""
+
+
+def _devices(report: dict, issues: list, focus: str = "all") -> None:
+    want_cam, want_mic = focus in ("all", "camera"), focus in ("all", "microphone")
+    cams, mics, problem = None, None, []
+    if MAC:
+        if want_cam:
+            ok, out = run(["system_profiler", "SPCameraDataType"], timeout=20)
+            cams = [m.strip() for m in re.findall(r"^\s{4}(\S[^:\n]*):\s*$", out, re.M)] if ok else None
+        if want_mic:
+            ok, out = run(["system_profiler", "SPAudioDataType"], timeout=20)
+            found = []
+            for block in re.split(r"\n(?=\s{8}\S[^\n]*:\s*\n)", out if ok else ""):
+                head = block.strip().splitlines()[0].rstrip(":").strip() if block.strip() else ""
+                if head and (re.search(r"microphone|\bmic\b|input", head, re.I) or "Input Channels" in block
+                             or "Default Input Device: Yes" in block):
+                    found.append(head)
+            mics = found or None             # nothing recognisable (older macOS lists them differently): don't guess
+    elif WIN:
+        script = ("$c = Get-PnpDevice -Class Camera,Image -PresentOnly -ErrorAction SilentlyContinue | "
+                  "ForEach-Object { $_.FriendlyName + '|' + $_.Status };"
+                  "$m = Get-PnpDevice -Class AudioEndpoint -PresentOnly -ErrorAction SilentlyContinue | "
+                  "Where-Object { $_.FriendlyName -match 'Microphone|Mic|Input|Headset' } | ForEach-Object { $_.FriendlyName + '|' + $_.Status };"
+                  "'CAM:' + ($c -join ';'); 'MIC:' + ($m -join ';');"
+                  "$k = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore';"
+                  "'CAMOK:' + (Get-ItemProperty -Path ($k + '\\webcam') -Name Value -ErrorAction SilentlyContinue).Value;"
+                  "'MICOK:' + (Get-ItemProperty -Path ($k + '\\microphone') -Name Value -ErrorAction SilentlyContinue).Value")
+        ok, out = run(["powershell", "-NoProfile", "-Command", script], timeout=25)
+        lines = dict(line.split(":", 1) for line in out.splitlines() if ":" in line and line.split(":", 1)[0] in
+                     ("CAM", "MIC", "CAMOK", "MICOK")) if ok else {}
+
+        def parse(text):
+            found = [x.split("|") for x in (text or "").split(";") if x.strip()]
+            for name, *status in found:
+                if status and status[0].strip().upper() not in ("OK", ""):
+                    problem.append(f"{name.strip()} ({status[0].strip().lower()})")
+            return [f[0].strip() for f in found]
+        if want_cam and "CAM" in lines:
+            cams = parse(lines["CAM"])
+            if lines.get("CAMOK", "").strip().lower() == "deny":
+                issues.append({"level": "warn", "what": "Camera access is turned off for apps.",
+                               "fix": "Settings > Privacy & security > Camera: turn on Camera access (and for the app)."})
+        if want_mic and "MIC" in lines:
+            mics = parse(lines["MIC"])
+            if lines.get("MICOK", "").strip().lower() == "deny":
+                issues.append({"level": "warn", "what": "Microphone access is turned off for apps.",
+                               "fix": "Settings > Privacy & security > Microphone: turn on Microphone access."})
+    elif sys.platform.startswith("linux"):
+        if want_cam:
+            try:
+                cams = sorted(n for n in os.listdir("/dev") if re.match(r"video\d+$", n))
+            except OSError:
+                cams = None
+            if cams:
+                ok, out = run(["fuser"] + [f"/dev/{n}" for n in cams], timeout=6)
+                if ok and re.search(r"\d", out.split(":", 1)[-1] if ":" in out else out):
+                    report["camera_in_use"] = "yes: another program has it open"
+        if want_mic:
+            ok, out = run(["arecord", "-l"], timeout=6)
+            mics = re.findall(r"^card \d+: [^\[]*\[([^\]]+)\]", out, re.M) if ok else None
+    if cams is not None and want_cam:
+        report["cameras"] = cams or "none found"
+        if not cams:
+            issues.append({"level": "warn", "what": "No camera was found.",
+                           "fix": "A camera that's plugged in: unplug it and plug it in again (another port). A built-in one: "
+                                  "restart the computer; if it's still missing, it may need a repair."})
+    if mics is not None and want_mic:
+        report["microphones"] = mics or "none found"
+        if not mics:
+            issues.append({"level": "warn", "what": "No microphone was found.",
+                           "fix": "Plug the headset or microphone in again, or choose it in the sound settings (Input)."})
+    if problem:
+        issues.append({"level": "warn", "what": "The system reports a problem with " + ", ".join(problem) + ".",
+                       "fix": "Device Manager: right-click it, then Disable and Enable it again, or Update driver; then restart."})
+    if MAC:
+        for kind, wanted in (("camera", want_cam), ("microphone", want_mic)):
+            state = _mac_av_permission(kind) if wanted else ""
+            if state:
+                report[f"gink_{kind}_permission"] = state
+            if state == "denied":
+                pane = "Camera" if kind == "camera" else "Microphone"
+                issues.append({"level": "tip", "what": f"Gink isn't allowed to use the {kind}.",
+                               "fix": f"System Settings > Privacy & Security > {pane}: turn on Gink."})
+    holders = _call_apps_open() if (want_cam or want_mic) else []
+    if holders:
+        report["call_apps_open"] = holders
+        issues.append({"level": "tip", "what": "Open apps that may be using the camera or microphone: " + ", ".join(holders) + ".",
+                       "fix": "Quit the ones you aren't using (a camera often works in one app at a time), then try again."})
+    if (want_cam or want_mic) and not (ANDROID or IOS):
+        where = ("System Settings > Privacy & Security > Camera / Microphone" if MAC else
+                 "Settings > Privacy & security > Camera / Microphone" if WIN else "the app's permissions")
+        report["if_one_app_fails"] = f"If it works in one app but not another, that app needs permission: {where}."
+
+
+def check_device(updates: bool = False, focus: str = "all") -> Dict:
+    """Read-only health check of this device. -> {"ok", "message", "report", "issues"}
+    focus: "all" (everything), or "camera" / "microphone" (the system basics and that device)."""
     report: Dict = {}
     issues: List[dict] = []
+    focus = focus if focus in ("all", "camera", "microphone") else "all"
     if ANDROID or IOS:
         _phone(report, issues)
+        if focus != "all":
+            what = "Camera" if focus == "camera" else "Microphone"
+            report["permissions"] = (f"Settings > Apps > the app > Permissions > {what}" if ANDROID else
+                                     f"Settings > Privacy & Security > {what}")
+            issues.append({"level": "tip", "what": f"Phones only let apps use the {focus} with permission.",
+                           "fix": f"Check that the app has {what} permission ({report['permissions']}); close other apps "
+                                  "that may be using it, then restart the phone if it's still not working."})
     else:
-        for step in (_system, _uptime, _cpu_memory, _storage, _battery, _protection):
+        steps = (_system, _uptime, _cpu_memory, _storage, _battery, _protection) if focus == "all" else (_system,)
+        for step in steps:
             try:
                 step(report, issues)
             except Exception:
                 continue
+        try:
+            _devices(report, issues, focus)
+        except Exception:
+            pass
         if updates:
             try:
                 _updates(report, issues)
@@ -371,7 +517,10 @@ def format_report(result: Dict) -> str:
     r, issues = result.get("report", {}), result.get("issues", [])
     names = {"device": "Device", "system": "System", "since_restart": "Since the last restart",
              "processor_load": "Processor", "memory": "Memory", "storage": "Storage", "battery": "Battery",
-             "battery_health": "Battery health", "battery_cycles": "Charge cycles", "updates": "Updates"}
+             "battery_health": "Battery health", "battery_cycles": "Charge cycles", "updates": "Updates",
+             "cameras": "Cameras", "camera_in_use": "Camera in use", "microphones": "Microphones",
+             "gink_camera_permission": "Gink's camera permission", "gink_microphone_permission": "Gink's microphone permission",
+             "call_apps_open": "Call apps open", "if_one_app_fails": "Tip"}
     out = ["**Your device check**", ""]
     for key, label in names.items():
         if key in r:

@@ -87,7 +87,6 @@ import asyncio
 import time
 import json
 import os
-import shutil
 import sys
 import re
 import uuid
@@ -102,7 +101,10 @@ from toga.style.pack import ROW
 from ..services import skills, voice_bridge
 from ..services.voice_bridge import VOICES
 from ..services.audio_engine import GinkAudioEngine
-from ..services.groq_worker import SPOKEN_REPLY_PROMPT, GroqBrain
+from ..services.groq_worker import SPOKEN_REPLY_PROMPT, GroqBrain, UseTools
+from ..services import tool_slips
+from ..services.tool_slips import friendly as friendly_problem
+from ..services import system_notify
 from ..services import attachments as att_svc, biometric, briefing, prefs
 from ..services.actions import looks_like_action
 from ..services.paths import data_dir
@@ -544,21 +546,25 @@ def build_main_screen(app: toga.App, email: str):
             brain.history.save_message(current_session["id"], "assistant", md)
             return spoken_text
 
-        if route == "__ASK_AGENT__":
-            await web_chat.start_assistant_message(msg_id, "Thinking\u2026")
+        async def step(label: str):
+            await web_chat.set_spin_label(msg_id, label)
 
-            async def step(label: str):
-                await web_chat.set_spin_label(msg_id, label)
+        async def media(label: str, items: list):
+            await web_chat.set_step_media(msg_id, label, items)
 
-            async def media(label: str, items: list):
-                await web_chat.set_step_media(msg_id, label, items)
-            # documents can feed an action ("turn this timetable into reminders")
+        async def with_tools():
+            """Gink's agent does it, in this reply row (None: it couldn't do anything useful). Documents can feed an
+            action ("turn this timetable into reminders")."""
             try:
-                agent_reply = await run_agent(att_svc.build_prompt_text(message, attachments), on_step=step, on_media=media)
+                return await run_agent(att_svc.build_prompt_text(message, attachments), on_step=step, on_media=media)
             except asyncio.CancelledError:
                 await web_chat.finalize_message(msg_id, "*Stopped.*")
                 brain.history.save_message(current_session["id"], "assistant", "*Stopped.*")
                 raise
+
+        if route == "__ASK_AGENT__":
+            await web_chat.start_assistant_message(msg_id, "Thinking\u2026")
+            agent_reply = await with_tools()
             if agent_reply is not None:
                 await web_chat.finalize_message(msg_id, agent_reply)
                 brain.history.save_message(current_session["id"], "assistant", agent_reply)
@@ -574,8 +580,9 @@ def build_main_screen(app: toga.App, email: str):
             brain.history.save_message(current_session["id"], "assistant", route)
             return route
 
-        images = any(a.kind == "image" for a in attachments)
-        label = ("Looking at your photo\u2026" if images else
+        images = any(a.kind in ("image", "video") for a in attachments)
+        label = ("Watching your video\u2026" if any(a.kind == "video" for a in attachments) else
+                 "Looking at your photo\u2026" if images else
                  "Reading your file\u2026" if attachments else "Thinking\u2026")
         if started:
             await web_chat.set_spin_label(msg_id, label)
@@ -608,6 +615,9 @@ def build_main_screen(app: toga.App, email: str):
                         await flush()
                 asyncio.create_task(later())
 
+        # Automatic tools (0.1.162): the AI may hand a request to Gink's tools by itself ("run a check on my camera")
+        # -- typed or spoken, not with photos, and only when the agent can reach the AI
+        brain.actions_ok = not images and bool(getattr(getattr(app, "task_agent", None), "api_key", ""))
         try:
             reply = await brain.ask(message, on_token=on_token, system_prompt=SPOKEN_REPLY_PROMPT if spoken else None,
                                     attachments=attachments, save_user=False,
@@ -620,6 +630,26 @@ def build_main_screen(app: toga.App, email: str):
             await web_chat.finalize_message(msg_id, shown)
             brain.history.save_message(current_session["id"], "assistant", shown)
             raise
+        except UseTools:
+            # the AI chose to act: the agent does it with its real tools, in the same reply
+            stream["pending"] = False
+            await web_chat.set_spin_label(msg_id, "Working on it\u2026")
+            agent_reply = await with_tools()
+            reply = agent_reply if agent_reply is not None else tool_slips.NO_ANSWER
+            await web_chat.finalize_message(msg_id, reply)
+            brain.history.save_message(current_session["id"], "assistant", reply)
+            refresh_home()
+            return reply
+        except Exception as exc:
+            # anything else: the reply row always ends (never a spinner left behind, never "[error] ..."), keeping
+            # what was already written; nothing is saved or read aloud
+            stream["pending"] = False
+            print(f"[Gink] answer failed: {type(exc).__name__}: {exc}", flush=True)
+            partial = stream["text"].rstrip()
+            await web_chat.finalize_message(msg_id, (partial + "\n\n" if partial else "") + friendly_problem(exc))
+            return ""
+        finally:
+            brain.actions_ok = False
         stream["pending"] = False
         await web_chat.finalize_message(msg_id, reply)
         return reply
@@ -735,7 +765,7 @@ def build_main_screen(app: toga.App, email: str):
 
         try:
             if attachments:
-                has_photo = any(a.kind == "image" for a in attachments)
+                has_photo = any(a.kind in ("image", "video") for a in attachments)
                 route = ("__ASK_AGENT__" if message and not has_photo and looks_like_action(message)
                          else "__ASK_BRAIN__")
                 photos = [a.data_url for a in attachments if a.kind == "image" and a.data_url
@@ -758,12 +788,13 @@ def build_main_screen(app: toga.App, email: str):
                     await web_chat.show_recalled(recalled)
             reply = await answer(message, route, attachments=attachments)
             asyncio.create_task(maybe_auto_title(current_session["id"], message, reply))
-            if route == "__ASK_BRAIN__" and reply and not str(reply).startswith("[error]"):
+            if route == "__ASK_BRAIN__" and reply:
                 await auto_remember(message)                # a lasting fact they mentioned: remembered by itself
                 asyncio.create_task(auto_generate_memories(current_session["id"]))   # and, every few messages, the AI's picks
         except Exception as exc:
-            reply = f"[error] {exc}"
-            await add_assistant_message(reply, save=False)
+            print(f"[Gink] message failed: {type(exc).__name__}: {exc}", flush=True)
+            reply = ""                                     # a sentence on screen, nothing read aloud or remembered
+            await add_assistant_message(friendly_problem(exc), save=False)
         finally:
             _sending["value"] = False
             await web_chat.set_busy(False)
@@ -932,7 +963,8 @@ def build_main_screen(app: toga.App, email: str):
                 reply = await answer(text, route, spoken=True, speech=speech)
                 asyncio.create_task(maybe_auto_title(current_session["id"], text, reply))
             except Exception as exc:
-                reply = f"[error] {exc}"
+                print(f"[Gink] voice answer failed: {type(exc).__name__}: {exc}", flush=True)
+                reply = friendly_problem(exc)               # said and shown, not saved
                 await add_assistant_message(reply, save=False)
 
             refresh_sidebar()
@@ -997,18 +1029,19 @@ def build_main_screen(app: toga.App, email: str):
             await web_chat.show_update(offer["version"])
     asyncio.create_task(check_for_update())
 
-    def system_notification(title: str, body: str):
-        """The computer's own notification too (Notification Centre on a Mac; notify-send on Linux)."""
-        import subprocess
-        import sys as _sys
-        try:
-            if _sys.platform == "darwin":
-                q = lambda t: str(t).replace("\\", "\\\\").replace('"', '\\"')
-                subprocess.Popen(["osascript", "-e", f'display notification "{q(body)}" with title "Gink" subtitle "{q(title)}" sound name "Glass"'])
-            elif _sys.platform.startswith("linux") and shutil.which("notify-send"):
-                subprocess.Popen(["notify-send", "-a", "Gink", f"Gink \u00b7 {title}", body])
-        except Exception:
-            pass
+    page_seen = {"visible": True}                           # the chat page on screen (its visibilitychange events)
+
+    def device_notification(title: str, body: str, nid: str = ""):
+        """Gink's notifications on the device too (0.1.162): Notification Center on a Mac or iPhone, Windows and Linux
+        notifications, Android's -- when Gink isn't in front (services/system_notify.py). Settings > General >
+        Notifications > "Show in Notification Center" turns it off."""
+        if not prefs.load(app).get("notify_system", True):
+            return
+        system_notify.post(title, body, nid, page_visible=page_seen["visible"])
+
+    web_chat.on_system_notify = device_notification
+    if prefs.load(app).get("notify_system", True):
+        system_notify.ask_permission()                      # once: the system's own question (Mac, iPhone, Android 13+)
 
     async def on_item_due(item):
         """A reminder/alarm/timer came due. Items handed to the OS
@@ -1024,8 +1057,8 @@ def build_main_screen(app: toga.App, email: str):
             # an Apple-style card in the window (not a dialog that blocks everything) + the computer's own notification
             actions = [{"label": "Snooze 10 min", "emit": "item_snooze", "value": item.id},
                        {"label": "Done", "emit": "item_done", "value": item.id, "primary": True}]
-            await web_chat.notify(item.kind.capitalize(), item.title, icon=icon, timeout=0, actions=actions, nid=f"due-{item.id}")
-            system_notification(item.kind.capitalize(), item.title)
+            await web_chat.notify(item.kind.capitalize(), item.title, icon=icon, timeout=0, actions=actions, nid=f"due-{item.id}",
+                                  system=bool(prefs.load(app).get("notify_reminders", True)))
 
     app.task_scheduler.on_due = on_item_due
     if not getattr(app, "_task_scheduler_started", False):
@@ -1414,6 +1447,7 @@ def build_main_screen(app: toga.App, email: str):
             lock["locked"] = False
             return on_log_out()
         if kind == "page_visibility":
+            page_seen["visible"] = value != "hidden"           # notifications: on the device only when not in front
             return went_away() if value == "hidden" else came_back()
         if kind == "people_save" and isinstance(value, str):
             return await asyncio.get_running_loop().run_in_executor(None, people_write, value)
@@ -1463,6 +1497,12 @@ def build_main_screen(app: toga.App, email: str):
             set_voice_status(f"Now using {_model_entry(value)['name']}")
         elif kind == "attach_data" and isinstance(value, dict):
             await add_attachment(lambda: att_svc.load_data_url(value.get("data", ""), value.get("name", "file")))
+        elif kind == "attach_video" and isinstance(value, dict):      # the page took a few frames from a video (0.1.162)
+            if value.get("error"):
+                set_voice_status(att_svc.video_problem(str(value.get("name") or "That video"), str(value.get("error"))))
+                await web_chat.set_attachments([a.chip() for a in pending_attachments])
+            else:
+                await add_attachment(lambda: att_svc.video_attachment(value.get("name"), value.get("duration"), value.get("frames")))
         elif kind == "remove_attachment" and value is not None:
             idx = int(value)
             if 0 <= idx < len(pending_attachments):
@@ -1475,7 +1515,8 @@ def build_main_screen(app: toga.App, email: str):
                 app.memory.add(str(value["replaced"]))     # the old fact takes its place back
             elif value.get("uid"):
                 app.memory.forget(str(value["uid"]))
-            await web_chat.notify("Undone", "Gink won't remember that.", icon="\u21A9\uFE0F", timeout=2500, nid="mem-auto")
+            await web_chat.notify("Undone", "Gink won't remember that.", icon="\u21A9\uFE0F", timeout=2500, nid="mem-auto",
+                                  system=False)
         elif kind == "item_done" and value:            # a reminder's notification: Done
             app.task_store.set_done(int(value), True)
             refresh_home()
@@ -1485,7 +1526,8 @@ def build_main_screen(app: toga.App, email: str):
                 from datetime import datetime as _dt, timedelta as _td
                 app.task_store.add(it.kind, it.title, due=_dt.now() + _td(minutes=10))
                 app.task_store.set_done(it.id, True)
-                await web_chat.notify("Snoozed", f"{it.title} \u2014 again in 10 minutes", icon="\U0001F4A4", timeout=3000)
+                await web_chat.notify("Snoozed", f"{it.title} \u2014 again in 10 minutes", icon="\U0001F4A4", timeout=3000,
+                                      system=False)
         elif kind == "policy_seen" and value:          # the policy notice's OK: don't show it again for this change
             prefs.save(app, policy_seen=str(value)[:20])
         elif kind == "open_url" and value:
@@ -1646,7 +1688,7 @@ def build_main_screen(app: toga.App, email: str):
                     return
             except Exception as exc:
                 msg = str(exc) or "That didn\u2019t work. Please try again."
-            await web_chat.notify("Scheduled task", msg, icon="\u23f0", timeout=3500, nid="task-action")
+            await web_chat.notify("Scheduled task", msg, icon="\u23f0", timeout=3500, nid="task-action", system=False)
             await push_tasks()
         elif kind == "task_open" and isinstance(value, dict):
             chat = str(value.get("chat_id") or "")
@@ -1657,7 +1699,7 @@ def build_main_screen(app: toga.App, email: str):
                 on_select_session(chat)
             else:
                 await web_chat.notify("Scheduled task", "Its chat isn\u2019t on this device yet \u2014 it appears with the next sync.",
-                                      icon="\u23f0", timeout=4000, nid="task-action")
+                                      icon="\u23f0", timeout=4000, nid="task-action", system=False)
 
     async def add_attachment(loader):
         """Runs a file loader off the UI thread, then shows its chip."""
@@ -1714,16 +1756,38 @@ def build_main_screen(app: toga.App, email: str):
                     pass
         await add_attachment(load)
 
+    async def hand_video(path: str):
+        """A video from the file picker: the chat page takes its frames (the browser engine plays it), then sends
+        them back as attach_video. Bigger ones: dragging them into the message box has no size limit."""
+        name = os.path.basename(path)
+        try:
+            size = os.path.getsize(path)
+        except OSError:
+            size = -1
+        if size < 0 or size > att_svc.MAX_VIDEO_HANDOVER:
+            set_voice_status(f"{name} is over {att_svc.MAX_VIDEO_HANDOVER // (1024 * 1024)} MB: drag it into the message box "
+                             "instead, or pick a shorter clip." if size > 0 else f"Couldn't open {name}.")
+            return
+        ext = os.path.splitext(name.lower())[1].lstrip(".")
+        mime = {"mov": "video/quicktime", "m4v": "video/mp4", "3gp": "video/3gpp", "avi": "video/x-msvideo",
+                "mkv": "video/x-matroska"}.get(ext, f"video/{ext or 'mp4'}")
+        def read_all():
+            with open(path, "rb") as f:
+                return f.read()
+        raw = await asyncio.get_event_loop().run_in_executor(None, read_all)
+        import base64 as _b64
+        await web_chat.video_from_data(f"data:{mime};base64," + _b64.b64encode(raw).decode("ascii"), name)
+
     async def pick_files():
-        exts = sorted(e.lstrip(".") for e in att_svc.IMAGE_EXT | att_svc.TEXT_EXT | {".pdf", ".docx"})
+        exts = sorted(e.lstrip(".") for e in att_svc.IMAGE_EXT | att_svc.TEXT_EXT | att_svc.VIDEO_EXT | {".pdf", ".docx"})
         paths = None
         try:
             paths = await app.main_window.dialog(toga.OpenFileDialog(
-                "Attach photos or files", file_types=exts, multiple_select=True))
+                "Attach photos, videos or files", file_types=exts, multiple_select=True))
         except AttributeError:
             try:   # older Toga
                 paths = await app.main_window.open_file_dialog(
-                    "Attach photos or files", file_types=exts, multiple_select=True)
+                    "Attach photos, videos or files", file_types=exts, multiple_select=True)
             except Exception:
                 paths = None
         except NotImplementedError:
@@ -1738,7 +1802,10 @@ def build_main_screen(app: toga.App, email: str):
         if not isinstance(paths, (list, tuple)):
             paths = [paths]
         for path in paths:
-            await add_attachment(lambda p=path: att_svc.load_path(p))
+            if os.path.splitext(str(path).lower())[1] in att_svc.VIDEO_EXT:
+                await hand_video(str(path))
+            else:
+                await add_attachment(lambda p=path: att_svc.load_path(p))
 
     async def run_auto_briefing():
         """Once a day at the briefing time (Settings), in its own new chat."""
@@ -1787,12 +1854,12 @@ def build_main_screen(app: toga.App, email: str):
         body = re.sub(r"^\*\*\u23f0[^\n]*\n+", "", news.get("text") or "")      # without its "Morning news . time" line
         preview = " ".join(re.sub(r"[*#>`_]+", " ", body).split())
         preview = preview[:140] + ("\u2026" if len(preview) > 140 else "")
-        if news.get("id") == current_session["id"]:
-            return                                          # it's the chat on screen: the result is already showing
-        await web_chat.notify(news.get("title") or "Scheduled task", preview, icon="\u23f0", timeout=12000,
-                              actions=[{"label": "Open", "emit": "select_session", "value": news["id"], "primary": True}],
-                              nid="task-" + news["id"])
-        system_notification(news.get("title") or "Scheduled task", preview or "A new result is ready.")
+        if news.get("id") == current_session["id"]:         # the chat on screen: the result is showing -- on the device
+            device_notification(news.get("title") or "Scheduled task", preview or "A new result is ready.", "task-" + news["id"])
+            return                                          # only if Gink isn't in front
+        await web_chat.notify(news.get("title") or "Scheduled task", preview or "A new result is ready.", icon="\u23f0",
+                              timeout=12000, nid="task-" + news["id"],
+                              actions=[{"label": "Open", "emit": "select_session", "value": news["id"], "primary": True}])
 
     sync_service = SyncService(
         data_dir(app) / "sync_state.json", base_url_fn=lambda: app.state.base_url,
@@ -2467,7 +2534,7 @@ def build_main_screen(app: toga.App, email: str):
             ok, why = False, str(exc)
         if not ok:
             await web_chat.notify("Couldn\u2019t open it", "Download it instead and open the file. " + (why or ""),
-                                  icon="\u26a0\ufe0f", timeout=5000, nid="artifact-tab")
+                                  icon="\u26a0\ufe0f", timeout=5000, nid="artifact-tab", system=False)
 
     async def open_link(url: str):
         low = url.lower()

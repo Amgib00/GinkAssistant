@@ -308,6 +308,14 @@ SETTINGS_JS = r"""
         {title: 'Language', rows: [
           {type: 'lang', label: 'Reply language', desc: 'The language Gink answers in. Answers are best in widely used languages; ones marked experimental may contain mistakes.'}]},
         {title: 'Notifications', rows: [
+          info.web
+            ? {type: 'toggle', key: 'notify_system', label: 'Browser notifications',
+               desc: 'When this tab isn\u2019t in front, Gink\u2019s notifications \u2014 scheduled task results, reminders, updates \u2014 also show on your computer or phone (your browser asks you first).'}
+            : {type: 'toggle', key: 'notify_system', label: 'Show in ' + (info.notify_where || 'your notifications'),
+               desc: 'Gink\u2019s notifications \u2014 scheduled task results, reminders, updates, notices \u2014 also go to ' +
+                     (info.notify_where || 'your device\u2019s notifications') + ', with a banner when Gink isn\u2019t in front.' +
+                     (info.notify_status ? ' ' + info.notify_status : '')},
+          {apps: true, type: 'button', label: 'Test notification', desc: 'Send one now to see it arrive.', action: 'test_notify', text: 'Send'},
           {type: 'toggle', key: 'notify_reminders', label: 'Reminders and alarms', desc: 'Show a system notification when a reminder, alarm or timer is due.'},
           {type: 'toggle', key: 'briefing_enabled', label: 'Morning briefing', desc: 'Get your daily briefing automatically at your briefing time.'}]}]},
       {id: 'voice', group: 'Settings', title: 'Voice', sections: [
@@ -934,7 +942,7 @@ SETTINGS_JS = r"""
   var toastTimer = null;
   function settingsToast(text, kind) {
     if (typeof ginkNotify === 'function') {             // the same notification cards as everywhere (Apple style)
-      ginkNotify({id: 'settings', title: kind === 'err' ? 'Couldn\u2019t do that' : 'Settings', body: text, kind: kind === 'err' ? 'warn' : '',
+      ginkNotify({id: 'settings', system: false, title: kind === 'err' ? 'Couldn\u2019t do that' : 'Settings', body: text, kind: kind === 'err' ? 'warn' : '',
                   icon: kind === 'err' ? '\u26a0\ufe0f' : '\u2713', timeout: kind === 'err' ? 7000 : 3200});
       return;
     }

@@ -10,12 +10,13 @@ def _read_text(path):
 
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-WF = yaml.safe_load(_read_text(os.path.join(ROOT, ".github", "workflows", "pull-requests.yml")))
+RECORD = yaml.safe_load(_read_text(os.path.join(ROOT, ".github", "workflows", "pull-requests.yml")))       # step 1
+WF = yaml.safe_load(_read_text(os.path.join(ROOT, ".github", "workflows", "pull-request-triage.yml")))    # step 2
 
 
 def _gate(tmp_path, author, permission):
     """Run the gate step with a fake gh: it answers the permission and records what it was asked to do."""
-    step = WF["jobs"]["gate"]["steps"][0]
+    step = next(s for s in WF["jobs"]["gate"]["steps"] if s.get("id") == "check")
     log = tmp_path / "gh.log"; out = tmp_path / "out.txt"; out.write_text("")
     (tmp_path / "bin").mkdir(exist_ok=True)
     gh = tmp_path / "bin" / "gh"
@@ -37,11 +38,35 @@ def test_only_collaborators_may_open_pull_requests(tmp_path):
 
 
 def test_the_workflow_never_runs_the_pull_requests_code():
-    text = open(os.path.join(ROOT, ".github", "workflows", "pull-requests.yml")).read()
-    assert "pull_request_target" in text and "actions/checkout" not in text and "head.sha" not in text
-    assert "gh pr edit" not in text            # it asks about retired classic Projects and fails
+    record = _read_text(os.path.join(ROOT, ".github", "workflows", "pull-requests.yml"))
+    triage_text = _read_text(os.path.join(ROOT, ".github", "workflows", "pull-request-triage.yml"))
+    for text in (record, triage_text):                 # pull_request_target: restricted by GitHub from 2 Dec 2026
+        assert "pull_request_target:" not in text and "actions/checkout" not in text and "head.sha" not in text
+    assert "gh pr edit" not in triage_text             # it asks about retired classic Projects and fails
+    on = lambda wf: wf.get("on", wf.get(True))        # YAML 1.1 reads the key "on" as True
+    assert on(RECORD) == {"pull_request": {"types": ["opened", "reopened", "ready_for_review", "synchronize"]}}
+    assert RECORD["permissions"] == {"contents": "read"} and "secrets." not in record          # step 1: read-only
+    assert on(WF)["workflow_run"]["workflows"] == [RECORD["name"]]
+    which = next(s for s in WF["jobs"]["gate"]["steps"] if s.get("id") == "which")["run"]
+    assert "tr -cd '0-9'" in which                     # the saved number is untrusted: digits only
     triage = WF["jobs"]["triage"]
     assert triage["needs"] == "gate" and "allowed == 'true'" in triage["if"]
+    labeler = next(s for s in triage["steps"] if str(s.get("uses", "")).startswith("actions/labeler"))
+    assert labeler["with"]["pr-number"] == "${{ needs.gate.outputs.pr }}"
+    project = next(s for s in triage["steps"] if s.get("name") == "Add to the project")
+    assert project["continue-on-error"] is True and "::warning::" in project["run"]          # "Bad credentials": a warning
+
+
+def test_the_saved_number_is_checked(tmp_path):
+    step = next(s for s in WF["jobs"]["gate"]["steps"] if s.get("id") == "which")
+    out = tmp_path / "out.txt"
+    for saved, want in (("12\nopened\n", ["pr=12", "action=opened"]), ("12; rm -rf /\n$(id)\n", ["pr=12", "action=synchronize"])):
+        (tmp_path / "pr").mkdir(exist_ok=True)
+        (tmp_path / "pr" / "pull-request.txt").write_text(saved)
+        out.write_text("")
+        subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp_path, env={**os.environ, "GITHUB_OUTPUT": str(out)},
+                       check=True, capture_output=True)
+        assert out.read_text().split() == want
 
 
 def test_reviews_labels_and_dependabot():
@@ -100,3 +125,39 @@ elif a[:1] == ["api"] and a[1].endswith("/milestones"):
     assert "issues/5/" not in calls and "pr edit" not in calls                           # already tidy; never gh pr edit
     assert calls.count("label create") == 9 and "milestones -f title=Next release" in calls
     assert "pr close" not in calls and "pr merge" not in calls and "pr reopen" not in calls
+
+
+def test_autofix_pull_requests_of_fixed_alerts_are_closed(tmp_path):
+    """tools/close_fixed_alert_prs.py: Copilot Autofix's old pull requests -- closed when their alert is fixed or
+    dismissed, kept (and listed with where the alert is) while it's still open."""
+    import json
+    import sys
+    prs = [{"number": 36, "title": "Potential fix for code scanning alert no. 1383: Client-side URL redirect"},
+           {"number": 34, "title": "Potential fix for code scanning alert no. 1356: Information exposure through an exception"},
+           {"number": 49, "title": "Potential fix for code scanning alert no. 1362: Workflow does not contain permissions"},
+           {"number": 53, "title": "Bump the python-dependencies group with 6 updates"}]
+    alerts = {"1383": {"state": "fixed"}, "1362": {"state": "dismissed"},
+              "1356": {"state": "open", "rule": {"description": "Information exposure through an exception"},
+                       "most_recent_instance": {"location": {"path": "src/x.py", "start_line": 12}}}}
+    (tmp_path / "bin").mkdir()
+    (tmp_path / "prs.json").write_text(json.dumps(prs)); (tmp_path / "alerts.json").write_text(json.dumps(alerts))
+    fake = tmp_path / "bin" / "gh"
+    fake.write_text("#!" + sys.executable + """
+import json, sys
+d = %r
+a = sys.argv[1:]
+open(d + "/gh.log", "a").write(" ".join(a) + "\\n")
+if a[:2] == ["pr", "list"]:
+    print(open(d + "/prs.json").read())
+elif a[:1] == ["api"] and "/code-scanning/alerts/" in a[1]:
+    print(json.dumps(json.load(open(d + "/alerts.json"))[a[1].rsplit("/", 1)[1]]))
+""" % str(tmp_path))
+    fake.chmod(0o755)
+    env = {**os.environ, "PATH": f"{tmp_path / 'bin'}:{os.environ['PATH']}"}
+    tool = os.path.join(ROOT, "tools", "close_fixed_alert_prs.py")
+    out = subprocess.run([sys.executable, tool], env=env, capture_output=True, text=True, check=True).stdout
+    assert "2 pull request(s) would be closed; 1 kept." in out and "pr close" not in (tmp_path / "gh.log").read_text()
+    assert "alert 1356: Information exposure through an exception at src/x.py:12  (pull request #34)" in out
+    out = subprocess.run([sys.executable, tool, "--close"], env=env, capture_output=True, text=True, check=True).stdout
+    closed = [l.split()[2] for l in (tmp_path / "gh.log").read_text().splitlines() if l.startswith("pr close")]
+    assert sorted(closed) == ["36", "49"] and "53" not in closed                   # never the open alert or other PRs

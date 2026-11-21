@@ -4,7 +4,7 @@ The Gink API: managed agents with live steps, persistent workspaces, chat with l
 images. Node 18+, Deno, Bun (anything with `fetch`).
 
 ```js
-import { Gink } from "gink-ai";
+import { Gink, videoFrames } from "gink-ai";
 
 const gink = new Gink();                    // GINK_API_KEY (create one at https://gink-server.onrender.com/developers)
 const it = await gink.interactions.create({
@@ -24,6 +24,8 @@ const { answer, sources } = await gink.search("When is the next election in my c
 for (const s of sources) console.log(s.official ? "official" : "        ", s.title, s.url, s.icon);   // official first, real logos
 const png = await gink.image("my dog", { idea: "statue", photo: dogPhotoBytes });   // see gink.imageIdeas()
 console.log(await gink.see(photoBytes, { question: "what's wrong with this?" }));  // about a photo (Gink Pro)
+const { frames, duration } = await videoFrames(fileInput.files[0]);                // in a browser: a video's frames
+console.log(await gink.watch(frames, { duration, question: "what happens here?" })); // about a video (Gink Pro)
 ```
 
 Workspaces: `await gink.workspace.get()`; admins of one in healthcare mode: `await gink.workspace.safety({ days: 30 })`

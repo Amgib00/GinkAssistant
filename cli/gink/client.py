@@ -180,6 +180,67 @@ def screen_image() -> bytes:
             pass
 
 
+MAX_PICTURES = 5          # pictures in one question (Gink's vision models): photos first, then a video's frames
+
+
+def _mmss(seconds) -> str:
+    t = int(max(0.0, float(seconds or 0)) + 0.5)          # halves round up, like the apps and JavaScript
+    return f"{t // 60}:{t % 60:02d}"
+
+
+def video_parts(frames, question: str = "", name: str = "video", duration: float = 0.0, times=None) -> list:
+    """A video as Gink's apps send it (0.1.162): a sentence saying what the pictures are, then up to five frames in
+    order -- message content for chat(). frames: bytes, file paths or data URLs (JPEG, PNG, WebP), in order;
+    times: their moments in seconds (default: evenly spread over duration). Looking at videos is part of Gink Pro."""
+    frames = list(frames or [])[:MAX_PICTURES]
+    if not frames:
+        raise GinkAPIError("A video needs at least one frame.", 400, "invalid_video")
+    if times is None:
+        times = [(i + 0.5) * float(duration or 0) / len(frames) for i in range(len(frames))] if duration else \
+            list(range(len(frames)))
+    when = ", ".join(_mmss(t) for t in list(times)[:len(frames)])
+    length = f" ({_mmss(duration)} long)" if duration else ""
+    note = (f"The video \u201c{name}\u201d{length} is attached as {len(frames)} pictures: frames taken from it in order, at "
+            f"{when}. Treat them as one moving scene and describe what happens across them.")
+    asked = (question or "").strip() or "What happens in this video?"
+    return [{"type": "text", "text": note + "\n\n" + asked}] + \
+        [{"type": "image_url", "image_url": {"url": image_data_url(f)}} for f in frames]
+
+
+def video_frames(path: str, count: int = MAX_PICTURES):
+    """(frames as JPEG bytes, their moments in seconds, the video's length) -- taken with ffmpeg, which must be
+    installed (https://ffmpeg.org). The video itself is never sent."""
+    import json as _json
+    import shutil
+    import subprocess
+    import tempfile
+    if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
+        raise GinkAPIError("Taking frames from a video needs ffmpeg (https://ffmpeg.org/download.html) -- or send a few "
+                           "photos of it with see().", 0, "no_ffmpeg")
+    if not os.path.isfile(path):
+        raise GinkAPIError(f"Can't read the video {path}.", 0, "no_video")
+    probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "json", path],
+                           capture_output=True, text=True, timeout=60)
+    try:
+        length = float(_json.loads(probe.stdout or "{}")["format"]["duration"])
+    except (KeyError, ValueError, TypeError):
+        raise GinkAPIError(f"{os.path.basename(path)} isn't a video ffmpeg can read.", 0, "invalid_video")
+    count = max(1, min(int(count or MAX_PICTURES), MAX_PICTURES))
+    times = [min(max(0.0, length - 0.1), (i + 0.5) * length / count) for i in range(count)]
+    frames = []
+    with tempfile.TemporaryDirectory(prefix="gink-video-") as tmp:
+        for i, t in enumerate(times):
+            out = os.path.join(tmp, f"{i}.jpg")
+            subprocess.run(["ffmpeg", "-v", "error", "-ss", f"{t:.2f}", "-i", path, "-frames:v", "1",
+                            "-vf", "scale='min(960,iw)':-2", "-q:v", "4", "-y", out], capture_output=True, timeout=60)
+            if os.path.exists(out) and os.path.getsize(out):
+                with open(out, "rb") as f:
+                    frames.append(f.read())
+    if not frames:
+        raise GinkAPIError(f"Couldn't take frames from {os.path.basename(path)}.", 0, "invalid_video")
+    return frames, [round(t, 1) for t in times[:len(frames)]], length
+
+
 class GinkAPIError(Exception):
     """The API said no; .status and .code say why (e.g. 429 daily_limit, 401 invalid_api_key)."""
 
@@ -324,6 +385,18 @@ class Client:
         (JPEG, PNG, WebP or GIF). Looking at photos is part of Gink Pro."""
         content = [{"type": "text", "text": (question or "").strip() or "What's this?"},
                    {"type": "image_url", "image_url": {"url": image_data_url(photo)}}]
+        return self.chat([{"role": "user", "content": content}], model=model, **extra)
+
+    def watch(self, video, question: str = "", model: str = "", name: str = "", duration: float = 0.0, times=None,
+              **extra) -> str:
+        """An answer about a video, like the apps' (0.1.162): video is a file path (frames taken with ffmpeg) or a list of
+        frames you took yourself (bytes, paths or data URLs, in order; give duration or times). Gink Pro."""
+        if isinstance(video, (str, os.PathLike)) and not str(video).startswith("data:"):
+            frames, times, duration = video_frames(str(video))
+            name = name or os.path.basename(str(video))
+        else:
+            frames = list(video)
+        content = video_parts(frames, question, name or "video", duration, times)
         return self.chat([{"role": "user", "content": content}], model=model, **extra)
 
     def image(self, prompt: str = "", idea: str = "", subject: str = "", style: str = "", aspect_ratio: str = "",

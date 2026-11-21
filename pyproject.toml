@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # Must be a valid package name (letters, digits, "-", "_", "."; no spaces).
 # Briefcase 0.4.6+ reads this name, so "gink ai assistant" could break builds.
 name = "ginkassistant"
-version = "0.1.161"
+version = "0.1.162"
 description = "Your AI assistant for work, study and everyday life"
 readme = "README.md"
 requires-python = ">=3.11"            # 3.10 reached end of life (Oct 2026); 32-bit Android stops at 3.11
@@ -22,7 +22,7 @@ license = "MIT"          # Briefcase 0.3.15 reads this one (it can't read the [p
 # "Gink Ai Assistant" will become an error). Users see formal_name ("Gink") below.
 project_name = "ginkassistant"
 bundle = "com.amgib"
-version = "0.1.161"
+version = "0.1.162"
 url = "https://github.com/amgib00/ginkassistant"
 author = "Amgib00"
 author_email = "kargboi131ik667957@gmail.com"
@@ -77,7 +77,7 @@ requires = [
     "std-nslog",            # app logging on macOS (Mac-only builds -- never add to the universal list)
     # the built-in server (services/backend_server.py; started on desktop only)
     "pydantic==2.13.4",
-    "fastapi>=0.162.0",
+    "fastapi>=0.163.2",
     "uvicorn",
     "python-multipart",     # form posts (payments, Apple sign-in)
     "PyJWT",
@@ -94,7 +94,7 @@ requires = [
     "vosk",                 # offline "Hey Gink" wake word
     "sounddevice",          # song recognition recording
     "shazamio>=0.9.0",      # song recognition. Older ones wrongly pull in pytest and pin anyio < 4 (vulnerable)
-    "anyio>=4.15.1",        # security fixes (PYSEC-2026-4024/4025)
+    "anyio>=4.16.0",        # security fixes (PYSEC-2026-4024/4025)
     "numpy>=2.2.2,<2.3",     # shazamio 0.8+ needs 2.2+; 2.3 drops Python 3.10 (Catalina builds); works with numba 0.62.1
     "librosa",              # offline song fingerprinting (services/shazam_engine.py)
     "scipy",
@@ -124,7 +124,7 @@ console = false
 requires = [
     "toga-winforms",
     "pydantic==2.13.4",
-    "fastapi>=0.162.0",
+    "fastapi>=0.163.2",
     "uvicorn",
     "python-multipart",
     "PyJWT",
@@ -137,7 +137,7 @@ requires = [
     "vosk",
     "sounddevice",
     "shazamio>=0.9.0",
-    "anyio>=4.15.1",
+    "anyio>=4.16.0",
     "numpy>=2.2.2,<2.3",     # shazamio 0.8+ needs 2.2+; 2.3 drops Python 3.10 (Catalina builds); works with numba 0.62.1
     "librosa",
     "scipy",
@@ -158,7 +158,7 @@ requires = [
 requires = [
     "toga-gtk",
     "pydantic==2.13.4",
-    "fastapi>=0.162.0",
+    "fastapi>=0.163.2",
     "uvicorn",
     "python-multipart",
     "PyJWT",
@@ -171,7 +171,7 @@ requires = [
     "vosk",
     "sounddevice",
     "shazamio>=0.9.0",
-    "anyio>=4.15.1",
+    "anyio>=4.16.0",
     "numpy>=2.2.2,<2.3",     # shazamio 0.8+ needs 2.2+; 2.3 drops Python 3.10 (Catalina builds); works with numba 0.62.1
     "librosa",
     "scipy",
@@ -305,7 +305,7 @@ chaquopy.defaultConfig.staticProxy("ginkassistant.services.android_fgs")
 "com.android.alarm.permission.SET_ALARM" = "Lets Gink set wake-up alarms and timers in your Clock app."
 "android.permission.FOREGROUND_SERVICE" = "Lets Gink keep listening for \u201cHey Gink\u201d in the background, when you switch it on."
 "android.permission.FOREGROUND_SERVICE_MICROPHONE" = "Android 14+: the microphone kind of background listening."
-"android.permission.POST_NOTIFICATIONS" = "Shows the notification while Gink listens in the background."
+"android.permission.POST_NOTIFICATIONS" = "Shows Gink's notifications: scheduled task results, reminders, updates, and the one while Gink listens in the background."
 "android.permission.CAMERA" = "Lets you take a photo to ask Gink about, when you choose Camera."
 
 

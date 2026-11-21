@@ -395,9 +395,11 @@ def test_a_run_with_no_searches_left_still_answers(srv, monkeypatch):
     SEEN.clear()
     r = c.post(f"/tasks/{t['id']}/run", headers=h, json={"wait": True}).json()
     assert r["status"] == "ok" and "couldn't search" in r["text"]
-    tools = [m for m in SEEN[-1]["messages"] if m["role"] == "tool"]
-    assert len(tools) == 2 and all("isn't available" in m["content"] for m in tools)        # both calls answered
-    assert SEEN[-1]["tool_choice"] == "none"                                               # then: answer, no tools
+    last = SEEN[-1]                     # then: the answer, with no tools at all (tool_choice "none" still slipped, 0.1.162)
+    assert "tools" not in last and "tool_choice" not in last and not any(m["role"] == "tool" for m in last["messages"])
+    said = [m["content"] for m in last["messages"] if m["role"] == "user"]
+    assert sum("isn't available" in t for t in said) == 2                                  # both calls answered, as text
+    assert any(m["role"] == "system" and m["content"] == b.PLAIN_TEXT_NOTE for m in last["messages"])
 
 
 def test_runs_know_the_person_unless_memory_is_off(srv):

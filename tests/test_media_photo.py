@@ -63,7 +63,7 @@ def test_only_real_photos(srv):
     assert sent == []                                                          # nothing sent, nothing counted
 
 
-def test_app_shrinks_and_sends_the_photo(monkeypatch):
+def test_app_shrinks_and_sends_the_photo(monkeypatch, tmp_path):
     from ginkassistant.services import image_service as isv
     big = jpeg((4000, 3000))
     small = isv.shrink_photo(big)
@@ -76,7 +76,7 @@ def test_app_shrinks_and_sends_the_photo(monkeypatch):
             seen.update(photo=photo); return {"image_b64": base64.b64encode(b"\x89PNG\r\n\x1a\nxx").decode()}
     monkeypatch.setattr(isv, "ApiClient", Api)
     monkeypatch.setattr(isv, "save_image", lambda d, n, raw, mime: types.SimpleNamespace(name="a.png"))
-    svc = isv.ImageService("/tmp/gink-photo-test", lambda: "https://x", lambda: "tok")
+    svc = isv.ImageService(str(tmp_path / "images"), lambda: "https://x", lambda: "tok")     # never a shared /tmp folder
     asyncio.run(svc.create("statue of me", "3:4", "photo", small))
     assert seen["photo"] == small
 

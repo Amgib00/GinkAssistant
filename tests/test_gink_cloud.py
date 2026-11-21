@@ -20,6 +20,7 @@ def cloud(tmp_path, monkeypatch):
     monkeypatch.setenv("GINK_PRO_DAILY", "50")
     from ginkassistant.services import backend_server as b
     b._models_cache.update(at=0, data=None)
+    b._groq_models.update(ids=set(), at=0.0)        # another test's model list must not decide the photo model here
     seen = []
 
     def groq(request):

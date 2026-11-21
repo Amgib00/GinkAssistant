@@ -8,7 +8,7 @@ import asyncio
 import time
 from datetime import datetime
 
-from ..services import personality, data_export, languages, launch_at_login, prefs, server_config, voice_bridge
+from ..services import personality, data_export, languages, launch_at_login, prefs, server_config, system_notify, voice_bridge
 from ..services.profile import WORK_OPTIONS
 from ..services.voice_profiles import SPEECH_LANG_CODES, SPEECH_LANGS, VOICE_PROFILES
 from ..services.api_client import ApiClient, ApiError
@@ -22,7 +22,7 @@ METHOD_LABELS = {"wave": "Wave", "orange_money": "Orange Money", "free_money": "
                  "mtn_momo": "MTN MoMo", "moov_money": "Moov Money", "mpesa": "M-Pesa"}
 PLAN_LABELS = {"pro_1m": "Pro \u00b7 1 month", "pro_3m": "Pro \u00b7 3 months", "pro_12m": "Pro \u00b7 12 months"}
 STATUS_LABELS = {"success": "Paid", "pending": "Pending", "failed": "Not completed"}
-BOOL_KEYS = {"read_aloud", "notify_reminders", "briefing_enabled", "briefing_speak", "use_memory",
+BOOL_KEYS = {"read_aloud", "notify_reminders", "notify_system", "briefing_enabled", "briefing_speak", "use_memory",
              "web_search", "video_suggestions", "single_keys", "wake_enabled", "wake_followup", "wake_front",
              "wake_background", "briefing_projects", "use_location", "agent_confirm", "send_errors",
              "wake_short", "memory_suggest", "people_on", "memory_sensitive", "location_metadata"}
@@ -111,7 +111,7 @@ class SettingsController:
     def _values(self) -> dict:
         p = self.p()
         v = {k: p.get(k) for k in ("theme", "chat_font", "motion", "voice_speed", "read_aloud", "reply_language",
-                                   "notify_reminders", "briefing_enabled", "briefing_time", "briefing_speak",
+                                   "notify_reminders", "notify_system", "briefing_enabled", "briefing_time", "briefing_speak",
                                    "use_memory", "web_search", "video_suggestions", "speech_lang", "send_key",
                                    "single_keys", "wake_enabled", "wake_followup", "wake_front", "wake_background",
                                    "briefing_projects", "send_errors", "wake_short", "memory_suggest",
@@ -150,6 +150,7 @@ class SettingsController:
                 "language_label": languages.label(prefs.load(self.app).get("reply_language", "auto")),
                 "build": getattr(self.app, "gink_build", ""),
                 "location_text": self._location_text(),
+                "notify_where": system_notify.where(), "notify_status": system_notify.status(),   # 0.1.162
                 "lock_kind": getattr(self, "lock_kind", ""),             # "Face ID", "Touch ID", "Windows Hello"...
                 "care": bool(getattr(self, "care", False))}              # a healthcare workspace: People is off
         if not getattr(self, "_langs_sent", False):
@@ -447,6 +448,17 @@ class SettingsController:
             cb({"instructions": str(text or "")[:2000]})
         await self.push()
         await self.web.settings_toast("Instructions saved \u2014 Gink will follow them in every chat.")
+
+    async def _a_test_notify(self, _):
+        """Settings > Notifications > "Test notification": one now, even with Gink in front."""
+        system_notify.ask_permission()
+        sent = system_notify.post("Notifications work", "This is how Gink's notifications look on this device.",
+                                  "test", force=True)
+        where = system_notify.where() or "this device"
+        if sent:
+            await self.web.settings_toast(f"Sent to {where} \u2713")
+        else:
+            await self.web.settings_toast(system_notify.status() or f"{where[0].upper() + where[1:]} didn\u2019t take it.", "err")
 
     async def _a_test_voice(self, _):
         await self.web.settings_toast("Testing the natural voice\u2026")

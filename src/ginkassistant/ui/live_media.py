@@ -148,7 +148,7 @@ CSS = r"""
 
 JS = r"""
   function lmSay(text) {                            // a short notice (or the status line under the message box)
-    if (window.ginkNotify) ginkNotify({ id: 'live-media', title: text, timeout: 4500 });
+    if (window.ginkNotify) ginkNotify({ id: 'live-media', title: text, timeout: 4500, system: false });
     else if (typeof setStatus === 'function') setStatus(text);
   }
   window.lmSay = lmSay;

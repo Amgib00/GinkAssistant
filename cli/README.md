@@ -24,11 +24,12 @@ gink --image "my dog" --idea statue --photo dog.jpg   # start from your own phot
 gink --image "an x-ray of my camera"                  # X-ray, exploded view, cutaway: picked from your words
 ```
 
-## Photos
+## Photos and videos
 
 ```bash
 gink see broken-tap.jpg                    # Gink works out what it needs: reads text, finds what's wrong, solves sums
 gink see menu.jpg "translate this"
+gink watch clip.mp4 "why does my camera look like this?"   # a video: a few frames, in order (needs ffmpeg)
 ```
 
 Like the Live camera in the apps: careful with anything about health (general terms only, never a diagnosis or a
@@ -79,6 +80,7 @@ for s in found["sources"]:                                           # official 
     print("official" if s["official"] else "        ", s["title"], s["url"], s["icon"])
 png = client.image("my dog", idea="figurine", photo="dog.jpg")         # Media Studio's looks
 print(client.see("receipt.jpg", "add these up"))                       # about a photo (Gink Pro)
+print(client.watch("clip.mp4", "what happens here?"))                  # about a video: its frames (ffmpeg; Gink Pro)
 env = client.environments.get(it.environment)
 print(env.download("report.md").decode())
 ```

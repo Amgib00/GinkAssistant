@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.1.162 (November 2026)
+
+- Fixed: sending a photo or a video, or asking Gink to run a check, could end in "[error] Tool choice is none, but model
+  called a tool" with a spinner left under the answer. The AI sometimes tries to use a tool it wasn't given; Gink now
+  asks it again by itself (as plain text, then another model), so you get your answer. Whatever goes wrong, an answer
+  always finishes in plain words -- never a raw error, never a spinner that keeps turning
+- Gink uses its tools by itself: ask in your own words -- "can you run some check for why my camera is not
+  working?" -- and Gink does it with its real tools instead of explaining how. The AI can hand anything you want done
+  on your device to Gink's tools on its own, and the new camera and microphone check looks at whether your computer
+  sees them, whether the system reports a problem, whether access is turned off, and which open apps may be holding them
+- Notifications in Notification Center: Gink's notifications -- scheduled task results, reminders, updates, "Gink is
+  having trouble", policy changes -- also go to Notification Center on a Mac (with Gink's own name and icon), and to
+  Windows, Linux, Android and iPhone notifications. When Gink isn't in front you get the banner; while it's in front
+  the card in the window is the alert and the notification goes quietly into Notification Center's list (macOS 11 and
+  later). Settings > General > Notifications turns it off and sends a test. On the web, your browser's notifications
+  do the same when you allow them
+- Gink knows its own logo: a photo of the lime snowflake is Gink, not "the Snowflake logo"
+- Videos: attach or drag a video into the message box and Gink watches it -- it looks at a few moments in order and
+  says what happens. The video itself stays on your device (Gink Pro, like photos)
+- GitHub: Dependabot's updates no longer fail the checks by design (the newer minimum versions are in), the pull
+  request automation no longer needs `pull_request_target` (restricted by GitHub from 2 December 2026) and an expired
+  project token only warns, tests never reach the internet (the same results on every computer), and
+  `tools/close_fixed_alert_prs.py` closes Copilot Autofix pull requests whose alert is already fixed
+- Developers: chat completions, managed agents, scheduled tasks and Gink Genie ask again by themselves when a model
+  slips on a tool call; the SDKs send videos like the apps (`watch()`, `video_parts()` / `videoParts()`, and
+  `videoFrames()` in a browser; gink-ai 0.3.17), and `gink watch VIDEO` in the CLI (with ffmpeg)
+
 ## 0.1.161 (November 2026)
 
 - Scheduled tasks: ask "every morning at 8, give me the three biggest stories", "each Monday, plan my week" or "on

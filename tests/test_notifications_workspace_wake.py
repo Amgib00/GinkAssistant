@@ -17,7 +17,8 @@ def test_one_notification_style_for_everything():
     assert "ginkNotify({id: 'update'" in html and "ginkNotify({id: 'settings'" in html      # update offer + Settings
     main = read("src", "ginkassistant", "ui", "main_screen.py")
     assert "await web_chat.notify(item.kind.capitalize(), item.title" in main            # reminders: a card, not a dialog
-    assert 'kind == "item_done"' in main and 'kind == "item_snooze"' in main and "display notification" in main
+    assert 'kind == "item_done"' in main and 'kind == "item_snooze"' in main
+    assert "web_chat.on_system_notify = device_notification" in main                     # and on the device (0.1.162)
     for f in ("genie.html", "console.html"):
         assert "backdrop-filter:blur(28px)" in read("src", "ginkassistant", "services", "web_app", f), f
 

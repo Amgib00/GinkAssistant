@@ -9,6 +9,7 @@ gink -- Gink in your terminal (the Gink Developer API, OpenAI-compatible).
     gink --schedule "every morning at 8, the top news"        make the scheduled tasks the answer offers
                                     (links in a question are read and the web searched when needed: --no-auto turns it off)
     gink see PHOTO ["question"]     about a photo: Gink reads it, finds what's wrong, solves it... (Gink Pro)
+    gink watch VIDEO ["question"]   about a video: a few frames, in order, taken with ffmpeg (Gink Pro)
     gink --image "prompt" -o x.png  make an image
     gink agent "task"               a managed agent does it in a workspace that persists (--env ID, --continue)
     gink env list | new NAME | files ID | check ID [--fix] | pull ID [DIR] | push ID DIR | rm ID
@@ -664,6 +665,17 @@ def main(argv=None) -> int:
             question = " ".join(argv[2:]).strip() or "What's this?"
             stream_answer(key, base, [{"role": "user", "content": [{"type": "text", "text": question},
                                                                    {"type": "image_url", "image_url": {"url": url}}]}])
+            return 0
+        if argv[:1] == ["watch"]:                     # a video: a few frames, in order (ffmpeg), like the apps (0.1.162)
+            if len(argv) < 2:
+                raise GinkError('gink watch VIDEO ["question"]   e.g. gink watch clip.mp4 "why does my camera look like this?"')
+            from gink.client import GinkAPIError as _SdkError, video_frames, video_parts
+            try:
+                frames, times, length = video_frames(argv[1])
+                content = video_parts(frames, " ".join(argv[2:]).strip(), os.path.basename(argv[1]), length, times)
+            except _SdkError as exc:
+                raise GinkError(str(exc))
+            stream_answer(key, base, [{"role": "user", "content": content}])
             return 0
         if argv[:1] in (["batch"], ["batches"]):      # many requests at once, answered in the background
             sub = argv[1] if len(argv) > 1 else ("list" if argv[0] == "batches" else "")

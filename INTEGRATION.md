@@ -2762,3 +2762,52 @@ New services/live_info.py (all free, no API keys):
 - Website: home "Ask once. Gink keeps working." section, features, pricing (3 / 25 tasks), developers (#tasks,
   #artifacts), blog post.
 - Tests: tests/test_scheduled_tasks.py, tests/test_artifacts.py, tests/test_codebase_and_web.py.
+
+## 0.1.162: tool slips never reach anyone; automatic tools; notifications on the device; videos; GitHub checks
+- Tool slips: Groq answers 400 "tool_use_failed" when a model calls a tool it wasn't given ("Tool choice is none, but
+  model called a tool": GPT-OSS / Llama 4 trying to "run a check" or search), calls one that isn't in the list, or
+  writes a broken call -- before the stream, or as an `error` event inside it. It reached the apps as an uncaught
+  exception: "[error] ..." plus the reply row's spinner left behind (the lone mark under a photo answer).
+  backend_server: _tool_slip / _after_slip (no tools: _without_tools -- tool calls and results as text plus
+  PLAIN_TEXT_NOTE -- then another model; with tools: TOOL_RETRY_NOTE, then another model; Groq's own tools: once as
+  it was), _groq_post for Gink's own loops (managed agents, scheduled tasks -- whose last round is now _without_tools
+  instead of tool_choice "none", which still slipped --, Sites, search, Genie). The streaming relay reads event by
+  event: a slip before any words is asked again transparently; any other error becomes a sentence for the apps and
+  the web app (STOPPED_EARLY / NO_ANSWER), developers keep the OpenAI-style error. _SearchStream got the same ending.
+  Apps: services/tool_slips.py (the same words, tested equal), groq_worker catches errors inside the stream (once
+  more without tools, else the sentence), main_screen.answer always finalises the row (friendly_problem), the agent's
+  _chat retries and answers its last word without tools. _health["tool_slips"] counts them.
+- Automatic tools: the apps' chats send X-Gink-Actions: 1 (typed or spoken, no photos, the agent can reach the AI);
+  the server adds HANDOFF_TOOL (gink_use_tools) + HANDOFF_NOTE unless it's searching. A call of it, or a slip, becomes
+  {"gink_status": "use_tools"} (non-streamed: "gink": {"use_tools": true}); groq_worker raises UseTools and
+  main_screen runs the agent in the same reply row. agent.looks_like_action also catches device trouble ("run some
+  check", "my camera isn't working", "troubleshoot..."). device_check(focus="camera"|"microphone"): health._devices
+  (Mac system_profiler + Gink's own AVFoundation permission, Windows Get-PnpDevice + the privacy ConsentStore, Linux
+  /dev/video*, fuser, arecord), the call apps that are open, and where permissions live. Older macOS lists audio
+  devices differently: no microphone list is better than a wrong "none found".
+- Notifications on the device: services/system_notify.py. Mac/iOS: UNUserNotificationCenter -- only inside the
+  built app (bundle path ends .app, id contains "gink"), since asking from source stops the process; a delegate
+  presents notifications even with Gink in front (only the Settings test posts then). osascript stays the fallback
+  (from source, or when macOS refuses this copy) but never overrides the person's "off". Windows/Linux:
+  actions/notify.py; Android: a "Gink" channel (POST_NOTIFICATIONS asked at start on 13+). WebChatFeed mirrors its
+  cards (notify(system=True), status_bar, policy_notice, show_update) through on_system_notify; main_screen posts a
+  banner only when Gink isn't in front (NSApplication.isActive, the foreground window, else the page's visibility);
+  in front, macOS 11+ gets it quietly in the list ("gink-quiet-" ids: the delegate answers list only), others not at
+  all; never the same one again within 30 minutes (status/update/policy: 12 hours). Quick confirmations: system=False.
+- about_gink describes Gink's logo (a photo of con.jpg, the icon, was called "the Snowflake logo").
+  Setting notify_system (this device only) + "Test notification". Web: window.ginkSystemNotify (bridge.js) posts the
+  browser's Notification when the tab is hidden; the page's ginkNotify calls it for every card that isn't system:false.
+- Videos: the chat page takes 2-5 frames (<video> + canvas, evenly spaced, 960 px, JPEG) and sends attach_video; only
+  frames leave the page (dragging has no size limit; the apps' file picker hands files up to 25 MB to the page).
+  attachments.video_attachment / picture_parts (photos first, then frames, five pictures at most, with a sentence
+  saying what they are), the same in bridge.buildContent, the SDKs (video_parts / videoParts) and the CLI (ffmpeg).
+- GitHub: dependabot's pip PRs failed test_requirements_match by design (requirements.txt raised, pyproject's Briefcase
+  lists out of its reach) -- a newer >= minimum in requirements.txt is now fine, and this release takes its bumps
+  (fastapi 0.163.2, anyio 4.16.0; server: pypdf 7.1, markdown 3.11.3, python-multipart 0.0.34, boto3 1.44.5;
+  hadolint-action 3.5.0) so those PRs close themselves. Pull request automation: pull-requests.yml (pull_request,
+  read-only: saves the number) + pull-request-triage.yml (workflow_run, write: gate, labels with pr-number, assignee,
+  milestone, project via gh project item-add that only warns) -- no pull_request_target (restricted on public repos
+  from 2 Dec 2026), and its checks don't sit on the PR. tests/conftest.py: no test reaches the internet (names don't
+  resolve, only loopback connects, proxies dropped); tests.yml -rfE and 30-minute limits; tools/close_fixed_alert_prs.py.
+- Tests: tests/test_tool_slips.py, tests/test_automatic_tools.py, tests/test_device_notifications.py,
+  tests/test_video_attachments.py (a real-browser check records its own clip with MediaRecorder).

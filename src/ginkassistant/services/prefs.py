@@ -25,6 +25,7 @@ DEFAULTS = {
     "read_aloud": True,           # speak replies to typed messages
     "reply_language": "auto",     # auto | en | fr | wo | kri | ar | pt | es
     "notify_reminders": True,     # system notifications for due reminders/alarms
+    "notify_system": True,        # this device: Gink's notifications in Notification Center etc. when it isn't in front
     "use_memory": True,           # use saved memories in answers
     "memory_suggest": True,       # Settings > Memory > "Generate memory from chats" (lasting facts, remembered by themselves)
     "memory_sensitive": False,    # ... "Include sensitive topics in memory" (health, religion...): off unless turned on
