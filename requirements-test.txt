@@ -6,7 +6,7 @@ SpeechRecognition
 certifi
 cryptography
 edge-tts
-fastapi>=0.163.2
+fastapi>=0.165.0
 fpdf2
 groq
 httpx
