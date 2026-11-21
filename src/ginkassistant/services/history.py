@@ -87,12 +87,22 @@ class HistoryStore:
             self._temp_store().pop(session_id, None)
 
     def save_message(self, session_id: str, role: str, content: str):
+        # The same question twice in a row (sent again after the first got no answer -- a lost connection, a
+        # limit) is kept once: opening the chat again showed "which device i'm using" twice (0.1.160).
         if self.is_temporary(session_id):
-            self._temp_store().setdefault(session_id, []).append({"role": role, "content": content})
+            kept = self._temp_store().setdefault(session_id, [])
+            if role == "user" and kept and kept[-1] == {"role": "user", "content": content}:
+                return
+            kept.append({"role": role, "content": content})
             return
         if not content or not content.strip():
             return
         with self._connect() as conn:
+            if role == "user":
+                last = conn.execute("SELECT role, content FROM chat_history WHERE session_id = ? ORDER BY id DESC LIMIT 1",
+                                    (session_id,)).fetchone()
+                if last and last[0] == "user" and last[1] == content.strip():
+                    return
             conn.execute(
                 "INSERT INTO chat_history (session_id, role, content) VALUES (?, ?, ?)",
                 (session_id, role, content.strip()),

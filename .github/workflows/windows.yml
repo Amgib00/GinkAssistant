@@ -9,6 +9,9 @@ on:
   workflow_dispatch:
   workflow_call:          # used by release.yml
 
+permissions:
+  contents: read          # build and test only: nothing here writes to the repository
+
 jobs:
   windows:
     runs-on: windows-latest

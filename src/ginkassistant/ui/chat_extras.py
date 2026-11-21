@@ -159,34 +159,43 @@ CSS = r"""
   }
   .reasons button:hover { border-color: var(--accent); color: var(--accent); }
   .thanks { font-size: 12.5px; color: var(--accent); margin-left: 8px; }
-  /* ---------- code blocks (redesigned) ---------- */
-  .code-block { border: 1px solid #2F332E !important; border-radius: 12px !important; overflow: hidden; background: #1C1E1A !important; margin: 12px 0 !important; max-width: 100%; }
-  .code-block-bar { background: #262924 !important; border-bottom: 1px solid #33372F !important; padding: 6px 8px 6px 14px !important; display: flex; align-items: center; }
-  .code-block-label { color: #C9D1C6 !important; font-size: 12.5px !important; font-weight: 500; display: flex; align-items: center; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .code-block-label .ldot { width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; flex: none; }
-  .code-block-bar button {
-    background: transparent !important; color: #AAB3A7 !important; border: 1px solid transparent !important; border-radius: 7px !important;
-    font-size: 12px !important; padding: 4px 9px !important; margin-left: 2px; cursor: pointer; display: inline-flex; align-items: center;
-  }
-  .code-block-bar button:hover { background: #33372F !important; color: #fff !important; }
-  .code-block-bar button svg { width: 14px; height: 14px; margin-right: 5px; }
-  .code-block-bar button.on { color: #A8F03C !important; }
-  .code-block-body { position: relative; display: flex; background: #1C1E1A; }
-  .code-block-body .lns {
-    flex: none; padding: 14px 0 14px 12px; text-align: right; color: #5D665A; font: 12.5px/1.6 'SF Mono', Menlo, Consolas, monospace;
-    user-select: none; -webkit-user-select: none; white-space: pre; border-right: 1px solid #2B2F29; padding-right: 10px;
-  }
+  /* ---------- code blocks (0.1.160): calm and readable, in the page's own light or dark colours ----------
+     The language (or the file's name) at the top left, small icon buttons at the top right (wrap, save, copy),
+     the code under it, coloured by services/markdown_render.py. Long code folds, with "Show all N lines". */
+  :root { --code-bg: #F7F7F4; --code-border: #E3E6DE; --code-text: #1F2420; --code-muted: #687066; --code-hover: rgba(28, 33, 29, 0.07); }
+  body.theme-dark { --code-bg: #181C19; --code-border: #2B312C; --code-text: #E2E8E1; --code-muted: #98A196; --code-hover: rgba(255, 255, 255, 0.08); }
+  .code-block { position: relative; margin: 14px 0 !important; max-width: 100%; overflow: hidden;
+    background: var(--code-bg) !important; border: 1px solid var(--code-border) !important; border-radius: 12px !important; }
+  .code-block-bar { display: flex; align-items: center; gap: 2px; padding: 7px 7px 0 14px !important;
+    background: transparent !important; border: 0 !important; min-height: 36px; }
+  .code-block-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    color: var(--code-muted) !important; font-family: inherit !important; font-size: 12.5px !important; font-weight: 500; letter-spacing: 0.01em; }
+  .code-block-bar button { flex: none; width: 30px; height: 30px; padding: 0 !important; margin: 0; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; border: 0 !important; border-radius: 8px !important;
+    background: transparent !important; color: var(--code-muted) !important; font: inherit; }
+  .code-block-bar button:hover { background: var(--code-hover) !important; color: var(--code-text) !important; }
+  .code-block-bar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .code-block-bar button svg { width: 16px; height: 16px; }
+  .code-block-bar button.on { color: var(--accent) !important; }
+  .code-block-body { position: relative; display: flex; background: transparent; }
   .code-block-body .codehilite { flex: 1; min-width: 0; background: transparent !important; }
-  .code-block-body pre { background: transparent !important; margin: 0 !important; padding: 14px 16px !important; overflow-x: auto; font: 12.5px/1.6 'SF Mono', Menlo, Consolas, monospace !important; color: #E6EDE3; }
-  .code-block.wrap pre { white-space: pre-wrap !important; word-break: break-word; }
+  .code-block-body pre { margin: 0 !important; padding: 4px 16px 15px !important; background: transparent !important;
+    color: var(--code-text) !important; overflow-x: auto; tab-size: 4; -moz-tab-size: 4;
+    font: 13px/1.62 ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace !important; }
+  .code-block-body pre code { font: inherit !important; background: none !important; padding: 0 !important; border: 0 !important; color: inherit; }
+  .code-block-body .lns { flex: none; padding: 4px 0 15px 14px; padding-right: 2px; text-align: right; white-space: pre; color: var(--code-muted);
+    opacity: 0.7; font: 13px/1.62 ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace; user-select: none; -webkit-user-select: none; }
+  .code-block.wrap pre { white-space: pre-wrap !important; overflow-wrap: anywhere; }
   .code-block.wrap .lns { display: none; }
-  .code-block.collapsed .code-block-body { max-height: 420px; overflow: hidden; }
-  .code-block.collapsed .code-block-body::after {
-    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 70px;
-    background: linear-gradient(rgba(28,30,26,0), #1C1E1A);
-  }
-  .code-more { display: block; width: 100%; border: none; border-top: 1px solid #2F332E; background: #222520; color: #C9D1C6; font: inherit; font-size: 12.5px; padding: 8px; cursor: pointer; }
-  .code-more:hover { color: #A8F03C; }
+  .code-block.collapsed .code-block-body { max-height: 380px; overflow: hidden; }
+  .code-block.collapsed .code-block-body::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 72px;
+    background: linear-gradient(rgba(0, 0, 0, 0), var(--code-bg)); pointer-events: none; }
+  .code-more { display: block; width: 100%; border: 0; border-top: 1px solid var(--code-border); background: transparent;
+    color: var(--code-muted); font: inherit; font-size: 12.5px; padding: 9px; cursor: pointer; }
+  .code-more:hover { color: var(--code-text); background: var(--code-hover); }
+  .code-tip { position: absolute; top: 40px; right: 8px; z-index: 2; padding: 3px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 600;
+    background: var(--code-text); color: var(--code-bg); pointer-events: none; opacity: 0; transition: opacity 0.15s; }
+  .code-tip.show { opacity: 1; }
   .assistant-text p code, .assistant-text li code { background: var(--elevated); color: var(--text-main); border: 1px solid var(--border); padding: 1px 5px; border-radius: 5px; font-size: 0.9em; }
   /* ---------- file cards (files Gink made) ---------- */
   .fcard {
@@ -491,40 +500,30 @@ JS = r"""
     bar.appendChild(t); setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); bar.classList.remove('open'); }, 2500);
   }
 
-  // ---- code blocks: language dot, line numbers, wrap, collapse, copy/save that work in the app ----
-  var LANG_COLORS = {python: '#3572A5', py: '#3572A5', javascript: '#F1E05A', js: '#F1E05A', typescript: '#3178C6', ts: '#3178C6',
-    html: '#E34C26', css: '#563D7C', java: '#B07219', kotlin: '#A97BFF', swift: '#F05138', go: '#00ADD8', rust: '#DEA584',
-    c: '#555555', cpp: '#F34B7D', 'c++': '#F34B7D', csharp: '#178600', cs: '#178600', php: '#4F5D95', ruby: '#701516', sql: '#E38C00',
-    bash: '#89E051', sh: '#89E051', shell: '#89E051', json: '#8BC34A', yaml: '#CB171E', dart: '#00B4AB', r: '#198CE7'};
+  // ---- code blocks: icon buttons (wrap, save, copy), long code folds, copy and save that work in the apps ----
   var CODE_ICONS = {
     copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>',
     check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
     save: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5"/><path d="M5 19h14"/></svg>',
-    wrap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h13a3 3 0 0 1 0 6h-4M4 17h5"/><path d="M15 16l-2 2 2 2"/></svg>'
+    wrap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h13a3 3 0 0 1 0 6h-4M4 17h5"/><path d="M15 16l-2 2 2 2"/></svg>',
+    open: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"/></svg>'
   };
   function codeText(block) { var c = block.querySelector('pre code') || block.querySelector('pre'); return c ? (c.innerText || c.textContent || '') : ''; }
+  function codeButton(what, title, icon) {
+    return '<button type="button" data-code="' + what + '" title="' + title + '" aria-label="' + title + '">' + icon + '</button>';
+  }
   function enhanceCodeBlocks(root) {
     Array.prototype.forEach.call((root || document).querySelectorAll('.code-block:not([data-enh])'), function (block) {
       block.setAttribute('data-enh', '1');
-      var bar = block.querySelector('.code-block-bar'), label = block.querySelector('.code-block-label');
-      var lang = (label.textContent || '').trim().toLowerCase(), isFile = lang.indexOf('.') > 0;
-      var key = isFile ? lang.split('.').pop() : lang;
-      var dot = document.createElement('span'); dot.className = 'ldot'; dot.style.background = LANG_COLORS[key] || '#7D857B';
-      label.insertBefore(dot, label.firstChild);
+      var bar = block.querySelector('.code-block-bar');
       Array.prototype.forEach.call(bar.querySelectorAll('button'), function (b) { b.parentNode.removeChild(b); });
-      bar.insertAdjacentHTML('beforeend',
-        '<button data-code="wrap" title="Wrap long lines">' + CODE_ICONS.wrap + 'Wrap</button>' +
-        '<button data-code="save" title="Save to a file">' + CODE_ICONS.save + 'Save</button>' +
-        '<button data-code="copy" title="Copy code">' + CODE_ICONS.copy + 'Copy</button>');
       var text = codeText(block).replace(/\n$/, ''), n = text ? text.split('\n').length : 0;
-      if (n >= 15) bar.insertAdjacentHTML('beforeend', '<button data-code="open" title="Open in the code viewer">\u2922 Open</button>');
-      var body = block.querySelector('.code-block-body');
-      if (n > 1 && body) {
-        var lns = document.createElement('div'); lns.className = 'lns';
-        var nums = []; for (var i = 1; i <= n; i++) nums.push(i);
-        lns.textContent = nums.join('\n'); body.insertBefore(lns, body.firstChild);
-      }
-      if (n > 24) {
+      var wide = text.split('\n').some(function (l) { return l.length > 90; });
+      bar.insertAdjacentHTML('beforeend',
+        (wide ? codeButton('wrap', 'Wrap long lines', CODE_ICONS.wrap) : '') +
+        (n >= 15 ? codeButton('open', 'Open in the code viewer', CODE_ICONS.open) : '') +
+        codeButton('save', 'Save to a file', CODE_ICONS.save) + codeButton('copy', 'Copy code', CODE_ICONS.copy));
+      if (n > 22) {
         block.classList.add('collapsed');
         var more = document.createElement('button'); more.className = 'code-more';
         more.textContent = 'Show all ' + n + ' lines'; block.appendChild(more);
@@ -540,8 +539,13 @@ JS = r"""
     var block = b.closest('.code-block'), what = b.getAttribute('data-code');
     if (what === 'open') { openCodeViewer(block); return; }
     if (what === 'copy') {
-      copyText(codeText(block), function () { b.innerHTML = CODE_ICONS.check + 'Copied'; b.classList.add('on');
-        setTimeout(function () { b.innerHTML = CODE_ICONS.copy + 'Copy'; b.classList.remove('on'); }, 1600); });
+      copyText(codeText(block).replace(/\n$/, ''), function () {
+        b.innerHTML = CODE_ICONS.check; b.classList.add('on'); b.setAttribute('aria-label', 'Copied');
+        var tip = block.querySelector('.code-tip');
+        if (!tip) { tip = document.createElement('span'); tip.className = 'code-tip'; tip.setAttribute('role', 'status'); block.appendChild(tip); }
+        tip.textContent = 'Copied'; tip.classList.add('show');
+        setTimeout(function () { b.innerHTML = CODE_ICONS.copy; b.classList.remove('on'); b.setAttribute('aria-label', 'Copy code'); tip.classList.remove('show'); }, 1600);
+      });
     } else if (what === 'wrap') {
       b.classList.toggle('on', block.classList.toggle('wrap'));
     } else if (what === 'save') {
@@ -549,7 +553,7 @@ JS = r"""
       var ext = {python: 'py', javascript: 'js', typescript: 'ts', html: 'html', css: 'css', java: 'java', kotlin: 'kt',
                  swift: 'swift', go: 'go', rust: 'rs', c: 'c', cpp: 'cpp', csharp: 'cs', php: 'php', ruby: 'rb', sql: 'sql',
                  bash: 'sh', shell: 'sh', json: 'json', yaml: 'yml', dart: 'dart', r: 'r'}[label.toLowerCase()];
-      ginkEmit('save_code', {name: label.indexOf('.') > 0 ? label : 'gink-code.' + (ext || 'txt'), code: codeText(block)});
+      ginkEmit('save_code', {name: label.indexOf('.') > 0 ? label : 'gink-code.' + (ext || 'txt'), code: codeText(block).replace(/\n$/, '')});
     }
   }, true);
   // the older inline handlers (still in replies being streamed) use the same working paths
@@ -839,14 +843,41 @@ JS = r"""
         f.appendChild(skip); f.appendChild(send); card.appendChild(f);
       }
       function next() { if (st.i < qs.length - 1) st.i++; draw(); }
-      function submit() {
-        var text = qs.map(function (q, i) { return q.q + ' ' + st.answers[i]; }).join('\n');
+      function finish(answers) {                     // the card as answered: the questions and what was chosen
         card.classList.add('done'); card.innerHTML = '';
         card.appendChild(el('div', 'qq', 'Your answers'));
-        qs.forEach(function (q, i) { card.appendChild(el('div', 'qans', q.q + ' \u2014 ' + st.answers[i])); });
+        qs.forEach(function (q, i) { card.appendChild(el('div', 'qans', q.q + ' \u2014 ' + (answers[i] || 'answered in the chat'))); });
+      }
+      card._finish = function (text) { finish(parseAnswers(qs, text)); };
+      function submit() {
+        // "My answers:" so the AI reads them as answers to its questions (not as the person asking it the question:
+        // before 0.1.160, "What OS does your laptop use? macOS" got "I don't run on a laptop myself")
+        var text = 'My answers:\n' + qs.map(function (q, i) { return '\u2022 ' + q.q + ' \u2192 ' + st.answers[i]; }).join('\n');
+        finish(st.answers);
         ginkEmit('send', text);
       }
       draw(); block.parentNode.replaceChild(card, block);
+    });
+  };
+  // What the person answered, from their next message: "My answers:\n- Q -> A" (0.1.160) or the older "Q A".
+  function parseAnswers(qs, text) {
+    text = String(text || '');
+    return qs.map(function (q) {
+      var lines = text.split('\n');
+      for (var i = 0; i < lines.length; i++) {
+        var ln = lines[i].replace(/^\s*[\u2022*-]\s*/, '');
+        if (ln.indexOf(q.q) !== 0) continue;
+        var rest = ln.slice(q.q.length).replace(/^\s*(\u2192|->|:|\u2014|-)?\s*/, '');
+        if (rest) return rest;
+      }
+      return '';
+    });
+  }
+  // A question card stays answerable only until the person's next message. Opening a chat again redraws its cards,
+  // so the message after a card closes it, with the answers it held -- an answered card never comes back blank.
+  window.closeQuestionCards = function (text) {
+    Array.prototype.forEach.call(document.querySelectorAll('.qcard:not(.done)'), function (card) {
+      if (card._finish) card._finish(text);
     });
   };
   // ---- "Recalled memory": the memories Gink is using for this answer
@@ -913,6 +944,12 @@ JS = r"""
     var body = block.querySelector('.code-block-body');
     // inside a .code-block wrapper so the numbers and the code share the same styling (they drifted apart otherwise)
     v.querySelector('.cvbody').innerHTML = body ? '<div class="code-block cv-inner" data-enh="1">' + body.outerHTML + '</div>' : '';
+    var cvb = v.querySelector('.cvbody .code-block-body'), cvn = CV.text ? CV.text.split('\n').length : 0;
+    if (cvb && cvn > 1 && !cvb.querySelector('.lns')) {           // line numbers in the viewer (the chat's blocks have none)
+      var lns = document.createElement('div'); lns.className = 'lns';
+      var nums = []; for (var li = 1; li <= cvn; li++) nums.push(li);
+      lns.textContent = nums.join('\n'); cvb.insertBefore(lns, cvb.firstChild);
+    }
     var design = /^(html?|svg|xml)$/.test(ext) && /<(html|body|div|svg|style|section|main|h1|p)\b/i.test(CV.text);
     v.querySelector('.cvtabs').hidden = !design;
     var pub = v.querySelector('.cvpub'); pub.hidden = !design; pub.disabled = false; pub.textContent = 'Publish';

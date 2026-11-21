@@ -88,6 +88,7 @@ import time
 import json
 import os
 import shutil
+import sys
 import re
 import uuid
 import datetime
@@ -105,6 +106,11 @@ from ..services.groq_worker import SPOKEN_REPLY_PROMPT, GroqBrain
 from ..services import attachments as att_svc, biometric, briefing, prefs
 from ..services.actions import looks_like_action
 from ..services.paths import data_dir
+
+# "look at my screen", "what's on my screen", "share my screen": Gink looks at the screen by itself (the same words as
+# GINK_SCREEN_RE on the chat page, ui/live_media.py)
+SCREEN_ASK = re.compile(r"\b(?:look at|see|check|read|watch|what'?s on|whats on|what is on|help me with|explain|share)\b"
+                        r"[^.?!\n]{0,40}\bmy (?:screen|display|monitor)\b|\bscreen ?shar(?:e|ing)\b|\bshare (?:my |the )?screen\b", re.I)
 from ..services import data_export
 from ..services.api_client import ApiClient, ApiError
 from ..services.sync import SyncService
@@ -473,6 +479,9 @@ def build_main_screen(app: toga.App, email: str):
         async def agent_step(i, label, state):
             await web_chat._js(f"agentStep({int(i)}, {json.dumps(label)}, {json.dumps(state)})")
 
+        async def agent_plan(steps):
+            await web_chat._js(f"agentPlan({json.dumps(steps)})")
+
         async def agent_confirm(tool, args, label):
             ask_id = uuid.uuid4().hex[:12]
             fut = asyncio.get_running_loop().create_future()
@@ -490,7 +499,8 @@ def build_main_screen(app: toga.App, email: str):
             # "Ask before sensitive actions" switch only controls the optional questions
             result = await agent.run(message, history=history, on_status=on_status,
                                      on_step=agent_step if typed else None,
-                                     confirm=agent_confirm if typed else None, ask_sensitive=asks_ok)
+                                     confirm=agent_confirm if typed else None, ask_sensitive=asks_ok,
+                                     on_plan=agent_plan if typed else None)
         finally:
             if typed:
                 await web_chat._js("agentEnd()")
@@ -633,10 +643,35 @@ def build_main_screen(app: toga.App, email: str):
             _org_care["at"] = time.time()
         return _org_care["healthcare"]
 
+    _teen = {"teen": False, "at": 0.0}
+
+    async def account_is_teen() -> bool:
+        """Is this a teen's account (13-17)? Sensitive topics are never kept for them. (Every 10 minutes at most.)"""
+        token = getattr(app, "session_token", None)
+        if not token:
+            return False
+        if time.time() - _teen["at"] > 600:
+            try:
+                _teen["teen"] = bool((await ApiClient(app.state.base_url).family(token)).get("teen"))
+            except Exception:
+                pass                                         # offline: keep what we knew
+            _teen["at"] = time.time()
+        return _teen["teen"]
+
+    async def keep_sensitive() -> bool:
+        """Settings > Memory > "Include sensitive topics in memory" -- never for teens or in a healthcare workspace."""
+        return bool(prefs.load(app).get("memory_sensitive")) and not await account_is_teen() and not await in_healthcare_workspace()
+
+    async def remembered(saved: dict, nid: str = "mem-auto"):
+        await web_chat.notify("Updated" if saved.get("replaced") else "Remembered", saved["text"], icon="\U0001F9E0",
+                              timeout=6000, nid=nid,
+                              actions=[{"label": "Undo", "emit": "memory_undo",
+                                        "value": {"uid": saved.get("uid", ""), "replaced": saved.get("replaced", "")}}])
+
     async def auto_remember(message: str):
         """A lasting fact in what was just said ("I live in Nairobi") is remembered BY ITSELF, with Undo in the
-        notification. Never health (memory_rules), never in a temporary chat, never in a healthcare workspace,
-        not when memory (or automatic memory) is off in Settings."""
+        notification. Health and other sensitive topics only with "Include sensitive topics in memory" on; never in a
+        temporary chat or a healthcare workspace, not when memory (or "Generate memory from chats") is off."""
         from ..services import memory_rules
         try:
             p = prefs.load(app)
@@ -644,14 +679,37 @@ def build_main_screen(app: toga.App, email: str):
                 return
             if brain.history.is_temporary(current_session["id"]) or await in_healthcare_workspace():
                 return
-            fact = memory_rules.suggest(message, [x["text"] for x in app.memory.list()])
+            fact = memory_rules.suggest(message, [x["text"] for x in app.memory.list()], sensitive=await keep_sensitive())
             if not fact:
                 return
-            saved = app.memory.add(fact)
-            await web_chat.notify("Updated" if saved.get("replaced") else "Remembered", saved["text"], icon="\U0001F9E0",
-                                  timeout=6000, nid="mem-auto",
-                                  actions=[{"label": "Undo", "emit": "memory_undo",
-                                            "value": {"uid": saved.get("uid", ""), "replaced": saved.get("replaced", "")}}])
+            await remembered(app.memory.add(fact))
+        except Exception:
+            pass                                             # memory must never break a chat
+
+    _memgen = {}                                             # chat -> how many of the person's messages were looked at
+
+    async def auto_generate_memories(session_id: str):
+        """"Generate memory from chats": every 4 messages the person sends, Gink's AI picks the lasting facts out of the
+        conversation (the server's /memory/generate -- nothing kept there) and they're remembered here, with Undo."""
+        from ..services import memory_rules
+        token = getattr(app, "session_token", None)
+        try:
+            p = prefs.load(app)
+            if not token or not session_id or not p.get("use_memory", True) or not p.get("memory_suggest", True):
+                return
+            if brain.history.is_temporary(session_id):
+                return
+            everything = brain.history.get_history(session_id, limit=400)
+            said, history = sum(1 for m in everything if m.get("role") == "user"), everything[-16:]
+            if said - _memgen.get(session_id, 0) < 4 or await in_healthcare_workspace():
+                return
+            _memgen[session_id] = said
+            sensitive = await keep_sensitive()
+            facts = await ApiClient(app.state.base_url).memory_generate(
+                token, [{"role": m["role"], "content": str(m.get("content") or "")[:1500]} for m in history], sensitive)
+            known = [x["text"] for x in app.memory.list()]
+            for i, fact in enumerate(memory_rules.clean_generated(facts, known, sensitive, limit=5)):
+                await remembered(app.memory.add(fact), nid=f"mem-gen-{i}")
         except Exception:
             pass                                             # memory must never break a chat
 
@@ -670,6 +728,10 @@ def build_main_screen(app: toga.App, email: str):
         pending_attachments.clear()
         await web_chat.set_attachments([])
         await web_chat.set_busy(True)
+        if message and not attachments and SCREEN_ASK.search(message) and screen_view_supported():
+            shot = await screen_picture()                    # "look at my screen": Gink looks, by itself
+            if shot is not None:
+                attachments = [shot]
 
         try:
             if attachments:
@@ -698,6 +760,7 @@ def build_main_screen(app: toga.App, email: str):
             asyncio.create_task(maybe_auto_title(current_session["id"], message, reply))
             if route == "__ASK_BRAIN__" and reply and not str(reply).startswith("[error]"):
                 await auto_remember(message)                # a lasting fact they mentioned: remembered by itself
+                asyncio.create_task(auto_generate_memories(current_session["id"]))   # and, every few messages, the AI's picks
         except Exception as exc:
             reply = f"[error] {exc}"
             await add_assistant_message(reply, save=False)
@@ -706,9 +769,78 @@ def build_main_screen(app: toga.App, email: str):
             await web_chat.set_busy(False)
             refresh_sidebar()
 
+        spoken, _voice_msg["reply"] = _voice_msg["reply"], False
         if reply:
-            if prefs.load(app).get("read_aloud", True):
+            if prefs.load(app).get("read_aloud", True) or spoken:      # a voice message gets a spoken answer
                 await voice_bridge.speak(reply, voice_key=selected_voice["value"])
+
+    # -- voice messages: hold the mic, speak, let go (the page: ui/live_media.py) -----------
+    _voice_msg = {"busy": False, "reply": False}
+
+    async def voice_message(action: str):
+        """The app listens (until you pause), sends what you said as a voice message, and answers out loud."""
+        if action != "start" or _voice_msg["busy"] or _sending["value"]:
+            return
+        _voice_msg["busy"] = True
+        started, text = time.time(), ""
+        set_voice_status("Listening\u2026")
+        await take_mic()
+        try:
+            text = await voice_bridge.listen()
+            if not text:
+                set_voice_status("Didn't catch that \u2014 try again")
+        except voice_bridge.VoiceUnavailable as exc:
+            set_voice_status(str(exc))
+        except Exception as exc:
+            set_voice_status(f"Mic problem: {exc}")
+        finally:
+            resume_wake()
+            _voice_msg["busy"] = False
+            await web_chat._js("window.voiceMessageDone && voiceMessageDone()")
+        if not text:
+            return
+        set_voice_status("")
+        _voice_msg["reply"] = True
+        job = asyncio.create_task(send_query(text))
+        await asyncio.sleep(0.4)                              # the message is on the page by now
+        await web_chat._js(f"window.markVoiceMessage && markVoiceMessage('', {int(time.time() - started)}, {json.dumps(text)})")
+        await job
+
+    # -- screen view: Live shows Gink your screen (frames from here), or one look for "look at my screen" ----------
+    _screen = {"task": None}
+
+    def screen_view_supported() -> bool:
+        from ..services.platform_utils import is_mobile
+        return not is_mobile() and sys.platform in ("darwin", "win32", "linux")
+
+    async def screen_picture():
+        """The screen now, as an attachment (named live-...: never kept by People), or None."""
+        from ..services.actions.computer import ComputerControl
+        data = await asyncio.to_thread(ComputerControl().screen_image)
+        if not data:
+            set_voice_status("Gink couldn't see the screen" + (" \u2014 allow Screen Recording for Gink in System Settings "
+                             "\u2192 Privacy & Security" if sys.platform == "darwin" else "") + ".")
+            return None
+        try:
+            return await asyncio.to_thread(att_svc.load_data_url, data, "live-screen.jpg")
+        except Exception:
+            return None
+
+    async def screen_frames():
+        from ..services.actions.computer import ComputerControl
+        pc = ComputerControl()
+        while _screen["task"] is not None:
+            data = await asyncio.to_thread(pc.screen_image, 1280)
+            if data and _screen["task"] is not None:
+                await web_chat._js(f"window.liveScreenFrame && liveScreenFrame({json.dumps(data)})")
+            await asyncio.sleep(2.0)
+
+    def screen_view(on: bool):
+        if on and _screen["task"] is None and screen_view_supported():
+            _screen["task"] = asyncio.create_task(screen_frames())
+        elif not on and _screen["task"] is not None:
+            task, _screen["task"] = _screen["task"], None
+            task.cancel()
 
 
     # -- voice conversation screen (ui/voice_ui.py) -------------------------
@@ -1431,6 +1563,10 @@ def build_main_screen(app: toga.App, email: str):
             await send_query(str(value.get("question") or "What is this?")[:2000])
         elif kind == "camera":                          # Live can't run here: one photo (the page wrote the request)
             await take_photo(str(value or "ask"))
+        elif kind == "voice_message" and isinstance(value, dict):   # hold the mic: a voice message
+            await voice_message(str(value.get("action") or ""))
+        elif kind == "screen_view" and isinstance(value, dict):     # Live screen view: frames on or off
+            screen_view(bool(value.get("on")))
         elif kind == "menu":
             if value == "tasks":
                 open_tasks()
@@ -2024,7 +2160,7 @@ def build_main_screen(app: toga.App, email: str):
         pause_wake() if on else resume_wake()
     voice_bridge.on_speaking = _on_speaking
 
-    VOICE_EVENTS = {"voice_toggle", "voice_start", "dictate", "read_aloud", "voice_preview"}
+    VOICE_EVENTS = {"voice_toggle", "voice_start", "dictate", "read_aloud", "voice_preview", "voice_message"}
 
     async def check_family():
         """Age and parental controls: the one-time birth-year question; and if a parent turned voice
@@ -2161,6 +2297,8 @@ def build_main_screen(app: toga.App, email: str):
         if lock["locked"]:
             asyncio.create_task(lock_now())             # opened locked: ask the device straight away
         asyncio.create_task(web_chat.set_server(app.state.base_url))   # the sources' real logos come from Gink's server
+        if screen_view_supported():                                     # Live screen view: this app sends the frames
+            asyncio.create_task(web_chat._js("window.GINK_NATIVE_SCREEN = true"))
         asyncio.create_task(people_start())
         asyncio.create_task(lock_kind())                 # Settings > Privacy names it: Face ID, Touch ID, Windows Hello...
         asyncio.create_task(status_loop())

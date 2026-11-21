@@ -148,6 +148,8 @@ class GinkAssistantApp(toga.App):
         # rebuild -- see services/server_config.py.
         self.state = AppState(base_url=resolve_base_url(self))
         data_dir(self)  # ensure the writable data directory exists up front
+        from .services import device_info
+        device_info.warm_up()        # "which device am I using?": the model, system and memory, read once in the background
 
         if is_desktop() and is_local(self.state.base_url):   # only when chosen (Settings -> Advanced -> Login server)
             _start_backend_if_needed(self)
@@ -175,6 +177,9 @@ class GinkAssistantApp(toga.App):
         from .services import prefs as _prefs
         self.task_runner.live.city_fn = lambda: _prefs.city(self)     # Settings -> Location
         self.task_runner.live.allowed_fn = lambda: _prefs.load(self).get("use_location", True)
+        self.task_runner.live.estimate_fn = lambda: _prefs.load(self).get("location_metadata", True)
+        from .services import device_region as _region                 # Settings > Privacy > "Location metadata"
+        _region.metadata_allowed[0] = lambda: _prefs.load(self).get("location_metadata", True)
         self.task_agent = TaskAgent(self.task_runner)
         self.task_scheduler = ReminderScheduler(self.task_store)
 

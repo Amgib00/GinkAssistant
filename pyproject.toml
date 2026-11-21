@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # Must be a valid package name (letters, digits, "-", "_", "."; no spaces).
 # Briefcase 0.4.6+ reads this name, so "gink ai assistant" could break builds.
 name = "ginkassistant"
-version = "0.1.157"
+version = "0.1.160"
 description = "Your AI assistant for work, study and everyday life"
 readme = "README.md"
 requires-python = ">=3.11"            # 3.10 reached end of life (Oct 2026); 32-bit Android stops at 3.11
@@ -22,7 +22,7 @@ license = "MIT"          # Briefcase 0.3.15 reads this one (it can't read the [p
 # "Gink Ai Assistant" will become an error). Users see formal_name ("Gink") below.
 project_name = "ginkassistant"
 bundle = "com.amgib"
-version = "0.1.157"
+version = "0.1.160"
 url = "https://github.com/amgib00/ginkassistant"
 author = "Amgib00"
 author_email = "kargboi131ik667957@gmail.com"
@@ -81,9 +81,10 @@ requires = [
     "uvicorn",
     "python-multipart",     # form posts (payments, Apple sign-in)
     "PyJWT",
-    # Sign in with Apple (ES256) + two-step encryption on the built-in server. 49+ fixes security issues
-    # but has no Intel-Mac builds, so Intel Macs keep 48 (only the local built-in server uses it).
-    "cryptography>=49; platform_machine == 'arm64'",
+    # Sign in with Apple (ES256) + two-step encryption on the built-in server. 50 fixes the latest security
+    # issue (GHSA-g6cj-pr64-35w5, PKCS#7 decryption: Gink never decrypts PKCS#7) but 49+ has no Intel-Mac
+    # builds, so Intel Macs keep 48 (only the local built-in server uses it).
+    "cryptography>=50; platform_machine == 'arm64'",
     "cryptography<49; platform_machine == 'x86_64'",
     # voice, wake word, music
     "edge-tts",             # online voice fallback
@@ -111,7 +112,10 @@ requires = [
 [tool.briefcase.app.ginkassistant.macOS.permission]      # singular: Briefcase ignores "permissions" (the Mac app had NO microphone)
 microphone = "Gink uses the microphone for voice conversations, dictation and \u201cHey Gink\u201d."
 camera = "Gink uses the camera when you choose Camera, to take a photo you want to ask about."
-# No camera permission: nothing in Gink uses the camera (App Store reviewers check this).
+# Briefcase 0.3.15 (Catalina builds) reads neither table: tools/mac_permissions.py writes them into Info.plist there.
+
+[tool.briefcase.app.ginkassistant.macOS.info]
+NSAppleEventsUsageDescription = "Gink controls other apps when you ask it to: music, Notes, Finder, Terminal and the apps it opens or closes."
 
 
 # --- Windows ----------------------------------------------------------------
@@ -124,7 +128,7 @@ requires = [
     "uvicorn",
     "python-multipart",
     "PyJWT",
-    "cryptography",         # PyJWT needs it for Sign in with Apple (ES256) on the built-in server
+    "cryptography>=50",     # PyJWT needs it for Sign in with Apple (ES256) on the built-in server
     "edge-tts",
     "SpeechRecognition",
     "pyaudio",
@@ -158,7 +162,7 @@ requires = [
     "uvicorn",
     "python-multipart",
     "PyJWT",
-    "cryptography",         # PyJWT needs it for Sign in with Apple (ES256) on the built-in server
+    "cryptography>=50",     # PyJWT needs it for Sign in with Apple (ES256) on the built-in server
     "edge-tts",
     "SpeechRecognition",
     "pyaudio",

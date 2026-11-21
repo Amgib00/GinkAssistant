@@ -108,6 +108,7 @@ class LiveInfo:
     def __init__(self, city_fn: Callable[[], str] = lambda: "", http_client=None):
         self.city_fn = city_fn            # Settings -> Location
         self.allowed_fn = lambda: True    # Settings -> Location -> "Use location in answers"
+        self.estimate_fn = lambda: True   # Settings -> Privacy -> "Location metadata" (off: no estimate from the IP)
         self._http = http_client
         self._ip_place = None              # cached for the session
 
@@ -154,8 +155,8 @@ class LiveInfo:
             if p:
                 p["source"] = "settings"
                 return p
-        if not self.allowed_fn():
-            return None                   # location turned off: ask the user instead
+        if not self.allowed_fn() or not self.estimate_fn():
+            return None                   # location (or location metadata) turned off: ask the user instead
         return await self.approximate_place()
 
     async def approximate_place(self, fresh: bool = False):

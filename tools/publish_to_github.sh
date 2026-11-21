@@ -63,6 +63,13 @@ cd "$ROOT"
 for p in "${PUBLISH[@]}"; do
   [ -e "$p" ] || { echo "Missing $p -- run this from the Gink project (unzip the latest package first)."; exit 1; }
 done
+# Folders an update package created without permission to open them (the 0.1.159 and first 0.1.160 packages did:
+# unzip made every NEW folder drw-------, so nothing inside could be unzipped, built or published): open them again.
+LOCKED=$( { find "${PUBLISH[@]}" -type d ! -perm -u+x -print 2>/dev/null || true; } | awk 'END { print NR }')
+if [ "$LOCKED" != "0" ]; then
+  { find "${PUBLISH[@]}" -type d ! -perm -u+x -exec chmod u+rwx,go+rx {} \; 2>/dev/null || true; }
+  echo "Folders:    opened $LOCKED locked folder(s) -- if a file is reported missing next, unzip the package again"
+fi
 
 # 1) secrets check (only what will be published)
 if grep -rInE "$SECRET_RE" "${PUBLISH[@]}" --exclude-dir=__pycache__ --exclude=publish_to_github.sh >/tmp/gink_secret_hits 2>/dev/null; then

@@ -26,7 +26,9 @@ DEFAULTS = {
     "reply_language": "auto",     # auto | en | fr | wo | kri | ar | pt | es
     "notify_reminders": True,     # system notifications for due reminders/alarms
     "use_memory": True,           # use saved memories in answers
-    "memory_suggest": True,       # offer to remember lasting facts the person mentions ("Remember this?")
+    "memory_suggest": True,       # Settings > Memory > "Generate memory from chats" (lasting facts, remembered by themselves)
+    "memory_sensitive": False,    # ... "Include sensitive topics in memory" (health, religion...): off unless turned on
+    "location_metadata": True,    # Settings > Privacy > "Location metadata": time zone + region hints (off: the clock only)
     "web_search": True,           # let Gink search the web
     "video_suggestions": True,    # add YouTube guides to how-to answers
     "speech_lang": "auto",        # Settings -> Voice -> Language (speech recognition); auto = any language
@@ -69,6 +71,7 @@ SYNCED = frozenset({
     "reply_language", "voice_speed", "read_aloud", "speech_lang", "web_search", "use_memory", "memory_suggest", "video_suggestions",
     "notify_reminders", "agent_confirm", "send_key", "briefing_enabled", "briefing_time", "briefing_city",
     "briefing_speak", "wake_followup", "voice", "model", "genie_mode", "instructions", "effort",
+    "memory_sensitive", "location_metadata",
 })
 on_change = []                     # callbacks(changed_synced_settings) -- the app uploads them
 

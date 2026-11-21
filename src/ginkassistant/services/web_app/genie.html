@@ -51,9 +51,27 @@
   .m .ch { margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
   .m .ch button { padding:2px 9px; font-size:12px; font-family:ui-monospace,Menlo,monospace; font-weight:500; }
   .m.err { color:var(--bad); border-color:var(--bad); }
+  /* Genie's answers as formatted text: paragraphs, lists, tables and code blocks like the chat's (0.1.160) */
+  .m .md { white-space:normal; }
+  .m .md p { margin:0 0 8px; } .m .md > :last-child { margin-bottom:0; }
+  .m .md ul, .m .md ol { margin:4px 0 8px; padding-left:22px; } .m .md li { margin:2px 0; }
+  .m .md h1, .m .md h2, .m .md h3 { font-size:15px; margin:10px 0 6px; }
+  .m .md a { color:var(--accent); }
+  .m .md :not(pre) > code { font:12.5px ui-monospace,Menlo,Consolas,monospace; background:var(--sel); padding:1px 5px; border-radius:5px; }
+  .m .md table { border-collapse:collapse; margin:6px 0 8px; font-size:13px; display:block; overflow-x:auto; }
+  .m .md th, .m .md td { border:1px solid var(--line); padding:4px 8px; text-align:left; }
+  .m .md .code-block { margin:8px 0; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--code); }
+  .m .md .code-block-bar { display:flex; align-items:center; gap:4px; padding:6px 8px 0 12px; }
+  .m .md .code-block-label { flex:1; font:12px ui-monospace,Menlo,Consolas,monospace; color:var(--muted); }
+  .m .md .code-block-bar button { background:none; color:var(--muted); padding:3px 8px; font-size:12px; font-weight:550; border-radius:6px; }
+  .m .md .code-block-bar button:hover { background:var(--sel); color:var(--text); }
+  .m .md .codehilite pre { margin:0; padding:8px 12px 12px; overflow-x:auto; white-space:pre; font:12.5px/1.55 ui-monospace,Menlo,Consolas,monospace; }
+  /*__GINK_CODE_CSS__*/
   .ask { border-top:1px solid var(--line); padding:10px; }
   .ask textarea { width:100%; min-height:70px; max-height:200px; border:1px solid var(--line); border-radius:12px; padding:10px; background:var(--bg); resize:vertical; }
   .ask .row { display:flex; justify-content:space-between; align-items:center; margin-top:8px; gap:8px; }
+  .gvoice { width:32px; height:32px; padding:0; border-radius:50%; display:grid; place-items:center; }
+  .gvoice.rec { background:#DC2626; color:#fff; box-shadow:none; }
   .note { color:var(--muted); font-size:12.5px; }
   .start { flex:1; display:flex; flex-direction:column; min-height:0; padding:14px 22px 16px; }
   .s-title { color:var(--muted); font-size:14px; }
@@ -347,6 +365,7 @@
     <div class="ask">
       <textarea id="instr" placeholder="Ask Genie: add a login page, fix a bug, explain app.js…"></textarea>
       <div class="row"><label class="plus" title="Add files (ZIPs are unpacked)" aria-label="Add files" style="width:32px;height:32px;border-radius:50%;display:grid;place-items:center;cursor:pointer;font-size:20px;box-shadow:inset 0 0 0 1.5px var(--line)">+<input type="file" id="upload3" multiple hidden></label>
+        <button class="ghost gvoice" id="gvoice" type="button" aria-pressed="false" title="Speak your instruction (tap again to stop)" aria-label="Speak your instruction"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
         <button class="ghost mode-btn" type="button" aria-pressed="false" title="Plan first: Genie proposes a plan before changing anything">Auto</button>
         <span class="note">Ctrl+Enter to send</span><button id="send">Ask Genie</button></div>
     </div>
@@ -414,10 +433,20 @@
   // In the Gink Genie app (its WebView adds "GinkGenieApp" to the browser identity) there are no pop-ups
   // and no downloads: links go through the same window (the app opens them in the real browser).
   var IN_APP = /GinkGenieApp/.test(navigator.userAgent);
-  function openOutside(url) { if (IN_APP) location.href = url; else window.open(url, "_blank", "noopener"); }
+  function openOutside(url) {                    // only web links (never javascript: or data: ones)
+    var u; try { u = new URL(String(url || ""), location.href); } catch (e) { return; }
+    if (u.protocol !== "https:" && u.protocol !== "http:") return;
+    if (IN_APP) location.href = u.href; else window.open(u.href, "_blank", "noopener");
+  }
 
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function placeHeaders(h) {                     // the device's time zone + language: answers fit their own country
+    var off = false; try { off = (JSON.parse(localStorage.getItem("gink_prefs") || "{}") || {}).location_metadata === false; } catch (e) {}
+    if (off) {                                   // Settings > Privacy > Location metadata off (the web app's setting): the clock only
+      var m = -new Date().getTimezoneOffset(), a = Math.abs(m);
+      h["X-Gink-Location"] = "off"; h["X-Gink-UTC-Offset"] = (m >= 0 ? "+" : "-") + ("0" + Math.floor(a / 60)).slice(-2) + ":" + ("0" + a % 60).slice(-2);
+      return h;
+    }
     try { var tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if (tz) h["X-Gink-TZ"] = tz; } catch (e) {}
     try { var lang = (navigator.languages && navigator.languages[0]) || navigator.language; if (lang) h["X-Gink-Locale"] = lang; } catch (e) {}
     return h;
@@ -710,11 +739,44 @@
     });
     box.appendChild(head); box.appendChild(list); return box;
   }
+  // Genie's answer as formatted text (Gink's own safe formatter on the server: /render), with code blocks to copy or
+  // download -- plain text until it's back, and plain text if it can't be.
+  var FMT = { q: [], timer: 0 };                              // answers drawn together are formatted in one request
+  function formatAnswer(box, entry) {
+    if (!/[`*_#|>\[]|^\s*(?:[-+]|\d+[.)])\s/m.test(entry.text || "")) return;   // nothing to format
+    if (entry._html) { box.className = "md"; box.innerHTML = entry._html; return; }
+    FMT.q.push([box, entry]);
+    if (!FMT.timer) FMT.timer = setTimeout(function send() {
+      var batch = FMT.q.splice(0, 200);
+      FMT.timer = FMT.q.length ? setTimeout(send, 0) : 0;
+      api("/render", { body: { items: batch.map(function (x) { return x[1].text; }) } }).then(function (j) {
+        ((j && j.html) || []).forEach(function (html, i) {
+          if (typeof html !== "string" || !batch[i]) return;
+          Object.defineProperty(batch[i][1], "_html", { value: html, writable: true, enumerable: false });   // not saved
+          batch[i][0].className = "md"; batch[i][0].innerHTML = html;
+        });
+      }).catch(function () {});
+    }, 0);
+  }
+  function codeOf(btn) { var b = btn.closest(".code-block"), c = b && (b.querySelector("code") || b.querySelector(".code-block-body")); return c ? c.textContent : ""; }
+  window.copyCodeBlock = function (btn) {
+    var text = codeOf(btn), done = function () { var t = btn.textContent; btn.textContent = "Copied"; setTimeout(function () { btn.textContent = t; }, 1400); };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () {}); else done();
+  };
+  window.downloadCodeBlock = function (btn) {
+    var b = btn.closest(".code-block"), lang = ((b && b.getAttribute("data-lang")) || "txt").toLowerCase();
+    var ext = { python: "py", javascript: "js", typescript: "ts", bash: "sh", shell: "sh", html: "html", css: "css", json: "json",
+                sql: "sql", java: "java", kotlin: "kt", swift: "swift", go: "go", rust: "rs", c: "c", cpp: "cpp", ruby: "rb", php: "php" }[lang] || "txt";
+    var a = document.createElement("a"); a.download = "code." + ext;
+    a.href = URL.createObjectURL(new Blob([codeOf(btn)], { type: "text/plain" })); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  };
   function draw(entry) {
     var changes = entry.changes, isError = entry.kind === "err";
     var m = el("div", "m " + (entry.kind === "u" ? "u" : isError ? "g err" : "g"));
     if (entry.steps && entry.steps.length) m.appendChild(stepsBlock(entry.steps, false));
-    m.appendChild(el("div", "", entry.text));
+    var body = el("div", "", entry.text); m.appendChild(body);
+    if (entry.kind === "g") formatAnswer(body, entry);
     if (entry.plan) {                                        // plan mode: approve, then Genie builds it
       var go = el("button", "", "Build this plan"); go.style.cssText = "margin-top:10px;padding:6px 14px;font-size:13px";
       go.onclick = function () { if (!S.busy) { go.disabled = true; sendToGenie("Go ahead and build the plan above.", "auto"); } };
@@ -1033,6 +1095,41 @@
   // ---- wiring
   $("go").onclick = build;
   $("send").onclick = function () { dview("chat"); ask(); };
+
+  // ---- voice: tap the mic, say what Genie should do, tap again -- Gink's server writes it into the box (any language)
+  (function () {
+    var btn = $("gvoice"), rec = null;
+    if (!btn) return;
+    if (!(window.MediaRecorder && navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { btn.hidden = true; return; }
+    function done(on) { btn.classList.toggle("rec", on); btn.setAttribute("aria-pressed", on ? "true" : "false");
+                        btn.title = on ? "Stop, and write it in the box" : "Speak your instruction (tap again to stop)"; }
+    btn.onclick = function () {
+      if (rec) { rec.stop(); return; }
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+        var chunks = [], type = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].filter(function (t) {
+          try { return MediaRecorder.isTypeSupported(t); } catch (e) { return false; } })[0];
+        rec = type ? new MediaRecorder(stream, { mimeType: type }) : new MediaRecorder(stream);
+        rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+        rec.onstop = function () {
+          stream.getTracks().forEach(function (t) { t.stop(); });
+          var blob = new Blob(chunks, { type: rec.mimeType || "audio/webm" }); rec = null; done(false);
+          if (!blob.size) return;
+          var fr = new FileReader();
+          fr.onload = function () {
+            btn.disabled = true;
+            api("/voice/transcribe", { body: { audio_b64: String(fr.result).split(",")[1] || "", format: /mp4/.test(blob.type) ? "m4a" : "webm" } })
+              .then(function (j) {
+                var t = String(j.text || "").trim(), box = $("instr"); if (!t) return;
+                box.value = (box.value ? box.value.replace(/\s*$/, " ") : "") + t; box.focus();
+              }).catch(function () { say("Genie couldn\u2019t hear that. Please try again.", true); })
+              .then(function () { btn.disabled = false; });
+          };
+          fr.readAsDataURL(blob);
+        };
+        rec.start(); done(true);
+      }).catch(function () { say("Allow the microphone to speak to Genie.", true); });
+    };
+  })();
   $("side-new").onclick = function () { $("new").click(); };
   $("preload").onclick = reloadPreview;
   $("perr-x").onclick = function () { PERR.hidden = true; showPerr(); };

@@ -59,6 +59,25 @@ def test_sidebar_is_plain():
     assert ".side-head .gmark { margin-right: 10px; }" in css and "#temp-btn svg { flex: none; margin-right: 6px; }" in h
 
 
+def test_the_closed_sidebar_has_the_older_lighter_look():
+    """0.1.158: "change this to this" -- the rail as it was before 0.1.157 (with the logo kept on top)."""
+    h = _page()
+    css = h[h.index("/* ---------- icon rail: the sidebar, collapsed"):h.index("/* ---------- attachments")]
+    rule = css[css.index("  #rail {"):css.index("}", css.index("  #rail {"))]
+    assert "background" not in rule and "border" not in rule                          # on the page: no tinted column, no line
+    assert "#rail .ibtn { width: 40px; height: 40px; border-radius: 12px; margin: 0 0 4px; color: var(--text-muted);" in css
+    assert "#rail .ibtn:hover { color: var(--text-main); background: var(--side-hover); }" in css
+    rail = h[h.index('<nav id="rail">'):h.index("</nav>", h.index('<nav id="rail">'))]
+    new = rail[rail.index('data-rail="new"'):rail.index("</button>", rail.index('data-rail="new"'))]
+    assert '<path d="M12 20h8"/>' in new                                                # a pencil, not a pencil-in-a-square
+    media = rail[rail.index('data-rail="media"'):rail.index("</button>", rail.index('data-rail="media"'))]
+    assert '<path d="M20.5 16l-5-5-8 8.5"/>' in media
+    side = h[h.index('<aside id="side"'):h.index("</aside>")]
+    for nav, path in (("new", '<path d="M12 20h8"/>'), ("media", '<path d="M20.5 16l-5-5-8 8.5"/>')):
+        row = side[side.index(f'data-nav="{nav}"'):side.index("</button>", side.index(f'data-nav="{nav}"'))]
+        assert path in row, nav                                                       # the open sidebar: the same icons
+
+
 def test_logo_on_the_sidebar_and_the_rail():
     from ginkassistant.ui.branding import BRAND_TILE_BASE64, BRAND_TILE_DATA_URI
     h = _page()
@@ -67,7 +86,7 @@ def test_logo_on_the_sidebar_and_the_rail():
     toggle = h[h.index('<button class="ibtn tb-toggle" id="tb-toggle"'):h.index("</button>", h.index('id="tb-toggle"'))]
     assert '<span class="gmark" aria-hidden="true"></span>' in toggle and 'class="tb-panel"' in toggle
     rail = h[h.index('<nav id="rail">'):h.index("</nav>", h.index('<nav id="rail">'))]
-    assert re.findall(r'data-rail="(\w+)"', rail) == ["new", "search", "tasks", "media", "genie", "settings", "settings"]
+    assert re.findall(r'data-rail="(\w+)"', rail) == ["new", "search", "tasks", "genie", "media", "settings", "settings"]
     for must in ("body:not(.pinned):not(.peek) #tb-toggle .gmark { display: block; }",
                  "body:not(.pinned):not(.peek) #tb-toggle:hover .tb-panel { display: block; }",
                  "body.pinned #tb-toggle, body.peek #tb-toggle { left: calc(var(--side-w) - 50px); }",

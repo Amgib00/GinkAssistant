@@ -60,6 +60,19 @@ PREFERRED_CASCADE = [
     "qwen/qwen3.8-27b",
 ]
 
+# Maps in answers: the chat page draws a live map from the ```map block by itself (ui/live_media.py). The same
+# words as backend_server.MAP_PROMPT and webapp/bridge.js (a test keeps them equal).
+MAP_PROMPT = (
+    "When your answer is about real places someone could find on a map -- where something is, places to visit, "
+    "eat or stay, an address, a route between towns, a list of locations -- add a map after your text: a fenced "
+    "code block with the language map containing JSON like {\"title\": \"Short title\", \"places\": [{\"name\": \"Place "
+    "name\", \"query\": \"Place name, street, city, country\", \"lat\": 0.0, \"lon\": 0.0, \"category\": \"museum\", \"note\": "
+    "\"a few words\"}]} (1 to 10 places; category is one of food, cafe, bar, shop, museum, sight, park, beach, "
+    "hotel, transport, health, school, worship, other; give lat and lon only when you know them precisely, and "
+    "always a query precise enough to find the place). The map appears by itself: don't mention the block. Don't "
+    "add a map for general knowledge with no particular place, and never for a private person's home.")
+
+
 DEFAULT_SYSTEM_PROMPT = (
     "You are Gink, a capable, warm AI assistant having a real conversation "
     "with someone, not filling out a form. Talk like a sharp, genuinely "
@@ -78,7 +91,8 @@ DEFAULT_SYSTEM_PROMPT = (
     "copyable, downloadable block instead of plain chat text. Still talk "
     "normally around it -- a short line introducing it is fine, just "
     "don't put ordinary conversational replies in a document block."
-    ' When you genuinely need the person\'s preferences or details before you can help well (planning a trip, recommending something, a workout plan...), you may ask 1 to 3 short questions as tappable choices: write one short sentence, then a fenced code block with the language ask containing JSON like {"questions": [{"q": "Your question?", "options": ["Choice 1", "Choice 2", "Choice 3"]}]} (2 to 4 short options each). The person can also type their own answer. Don\'t use it for simple questions, facts, or when they already said what they want.'
+    ' When you genuinely need the person\'s preferences or details before you can help well (planning a trip, recommending something, a workout plan...), you may ask 1 to 3 short questions as tappable choices: write one short sentence, then a fenced code block with the language ask containing JSON like {"questions": [{"q": "Your question?", "options": ["Choice 1", "Choice 2", "Choice 3"]}]} (2 to 4 short options each). The person can also type their own answer. Their reply starts with "My answers:" and lists each question with what they chose: those are answers about them and their situation, so carry on with what they asked for. Don\'t use it for simple questions, facts, or when they already said what they want.'
+    " " + MAP_PROMPT
 )
 
 SPOKEN_REPLY_PROMPT = (
@@ -166,6 +180,15 @@ class GroqBrain:
             except Exception as e:
                 logger.warning(f"Groq client failed to initialize: {e}")
 
+    def refresh_place_headers(self) -> None:
+        """Settings > Privacy > "Location metadata" changed: the next requests send the new hints."""
+        custom = getattr(self.client, "_custom_headers", None) if self.cloud else None
+        if isinstance(custom, dict):
+            from .device_region import place_headers
+            for k in ("X-Gink-TZ", "X-Gink-Locale", "X-Gink-Location", "X-Gink-UTC-Offset"):
+                custom.pop(k, None)
+            custom.update(place_headers())
+
     def use_cloud(self, server_url: str, session_token: str, http_client=None) -> bool:
         """Gink Cloud: talk to YOUR server's /ai routes with the user's session
         token -- no Groq key inside the app. The server applies the plan's limits."""
@@ -237,7 +260,9 @@ class GroqBrain:
             city = self.city_fn() if self.city_fn else ""
         except Exception:
             city = ""
-        return system_prompt + live_context(city) + (extra or "")
+        from . import device_info
+        from .about_gink import about_gink
+        return system_prompt + live_context(city) + device_info.prompt_note() + about_gink() + (extra or "")
 
     last_turn = None
     TITLE_MODELS = ("openai/gpt-oss-20b", "openai/gpt-oss-120b", "llama-3.1-8b-instant")   # small + fast first

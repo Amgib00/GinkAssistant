@@ -9,7 +9,9 @@ a standard way; phones say plainly that it isn't available.
 SAFETY: text from the conversation (a note, an app name, a search) is passed
 to AppleScript as an ARGUMENT (`on run argv`), never pasted into the script,
 so quotes or code in it can't run anything. Commands are run without a shell.
-Nothing here deletes anything.
+Nothing here deletes anything. Writing and editing text files (the agent's "write, edit" tools) stays inside the
+person's home folder, never touches hidden or system folders, and keeps a copy of the old version first
+(Gink's "file backups" folder), so every change can be undone.
 """
 
 import os
@@ -119,6 +121,54 @@ class ComputerControl:
         from ..file_maker import MadeFile
         made = MadeFile(path=path, name=os.path.basename(path), kind="png", size=os.path.getsize(path))
         return _ok(f"Here's your screenshot:\n\n{made.card_markdown()}", file=made.name, path=path)
+
+    def screen_image(self, max_side: int = 1600) -> str:
+        """What's on the screen right now, as a JPEG data URL (for Live screen view and "look at my screen"), or "".
+        Nothing is saved: the picture is made in a temporary file and deleted at once."""
+        if MOBILE:
+            return ""
+        import base64
+        import tempfile
+        fd, path = tempfile.mkstemp(suffix=".png", prefix="gink-screen-")
+        os.close(fd)
+        try:
+            ok = False
+            if MAC:
+                ok, _ = run(["screencapture", "-x", "-C", path], timeout=15)
+            if not MAC or not ok:
+                try:
+                    from PIL import ImageGrab
+                    ImageGrab.grab().save(path)
+                    ok = True
+                except Exception:
+                    ok = False
+            if not ok and LINUX:
+                for cmd in (["gnome-screenshot", "-f", path], ["grim", path], ["import", "-window", "root", path],
+                            ["spectacle", "-b", "-n", "-o", path]):
+                    if shutil.which(cmd[0]):
+                        ok, _ = run(cmd, timeout=15)
+                        if ok:
+                            break
+            if not ok or not os.path.getsize(path):
+                return ""
+            try:
+                from io import BytesIO
+                from PIL import Image
+                with Image.open(path) as im:
+                    im = im.convert("RGB")
+                    im.thumbnail((max_side, max_side))
+                    buf = BytesIO()
+                    im.save(buf, "JPEG", quality=80)
+                return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+            except Exception:
+                with open(path, "rb") as f:
+                    raw = f.read()
+                return "data:image/png;base64," + base64.b64encode(raw).decode() if len(raw) < 8_000_000 else ""
+        finally:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
 
     # ---------------- files ----------------
     def find_files(self, query: str, limit: int = 8) -> dict:
@@ -285,6 +335,210 @@ class ComputerControl:
             return _no(f"I couldn't open the browser ({exc.__class__.__name__}).")
         return _ok(f"Searching Google for \u201c{q}\u201d.")
 
+    # ---------------- apps: find, list, close; editors and IDEs ----------------
+    def installed_apps(self) -> List[str]:
+        """The apps installed on this computer (names people would say)."""
+        names = set()
+        if MAC:
+            from .device import DeviceActions
+            names.update(DeviceActions.installed_mac_apps())
+        elif WIN:
+            roots = [os.path.join(os.environ.get("ProgramData", r"C:\ProgramData"), r"Microsoft\Windows\Start Menu\Programs"),
+                     os.path.join(os.environ.get("APPDATA", ""), r"Microsoft\Windows\Start Menu\Programs")]
+            for root in roots:
+                for _dir, _sub, files in os.walk(root):
+                    names.update(f[:-4] for f in files if f.lower().endswith(".lnk") and "uninstall" not in f.lower())
+        elif LINUX:
+            for root in ("/usr/share/applications", os.path.expanduser("~/.local/share/applications"),
+                         "/var/lib/flatpak/exports/share/applications", "/var/lib/snapd/desktop/applications"):
+                try:
+                    files = os.listdir(root)
+                except OSError:
+                    continue
+                for f in files:
+                    if f.endswith(".desktop"):
+                        names.add(_desktop_name(os.path.join(root, f)) or f[:-8])
+        return sorted(n for n in names if n)
+
+    def find_app(self, query: str = "") -> dict:
+        """Installed apps whose names match `query` (all of them, briefly, when it's empty)."""
+        if MOBILE:
+            return _no("Finding apps works on computers.")
+        q = (query or "").strip().lower()
+        apps = self.installed_apps()
+        hits = [a for a in apps if not q or q in a.lower()]
+        if q and not hits:
+            import difflib
+            hits = difflib.get_close_matches(q, apps, n=5, cutoff=0.6)
+        if not hits:
+            return _no(f"I couldn't find an app called \u201c{query}\u201d on this computer.")
+        shown = hits[:40]
+        more = f" (and {len(hits) - len(shown)} more)" if len(hits) > len(shown) else ""
+        return _ok(("Installed apps" + (f" matching \u201c{query}\u201d" if q else "") + f": {', '.join(shown)}{more}."),
+                   apps=shown)
+
+    def running_apps(self) -> dict:
+        """The apps open right now (windows the person can see)."""
+        if MOBILE:
+            return _no("Listing open apps works on computers.")
+        names: List[str] = []
+        if MAC:
+            ok, out = osa(['tell application "System Events" to get name of every application process whose background only is false'])
+            if ok:
+                names = [x.strip() for x in out.split(",") if x.strip()]
+            else:
+                return _no("I couldn't list the open apps" + (" \u2014 allow Gink to control System Events (System Settings \u2192 "
+                           "Privacy & Security \u2192 Automation)." if "not allowed" in out.lower() else "."))
+        elif WIN:
+            ok, out = run(["powershell", "-NoProfile", "-Command",
+                           "Get-Process | Where-Object {$_.MainWindowTitle} | Select-Object -ExpandProperty ProcessName"], timeout=15)
+            names = [x.strip() for x in out.splitlines() if x.strip()] if ok else []
+        elif LINUX and shutil.which("wmctrl"):
+            ok, out = run(["wmctrl", "-l", "-x"])
+            names = [ln.split()[2].split(".")[-1] for ln in out.splitlines() if len(ln.split()) > 2] if ok else []
+        elif LINUX:
+            ok, out = run(["ps", "-u", str(os.getuid()), "-o", "comm="])          # this person's own programs
+            names = [x.strip() for x in out.splitlines() if x.strip() and x.strip() not in ("ps", "bash", "sh", "zsh")][:200] if ok else []
+        names = sorted(set(names), key=str.lower)
+        if not names:
+            return _no("I couldn't see which apps are open.")
+        return _ok(f"Open now: {', '.join(names)}.", apps=names)
+
+    def open_in_editor(self, path: str = "", editor: str = "") -> dict:
+        """Open a file or folder in a code editor or IDE: VS Code, PyCharm, Xcode, Android Studio, Sublime Text,
+        Cursor, Zed, IntelliJ, Notepad++... (the one asked for, else the first one installed)."""
+        if MOBILE:
+            return _no("Editors and IDEs open on computers.")
+        target = self.resolve_path(path) if path else None
+        if path and not target:
+            return _no(f"I couldn't find \u201c{path}\u201d. Search for it first (\u201cfind my ...\u201d) or give the full path.")
+        installed = {a.lower(): a for a in self.installed_apps()} if MAC else {}
+        asked = (editor or "").strip()
+        wanted = [EDITOR_ALIASES.get(asked.lower(), asked.lower())] if asked else []
+        for key in wanted + [k for k in EDITORS if k not in wanted]:
+            spec, mine = EDITORS.get(key, {}), key in wanted
+            if MAC:
+                app = spec.get("mac", "") if spec else asked
+                if not app:
+                    continue
+                real = installed.get(app.lower()) or next((v for k, v in installed.items() if app.lower() in k), None)
+                if not real and not mine:
+                    continue
+                ok, out = run(["open", "-a", real or app] + ([target] if target else []))
+                label = real or app
+            else:
+                exe = shutil.which(spec.get("cmd", "") or key) or shutil.which(key.replace(" ", ""))
+                if not exe:
+                    if mine:
+                        return _no(f"I couldn't find {asked} on this computer.")
+                    continue
+                from ._shell import spawn
+                ok, out, label = spawn([exe] + ([target] if target else [])), "", key.title() if spec else asked
+            if ok:
+                where = os.path.basename(target.rstrip("/\\")) if target else ""
+                return _ok(f"Opened {where + ' in ' if where else ''}{label}.", path=target or "")
+            if mine:
+                return _no(f"I couldn't open {asked}: {out}")
+        if target:                                         # no editor found: the system's own app for it
+            ok, out = run(["open", target] if MAC else ["xdg-open", target] if LINUX else ["cmd", "/c", "start", "", target])
+            return _ok(f"Opened {os.path.basename(target)}.") if ok else _no(out)
+        return _no("I couldn't find a code editor. Install one (for example Visual Studio Code) and ask again.")
+
+    # ---------------- text files: read, write, edit (inside the home folder, with a backup first) ----------------
+    def resolve_path(self, which: str) -> Optional[str]:
+        """A file or folder: a number or name from the last search, ~/..., or a full path inside the home folder."""
+        w = (which or "").strip().strip('"')
+        hit = self.resolve_file(w) if w else None
+        if hit:
+            return hit
+        p = os.path.abspath(os.path.expanduser(w)) if w else ""
+        if p and os.path.exists(p):
+            return p
+        folder = self._folder(w) if w else None
+        return folder if folder and os.path.isdir(folder) else None
+
+    def _writable(self, path: str) -> Optional[str]:
+        """Why Gink won't write here (None = fine): only inside the home folder, never hidden or system folders."""
+        home = os.path.realpath(os.path.expanduser("~"))
+        real = os.path.realpath(path)
+        if not (real == home or real.startswith(home + os.sep)):
+            return "I only write files inside your home folder."
+        parts = os.path.relpath(real, home).split(os.sep)
+        if any(p.startswith(".") for p in parts) or (parts and parts[0] in ("Library", "AppData")):
+            return "I don't change hidden or system files (like settings, keys or app data)."
+        return None
+
+    def _backup(self, path: str) -> str:
+        folder = os.path.join(self.files_dir or os.path.expanduser("~/Documents"), "file backups")
+        os.makedirs(folder, exist_ok=True)
+        copy = os.path.join(folder, datetime.now().strftime("%Y-%m-%d %H.%M.%S ") + os.path.basename(path))
+        shutil.copy2(path, copy)
+        return copy
+
+    def read_text_file(self, which: str, start_line: int = 1, max_lines: int = 400) -> dict:
+        path = self.resolve_path(which)
+        if not path or not os.path.isfile(path):
+            return _no(f"I couldn't find the file \u201c{which}\u201d.")
+        if os.path.getsize(path) > 5_000_000:
+            return _no("That file is too big to read here (over 5 MB).")
+        with open(path, "rb") as f:
+            raw = f.read()
+        if b"\x00" in raw[:4096]:
+            return _no(f"{os.path.basename(path)} isn't a text file.")
+        lines = raw.decode("utf-8", "replace").splitlines()
+        start = max(1, int(start_line or 1))
+        part = lines[start - 1:start - 1 + max(1, min(int(max_lines or 400), 2000))]
+        numbered = "\n".join(f"{start + i:>5}  {ln}" for i, ln in enumerate(part))
+        more = len(lines) - (start - 1 + len(part))
+        return _ok(f"{path} ({len(lines)} lines){' -- ' + str(more) + ' more after this' if more > 0 else ''}:\n{numbered}",
+                   path=path, lines=len(lines))
+
+    def write_text_file(self, path: str, content: str, overwrite: bool = False) -> dict:
+        """Create a text or code file (a name alone goes in Documents). An existing file is replaced only with
+        overwrite=true, after a backup."""
+        raw = (path or "").strip().strip('"')
+        if not raw:
+            return _no("What should the file be called?")
+        full = os.path.abspath(os.path.expanduser(raw if (os.sep in raw or raw.startswith("~")) else os.path.join("~/Documents", raw)))
+        why = self._writable(full)
+        if why:
+            return _no(why)
+        backup = ""
+        if os.path.exists(full):
+            if not overwrite:
+                return _no(f"{os.path.basename(full)} already exists. Say so if I should replace it (I keep a backup), or edit it instead.")
+            backup = self._backup(full)
+        os.makedirs(os.path.dirname(full), exist_ok=True)
+        with open(full, "w", encoding="utf-8", newline="") as f:
+            f.write(content or "")
+        self.last_files = [full]
+        return _ok(f"{'Replaced' if backup else 'Created'} {full.replace(os.path.expanduser('~'), '~')}"
+                   + (f" (the old version is in {os.path.basename(os.path.dirname(backup))})" if backup else "") + ".",
+                   path=full, backup=backup)
+
+    def edit_text_file(self, which: str, find: str, replace: str, all: bool = False) -> dict:
+        """Replace an exact piece of a text file (once, or everywhere with all=true), after a backup."""
+        path = self.resolve_path(which)
+        if not path or not os.path.isfile(path):
+            return _no(f"I couldn't find the file \u201c{which}\u201d.")
+        why = self._writable(path)
+        if why:
+            return _no(why)
+        if not find:
+            return _no("Say exactly which text to change.")
+        with open(path, encoding="utf-8", errors="strict", newline="") as f:
+            text = f.read()
+        n = text.count(find)
+        if n == 0:
+            return _no(f"That exact text isn't in {os.path.basename(path)}. Read the file first and copy it exactly.")
+        if n > 1 and not all:
+            return _no(f"That text appears {n} times in {os.path.basename(path)}: include more of the line, or set all=true.")
+        backup = self._backup(path)
+        with open(path, "w", encoding="utf-8", newline="") as f:
+            f.write(text.replace(find, replace or "") if all else text.replace(find, replace or "", 1))
+        return _ok(f"Changed {os.path.basename(path)} ({n if all else 1} place{'s' if (n if all else 1) != 1 else ''}; "
+                   f"the old version is kept in file backups).", path=path, backup=backup, replaced=n if all else 1)
+
     # ---------------- apps & appearance ----------------
     def quit_app(self, name: str) -> dict:
         name = (name or "").strip()
@@ -302,7 +556,14 @@ class ComputerControl:
             exe = name if name.lower().endswith(".exe") else name + ".exe"
             ok, out = run(["taskkill", "/IM", exe])                                # polite close, no /F
             return _ok(f"Asked {name} to close.") if ok else _no(f"{name} isn't open.")
-        return _no("Quitting apps works on Mac and Windows for now.")
+        if LINUX:                                                                # polite: windows close, then the app
+            if shutil.which("wmctrl"):
+                ok, out = run(["wmctrl", "-c", name])
+                if ok:
+                    return _ok(f"Asked {name} to close.")
+            ok, out = run(["pkill", "-TERM", "-i", "-x", name.replace(" ", "-")])
+            return _ok(f"Asked {name} to close.") if ok else _no(f"{name} isn't open.")
+        return _no("Quitting apps works on computers.")
 
     def set_dark_mode(self, mode: str = "toggle") -> dict:
         if not MAC:
@@ -385,6 +646,34 @@ class ComputerControl:
         if not bits:
             return _no("I can't read this device's status.")
         return _ok("\n".join(f"- {b}" for b in bits))
+
+
+# Code editors and IDEs, the order Gink tries them in: Mac app name, Windows/Linux command.
+EDITORS = {
+    "visual studio code": {"mac": "Visual Studio Code", "cmd": "code"}, "cursor": {"mac": "Cursor", "cmd": "cursor"},
+    "pycharm": {"mac": "PyCharm", "cmd": "pycharm"}, "intellij idea": {"mac": "IntelliJ IDEA", "cmd": "idea"},
+    "android studio": {"mac": "Android Studio", "cmd": "studio"}, "xcode": {"mac": "Xcode", "cmd": "xed"},
+    "sublime text": {"mac": "Sublime Text", "cmd": "subl"}, "zed": {"mac": "Zed", "cmd": "zed"},
+    "webstorm": {"mac": "WebStorm", "cmd": "webstorm"}, "notepad++": {"mac": "", "cmd": "notepad++"},
+    "gedit": {"mac": "", "cmd": "gedit"}, "kate": {"mac": "", "cmd": "kate"},
+}
+EDITOR_ALIASES = {"vs code": "visual studio code", "vscode": "visual studio code", "code": "visual studio code",
+                  "intellij": "intellij idea", "sublime": "sublime text"}
+
+
+def _desktop_name(path: str) -> str:
+    """The Name= of a Linux .desktop file (skips hidden ones)."""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            name, hidden = "", False
+            for line in f:
+                if line.startswith("Name=") and not name:
+                    name = line[5:].strip()
+                elif line.strip() in ("NoDisplay=true", "Hidden=true"):
+                    hidden = True
+            return "" if hidden else name
+    except OSError:
+        return ""
 
 
 DOC_EXT = {".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".key", ".pages", ".numbers", ".txt", ".md",

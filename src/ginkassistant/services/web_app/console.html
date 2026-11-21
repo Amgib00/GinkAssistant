@@ -285,6 +285,12 @@ cat notes.txt | gink "summarise this"</code></pre>
     return s < 60 ? "just now" : s < 3600 ? Math.round(s / 60) + " min ago" : s < 86400 ? Math.round(s / 3600) + " h ago" : Math.round(s / 86400) + " days ago";
   }
   function placeHeaders(h) {                     // the device's time zone + language: answers fit their own country
+    var off = false; try { off = (JSON.parse(localStorage.getItem("gink_prefs") || "{}") || {}).location_metadata === false; } catch (e) {}
+    if (off) {                                   // Settings > Privacy > Location metadata off (the web app's setting): the clock only
+      var m = -new Date().getTimezoneOffset(), a = Math.abs(m);
+      h["X-Gink-Location"] = "off"; h["X-Gink-UTC-Offset"] = (m >= 0 ? "+" : "-") + ("0" + Math.floor(a / 60)).slice(-2) + ":" + ("0" + a % 60).slice(-2);
+      return h;
+    }
     try { var tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if (tz) h["X-Gink-TZ"] = tz; } catch (e) {}
     try { var lang = (navigator.languages && navigator.languages[0]) || navigator.language; if (lang) h["X-Gink-Locale"] = lang; } catch (e) {}
     return h;
@@ -519,6 +525,12 @@ cat notes.txt | gink "summarise this"</code></pre>
       .catch(function (e) { if (e.message !== "signed out") $("ag-err").textContent = e.message; });
   }
   function agStep(st) {
+    if (st.tool === "plan") {                          // the agent's plan: each step with its state
+      var pl = (st.plan || []).map(function (p, i) { return (p.status === "done" ? "\u2713 " : p.status === "doing" ? "\u25D0 " : "\u25CB ") + (i + 1) + ". " + p.title; });
+      var box = el("li", "", "plan \u2014 " + (st.result || "")); box.title = pl.join("\n");
+      var sub = el("div", "", pl.join("  \u00b7  ")); sub.style.cssText = "color:var(--muted,#888);font-size:12px;margin-top:2px";
+      box.appendChild(sub); $("ag-steps").appendChild(box); return;
+    }
     var li = el("li", "", (st.tool || "step") + (st.path ? " " + st.path : st.query ? " \u201c" + st.query + "\u201d"
                 : st.tool === "check" && st.result ? " \u2014 " + st.result : ""));          // the agent checked its whole workspace
     $("ag-steps").appendChild(li);
@@ -565,7 +577,8 @@ cat notes.txt | gink "summarise this"</code></pre>
   }
 
   function show(view) {
-    if (!VIEWS[view]) view = "dashboard";
+    view = String(view || "");
+    if (!Object.prototype.hasOwnProperty.call(VIEWS, view) || typeof VIEWS[view] !== "function") view = "dashboard";
     STATE.view = view;
     document.querySelectorAll("[data-view]").forEach(function (s) { s.hidden = s.getAttribute("data-view") !== view; });
     document.querySelectorAll("#nav a[data-v]").forEach(function (a) { a.classList.toggle("on", a.getAttribute("data-v") === view); });

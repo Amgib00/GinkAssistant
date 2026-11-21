@@ -20,8 +20,17 @@ export class GinkAPIError extends Error {
   }
 }
 
+// The clock's offset from UTC, like "+01:00" (no time zone name, no region).
+export function utcOffset() {
+  const m = -new Date().getTimezoneOffset(), a = Math.abs(m);
+  return (m >= 0 ? "+" : "-") + String(Math.floor(a / 60)).padStart(2, "0") + ":" + String(a % 60).padStart(2, "0");
+}
+
 // The machine's time zone and language (no location lookup): answers fit the user's own country.
-function placeHeaders() {
+// location: false (or GINK_LOCATION=off) -- like Settings > Privacy > "Location metadata" off: the clock only.
+function placeHeaders(location) {
+  if (location === undefined || location === null) location = !/^(off|0|false|no)$/i.test(env("GINK_LOCATION"));
+  if (!location) return { "X-Gink-Location": "off", "X-Gink-UTC-Offset": utcOffset() };
   const h = {};
   try { const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if (tz) h["X-Gink-TZ"] = tz; } catch (e) { /* none */ }
   try { const loc = Intl.DateTimeFormat().resolvedOptions().locale; if (loc) h["X-Gink-Locale"] = loc; } catch (e) { /* none */ }
@@ -33,7 +42,8 @@ function env(name) {
 }
 
 export class Gink {
-  constructor({ apiKey, baseURL, fetch: fetchImpl } = {}) {
+  constructor({ apiKey, baseURL, fetch: fetchImpl, location } = {}) {
+    this.location = location;                          // false: no location metadata (city/region), the clock only
     this.apiKey = apiKey || env("GINK_API_KEY");
     if (!this.apiKey) throw new GinkAPIError("No API key: pass { apiKey } or set GINK_API_KEY.", 401, "invalid_api_key");
     this.baseURL = (baseURL || env("GINK_BASE_URL") || DEFAULT_BASE_URL).replace(/\/+$/, "");
@@ -45,7 +55,14 @@ export class Gink {
       list: async () => (await this.request("GET", "/memories")).data || [],
       add: (text) => this.request("POST", "/memories", { json: { text } }),
       forget: (id) => this.request("DELETE", `/memories/${encodeURIComponent(id)}`),
-      suggest: async (text) => (await this.request("POST", "/memories/suggest", { json: { text } })).fact || null,
+      suggest: async (text, { sensitive = false } = {}) =>
+        (await this.request("POST", "/memories/suggest", { json: { text, sensitive } })).fact || null,
+      // "Generate memory from chats": the lasting facts in a conversation (a messages list), at most 5, saved unless save: false
+      generate: async (messages, { save = true, sensitive = false } = {}) =>
+        (await this.request("POST", "/memories/generate", { json: { messages, save, sensitive } })).data || [],
+      // "Import memory from other AI providers": ask your other assistant importPrompt(), then pass its answer to import()
+      importPrompt: async () => (await this.request("GET", "/memories/import-prompt")).prompt || "",
+      import: (text, { sensitive = false } = {}) => this.request("POST", "/memories/import", { json: { text: String(text), sensitive } }),
     };
     this.workspace = {                                 // your workspace; admins: healthcare mode's safety report (counts only)
       get: () => this.request("GET", "/workspace"),
@@ -55,10 +72,62 @@ export class Gink {
       secret: async () => (await this.request("GET", "/webhooks/secret")).secret,
       rotate: async () => (await this.request("POST", "/webhooks/secret/rotate")).secret,
     };
+    this.batches = {                                   // many chat requests at once, answered in the background (up to 100)
+      // requests: prompts (strings), message lists, or { custom_id, body: {chat request} } items
+      create: (requests, { name = "", model = "" } = {}) => this.request("POST", "/batches", { json: {
+        requests: requests.map((r, i) => (r && r.body ? { custom_id: String(r.custom_id || `request-${i + 1}`), body: r.body }
+          : { custom_id: `request-${i + 1}`, body: { messages: Array.isArray(r) ? r : [{ role: "user", content: String(r) }], ...(model ? { model } : {}) } })),
+        ...(name ? { name } : {}) } }),
+      get: (id) => this.request("GET", `/batches/${encodeURIComponent(id)}`),
+      list: async () => (await this.request("GET", "/batches")).data || [],
+      cancel: (id) => this.request("POST", `/batches/${encodeURIComponent(id)}/cancel`),
+      // [{ custom_id, response | error }], one per request
+      results: async (id) => (await (await this.request("GET", `/batches/${encodeURIComponent(id)}/results`, { raw: true })).text())
+        .split("\n").filter((l) => l.trim()).map((l) => JSON.parse(l)),
+      wait: async (id, { every = 2000, timeout = 3600000 } = {}) => {
+        const start = Date.now();
+        for (;;) {
+          const b = await this.batches.get(id);
+          if (["completed", "failed", "cancelled", "expired"].includes(b.status) || Date.now() - start > timeout) return b;
+          await new Promise((r) => setTimeout(r, every));
+        }
+      },
+    };
+    this.audio = {                                     // voice messages in your own app
+      // speech to text in any language: a Blob/File, or bytes (Uint8Array / ArrayBuffer) with a filename
+      transcribe: async (audio, { filename = "speech.webm", language = "" } = {}) => {
+        const form = new FormData();
+        const blob = audio instanceof Blob ? audio : new Blob([audio]);
+        form.append("file", blob, (audio && audio.name) || filename);
+        if (language) form.append("language", language);
+        return (await this.request("POST", "/audio/transcriptions", { body: form })).text || "";
+      },
+      // Gink's natural voice: an ArrayBuffer of WAV audio
+      speech: async (text, { voice, speed } = {}) =>
+        (await this.request("POST", "/audio/speech", { json: { input: String(text), ...(voice ? { voice } : {}), ...(speed ? { speed } : {}) }, raw: true })).arrayBuffer(),
+    };
+  }
+
+  // Places by name or address (OpenStreetMap): [{ name, display, lat, lon, type, map_url }]
+  async geo(query, { limit = 5 } = {}) {
+    return (await this.request("GET", `/geo/search?q=${encodeURIComponent(query)}&limit=${encodeURIComponent(limit)}`)).data || [];
+  }
+
+  // The maps in an answer (ask with { gink_maps: true }): [{ title, places: [{ name, query, lat, lon, category, note, map_url }] }]
+  maps(text) { return maps(text); }
+
+  // A picture of a place, like the ones on Gink's map cards (Wikipedia's): { image, title, page, credit } -- or null
+  async placePhoto(name, lat, lon) {
+    try {
+      return await this.request("GET", `/places/photo?name=${encodeURIComponent(name)}&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`);
+    } catch (err) {
+      if (err && err.status === 404) return null;
+      throw err;
+    }
   }
 
   async request(method, path, { json, body, raw } = {}) {
-    const headers = { Authorization: `Bearer ${this.apiKey}`, ...placeHeaders() };
+    const headers = { Authorization: `Bearer ${this.apiKey}`, ...placeHeaders(this.location) };
     if (json !== undefined) headers["Content-Type"] = "application/json";
     let res;
     try {
@@ -148,6 +217,23 @@ export function sources(text, baseURL = DEFAULT_BASE_URL) {
   return out.sort((a, b) => (b.official ? 1 : 0) - (a.official ? 1 : 0));
 }
 
+export function maps(text) {
+  const out = [];
+  for (const m of String(text || "").matchAll(/```map\s*\n([\s\S]*?)```/g)) {
+    let data; try { data = JSON.parse(m[1]); } catch { continue; }
+    const places = ((data && (data.places || data.markers)) || []).slice(0, 10)
+      .filter((p) => p && (p.name || p.query)).map((p) => {
+        const place = {};
+        for (const k of ["name", "query", "lat", "lon", "category", "note"]) if (p[k] !== undefined && p[k] !== "") place[k] = p[k];
+        if (typeof p.lat === "number" && typeof p.lon === "number")
+          place.map_url = `https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lon}#map=16/${p.lat}/${p.lon}`;
+        return place;
+      });
+    if (places.length) out.push({ title: String(data.title || ""), places });
+  }
+  return out;
+}
+
 export function imageDataURL(photo) {
   if (typeof photo === "string" && photo.startsWith("data:image/")) return photo;
   const bytes = typeof photo === "string" ? base64ToBytes(photo) : new Uint8Array(photo);
@@ -183,7 +269,7 @@ function base64ToBytes(b64) {
 }
 
 function body(params, extra = {}) {
-  const b = { agent: params.agent || "gink-agent", input: params.input, max_steps: params.max_steps ?? 15, ...extra };
+  const b = { agent: params.agent || "gink-agent", input: params.input, max_steps: params.max_steps ?? 30, ...extra };
   if (params.previous_interaction_id) b.previous_interaction_id = params.previous_interaction_id;
   else b.environment = params.environment || "remote";
   if (params.tools) b.tools = params.tools;

@@ -189,7 +189,11 @@
   // ---- where to go afterwards: only Gink's own pages
   function nextPath() {
     var n = new URLSearchParams(location.search).get("next") || "/app";
-    return /^\/(?!\/)[^\\\s]*$/.test(n) ? n : "/app";
+    if (!/^\/(?!\/)[^\\\s]*$/.test(n)) return "/app";
+    try {                                        // resolved against this site: anything that lands elsewhere goes to /app
+      var u = new URL(n, location.origin);
+      return u.origin === location.origin ? u.pathname + u.search + u.hash : "/app";
+    } catch (e) { return "/app"; }
   }
 
   function say(text, ok) { var m = $("msg"); m.textContent = text || ""; m.className = "msg " + (ok ? "ok" : "err"); }

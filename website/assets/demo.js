@@ -61,11 +61,11 @@
       return ["Today is " + new Date().toLocaleDateString([], { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + "."]; }],
     [/(wake me|set an? alarm|alarm (for|at))/, function (t) {
       var m = t.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/); var when = m ? m[0] : "7:00";
-      return ["Done \u2014 your alarm is set for " + when + ". I'll wake you up then.", "Alarm \u00b7 " + when]; }],
+      return ["Done. Your alarm is set for " + when + ", and I'll wake you up then.", "Alarm " + when]; }],
     [/remind me/, function (t) {
       return ["Got it. I'll remind you" + (t.match(/ (in|at|tomorrow|tonight).*/) ? t.match(/ (in|at|tomorrow|tonight).*/)[0] : " at the right time") + ".", "Reminder saved"]; }],
     [/\b(pdf|word|excel|spreadsheet|document|file)\b/, function () {
-      return ["Here's your file. Tap it to open, or save it anywhere.", "\ud83d\udcc4 Your file \u00b7 Open \u00b7 Save as"]; }],
+      return ["Here's your file. Tap it to open, or save it anywhere.", "Your file, ready to open"]; }],
     [/(create|make|draw|generate) (an? )?(image|picture|photo|logo)|image of/, function () {
       return ["In the app, a soft green glow appears while Gink paints your picture, then it shows up right here in the chat."]; }],
     [/brief|morning|what('?s| is) (on )?(my )?(day|today)/, function () {

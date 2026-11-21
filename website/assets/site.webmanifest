@@ -1,7 +1,7 @@
 {
   "name": "Gink",
   "short_name": "Gink",
-  "start_url": "index.html",
+  "start_url": "../index.html",
   "display": "standalone",
   "background_color": "#151D23",
   "theme_color": "#151D23",
@@ -16,5 +16,7 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "scope": "../",
+  "description": "Gink is an AI assistant that listens, answers out loud and gets things done on your computer and phone."
 }

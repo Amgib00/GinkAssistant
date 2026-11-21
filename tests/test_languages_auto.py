@@ -41,7 +41,8 @@ def srv(tmp_path, monkeypatch):
     from ginkassistant.services import backend_server as b
     b._stt_recent.clear()
     c = TestClient(b.app)
-    return b, c, {"Authorization": "Bearer " + b._token_response("ib@example.com", "I")["token"]}, sent, state
+    yield b, c, {"Authorization": "Bearer " + b._token_response("ib@example.com", "I")["token"]}, sent, state
+    b._stt_recent.clear()                                         # test_limits fills the minute's allowance
 
 
 WAV = base64.b64encode(b"RIFF....WAVEfmt " + b"\x00" * 200).decode()
@@ -65,7 +66,7 @@ def test_limits(srv):
     b, c, h, sent, state = srv
     assert c.post("/voice/transcribe", json={"audio_b64": WAV}).status_code == 401
     assert c.post("/voice/transcribe", headers=h, json={"audio_b64": "not base64!"}).status_code == 422
-    assert c.post("/voice/transcribe", headers=h, json={"audio_b64": base64.b64encode(b"x" * 4_000_001).decode()}).status_code == 422
+    assert c.post("/voice/transcribe", headers=h, json={"audio_b64": base64.b64encode(b"x" * 8_000_001).decode()}).status_code == 422
     codes = [c.post("/voice/transcribe", headers=h, json={"audio_b64": WAV}).status_code for _ in range(21)]
     assert codes[:20] == [200] * 20 and codes[20] == 429
 

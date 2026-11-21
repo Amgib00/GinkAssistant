@@ -25,7 +25,7 @@ STATUS_LABELS = {"success": "Paid", "pending": "Pending", "failed": "Not complet
 BOOL_KEYS = {"read_aloud", "notify_reminders", "briefing_enabled", "briefing_speak", "use_memory",
              "web_search", "video_suggestions", "single_keys", "wake_enabled", "wake_followup", "wake_front",
              "wake_background", "briefing_projects", "use_location", "agent_confirm", "send_errors",
-             "wake_short", "memory_suggest", "people_on"}
+             "wake_short", "memory_suggest", "people_on", "memory_sensitive", "location_metadata"}
 CHOICES = {"app_lock_after": {"1", "5", "15", "60", "launch"},
            "effort": {"low", "medium", "high", "extra", "max"}, "theme": {"system", "light", "dark"}, "chat_font": {"sans", "serif", "mono"},
            "motion": {"system", "reduced"}, "voice_speed": {"slow", "normal", "fast"},
@@ -113,7 +113,7 @@ class SettingsController:
                                    "use_memory", "web_search", "video_suggestions", "speech_lang", "send_key",
                                    "single_keys", "wake_enabled", "wake_followup", "wake_front", "wake_background",
                                    "briefing_projects", "send_errors", "wake_short", "memory_suggest",
-                                   "app_lock", "app_lock_after", "people_on")}
+                                   "app_lock", "app_lock_after", "people_on", "memory_sensitive", "location_metadata")}
         v.update(voice=self.selected_voice["value"], model=self.brain.preferred_model,
                  city=prefs.city(self.app), server_url=server_config.saved_url(self.app) or "",
                  launch_at_login=bool(launch_at_login.is_supported() and launch_at_login.is_enabled()))
@@ -222,6 +222,12 @@ class SettingsController:
                 extra_info["org"] = await asyncio.wait_for(api.org(token), timeout=8)
             except Exception:
                 extra_info["org_error"] = "Workspaces aren't available right now (offline, or the server is older)."
+        if token and panel == "memory":                       # teens: sensitive topics are never kept
+            try:
+                extra_info["teen"] = bool((await asyncio.wait_for(api.family(token), timeout=8)).get("teen"))
+                self._teen = extra_info["teen"]
+            except Exception:
+                pass
         if token and panel == "family":                       # Parental controls
             try:
                 extra_info["family"] = await asyncio.wait_for(api.family(token), timeout=8)
@@ -322,6 +328,15 @@ class SettingsController:
                 await self.on_wake_change()
             if key == "people_on" and getattr(self, "on_people_change", None):   # People: on or off right away
                 await self.on_people_change(bool(value))
+            if key == "location_metadata":                # the next requests send (or stop sending) the hints
+                refresh = getattr(self.brain, "refresh_place_headers", None)
+                if refresh:
+                    refresh()
+                await self.web.settings_toast("Gink uses your general area (city/region) again." if value else
+                                              "Location metadata is off: Gink only knows your clock\u2019s time difference from UTC.")
+            if key == "memory_sensitive" and value:
+                await self.web.settings_toast("Gink may now keep sensitive topics you mention, like health or religion. "
+                                              "You can forget any memory in Settings > Memory.")
         elif key in CHOICES:
             if value not in CHOICES[key]:
                 return
@@ -866,6 +881,43 @@ class SettingsController:
 
     async def _a_forget_memory(self, uid):
         self.app.memory.forget(uid or "")
+        await self.push()
+
+    async def _a_memory_import_copy(self, _):
+        """The page couldn't copy the import prompt (some app web views have no clipboard): the system clipboard does."""
+        from ..services import memory_rules
+        from ..services.actions.computer import ComputerControl
+        try:
+            r = await asyncio.to_thread(ComputerControl().copy_to_clipboard, memory_rules.IMPORT_PROMPT)
+        except Exception:
+            r = {"ok": False}
+        if r.get("ok"):
+            await self.web.settings_toast("Prompt copied. Paste it into a chat with your other AI assistant.")
+        else:
+            await self.web.settings_toast("Select the prompt and copy it (Cmd/Ctrl+C).", "err")
+
+    async def _a_memory_import(self, text):
+        """Settings > Memory > "Import memory from other AI providers": what the other assistant listed, checked by the
+        same rules as everywhere (memory_rules.import_lines), added to the memories on this device (they sync)."""
+        from ..services import memory_rules
+        p = self.p()
+        sensitive = bool(p.get("memory_sensitive")) and not getattr(self, "_teen", False) and not getattr(self, "care", False)
+        found = memory_rules.import_lines(str(text or "")[:200000], [m["text"] for m in self.app.memory.list()],
+                                          sensitive=sensitive, limit=200)
+        added = 0
+        for fact in found["facts"]:
+            try:
+                self.app.memory.add(fact)
+                added += 1
+            except Exception:
+                break                                            # memory full
+        bits = [f"Added {added} memor{'ies' if added != 1 else 'y'}." if added else "Nothing new to add."]
+        if found["skipped_sensitive"]:
+            n = found["skipped_sensitive"]
+            bits.append(f"Skipped {n} about sensitive topics (turn on \u201cInclude sensitive topics in memory\u201d to keep them).")
+        if found["skipped"]:
+            bits.append(f"Skipped {found['skipped']} Gink never keeps (like passwords or numbers).")
+        await self.web.settings_toast(" ".join(bits), "ok" if added else "err")
         await self.push()
 
     async def _a_forget_all(self, _):

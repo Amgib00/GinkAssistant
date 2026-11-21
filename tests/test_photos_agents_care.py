@@ -205,7 +205,7 @@ def test_live_is_hands_free_and_private():
     html = _build_page_html("Hi", "x")
     assert "LIVE.quiet <= 8" in html and "LIVE.again = setTimeout" in html                # keeps listening through silence
     assert "document.addEventListener('visibilitychange', LIVE.onVis)" in html           # leave the window: camera off
-    assert "if (document.hidden) closeLive()" in html
+    assert "if (document.hidden && !screen) closeLive()" in html       # screen view goes on: you switch windows to show it
     assert "window.setCareMode = function (on)" in html and "Healthcare workspace: never point the camera at patients" in html
 
 

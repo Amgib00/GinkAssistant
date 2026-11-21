@@ -31,7 +31,14 @@
   var PRICING = "https://amgib00.github.io/GinkAssistant/pricing.html";      // the website's plans page
 
   // ---------------------------------------------------------------- server
+  function utcOffset() {                         // "+01:00": the clock only, no time zone name or region
+    var m = -new Date().getTimezoneOffset(), a = Math.abs(m);
+    return (m >= 0 ? "+" : "-") + ("0" + Math.floor(a / 60)).slice(-2) + ":" + ("0" + a % 60).slice(-2);
+  }
   function placeHeaders(h) {                     // the device's time zone + language: answers fit their own country
+    if (W.prefs.location_metadata === false) {   // Settings > Privacy > Location metadata off: the clock only
+      h["X-Gink-Location"] = "off"; h["X-Gink-UTC-Offset"] = utcOffset(); return h;
+    }
     try { var tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if (tz) h["X-Gink-TZ"] = tz; } catch (e) {}
     try { var lang = (navigator.languages && navigator.languages[0]) || navigator.language; if (lang) h["X-Gink-Locale"] = lang; } catch (e) {}
     return h;
@@ -361,13 +368,30 @@
            " change it, tell them to say what to change (for example \u201cchange my website: add a photo gallery\u201d) and Gink will update it." +
            " When you have web search results, use them and keep the facts accurate." +
            " You're running in a web browser: you can't set alarms, reminders or tasks or control the user's computer here; " +
-           "if asked, say that the Gink app can do it." +
+           "if asked, say that the Gink app can do it." + deviceNote() + " " + ABOUT_GINK +
            (voice ? " You're in a live voice conversation: reply in one to three short, natural spoken sentences, " +
                     "with no lists, headings, code, links or emojis." : "") +
            (W.prefs.instructions ? "\n\nThe person's own instructions for you (follow them unless they're unsafe): " +
                                   String(W.prefs.instructions).slice(0, 2000) : "") + profileNote() + memoryNote() +
-           (voice ? "" : " " + "When you genuinely need the person's preferences or details before you can help well (planning a trip, recommending something, a workout plan...), you may ask 1 to 3 short questions as tappable choices: write one short sentence, then a fenced code block with the language ask containing JSON like {\"questions\": [{\"q\": \"Your question?\", \"options\": [\"Choice 1\", \"Choice 2\", \"Choice 3\"]}]} (2 to 4 short options each). The person can also type their own answer. Don't use it for simple questions, facts, or when they already said what they want.");
+           (voice ? "" : " " + MAP_PROMPT) +
+           (voice ? "" : " " + "When you genuinely need the person's preferences or details before you can help well (planning a trip, recommending something, a workout plan...), you may ask 1 to 3 short questions as tappable choices: write one short sentence, then a fenced code block with the language ask containing JSON like {\"questions\": [{\"q\": \"Your question?\", \"options\": [\"Choice 1\", \"Choice 2\", \"Choice 3\"]}]} (2 to 4 short options each). The person can also type their own answer. Their reply starts with \"My answers:\" and lists each question with what they chose: those are answers about them and their situation, so carry on with what they asked for. Don't use it for simple questions, facts, or when they already said what they want.");
   }
+  // What Gink knows about itself: the same words as services/about_gink.py (a test keeps them equal)
+  var ABOUT_GINK = "About you: you are Gink, an AI assistant made by Gink AI (developer: Amgib00), with apps for Mac, Windows, Linux and Android, a web app and Gink Genie for building apps and websites. Your website is https://amgib00.github.io/GinkAssistant/ (downloads at https://amgib00.github.io/GinkAssistant/download.html), your source code is on GitHub at https://github.com/Amgib00/GinkAssistant, the developer platform (API keys, docs) is https://gink-server.onrender.com/developers and support is gink@ginkaisupport.com. When asked about Gink, its website, repository, download or support, give these exact links -- never a placeholder.";
+  // Which device the person is on, from their browser -- "which device am I using?" gets an answer, not a question
+  function deviceNote() {
+    var ua = navigator.userAgent || "", touch = (navigator.maxTouchPoints || 0) > 1;
+    var os = /Android/.test(ua) ? "an Android phone or tablet" : /iPhone|iPod/.test(ua) ? "an iPhone" :
+             /iPad/.test(ua) || (/Macintosh/.test(ua) && touch) ? "an iPad" : /Mac OS X|Macintosh/.test(ua) ? "a Mac" :
+             /Windows/.test(ua) ? "a Windows PC" : /CrOS/.test(ua) ? "a Chromebook" : /Linux/.test(ua) ? "a Linux computer" : "";
+    var br = /Edg\//.test(ua) ? "Edge" : /OPR\//.test(ua) ? "Opera" : /Firefox\//.test(ua) ? "Firefox" :
+             /Chrome\//.test(ua) ? "Chrome" : /Safari\//.test(ua) ? "Safari" : "a web browser";
+    return os ? " The person is using Gink on the web, in " + br + " on " + os + " (from their browser). If they ask which " +
+                "device or system they're using, tell them -- never ask which operating system they have. If they ask you to " +
+                "check their device, say the Gink app does a full check by itself (" + "https://amgib00.github.io/GinkAssistant/download.html" + ")." : "";
+  }
+  // maps in answers (the page draws them by itself): the same words as the server's and the apps' MAP_PROMPT
+  var MAP_PROMPT = "When your answer is about real places someone could find on a map -- where something is, places to visit, eat or stay, an address, a route between towns, a list of locations -- add a map after your text: a fenced code block with the language map containing JSON like {\"title\": \"Short title\", \"places\": [{\"name\": \"Place name\", \"query\": \"Place name, street, city, country\", \"lat\": 0.0, \"lon\": 0.0, \"category\": \"museum\", \"note\": \"a few words\"}]} (1 to 10 places; category is one of food, cafe, bar, shop, museum, sight, park, beach, hotel, transport, health, school, worship, other; give lat and lon only when you know them precisely, and always a query precise enough to find the place). The map appears by itself: don't mention the block. Don't add a map for general knowledge with no particular place, and never for a private person's home.";
   // questions that need the internet search the web on their own, whatever model is picked
   var WEB_RE = /\b(search|look up|google|find out|latest|news|headlines|today'?s|this week|right now|currently|price of|cost of|how much (is|are|does)|exchange rate|who won|score|results? of|release date|weather|recherche|cherche|actualit\u00e9s?|derni\u00e8res? nouvelles|prix d|aujourd'hui|cette semaine)\b/i;
   var IMAGE_RE = /^\s*(please\s+)?(create|make|draw|generate|paint|design)\s+(me\s+)?(an?\s+)?(image|picture|photo|drawing|illustration|logo|poster)\b/i;
@@ -398,6 +422,9 @@
     text = (text || "").trim();
     var atts = opts.voice ? [] : W.atts.slice();
     if ((!text && !atts.length) || W.busy) return Promise.resolve("");
+    // "look at my screen": Live screen view starts by itself and asks with what's on the screen
+    if (!opts.voice && !atts.length && window.GINK_SCREEN_RE && GINK_SCREEN_RE.test(text) && window.screenViewAvailable &&
+        screenViewAvailable() && window.openScreenView) { openScreenView(text); return Promise.resolve(""); }
     if (atts.some(function (a) { return a.loading; })) {
       setStatus("Wait a moment: a file is still loading."); setTimeout(function () { setStatus(""); }, 3000);
       return Promise.resolve("");
@@ -437,17 +464,51 @@
       // a healthcare workspace), with Undo in the notification. Never in a temporary chat, never when memory is off.
       if (reply && text && !atts.length && !s.temporary && W.prefs.use_memory !== false && W.prefs.memory_suggest !== false &&
           text.length <= 400) {
-        api("/memory/auto", { text: text }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-          var m = j && j.saved; if (!m) return;
-          var all = W.memories || {};
-          Object.keys(all).forEach(function (id) { if (m.replaced && all[id].text === m.replaced) delete all[id]; });
-          all[m.id] = { text: m.text, created: Date.now() / 1000 }; W.memories = all; save("gink_memories", all);
-          if (typeof ginkNotify === "function") ginkNotify({ id: "mem-auto", title: m.replaced ? "Updated" : "Remembered", body: m.text,
-            icon: "\uD83E\uDDE0", timeout: 6000, actions: [{ label: "Undo", emit: "memory_undo", value: { id: m.id, replaced: m.replaced || "" } }] });
+        api("/memory/auto", { text: text, sensitive: keepSensitive() }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+          if (j && j.saved) remembered(j.saved, "mem-auto");
         }).catch(function () {});
       }
+      if (reply && !s.temporary && W.token && W.prefs.use_memory !== false && W.prefs.memory_suggest !== false) memgen(s);
       return reply;
     });
+  }
+
+  // ---- memory: "Generate memory from chats" and "Include sensitive topics in memory" (Settings > Memory)
+  function keepSensitive() { return W.prefs.memory_sensitive === true && !W.teen && !W.care; }   // the server checks too
+  function remembered(m, nid) {                    // a memory Gink kept by itself: in this browser too, with Undo
+    var all = W.memories || {};
+    Object.keys(all).forEach(function (id) { if (m.replaced && all[id].text === m.replaced) delete all[id]; });
+    all[m.id] = { text: m.text, created: Date.now() / 1000 }; W.memories = all; save("gink_memories", all);
+    if (typeof ginkNotify === "function") ginkNotify({ id: nid || "mem-auto", title: m.replaced ? "Updated" : "Remembered", body: m.text,
+      icon: "\uD83E\uDDE0", timeout: 6000, actions: [{ label: "Undo", emit: "memory_undo", value: { id: m.id, replaced: m.replaced || "" } }] });
+  }
+  W.memgen = {};                                   // chat -> how many of the person's messages were looked at
+  function memgen(s) {                             // every 4 messages they send: the AI's picks (server rules apply)
+    var said = s.messages.filter(function (m) { return m.role === "user"; }).length;
+    if (W.care || said - (W.memgen[s.id] || 0) < 4) return;
+    W.memgen[s.id] = said;
+    var msgs = s.messages.slice(-16).map(function (m) {
+      return { role: m.role, content: typeof m.content === "string" ? m.content.slice(0, 1500) : "" }; });
+    api("/memory/generate", { messages: msgs, sensitive: keepSensitive() }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { ((j && j.saved) || []).forEach(function (m, i) { remembered(m, "mem-gen-" + i); }); }).catch(function () {});
+  }
+  function importMemories(text) {                  // "Import memory from other AI providers": the other assistant's answer
+    return api("/memory/import", { text: String(text || "").slice(0, 200000), sensitive: keepSensitive() }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error(j.detail || "That didn\u2019t work. Please try again.");
+        var all = W.memories || {};
+        (j.saved || []).forEach(function (m) {
+          Object.keys(all).forEach(function (id) { if (m.replaced && all[id].text === m.replaced) delete all[id]; });
+          all[m.id] = { text: m.text, created: Date.now() / 1000 };
+        });
+        W.memories = all; save("gink_memories", all);
+        var n = (j.saved || []).length, bits = [n ? "Added " + n + (n === 1 ? " memory." : " memories.") : "Nothing new to add."];
+        if (j.skipped_sensitive) bits.push("Skipped " + j.skipped_sensitive + " about sensitive topics (turn on \u201cInclude sensitive topics in memory\u201d to keep them).");
+        if (j.skipped) bits.push("Skipped " + j.skipped + " Gink never keeps (like passwords or numbers).");
+        if (j.full) bits.push("Gink\u2019s memory is full: forget something first.");
+        settingsToast(bits.join(" "));
+      });
+    }).catch(function (err) { settingsToast(err.message); });
   }
 
   function chat(s, aid, opts) {
@@ -499,7 +560,8 @@
     if (!text) { setPlainText(aid, "No answer came back. Please try again."); return ""; }
     return api("/render", { markdown: text }).then(function (r) { return r.json(); }).then(function (j) {
       finalizeMessage(aid, j.html);
-      if (W.prefs.read_aloud) readAloud(text);
+      if (W.prefs.read_aloud || W.voiceReply) readAloud(text);       // a voice message gets a spoken answer, by itself
+      W.voiceReply = false;
       return text;
     }).catch(function () { setPlainText(aid, text); return text; });
   }
@@ -784,10 +846,16 @@
   function pushSettings(lists, extra) {
     setSettingsState({ values: Object.assign({}, W.prefs, { model: W.model }),
                        info: Object.assign({ name: W.name, email: W.email, version: "web", plan: W.plan || "free", voices: [], models: W.models, web: true,
-                                             care: !!W.care,
+                                             care: !!W.care, teen: !!W.teen,
                                              wake_supported: !!(window.SpeechRecognition || window.webkitSpeechRecognition), wake_web: true,
-                                             wake_status: (typeof WK !== "undefined" && WK && WK.status) || "Off" }, extra || {}),
+                                             wake_status: (typeof WK !== "undefined" && WK && WK.status) || "Off" }, W.info || {}, extra || {}),
                        lists: Object.assign({ prompts: myPrompts() }, lists || {}) });
+  }
+  W.info = {};                                     // from /info: Gink's own policy pages, "Learn more" links
+  function loadMemory() {                          // Settings > Memory: teens never keep sensitive topics
+    pushSettings({}, W.info);
+    api("/family").then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j) { W.teen = !!j.teen; pushSettings({}, W.info); } }).catch(function () {});
   }
   // the prompt library ("/" menu), kept in this browser
   function myPrompts() { return load("gink_prompts", []); }
@@ -849,7 +917,9 @@
   // The policies changed since this browser said OK: the page's notice, once per change
   function checkPolicies() {
     fetch("/info").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-      if (!j || !j.policies_updated) return;
+      if (!j) return;
+      W.info = { policies: j.policies || [], memory_help_url: j.memory_help_url || "", location_help_url: j.location_help_url || "" };
+      if (!j.policies_updated) return;
       var seen = ""; try { seen = LS.getItem("gink_policy_seen") || ""; } catch (e) {}
       if (j.policies_updated > seen && typeof policyNotice === "function") policyNotice(j.policies_updated, j.privacy_url, j.terms_url);
     }).catch(function () {});
@@ -955,7 +1025,7 @@
   var SYNCED_PREFS = ["theme", "chat_font", "motion", "style_base", "style_warmth", "style_enthusiasm", "style_emoji", "style_headers",
     "reply_language", "voice_speed", "read_aloud", "speech_lang", "web_search", "use_memory", "memory_suggest", "video_suggestions",
     "notify_reminders", "agent_confirm", "send_key", "briefing_enabled", "briefing_time", "briefing_city",
-    "briefing_speak", "wake_followup", "voice", "model", "genie_mode", "instructions", "effort"];
+    "briefing_speak", "wake_followup", "voice", "model", "genie_mode", "instructions", "effort", "memory_sensitive", "location_metadata"];
   var PREFSYNC = { pending: {}, timer: null, seen: parseFloat(LS.getItem("gink_prefs_seen") || "0") };
   function queuePrefs(key, value) {
     PREFSYNC.pending[key] = value; clearTimeout(PREFSYNC.timer);
@@ -994,8 +1064,30 @@
   }
 
   // ---------------------------------------------------------------- the events the page sends
+  // ---- voice messages: hold the mic, let go to send (the page records: MediaRecorder); Gink answers out loud
+  window.ginkVoiceRecorder = "page";
+  function voiceMessage(v) {
+    if (!v || v.action !== "done" || !v.data) return;
+    if (W.busy) { if (window.lmSay) lmSay("Wait for Gink to finish, then send your voice message again."); return; }
+    setStatus("Listening to your voice message\u2026");
+    api("/voice/transcribe", { audio_b64: v.data, format: v.format || "webm",
+                               language: W.prefs.speech_lang && W.prefs.speech_lang !== "auto" ? W.prefs.speech_lang : "" }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        setStatus("");
+        if (!r.ok) throw new Error((j.error && j.error.message) || j.detail || "Gink couldn\u2019t hear that. Please try again.");
+        var text = String(j.text || "").trim();
+        if (!text) throw new Error("Gink didn\u2019t hear any words. Try again a little closer to the microphone.");
+        W.voiceReply = true;
+        var job = send(text, { voiceNote: true });
+        if (typeof markVoiceMessage === "function") markVoiceMessage(v.url || "", v.secs || 0);
+        return job;
+      });
+    }).catch(function (e) { setStatus(""); W.voiceReply = false; if (window.lmSay) lmSay(e.message || "Gink couldn\u2019t hear that."); });
+  }
+
   var HANDLERS = {
     send: function (v) { send(String(v || "")); },
+    voice_message: voiceMessage,
     publish_design: function (v) {                                       // the code viewer's Publish
       api("/sites/publish", { html: (v || {}).html || "", title: (v || {}).title || "" }).then(function (r) {
         if (!r.ok) return errorText(r).then(function (t) { cvPublished(null, t); });
@@ -1091,7 +1183,10 @@
       var name = v && v.name;
       if (name === "refresh") return (v.value === "account" ? loadDevices() : v.value === "connected" ? loadConnected()
                                       : v.value === "privacy" ? loadLockdown() : v.value === "family" ? loadFamily()
-                                      : v.value === "workspace" ? loadOrg() : v.value === "schedules" ? loadSchedules() : pushSettings());
+                                      : v.value === "memory" ? loadMemory()
+                                      : v.value === "workspace" ? loadOrg() : v.value === "schedules" ? loadSchedules() : pushSettings({}, W.info));
+      if (name === "memory_import") return importMemories(v.value);
+      if (name === "memory_import_copy") return settingsToast("Select the prompt and copy it (Cmd/Ctrl+C).", "err");   // the browser couldn't copy
       if (name === "people_delete") {                   // People: everything kept in this browser
         if (typeof peopleDeleteAll === "function") peopleDeleteAll();
         return settingsToast("People data deleted from this browser.");
@@ -1390,7 +1485,7 @@
     reportError(r.name || "UnhandledRejection", r.message || String(r), r.stack || "");
   });
   // Age and parental controls: the one-time birth-year question; a parent can turn voice off.
-  var VOICE_EVENTS = { voice_toggle: 1, voice_start: 1, dictate: 1, read_aloud: 1, voice_preview: 1 };
+  var VOICE_EVENTS = { voice_toggle: 1, voice_start: 1, dictate: 1, read_aloud: 1, voice_preview: 1, voice_message: 1 };
   function checkFamily() {
     var json = function (r) { return r.ok ? r.json() : Promise.reject(); };
     api("/account/age").then(json).then(function (a) {

@@ -103,5 +103,12 @@ def test_openapi_only_describes_the_developer_api(server):
     for hidden in ("/docs", "/redoc", "/openapi.json"):
         assert c.get(hidden).status_code == 404
     spec = c.get("/v1/openapi.json").json()
-    assert spec["openapi"] == "3.1.0" and sorted(spec["paths"]) == ["/chat/completions", "/images/generations", "/models"]
+    assert spec["openapi"] == "3.1.0" and {"/chat/completions", "/images/generations", "/models"} <= set(spec["paths"])
     assert spec["servers"][0]["url"].endswith("/v1") and "admin" not in json.dumps(spec)
+    from ginkassistant.services import backend_server as b                     # every public /v1 endpoint, nothing else
+    import re as _re
+    routes = {_re.sub(r"\{[^}]+\}", "{}", r.path[3:].replace(":path", "")) for r in b.app.routes
+              if getattr(r, "path", "").startswith("/v1/")}
+    assert {_re.sub(r"\{[^}]+\}", "{}", p) for p in spec["paths"]} == routes
+    ops = [op["operationId"] for p in spec["paths"].values() for op in p.values()]
+    assert len(ops) == len(set(ops)) and "generateMemories" in ops and "createSpeech" in ops and "createBatch" in ops

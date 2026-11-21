@@ -781,17 +781,19 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     .aura { animation: none; }
   }
   /* ---------- icon rail: the sidebar, collapsed (desktop) ----------
-     The logo at the top (it's the sidebar button -- point at it and it shows "open sidebar"), then New chat,
-     Search chats, Workspace, Media Studio and Gink Genie; Settings and your account at the bottom. */
+     0.1.158: the lighter look of the older rail again -- on the page itself (no tinted column, no line), light
+     grey icons that darken when you point at them, 40px buttons 4px apart: New chat (a pencil), Search chats,
+     Workspace, Gink Genie, Media Studio; Settings and your account at the bottom. The logo stays on top: it's
+     the sidebar button (point at it and it shows "open sidebar"). */
   #rail {
-    position: fixed; top: 0; bottom: 0; left: 0; width: 60px; z-index: 27; background: var(--sidebar); border-right: 1px solid var(--side-line);
-    display: flex; flex-direction: column; align-items: center; padding: calc(58px + env(safe-area-inset-top, 0px)) 0 12px;
+    position: fixed; top: 0; bottom: 0; left: 0; width: 60px; z-index: 27;
+    display: flex; flex-direction: column; align-items: center; padding: calc(54px + env(safe-area-inset-top, 0px)) 0 14px;
   }
-  #rail .ibtn { width: 40px; height: 40px; border-radius: 10px; margin: 0 0 2px; color: var(--text-main); transition: background 0.12s; }
-  #rail .ibtn:hover { background: var(--side-hover); }
+  #rail .ibtn { width: 40px; height: 40px; border-radius: 12px; margin: 0 0 4px; color: var(--text-muted); transition: background 0.15s, color 0.15s; }
+  #rail .ibtn:hover { color: var(--text-main); background: var(--side-hover); }
   #rail .ibtn svg { width: 20px; height: 20px; }
   #rail .spacer { flex: 1; }
-  #rail .avatar { margin: 6px 0 0; width: 30px; height: 30px; cursor: pointer; font-size: 12.5px; }
+  #rail .avatar { margin: 8px 0 0; width: 32px; height: 32px; cursor: pointer; font-size: 13px; }
   body.pinned #rail { display: none; }
   @media (min-width: 761px) { body:not(.pinned) { padding-left: 60px; } body:not(.pinned) #shell { left: 60px; } }
   @media (max-width: 760px) { #rail { display: none; } }
@@ -888,11 +890,11 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
   <div id="edge"></div>
   <div class="aura a1"></div><div class="aura a2"></div>
   <nav id="rail">
-    <button class="ibtn" data-rail="new" title="New chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 4.5h-4a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h9a3 3 0 0 0 3-3v-4"/><path d="M17.9 3.9a1.9 1.9 0 0 1 2.7 2.7L13 14.2l-3.3.8.8-3.3z"/></svg></button>
+    <button class="ibtn" data-rail="new" title="New chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h8"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
     <button class="ibtn" data-rail="search" title="Search chats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></button>
-    <button class="ibtn" data-rail="tasks" title="Workspace"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.8"/></svg></button>
-    <button class="ibtn" data-rail="media" title="Media Studio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3.5"/><circle cx="9" cy="9.8" r="1.6"/><path d="M4 17.2l4.4-4.4a1.5 1.5 0 0 1 2.1 0l2.6 2.6 2.4-2.4a1.5 1.5 0 0 1 2.1 0l2.9 2.9"/></svg></button>
+    <button class="ibtn" data-rail="tasks" title="Workspace"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg></button>
     <button class="ibtn" data-rail="genie" title="Gink Genie"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><g transform="matrix(-1 0 0 1 24 0)"><path d="M2 10.2c1.9.1 3.4 1.2 4.7 2.2 1 .8 2.2 1.4 3.7 1.4h4c2 0 3.7-1.2 4.2-3"/><path d="M7.2 13.4c.7 2 2.6 3.2 4.8 3.2h1.6c2.1 0 3.9-1.3 4.5-3.2"/><path d="M10.6 10.9c0-1.5 1.1-2.6 2.6-2.6s2.6 1.1 2.6 2.6"/><path d="M13.2 8.3V6.9"/><circle cx="13.2" cy="5.9" r="1.1" fill="currentColor" stroke="none"/><path d="M18.6 11.2c1.3-.4 2.7.2 3 1.4.3 1.2-.6 2.4-2 2.6-.5.1-1 0-1.4-.2"/><path d="M11.4 16.6l-.6 2.2h5l-.6-2.2"/><path d="M9.6 18.8h6.6"/></g></svg></button>
+    <button class="ibtn" data-rail="media" title="Media Studio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8 8.5"/></svg></button>
     <div class="spacer"></div>
     <button class="ibtn" data-rail="settings" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     <div class="avatar" id="rail-avatar" data-rail="settings" title="Account">G</div>
@@ -907,10 +909,10 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
       <div class="brand"><span class="gmark" aria-hidden="true"></span><span>Gink</span></div>
     </div>
     <div class="side-nav">
-      <button type="button" class="srow" data-nav="new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 4.5h-4a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h9a3 3 0 0 0 3-3v-4"/><path d="M17.9 3.9a1.9 1.9 0 0 1 2.7 2.7L13 14.2l-3.3.8.8-3.3z"/></svg><span class="lbl">New chat</span><span class="nk" id="nk-new"></span></button>
+      <button type="button" class="srow" data-nav="new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h8"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span class="lbl">New chat</span><span class="nk" id="nk-new"></span></button>
       <label class="srow" id="side-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><input id="side-q" placeholder="Search chats" autocomplete="off" aria-label="Search chats"><span class="nk" id="nk-search"></span></label>
-      <button type="button" class="srow" data-nav="tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.8"/></svg><span class="lbl">Workspace</span></button>
-      <button type="button" class="srow" data-nav="media"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3.5"/><circle cx="9" cy="9.8" r="1.6"/><path d="M4 17.2l4.4-4.4a1.5 1.5 0 0 1 2.1 0l2.6 2.6 2.4-2.4a1.5 1.5 0 0 1 2.1 0l2.9 2.9"/></svg><span class="lbl">Media Studio</span></button>
+      <button type="button" class="srow" data-nav="tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg><span class="lbl">Workspace</span></button>
+      <button type="button" class="srow" data-nav="media"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8 8.5"/></svg><span class="lbl">Media Studio</span></button>
       <button type="button" class="srow" data-nav="genie"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><g transform="matrix(-1 0 0 1 24 0)"><path d="M2 10.2c1.9.1 3.4 1.2 4.7 2.2 1 .8 2.2 1.4 3.7 1.4h4c2 0 3.7-1.2 4.2-3"/><path d="M7.2 13.4c.7 2 2.6 3.2 4.8 3.2h1.6c2.1 0 3.9-1.3 4.5-3.2"/><path d="M10.6 10.9c0-1.5 1.1-2.6 2.6-2.6s2.6 1.1 2.6 2.6"/><path d="M13.2 8.3V6.9"/><circle cx="13.2" cy="5.9" r="1.1" fill="currentColor" stroke="none"/><path d="M18.6 11.2c1.3-.4 2.7.2 3 1.4.3 1.2-.6 2.4-2 2.6-.5.1-1 0-1.4-.2"/><path d="M11.4 16.6l-.6 2.2h5l-.6-2.2"/><path d="M9.6 18.8h6.6"/></g></svg><span class="lbl">Gink Genie</span></button>
     </div>
     <div id="recents"></div>
@@ -1612,7 +1614,8 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
   }
   function closeLive() {
     if (!LIVE) return;
-    try { LIVE.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+    try { if (LIVE.stream) LIVE.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+    if (LIVE.screen && !LIVE.stream) ginkEmit('screen_view', { on: false });    // the apps stop sending frames
     try { if (LIVE.rec) LIVE.rec.abort(); } catch (e) {}
     if (LIVE.obs) LIVE.obs.disconnect();
     clearTimeout(LIVE.again);
@@ -1620,30 +1623,45 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     document.removeEventListener('visibilitychange', LIVE.onVis);
     LIVE.el.remove(); LIVE = null;
   }
-  function liveFrame(video) {
-    var w = video.videoWidth, h = video.videoHeight; if (!w) return '';
+  function liveFrame(video) {                        // the camera, a shared screen (video) or the apps' screen frames (img)
+    var w = video.videoWidth || video.naturalWidth, h = video.videoHeight || video.naturalHeight; if (!w) return '';
     var k = Math.min(1, 1280 / Math.max(w, h)), c = document.createElement('canvas');
     c.width = Math.round(w * k); c.height = Math.round(h * k);
     c.getContext('2d').drawImage(video, 0, 0, c.width, c.height);
     return c.toDataURL('image/jpeg', 0.85);
   }
-  function openLive(facing) {
+  function openLive(facing) {                        // facing: 'environment' | 'user' | 'screen' (screen view)
     closeLive();
-    var md = navigator.mediaDevices;
-    if (!md || !md.getUserMedia) { cameraFallback(); return; }               // the system camera instead
-    md.getUserMedia({ video: { facingMode: facing || 'environment', width: { ideal: 1920 } }, audio: false }).then(function (stream) {
-      var root = document.createElement('div'); root.id = 'live-cam'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', 'Live camera');
-      var video = document.createElement('video'); video.autoplay = true; video.playsInline = true; video.muted = true; video.srcObject = stream;
+    var md = navigator.mediaDevices, screen = facing === 'screen', start;
+    if (screen) {
+      if (window.GINK_NATIVE_SCREEN) start = Promise.resolve(null);              // the apps send the frames (liveScreenFrame)
+      else if (md && md.getDisplayMedia) start = md.getDisplayMedia({ video: true, audio: false });
+      else { if (window.lmSay) lmSay('Screen view isn\u2019t available here: use the Gink app or a computer browser.'); return; }
+    } else {
+      if (!md || !md.getUserMedia) { cameraFallback(); return; }             // the system camera instead
+      start = md.getUserMedia({ video: { facingMode: facing || 'environment', width: { ideal: 1920 } }, audio: false });
+    }
+    start.then(function (stream) {
+      var root = document.createElement('div'); root.id = 'live-cam'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', screen ? 'Live screen view' : 'Live camera');
+      if (screen) root.className = 'screen';
+      var video;
+      if (stream) { video = document.createElement('video'); video.autoplay = true; video.playsInline = true; video.muted = true; video.srcObject = stream; }
+      else { video = document.createElement('img'); video.className = 'live-shot'; video.alt = 'Your screen'; ginkEmit('screen_view', { on: true }); }
+      if (stream) stream.getVideoTracks().forEach(function (t) { t.onended = function () { if (LIVE && LIVE.stream === stream) closeLive(); }; });   // "Stop sharing"
       var flash = document.createElement('div'); flash.className = 'live-flash';
       var top = document.createElement('div'); top.className = 'live-top';
-      top.innerHTML = '<span class="live-dot"></span><span class="live-title">Live</span>';
-      var flip = document.createElement('button'); flip.type = 'button'; flip.className = 'live-flip'; flip.title = 'Switch camera'; flip.textContent = '\u21BB';
+      top.innerHTML = '<span class="live-dot"></span><span class="live-title">' + (screen ? 'Live \u00b7 Your screen' : 'Live') + '</span>';
+      var flip = document.createElement('button'); flip.type = 'button'; flip.className = 'live-flip';
+      flip.title = screen ? 'Use the camera' : 'Switch camera'; flip.textContent = screen ? '\U0001F4F7' : '\u21BB';
+      var scr = document.createElement('button'); scr.type = 'button'; scr.className = 'live-flip'; scr.title = 'Show Gink your screen'; scr.textContent = '\U0001F5A5';
       var x = document.createElement('button'); x.type = 'button'; x.className = 'live-x'; x.title = 'Close'; x.textContent = '\u2715';
-      top.appendChild(flip); top.appendChild(x);
+      top.appendChild(flip);
+      if (!screen && window.screenViewAvailable && screenViewAvailable()) top.appendChild(scr);
+      top.appendChild(x);
       var bottom = document.createElement('div'); bottom.className = 'live-bottom';
       var answer = document.createElement('div'); answer.className = 'live-answer'; answer.setAttribute('aria-live', 'polite');
       var hint = document.createElement('div'); hint.className = 'live-hint';
-      hint.textContent = liveHint();
+      hint.textContent = screen ? 'Gink looks at your screen each time you ask \u2014 nothing is sent until then.' : liveHint();
       var form = document.createElement('form'); form.className = 'live-ask';
       var input = document.createElement('input'); input.placeholder = 'Ask, or just press Ask'; input.setAttribute('aria-label', 'Ask');
       var mic = document.createElement('button'); mic.type = 'button'; mic.className = 'live-mic'; mic.title = 'Speak'; mic.textContent = '\U0001F3A4';
@@ -1656,19 +1674,21 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
       root.appendChild(video); root.appendChild(flash); root.appendChild(top); root.appendChild(bottom);
       document.body.appendChild(root);
       LIVE = { el: root, stream: stream, facing: facing || 'environment', rec: null, obs: null, waiting: false, hands: !!SR,
-               quiet: 0, again: 0 };
+               quiet: 0, again: 0, screen: screen, pendingQ: '' };
       function ask(q) {
         if (!LIVE || LIVE.waiting) return;
-        var text = (q || '').trim() || 'What\u2019s this?';       // nothing typed: Gink works out what it needs
-        var data = liveFrame(video); if (!data) return;
+        var text = (q || '').trim() || (screen ? 'What\u2019s on my screen?' : 'What\u2019s this?');   // nothing typed: Gink works it out
+        var data = liveFrame(video); if (!data) { LIVE.pendingQ = text; return; }          // no frame yet: ask when one arrives
         flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
         LIVE.waiting = true; root.classList.add('busy'); answer.textContent = 'Looking\u2026'; input.value = '';
         setTimeout(function () { if (LIVE && LIVE.waiting) window.liveDone(); }, 90000);
         ginkEmit('live_ask', { data: data, name: 'live-' + new Date().toISOString().slice(11, 19).replace(/:/g, '') + '.jpg', question: text });
       }
       form.onsubmit = function (e) { e.preventDefault(); ask(input.value); };
+      LIVE.ask = ask;
       x.onclick = closeLive;
-      flip.onclick = function () { openLive(LIVE && LIVE.facing === 'environment' ? 'user' : 'environment'); };
+      flip.onclick = function () { openLive(screen ? 'environment' : LIVE && LIVE.facing === 'environment' ? 'user' : 'environment'); };
+      scr.onclick = function () { openLive('screen'); };
       function listen() {
         if (!LIVE || LIVE.rec || LIVE.waiting || !SR || document.hidden) return;
         var rec = new SR(), heard = false; rec.interimResults = true; rec.lang = document.documentElement.lang || navigator.language || 'en';
@@ -1704,10 +1724,16 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
       if (feed) LIVE.obs.observe(feed, { childList: true, subtree: true, characterData: true });
       LIVE.onKey = function (e) { if (e.key === 'Escape') closeLive(); };
       document.addEventListener('keydown', LIVE.onKey);
-      LIVE.onVis = function () { if (document.hidden) closeLive(); };     // left the window: camera and mic go off
+      LIVE.onVis = function () { if (document.hidden && !screen) closeLive(); };   // left the window: camera and mic go off
+      // (screen view keeps going: you're showing Gink another window)
       document.addEventListener('visibilitychange', LIVE.onVis);
       setTimeout(function () { input.focus(); if (LIVE && LIVE.hands) listen(); }, 300);   // hands-free from the start
+      if (window.LIVE_PENDING) {                                            // "look at my screen": asked by itself
+        var pending = window.LIVE_PENDING; window.LIVE_PENDING = '';
+        setTimeout(function () { if (LIVE && LIVE.ask === ask) ask(pending); }, stream ? 900 : 0);
+      }
     }).catch(function (err) {
+      if (screen) { window.LIVE_PENDING = ''; if (window.lmSay) lmSay('Screen sharing was cancelled.'); return; }
       cameraFallback();                                                // no camera here (or not allowed): take a photo
     });
   }
@@ -2379,6 +2405,7 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
       '</div>';
     row.appendChild(bar);
     feed.appendChild(row);
+    if (window.closeQuestionCards) closeQuestionCards(text);      // an earlier question card is answered now
     scrollDown();
   }
   document.addEventListener('click', function (e) {
@@ -2512,9 +2539,16 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     URL.revokeObjectURL(url);
   }
 
+  // While an answer streams in, its map and question blocks (JSON) stay out of sight: they become the map and the
+  // question card when the answer is done (finalizeMessage).
+  function streamView(text) {
+    return String(text == null ? '' : text).replace(/(^|\\n)```(?:map|ask)[^\\n]*(?:\\n[\\s\\S]*?(?:\\n```[ \\t]*(?=\\n|$)|$)|$)/g,
+                                                    function (m, pre) { return pre; }).replace(/\\s+$/, '');
+  }
+  window.streamView = streamView;
   function setPlainText(id, text) {
     var el = document.getElementById(id);
-    if (el) { el.innerText = text; scrollDown(); }
+    if (el) { el.innerText = streamView(text); scrollDown(); }
   }
 
   function finalizeMessage(id, renderedHtml) {
@@ -2537,6 +2571,7 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     upgradeVideoLinks(el);
     upgradeFileLinks(el);
     if (window.upgradeQuestionCards) upgradeQuestionCards(el);     // before code blocks: ```ask``` becomes a card
+    if (window.upgradeMaps) upgradeMaps(el);                       // ```map``` becomes a live map, by itself
     enhanceCodeBlocks(el);
     if (!LOADING_CHAT && window.autoOpenCode) autoOpenCode(el);        // long code in a new answer: the viewer
     addGinkActions(el, id);
@@ -2844,9 +2879,9 @@ class WebChatFeed:
         await self.finalize_message(message_id, raw_markdown)
 
 def _build_page_html(welcome_title, welcome_subtitle, start_locked: bool = False):
-    from . import agent_ui, chat_extras, compat, settings_page, update_ui, voice_ui, wake_ui
-    page = agent_ui.inject(update_ui.inject(wake_ui.inject(voice_ui.inject(chat_extras.inject(settings_page.inject(
-        _build_page_html_base(welcome_title, welcome_subtitle)))))))
+    from . import agent_ui, chat_extras, compat, live_media, settings_page, update_ui, voice_ui, wake_ui
+    page = live_media.inject(agent_ui.inject(update_ui.inject(wake_ui.inject(voice_ui.inject(chat_extras.inject(
+        settings_page.inject(_build_page_html_base(welcome_title, welcome_subtitle))))))))
     page = compat.inject(page)                         # flex gap for older web engines (older Macs' app window)
     if start_locked:                                   # Lock Gink: covered from the very first frame
         i = page.rindex("</body>")

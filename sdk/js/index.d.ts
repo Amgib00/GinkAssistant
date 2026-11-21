@@ -1,11 +1,22 @@
 export declare const DEFAULT_BASE_URL: string;
+export interface Batch { id: string; object: "batch"; name: string | null; status: string; created_at: number;
+  completed_at: number | null; request_counts: { total: number; completed: number; failed: number } }
+/** category: food, cafe, bar, shop, museum, sight, park, beach, hotel, transport, health, school, worship or other. */
+export interface MapPlace { name?: string; query?: string; lat?: number; lon?: number; category?: string; note?: string; map_url?: string }
+/** A picture of a place (Wikipedia's), as on Gink's map cards. */
+export interface PlacePhoto { image: string; title: string; page: string; credit: string; object?: "place_photo" }
+/** The maps in an answer (```map blocks; ask with { gink_maps: true }). */
+export declare function maps(text: string): Array<{ title: string; places: MapPlace[] }>;
+/** The clock's offset from UTC, like "+01:00". */
+export declare function utcOffset(): string;
 
 export declare class GinkAPIError extends Error {
   status: number;
   code: string;
 }
 
-export interface Step { tool: string; path?: string; query?: string; changed?: boolean; result?: string }
+export interface Step { tool: string; path?: string; query?: string; changed?: boolean; result?: string;
+  plan?: Array<{ title: string; status: "todo" | "doing" | "done" }> }
 
 export interface Interaction {
   id: string;
@@ -20,6 +31,8 @@ export interface Interaction {
   created: number;
   finished: number | null;
   usage: { steps: number };
+  /** The agent's plan (update_plan), as it last wrote it. */
+  plan: Array<{ title: string; status: "todo" | "doing" | "done" }>;
   error?: { message: string };
 }
 
@@ -29,7 +42,7 @@ export interface InteractionParams {
   environment?: string;            // "remote" for a new one, or an environment id
   previous_interaction_id?: string;
   background?: boolean;
-  max_steps?: number;              // 1-30, default 15
+  max_steps?: number;              // 1-60, default 30
   tools?: Array<"files" | "web_search">;
   notify_email?: boolean;          // email the account the result when it ends
   webhook_url?: string;            // https: Gink POSTs {"type": "interaction.<status>", "data": Interaction} when it ends
@@ -76,7 +89,8 @@ export interface Schedule {
 }
 
 export declare class Gink {
-  constructor(options?: { apiKey?: string; baseURL?: string; fetch?: typeof fetch });
+  /** location: false -- no location metadata (city/region) is sent, only the clock's UTC offset (or GINK_LOCATION=off). */
+  constructor(options?: { apiKey?: string; baseURL?: string; fetch?: typeof fetch; location?: boolean });
   interactions: {
     create(params: InteractionParams): Promise<Interaction>;
     stream(params: InteractionParams): AsyncIterable<InteractionEvent>;
@@ -105,14 +119,48 @@ export declare class Gink {
     /** Admins: healthcare mode's safety report -- counts only, never words. */
     safety(options?: { days?: number }): Promise<SafetyReport>;
   };
+  /** Many chat requests at once, answered in the background (up to 100). */
+  batches: {
+    create(requests: Array<string | Array<{ role: string; content: string }> | { custom_id?: string; body: object }>,
+           options?: { name?: string; model?: string }): Promise<Batch>;
+    get(id: string): Promise<Batch>;
+    list(): Promise<Batch[]>;
+    cancel(id: string): Promise<Batch>;
+    results(id: string): Promise<Array<{ custom_id: string; response?: any; error?: { message: string } }>>;
+    wait(id: string, options?: { every?: number; timeout?: number }): Promise<Batch>;
+  };
+  /** Voice messages in your own app. */
+  audio: {
+    /** Speech to text in any language (WAV, WebM, OGG, M4A/MP4, MP3, FLAC). */
+    transcribe(audio: Blob | ArrayBuffer | Uint8Array, options?: { filename?: string; language?: string }): Promise<string>;
+    /** Gink's natural voice: WAV audio. */
+    speech(text: string, options?: { voice?: string; speed?: "slow" | "fast" }): Promise<ArrayBuffer>;
+  };
+  /** Places by name or address (OpenStreetMap). */
+  geo(query: string, options?: { limit?: number }): Promise<Array<{ name: string; display: string; lat: number; lon: number;
+    type: string; map_url: string }>>;
+  /** The maps in an answer (ask with { gink_maps: true }). */
+  maps(text: string): Array<{ title: string; places: MapPlace[] }>;
+  /** A picture of a place, like the ones on Gink's map cards -- null when there's none. */
+  placePhoto(name: string, lat: number, lon: number): Promise<PlacePhoto | null>;
   memories: {
     list(): Promise<Array<{ id: string; text: string; created: number }>>;
     add(text: string): Promise<{ id: string; text: string; replaced: string | null }>;
     forget(id: string): Promise<{ id: string; deleted: true }>;
-    suggest(text: string): Promise<string | null>;
+    suggest(text: string, options?: { sensitive?: boolean }): Promise<string | null>;
+    /** "Generate memory from chats": the lasting facts in a conversation (at most 5), saved unless save: false.
+     *  sensitive: also health, religion and other sensitive topics (never for teens' accounts). */
+    generate(messages: Array<{ role: string; content: string }>, options?: { save?: boolean; sensitive?: boolean }):
+      Promise<Array<{ id?: string; text: string; replaced?: string | null }>>;
+    /** What to ask your other AI assistant so it lists what it remembers about you. */
+    importPrompt(): Promise<string>;
+    /** "Import memory from other AI providers": its answer (one fact per line), added to memory. */
+    import(text: string, options?: { sensitive?: boolean }): Promise<{ data: Array<{ id: string; text: string; replaced: string | null }>;
+      skipped: number; skipped_sensitive: number; memory_full: boolean }>;
   };
+  /** gink_maps: true -- answers about places end with a ```map block (read it with maps()). */
   chat(message: string | Array<{ role: string; content: string | Array<Record<string, unknown>> }>,
-       options?: { model?: string; system?: string }): Promise<string>;
+       options?: { model?: string; system?: string; gink_maps?: boolean }): Promise<string>;
   /** An answer from the web, its sources listed (official ones first); { withSources: true } adds them as data. */
   search(question: string): Promise<string>;
   search(question: string, options: { withSources: true }): Promise<{ answer: string; sources: Source[] }>;

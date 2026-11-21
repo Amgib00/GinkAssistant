@@ -1,6 +1,6 @@
-"""Agent mode on the chat page: a live checklist of steps above the message box, and
-"Gink wants to ... [Allow] [Don't allow]" before sensitive actions (services/actions/agent.py).
-Python calls agentStep / agentAsk / agentEnd; the buttons send 'agent_answer' {id, ok}."""
+"""Agent mode on the chat page: a live checklist of steps above the message box, the agent's plan (agentPlan),
+and "Gink wants to ... [Allow] [Don't allow]" before sensitive actions (services/actions/agent.py).
+Python calls agentStep / agentPlan / agentAsk / agentEnd; the buttons send 'agent_answer' {id, ok}."""
 
 _CSS = """
 <style>
@@ -15,6 +15,11 @@ _CSS = """
   #agent-panel li .ic { width: 18px; flex: none; text-align: center; }
   #agent-panel li.done { color: var(--text-main); } #agent-panel li.running { color: var(--text-main); font-weight: 600; }
   #agent-panel li.failed .ic { color: #C42B1C; } #agent-panel li.done .ic { color: var(--accent, #3F7D12); }
+  #agent-panel .ag-plan { margin: 0 0 8px; padding: 0 0 8px; border-bottom: 1px solid var(--border); }
+  #agent-panel .ag-plan[hidden] { display: none; }
+  #agent-panel .ag-plan b { display: block; font-size: 12px; font-weight: 650; color: var(--text-muted); margin-bottom: 2px; }
+  #agent-panel .ag-plan li.doing { color: var(--text-main); font-weight: 600; }
+  #agent-panel .ag-plan li.done { color: var(--text-main); text-decoration: line-through; text-decoration-color: var(--border); }
   #agent-panel .ag-ask { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); }
   #agent-panel .ag-ask .q { font-weight: 650; margin-bottom: 8px; }
   #agent-panel .ag-ask button { border: 0; border-radius: 999px; padding: 7px 14px; font: inherit; font-weight: 650; cursor: pointer; margin-right: 6px; }
@@ -25,6 +30,7 @@ _CSS = """
 _HTML = """
 <div id="agent-panel" role="status" aria-live="polite">
   <div class="ag-title" id="ag-title">Working on it\u2026</div>
+  <div class="ag-plan" id="ag-plan" hidden><b>Plan</b><ol id="ag-plan-steps"></ol></div>
   <ol id="ag-steps"></ol>
   <div class="ag-ask" id="ag-ask" hidden>
     <div class="q" id="ag-q"></div>
@@ -46,6 +52,21 @@ _HTML = """
       var n = list.children.length;
       document.getElementById('ag-title').textContent = state === 'asking' ? 'Waiting for your OK' : 'Step ' + (i + 1) + ' of ' + n;
     };
+    window.agentPlan = function (steps) {                // the agent's plan, as it changes (text only)
+      clearTimeout(hideTimer); panel().classList.add('show');
+      var box = document.getElementById('ag-plan'), list = document.getElementById('ag-plan-steps');
+      var PIC = {todo: '\u25CB', doing: '\u25D0', done: '\u2713'};
+      list.innerHTML = '';
+      (steps || []).forEach(function (s) {
+        var li = document.createElement('li'); li.className = s.status || 'todo';
+        li.innerHTML = '<span class="ic"></span><span class="tx"></span>';
+        li.querySelector('.ic').textContent = PIC[s.status] || PIC.todo; li.querySelector('.tx').textContent = s.title || '';
+        list.appendChild(li);
+      });
+      box.hidden = !(steps && steps.length);
+      var done = (steps || []).filter(function (s) { return s.status === 'done'; }).length;
+      if (steps && steps.length) document.getElementById('ag-title').textContent = 'Plan \u00b7 ' + done + ' of ' + steps.length + ' done';
+    };
     window.agentAsk = function (id, text) {
       askId = id; document.getElementById('ag-q').textContent = 'Gink wants to: ' + text;
       document.getElementById('ag-ask').hidden = false; panel().classList.add('show');
@@ -61,7 +82,8 @@ _HTML = """
       document.getElementById('ag-ask').hidden = true; askId = null;
       var n = document.getElementById('ag-steps').children.length;
       document.getElementById('ag-title').textContent = 'Finished \\u00b7 ' + n + (n === 1 ? ' step' : ' steps');
-      hideTimer = setTimeout(function () { panel().classList.remove('show'); document.getElementById('ag-steps').innerHTML = ''; }, 5000);
+      hideTimer = setTimeout(function () { panel().classList.remove('show'); document.getElementById('ag-steps').innerHTML = '';
+                                           document.getElementById('ag-plan-steps').innerHTML = ''; document.getElementById('ag-plan').hidden = true; }, 5000);
     };
   })();
 </script>

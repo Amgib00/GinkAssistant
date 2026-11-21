@@ -138,6 +138,8 @@ def test_runner_page_and_files_for_running(srv):
     assert "frame-ancestors http://testserver" in csp and "https://cdn.jsdelivr.net" in csp and "'wasm-unsafe-eval'" in csp
     assert "default-src 'none'" in csp and "form-action 'none'" in csp and "x-frame-options" not in page.headers
     assert "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/" in page.text                 # pinned, never "latest"
+    assert 'var PARENT = "http://testserver";' in page.text and "__ORIGIN__" not in page.text   # answers only the page that opened it
+    assert "e.origin !== PARENT" in page.text and ', "*")' not in page.text
     assert "http://testserver/test-copy/" in c.get("/genie/runner", params={"pyodide": "/test-copy/"}).text
     assert "evil.example" not in c.get("/genie/runner", params={"pyodide": "https://evil.example/"}).text   # only same-site paths
     pid = build(c, h)["project"]["id"]

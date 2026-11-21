@@ -6,10 +6,14 @@ description: Download Gink for Mac, Windows, Linux, Android and iPhone. Gink is 
   <div class="wrap">
     <h1>Download Gink</h1>
     <p>Gink is in beta. Get it for your computer, your phone, or use it in your browser.</p>
+    <div class="actions dl-best" id="dl-best" data-repo="{{REPO}}" data-web="{{API}}/app" hidden>
+      <a class="button" href="#apps">Download Gink</a>
+      <p class="dl-note"></p>
+    </div>
   </div>
 </section>
 
-<section style="padding-top:8px">
+<section id="apps">
   <div class="wrap">
     <div class="downloads">
       <div class="download">
@@ -29,7 +33,7 @@ description: Download Gink for Mac, Windows, Linux, Android and iPhone. Gink is 
       <div class="download">
         <h2>Web</h2>
         <p>Use Gink in any browser, with nothing to install.</p>
-        <span class="dl-buttons"><a class="button button-small" href="https://gink-server.onrender.com/app">Open Gink</a></span>
+        <span class="dl-buttons"><a class="button button-small" href="{{API}}/app">Open Gink</a></span>
       </div>
       <div class="download">
         <h2>Windows</h2>
@@ -54,7 +58,7 @@ description: Download Gink for Mac, Windows, Linux, Android and iPhone. Gink is 
   </div>
 </section>
 
-<section style="padding-top:8px">
+<section>
   <div class="wrap">
     <h2>Gink Genie</h2>
     <p class="muted">The coding workspace as its own app: describe an app, a website or a script and Genie builds the whole project with you. Signs in with your Gink account.</p>

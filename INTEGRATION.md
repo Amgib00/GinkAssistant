@@ -1340,7 +1340,7 @@ New services/live_info.py (all free, no API keys):
 
 ## 0.1.46: Hey Gink fixed everywhere + settings sync
 - ROOT CAUSE (Mac/iPhone): [..macOS.permissions] / [..iOS.permissions] (plural) are ignored by
-  Briefcase (0.3.15 and 0.4.4 read "permission"): no NSMicrophoneUsageDescription/entitlement, so
+  Briefcase (0.4.4 reads "permission"; 0.3.15 reads neither -- corrected in 0.1.160, see there): no NSMicrophoneUsageDescription/entitlement, so
   macOS gave Gink silence. Fixed + test (no ".permissions]" sections; mic declared everywhere).
 - Android: AndroidWakeListener stopped for good after 5 errors (busy/client are routine when
   restarting the recognizer) and never worked without an offline language (12/13 with
@@ -2574,3 +2574,151 @@ New services/live_info.py (all free, no API keys):
   web sign-in's "or" line spaces its ::before/::after with margins.
 - tests/test_plain_sidebar_compat.py (incl. Chromium: the rail's logo turns into the open button, the button moves
   to the sidebar's top right, icons 10px from their labels, and the forced fix matching the native pixels).
+
+## 0.1.158: the owner's logo; the rail's older look
+
+- branding.BRAND_TILE_BASE64 is now the owner's icon.png: the tile found as everything not connected to the image's
+  border through bright pixels (luminance > 120 -- the white page and the soft shadow), its edge pulled in 4px
+  (MinFilter 9) so no light fringe stays, centred on a transparent square of its own height (the tile is 3% taller
+  than wide: kept, not squashed), 96x96. Still one copy in the page (.gmark).
+- The rail ("change this to this": the 0.1.157 rail -> the 0.1.156 one) is back to: no background or border (on the
+  page), padding-top 54px, 40px buttons with radius 12px and 4px apart, color var(--text-muted) -> var(--text-main)
+  + var(--side-hover) on hover, the avatar 32px; the 0.1.156 icons (pencil "M12 20h8", the 7x7 grid, the picture
+  "M20.5 16l-5-5-8 8.5") and its order: new, search, tasks, genie, media. The logo stays on top (#tb-toggle).
+- The open sidebar's rows use the same three icons (their order and layout as in 0.1.157).
+
+## 0.1.159: memory you control, location metadata, privacy choices; the automatic agent; maps, voice messages, screen view; the premium website; the backlog
+
+- Memory: services/memory_rules.py (never kept: passwords, codes, card/account numbers, self-harm, abuse, crime;
+  what counts as sensitive; IMPORT_PROMPT). Server: POST /v1/memories/generate (the newest 16 messages, text only,
+  at most 5 lasting facts), POST /v1/memories/import and GET /v1/memories/import-prompt. `_memory_policy`: healthcare
+  workspaces and under-13s -> nothing by itself; teens -> never sensitive; otherwise the device's (or the synced)
+  "Include sensitive topics in memory". prefs memory_sensitive (default off) and location_metadata (default on) are
+  in prefs.SYNCED (account_preferences). The apps call main_screen.auto_generate_memories every few messages (never in
+  temporary chats).
+- Location metadata off -> clients send X-Gink-Location: off plus X-Gink-UTC-Offset only, and `_client_place_from`
+  returns {"utc_offset", "location": "off"}. Everywhere: the app (groq_worker.refresh_place_headers), bridge.js,
+  genie.html and console.html (placeHeaders), the CLI (--no-location, GINK_LOCATION=off) and the SDKs (location:
+  false / location=False).
+- Privacy choices: /info has `policies` (POLICY_PAGES on GINK_SITE -- Gink's own pages, never another company's),
+  `memory_help_url` and `location_help_url`; settings rows can carry `learn` (a "Learn more" link). New website pages:
+  responsible-disclosure, terms-commercial, dpa (sub-processors incl. the OpenStreetMap Foundation), usage-policy and
+  memory (#generate #sensitive #import); POLICIES_UPDATED = 2026-11-20. The DPA and commercial terms need a lawyer's
+  review (the governing law is still a placeholder).
+- The agent (services/actions/agent.py): MAX_ROUNDS 30; PLAN_SPEC (update_plan) is offered first and shown live
+  (on_plan -> window.agentPlan; console.html shows "plan" steps); when it stops with plan steps open it's told "Keep
+  going" with the open steps named, at most AUTO_CONTINUE (2) times. computer.py: find_app, running_apps,
+  open_in_editor (EDITORS, EDITOR_ALIASES), read/write/edit_text_file (home folder only, no hidden or system paths,
+  never an existing file overwritten by write, a backup in "<files_dir>/file backups" before every edit), quit_app on
+  Linux, screen_image. quick_parse only opens apps itself for <= 4 words without connectors ("and", "then", "in"...).
+  ASK_IN_CHAIN: lock_screen, sleep_computer, read_clipboard, take_screenshot (closing apps doesn't ask: apps still ask
+  to save). Server: X-Gink-Agent: 1 -> AGENT_TURN_CALLS (40) calls per turn, counted as a message per 10 calls
+  (`_count_call` cap); managed agents: AGENT_DEFAULT_STEPS 30, AGENT_MAX_STEPS 60, read_page (http/https only), the
+  plan in the interaction; clients default to 30 (CLI --max-steps, SDKs max_steps).
+- Maps: answers about places end with a ```map block (MAP_PROMPT; API callers ask with gink_maps), drawn by
+  ui/live_media.py with tiles through /tiles (OpenStreetMap, GEO_UA, TILE_CACHE_MAX 1500, 900 per IP per 10 minutes)
+  and places from /geo/search (Nominatim at 1 request a second, Open-Meteo's geocoder as the fallback). The page uses
+  window.GINK_ICONS as the server's address. API: GET /v1/geo/search.
+- Voice messages: holding the mic 380 ms records (MediaRecorder on the page, the apps' recorder in the apps); POST
+  /audio -> `_transcribe`; the text is the message and the answer is read aloud (voiceReply). AUDIO_FORMATS; API:
+  /v1/audio/transcriptions and /v1/audio/speech (`_speak`). Genie: tap to record (#gvoice).
+- Screen view: Live with getDisplayMedia (browsers) or liveScreenFrame (the apps; macOS needs Screen Recording);
+  GINK_SCREEN_RE opens it from "look at my screen". Any image needs Gink Pro (403 pro_required).
+- Web app headers: img-src 'self' data: blob: https: (map tiles), media-src 'self' data: blob:, Permissions-Policy
+  microphone=(self), camera=(self), display-capture=(self).
+- OpenAPI: `_openapi_more` adds the schemas and operations of every /v1 route (`_OPENAPI_SCHEMAS`, `_OPENAPI_OPS`).
+- SDKs and CLI gink-ai 0.3.14 (Python and JS move together): maps(), geo, audio, memories generate/import, batches,
+  the location option; CLI map, say, transcribe, screen, memories prompt|import|generate, --no-location. index.d.ts:
+  chat options include gink_maps.
+- Website (tools/build_website.py): a premium redesign. Two grounds from the product -- the icon's night (#151D23) for
+  the header, page heads, hero, developers band and footer, and the app's light theme (theme.py: white, #F6F7F3,
+  #3F8212) for reading, with dark mode. One family, Lexend (SIL OFL), self-hosted in website/assets/fonts, so the site
+  still requests nothing from anyone else (privacy.html says so). The hero's window is the real chat (voice message
+  -> map -> reminder) in one load sequence whose resting state is the final one (reduced motion: no animation, same
+  picture); it sits low and crosses into the next section by --overlap. New: developers.html, device-aware download
+  button (site.js), code tabs, blog posts for 0.1.159, absolute og:image/canonical (SITE_URL), og-image.png rendered
+  from the hero. Placeholders: {{SNOWFLAKE}}, {{FLAKE}}, {{REPO}}, {{API}}, {{YEAR}}. Checked with axe-core (WCAG 2.1
+  AA, light and dark) and at 390-1440px.
+- Backlog: GINK_LANGUAGES_DIR for the dataset scripts and masked keys that show no characters; test_grow_dataset is
+  hermetic; runner.html checks the parent's origin and paths; auth.html only follows same-origin next paths; Genie
+  opens only http/https outside; console.html show() only for its own views; clearer SMTP and sign-in messages;
+  token-exchange logging; `_ACTIVITY_KEY` is an HMAC key; every workflow has `permissions: contents: read`; tests.yml
+  adds a browser job and dependency review; dependabot for pip (/deploy, /cli) and docker; cryptography >= 50 (Intel
+  Macs < 49); the Docker image runs as user gink through deploy/start.py, with a HEALTHCHECK; four openspec changes
+  archived (fix-official-sources, update-genie-review, update-wake-media-models, add-scheduled-agents).
+
+## 0.1.160: real maps; Gink knows its device and checks it; question cards, Markdown, Catalina microphone; Genie's code blocks
+
+- Real maps (ui/live_media.py): MapLibre GL JS 5.24.1 (UMD build, BSD-3-Clause) vendored in
+  services/web_app/vendor (README there says how to update; the source-map line removed) and served by GET
+  /vendor/{name} (VENDOR_FILES only, gzip, a week's cache, ACAO *). The page loads it only when a map appears
+  (gmLib, MAPLIBRE_VERSION, AMD-safe), draws with the style GET /vmap/style.json?theme&lang (services/map_style.py:
+  PALETTES light/dark, OpenMapTiles layers, POI groups, local names for streets/stations/places, the person's language
+  for towns and countries; no sprite -- "gink-shield" and "gink-poi-<group>" are drawn by the page on
+  styleimagemissing) whose tiles and letters point back at the address the page used (`_request_base`, not
+  GINK_PUBLIC_URL): GET /vmap/t/{z}/{x}/{y}.pbf (OpenFreeMap's TileJSON, VTILES_URL, its weekly "tiles" template
+  checked every 6 h, or GINK_VECTOR_TILES; an LRU of VTILE_CACHE_BYTES / GINK_VTILE_CACHE_MB, 48 MB; 204 for open
+  sea; 2,400 per address per 10 minutes, _VMAP_ASKS) and GET /vmap/fonts/{fontstack}/{range}.pbf (FONT_NAMES only).
+  Web app CSP: worker-src / child-src 'self' blob: (MapLibre's worker). The style and the server code are tested with
+  MapLibre's own validator rules (no zoom curve inside another expression).
+- The map card: numbered HTML markers in the place's kind colour (GM_KIND; the AI's "category", or GM_GUESS on the
+  name/note without accents) with their names beside them (declutter: right, left or hidden; the chosen one first),
+  an invisible "gink-places" symbol layer so the map's own names step aside, the title chip, zoom buttons, the bigger
+  map (moved into .gmap-overlay with a .gmap-hold placeholder; Esc closes), cooperativeGestures (⌘/Ctrl + scroll,
+  two fingers on touch), a one-line credits strip (© OpenStreetMap, © OpenMapTiles, OpenFreeMap), cards under the
+  map (photo, kind, note, Directions: Apple Maps on Apple devices, Google Maps elsewhere). At most 4 live WebGL maps
+  (GM_LIVE; IntersectionObserver wakes them, the farthest sleeps with its camera saved). Light/dark follows
+  body.theme-dark (setStyle diff:false after removing the drawn images). Fallback to the picture-square gmMap (same
+  cards) when gmCanVector() says no (no WebGL, Object.hasOwn / Array.at missing, deviceMemory < 2,
+  window.ginkVectorMaps = false) or the library/style fails (GM_VECTOR.broken for load / no maplibre / style 404;
+  window.ginkMapProblem says why), or 6 tile errors without one success.
+- Place photos: GET /place/photo?name&lat&lon (public, 200 per address per 10 minutes) -> Wikipedia's geosearch
+  within 1 km (`_photo_pick`: words in common without accents and stop words, then the nearest; only
+  upload.wikimedia.org thumbnails) -> {"image": "<base>/place/img/<key>", "title", "page", "credit"}; the key is the
+  thumbnail's path in base64url (_THUMB_PATH), so pictures survive restarts and nothing else can be fetched; images
+  checked (JPEG/PNG/WebP, 2 MB), PHOTO_CACHE_BYTES 24 MB, CSP default-src 'none'. API: GET /v1/places/photo
+  (object place_photo; 404 not_found) in _OPENAPI_OPS. SDKs gink-ai 0.3.15: maps() keeps "category",
+  Client.place_photo / gink.placePhoto (None / null on 404); CLI: gink map PLACE --photos.
+- MAP_PROMPT (server, groq_worker, bridge.js -- equal, tested) asks for "category" (food, cafe, bar, shop, museum,
+  sight, park, beach, hotel, transport, health, school, worship, other). While an answer streams, streamView() hides
+  ```map / ```ask blocks (setPlainText).
+- Deploy: deploy/Dockerfile copies map_style.py and about_gink.py. The DPA lists OpenFreeMap and Wikimedia
+  (place photos) as sub-processors (needs the lawyer's review with the rest).
+- Device awareness: services/device_info.py (details(): system_profiler / sysctl, PowerShell CIM, os-release + DMI,
+  Android Build, UIDevice; warm_up() at start) -> prompt_note() in groq_worker._with_memory and the agent's
+  _system_prompt; the web app's bridge.js deviceNote() describes the browser. Device check: services/actions/health.py
+  check_device(updates) (read-only: system and support status, uptime, load and memory, storage, battery health and
+  cycles, busiest apps, FileVault/firewall/Gatekeeper or Defender/firewall, softwareupdate -l when asked) as the
+  device_check tool; quick_parse routes "do a check (now)", "check my computer", "health check"; format_report() is
+  the answer without the AI.
+- Gink's own links: services/about_gink.py ABOUT_GINK (website, downloads, GitHub, developers, support) in the apps'
+  prompts, bridge.js (equal, tested) and Genie's prompt (_about_gink_note).
+- Question cards: the answer is sent as "My answers:\n• Q → A" (the system prompts say what it is), and
+  addUserMessage closes any open card with the answers in the next message (closeQuestionCards / parseAnswers, old
+  "Q A" lines too), so reopening a chat never shows an answered card blank.
+- Markdown (services/markdown_render.py): _block_breaks adds the blank lines Python-Markdown needs before lists,
+  tables and quotes and after tables; _nest_lists indents 2-3-space sub-lists to 4. Code blocks: Gink's palettes
+  (CODE_TOKEN_CSS), code_css_for_media() for pages that follow the system's dark mode; Genie formats its answers
+  through POST /render (batched; the HTML isn't saved) with copyCodeBlock / downloadCodeBlock, and GET /genie
+  injects the code colours.
+- History: save_message keeps a question sent twice in a row once.
+- Catalina microphone: Briefcase 0.3.15 reads neither [..macOS.permission] nor [..macOS.info] (checked in its source
+  and template), so the Catalina build had no NSMicrophoneUsageDescription and macOS gave silence. tools/
+  mac_permissions.py writes both tables into Info.plist (tomllib, tomli, or its own reader on Python 3.10) and can
+  sign again (--sign); macos-catalina.yml runs it before packaging. An installed app: python3
+  tools/mac_permissions.py /Applications/Gink.app --sign, then tccutil reset Microphone com.amgib.ginkassistant.
+- Website: the hero's map is a real map (website/assets/hero-map.png, rendered with MapLibre and Gink's style from
+  OpenStreetMap data; pins are HTML so they stay legible on phones); og-image.png re-rendered; features, developers
+  (category, place photos) and blog updated.
+- OpenSpec: new spec maps; agent-mode gained "Knowing the device" and "Checking the device itself"
+  (changes/archive/2026-11-20-add-real-maps).
+- Tests: tests/test_real_maps.py, tests/test_device_awareness_fixes.py; tests/test_maps_voice_screen.py checks the
+  picture-square fallback.
+- Update packages (re-issued 0.1.160): the 0.1.159 and first 0.1.160 GinkAssistant_full.zip had folder entries with
+  no folder permissions (a bare ZipInfo is -rw-------), so unzip created every folder NEW on the owner's Mac as
+  drw------- -- nothing inside could be unzipped ("checkdir error: cannot create ... Permission denied"), built
+  (`gbrief update macOS`: shutil.Error ... [Errno 13] on web_app/vendor/maplibre-gl.js) or published. Folder entries
+  are now drwxr-xr-x with the MS-DOS folder flag, checked when the package is made. One-time repair on the Mac,
+  before unzipping: `for i in 1 2 3; do find . -type d ! -perm -u+x -exec chmod 755 {} \; 2>/dev/null; done`.
+  tools/publish_to_github.sh now opens any such folder itself (tests/test_release_tooling.py locks two and publishes).
+

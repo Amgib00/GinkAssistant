@@ -19,6 +19,9 @@ on:
   workflow_dispatch:
   workflow_call:          # for release.yml, once this edition is proven
 
+permissions:
+  contents: read          # build and test only: nothing here writes to the repository
+
 jobs:
   catalina:
     name: Mac app (Intel, macOS 10.15+)
@@ -112,6 +115,11 @@ jobs:
           briefcase create macOS app --no-input
           briefcase build macOS app --no-input
           ls "$APP/Contents"
+
+      - name: Privacy texts in Info.plist -- Briefcase 0.3.15 ignores the permission table, and without them the microphone gives silence
+        run: |
+          python tools/mac_permissions.py "$APP"
+          /usr/libexec/PlistBuddy -c "Print :NSMicrophoneUsageDescription" "$APP/Contents/Info.plist"
 
       - name: Intel only (thin every universal file)
         run: |

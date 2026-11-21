@@ -20,7 +20,7 @@ def test_live_camera_in_the_page():
     assert "function openLive(" in html and "ginkEmit('live_ask'" in html and "t.stop()" in html
     assert "cameraFallback()" in html and "window.liveDone" in html and "setTimeout(window.liveDone, 0)" in html
     assert "LIVE.hands && LIVE.listen" in html                       # hands-free: listens again after each answer
-    assert "|| 'What\u2019s this?'" in html                           # nothing typed: a short question, the server does the rest
+    assert "|| (screen ? 'What\u2019s on my screen?' : 'What\u2019s this?')" in html   # nothing typed: a short question
 
 
 def test_live_camera_apps_and_web_app():

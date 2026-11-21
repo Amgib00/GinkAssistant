@@ -67,9 +67,9 @@ def real_key(value: str) -> str:
     return "" if placeholder else v
 
 def masked(key: str) -> str:
-    """Enough to tell keys apart, never enough to use: "gsk_…9f2c (56 characters)"."""
-    k = key or ""
-    return f"{k[:4]}\u2026{k[-4:]} ({len(k)} characters)" if len(k) > 10 else f"({len(k)} characters)"
+    """What the key looks like, with none of its characters: "56 characters, a Groq key"."""
+    n, groq = len(key or ""), (key or "").startswith("gsk_")
+    return f"{n} characters" + (", a Groq key" if groq else ", not a Groq key (they start with gsk_)")
 
 
 def provider_message(exc) -> str:
@@ -250,7 +250,7 @@ def main(argv=None, ask_fn=ask):
         key, source = real_key(os.environ.get("GROQ_API_KEY", "")), "GROQ_API_KEY in this Terminal"
     if not key:
         key, source = getpass.getpass("Groq API key (hidden): ").strip(), "what you typed"
-    print(f"Using the key from {source}: {masked(key)}")
+    print(f"Using the key from {source} ({masked(key)}).")
     rows = [json.loads(l) for l in open(a.train, encoding="utf-8") if l.strip()]
     todo, seen = [], set()
     for r in rows:

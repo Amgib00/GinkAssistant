@@ -53,8 +53,13 @@ def test_run_writes_reviewable_rows_and_resumes(tmp_path):
     assert pp.approved_map(str(out)) == {"Wake me up at 6:30 am": ["Get me up at 6:30 am please"]}
 
 
-def _generate(env, out_dir):
+def _generate(env, out_dir, tmp_path=None):
     e = dict(os.environ, **env)
+    if tmp_path is not None:            # only this test's files: not the reviewed CSVs a real checkout holds
+        empty = tmp_path / "no-languages"
+        empty.mkdir(exist_ok=True)
+        e.setdefault("GINK_TRANSLATIONS", str(tmp_path / "no-translations.csv"))
+        e.setdefault("GINK_LANGUAGES_DIR", str(empty))
     subprocess.run([sys.executable, os.path.join(DS, "generate.py")], check=True, capture_output=True, env=e)
     return {n: [json.loads(l) for l in open(os.path.join(out_dir, n), encoding="utf-8")] for n in ("train.jsonl", "eval.jsonl")}
 
@@ -62,7 +67,7 @@ def _generate(env, out_dir):
 def test_generator_uses_rewrites_for_training_only(tmp_path):
     out = os.path.join(DS, "out")
     try:
-        plain = _generate({"GINK_PARAPHRASES": str(tmp_path / "none.csv"), "GINK_GENERAL_CSV": str(tmp_path / "none2.csv")}, out)
+        plain = _generate({"GINK_PARAPHRASES": str(tmp_path / "none.csv"), "GINK_GENERAL_CSV": str(tmp_path / "none2.csv")}, out, tmp_path)
         train_user = next(m["content"] for r in plain["train.jsonl"] if r["category"] == "action"
                           for m in r["messages"] if m["role"] == "user")
         eval_user = next(m["content"] for r in plain["eval.jsonl"] if r["category"] == "action"
@@ -78,7 +83,7 @@ def test_generator_uses_rewrites_for_training_only(tmp_path):
             w = csv.writer(f); w.writerow(["language", "category", "user_message", "gink_reply", "author", "reviewer", "approved"])
             w.writerow(["en", "general", "Q-APPROVED", "A-APPROVED", "a", "b", "yes"])
             w.writerow(["fr", "safety", "Q-NOT-YET", "A", "a", "", "no"])
-        grown = _generate({"GINK_PARAPHRASES": str(p), "GINK_GENERAL_CSV": str(g)}, out)
+        grown = _generate({"GINK_PARAPHRASES": str(p), "GINK_GENERAL_CSV": str(g)}, out, tmp_path)
         users = lambda rows: [m["content"] for r in rows for m in r["messages"] if m["role"] == "user"]
         added = [r for r in grown["eval.jsonl"] if r not in plain["eval.jsonl"]]
         assert all(r in grown["eval.jsonl"] for r in plain["eval.jsonl"])             # the held-out set doesn't move...
@@ -139,7 +144,7 @@ def test_refused_key_is_explained(tmp_path, capsys):
     pp.main(["--train", str(train), "--csv", str(tmp_path / "p.csv"), "--key", "gsk_wrong_but_long_enough_1234"], ask_fn=refused)
     out = capsys.readouterr().out
     assert "Groq refused the key (Invalid API Key)" in out and "--ask-key" in out
-    assert "gsk_\u20261234 (30 characters)" in out and "wrong_but" not in out          # masked, never the whole key
+    assert "30 characters, a Groq key" in out and "wrong_but" not in out and "1234" not in out   # none of the key's characters
     rows = list(csv.DictReader(open(tmp_path / "p.csv", encoding="utf-8")))
     assert rows == []                                                           # nothing marked done: a re-run retries
 
@@ -152,7 +157,7 @@ def test_ask_key_ignores_the_terminals_key(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(pp.getpass, "getpass", lambda prompt: typed.append(prompt) or "gsk_new_working_key_999999")
     pp.main(["--train", str(train), "--csv", str(tmp_path / "p.csv"), "--ask-key"], ask_fn=lambda *a: [])
     out = capsys.readouterr().out
-    assert typed and "what you typed" in out and "9999" in out
+    assert typed and "what you typed" in out and "9999" not in out                  # the key itself is never printed
     pp.main(["--train", str(train), "--csv", str(tmp_path / "p.csv")], ask_fn=lambda *a: [])
     assert "GROQ_API_KEY in this Terminal" in capsys.readouterr().out
 

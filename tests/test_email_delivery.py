@@ -51,7 +51,8 @@ def test_gmail_blocked_on_render_free_plan(monkeypatch, capsys):
     def blocked(*a, **k): raise OSError(101, "Network is unreachable")
     monkeypatch.setattr(smtplib, "SMTP", blocked)
     reason = b._send_email("ada@example.com", "s", "t")
-    assert "Network is unreachable" in reason and "set BREVO_API_KEY" in reason
+    assert "OSError" in reason and "set BREVO_API_KEY" in reason
+    assert "Network is unreachable" not in reason             # only the kind of failure, never the server's own words
     import pytest
     from fastapi import HTTPException
     with pytest.raises(HTTPException):                                    # a clear message instead of a silent failure

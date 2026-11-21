@@ -70,7 +70,7 @@ def test_apps_sdks_and_cli_send_it(monkeypatch):
     monkeypatch.setenv("TZ", "Australia/Sydney")
     assert sdk.place_headers()["X-Gink-TZ"] == "Australia/Sydney"
     js = open(os.path.join(ROOT, "sdk", "js", "index.js"), encoding="utf-8").read()
-    assert "...placeHeaders()" in js
+    assert "...placeHeaders(this.location)" in js                       # location: false sends only the UTC offset
     for page in ("webapp/bridge.js", "src/ginkassistant/services/web_app/genie.html", "src/ginkassistant/services/web_app/console.html"):
         assert 'h["X-Gink-TZ"] = tz' in open(os.path.join(ROOT, page), encoding="utf-8").read(), page
 

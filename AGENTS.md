@@ -16,7 +16,7 @@ Validate with `npx @fission-ai/openspec@1.14.3 validate --all --strict` (GitHub 
 - App: `src/ginkassistant` (Toga UI in `ui/`, logic in `services/`); server:
   `services/backend_server.py` (FastAPI); web app: `webapp/` (built by `tools/build_web_app.py`);
   CLI: `cli/`; website: `website/` (built by `tools/build_website.py`).
-- Tests: `python -m pytest tests` -- must pass on Python 3.12 and 3.10. UI changes also get a
+- Tests: `python -m pytest tests` -- must pass on Python 3.11 and 3.13 (the versions tests.yml runs). UI changes also get a
   real-browser check (Playwright), Android changes a check on a 32-bit phone.
 - Publishing: `bash tools/publish_to_github.sh` (only files in `tools/MANIFEST.txt`, secret scan).
 - Read `INTEGRATION.md` for the history of decisions, and `CHANGELOG.md` for what users got.

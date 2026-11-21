@@ -9,8 +9,22 @@ import httpx
 DEFAULT_BASE = "https://gink-server.onrender.com/v1"
 
 
-def place_headers() -> dict:
-    """The computer's time zone and region (no location lookup): answers fit the user's own country."""
+def utc_offset() -> str:
+    """The clock's offset from UTC, like "+01:00" (no time zone name, no region)."""
+    from datetime import datetime
+    off = datetime.now().astimezone().utcoffset()
+    mins = int(off.total_seconds() // 60) if off else 0
+    return f"{'+' if mins >= 0 else '-'}{abs(mins) // 60:02d}:{abs(mins) % 60:02d}"
+
+
+def place_headers(location: Optional[bool] = None) -> dict:
+    """The computer's time zone and region (no location lookup): answers fit the user's own country.
+    location=False (or GINK_LOCATION=off): like Settings > Privacy > "Location metadata" off -- only the clock's UTC
+    offset is sent, so times stay right but no city or region is used."""
+    if location is None:
+        location = os.environ.get("GINK_LOCATION", "").strip().lower() not in ("off", "0", "false", "no")
+    if not location:
+        return {"X-Gink-Location": "off", "X-Gink-UTC-Offset": utc_offset()}
     import locale
     h, tz = {}, os.environ.get("TZ", "").lstrip(":")
     if "/" not in tz:
@@ -63,6 +77,62 @@ def sources(text: str, base_url: str = DEFAULT_BASE) -> list:
     return sorted(out, key=lambda s: 0 if s["official"] else 1)
 
 
+def maps(text: str) -> list:
+    """The maps in an answer (```map blocks: ask with gink_maps=True): [{"title", "places": [{"name", "query", "lat",
+    "lon", "category", "note", "map_url"}]}] -- category is what kind of place (food, cafe, bar, shop, museum, sight,
+    park, beach, hotel, transport, health, school, worship, other); map_url opens it on OpenStreetMap when its
+    coordinates are known."""
+    import json as _json
+    import re
+    out = []
+    for block in re.findall(r"```map\s*\n(.*?)```", text or "", re.S):
+        try:
+            data = _json.loads(block)
+        except ValueError:
+            continue
+        places = []
+        for p in (data.get("places") or data.get("markers") or [])[:10] if isinstance(data, dict) else []:
+            if not isinstance(p, dict) or not (p.get("name") or p.get("query")):
+                continue
+            place = {k: p.get(k) for k in ("name", "query", "lat", "lon", "category", "note") if p.get(k) not in (None, "")}
+            if isinstance(p.get("lat"), (int, float)) and isinstance(p.get("lon"), (int, float)):
+                place["map_url"] = f"https://www.openstreetmap.org/?mlat={p['lat']}&mlon={p['lon']}#map=16/{p['lat']}/{p['lon']}"
+            places.append(place)
+        if places:
+            out.append({"title": str(data.get("title") or ""), "places": places})
+    return out
+
+
+def screen_image() -> bytes:
+    """A picture of this computer's screen (PNG bytes) for see(): macOS screencapture, Windows/Linux Pillow's
+    ImageGrab, or a Linux screenshot tool. Nothing is kept."""
+    import shutil
+    import subprocess
+    import sys as _sys
+    import tempfile
+    fd, path = tempfile.mkstemp(suffix=".png", prefix="gink-screen-")
+    os.close(fd)
+    try:
+        cmds = [["screencapture", "-x", "-C", path]] if _sys.platform == "darwin" else \
+            [["gnome-screenshot", "-f", path], ["grim", path], ["import", "-window", "root", path]]
+        for cmd in cmds:
+            if shutil.which(cmd[0]) and subprocess.run(cmd, capture_output=True, timeout=20).returncode == 0 and os.path.getsize(path):
+                return open(path, "rb").read()
+        try:
+            from PIL import ImageGrab
+            ImageGrab.grab().save(path)
+            return open(path, "rb").read()
+        except Exception as exc:
+            raise GinkAPIError("Couldn't take a picture of the screen here" + (
+                " (allow Screen Recording for your terminal in System Settings > Privacy & Security)" if _sys.platform == "darwin"
+                else " (install Pillow: pip install pillow)") + f": {type(exc).__name__}", 0, "no_screen")
+    finally:
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+
+
 class GinkAPIError(Exception):
     """The API said no; .status and .code say why (e.g. 429 daily_limit, 401 invalid_api_key)."""
 
@@ -100,7 +170,9 @@ def _saved_key() -> str:
 
 class Client:
     def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None, timeout: float = 600,
-                 http: Optional[httpx.Client] = None):
+                 http: Optional[httpx.Client] = None, location: Optional[bool] = None):
+        """location=False: send no location metadata (city/region), only the clock's UTC offset (or GINK_LOCATION=off)."""
+        self.location = location
         self.api_key = api_key or os.environ.get("GINK_API_KEY") or _saved_key()
         if not self.api_key:
             raise GinkAPIError("No API key: pass api_key=, set GINK_API_KEY, or run `gink login`.", 401, "invalid_api_key")
@@ -112,10 +184,12 @@ class Client:
         self.memories = _Memories(self)
         self.workspace = _Workspace(self)
         self.webhooks = _Webhooks(self)
+        self.audio = _Audio(self)
+        self.batches = _Batches(self)
 
     # ---- plumbing
     def _headers(self) -> dict:
-        return dict({"Authorization": f"Bearer {self.api_key}", "User-Agent": "gink-python"}, **place_headers())
+        return dict({"Authorization": f"Bearer {self.api_key}", "User-Agent": "gink-python"}, **place_headers(self.location))
 
     def request(self, method: str, path: str, **kw) -> httpx.Response:
         try:
@@ -160,6 +234,29 @@ class Client:
     def sources(self, text: str) -> list:
         """The sources under an answer's "Sources", each with its site's real logo (see gink.sources)."""
         return sources(text, self.base_url)
+
+    def maps(self, text: str) -> list:
+        """The maps in an answer (ask with gink_maps=True): see gink.maps."""
+        return maps(text)
+
+    def geo(self, query: str, limit: int = 5) -> list:
+        """Places by name or address (OpenStreetMap): [{"name", "display", "lat", "lon", "type", "map_url"}]."""
+        r = self.request("GET", "/geo/search", params={"q": query, "limit": int(limit)})
+        return [_Obj(p) for p in r.json().get("data", [])]
+
+    def place_photo(self, name: str, lat: float, lon: float):
+        """A picture of a place, like the ones on Gink's map cards (Wikipedia's, for the article about it):
+        {"image", "title", "page", "credit"} -- or None when there's no picture of it."""
+        try:
+            return _Obj(self.request("GET", "/places/photo", params={"name": name, "lat": lat, "lon": lon}).json())
+        except GinkAPIError as exc:
+            if exc.status == 404:
+                return None
+            raise
+
+    def see_screen(self, question: str = "", model: str = "", **extra) -> str:
+        """Like Live screen view: an answer about what's on this computer's screen right now (Gink Pro)."""
+        return self.see(screen_image(), question or "What's on my screen?", model=model, **extra)
 
     def see(self, photo, question: str = "", model: str = "", **extra) -> str:
         """An answer about a photo -- like the Live camera: Gink works out what it needs (reads text, finds what's
@@ -210,7 +307,7 @@ class _Interactions:
         self.c = client
 
     def create(self, input: str, agent: str = "gink-agent", environment: str = "remote", previous_interaction_id: str = "",
-               background: bool = False, stream: bool = False, max_steps: int = 15, tools: Optional[list] = None,
+               background: bool = False, stream: bool = False, max_steps: int = 30, tools: Optional[list] = None,
                webhook_url: str = "", notify_email: bool = False):
         """Run the managed agent. Returns an Interaction -- or, with stream=True, an iterator of live Events."""
         body = {"agent": agent, "input": input, "max_steps": max_steps, "background": bool(background), "stream": bool(stream)}
@@ -385,9 +482,97 @@ class _Memories:
     def forget(self, memory_id: str) -> None:
         self.c.request("DELETE", f"/memories/{memory_id}")
 
-    def suggest(self, text: str):
-        """A lasting fact in `text` worth offering to remember ("I live in Nairobi"), or None. Saves nothing."""
-        return self.c.request("POST", "/memories/suggest", json={"text": text}).json().get("fact")
+    def suggest(self, text: str, sensitive: bool = False):
+        """A lasting fact in `text` worth offering to remember ("I live in Nairobi"), or None. Saves nothing.
+        sensitive=True also considers health, religion and other sensitive topics (never for teens' accounts)."""
+        return self.c.request("POST", "/memories/suggest", json={"text": text, "sensitive": bool(sensitive)}).json().get("fact")
+
+    def generate(self, messages: list, save: bool = True, sensitive: bool = False) -> list:
+        """"Generate memory from chats": the lasting facts in a conversation (a messages list, like chat's), picked by
+        Gink's AI -- at most 5, saved to memory unless save=False. Returns the saved memories (or, with save=False,
+        [{"text"}])."""
+        body = {"messages": list(messages), "save": bool(save), "sensitive": bool(sensitive)}
+        return [_Obj(m) for m in self.c.request("POST", "/memories/generate", json=body).json().get("data", [])]
+
+    def import_prompt(self) -> str:
+        """What to ask your other AI assistant so it lists what it remembers about you (then use import_text)."""
+        return self.c.request("GET", "/memories/import-prompt").json().get("prompt", "")
+
+    def import_text(self, text: str, sensitive: bool = False) -> _Obj:
+        """"Import memory from other AI providers": another assistant's answer to import_prompt(), one fact per line,
+        added to memory. {"data": [saved memories], "skipped", "skipped_sensitive", "memory_full"}."""
+        return _Obj(self.c.request("POST", "/memories/import", json={"text": str(text), "sensitive": bool(sensitive)}).json())
+
+
+class _Batches:
+    """Many chat requests at once, answered in the background (up to 100):
+    batch = client.batches.create(["Summarise ...", "Translate ..."]); client.batches.wait(batch.id); client.batches.results(batch.id)"""
+
+    def __init__(self, client: Client):
+        self.c = client
+
+    def create(self, requests: list, name: str = "", model: str = "") -> _Obj:
+        """requests: prompts (strings), message lists, or {"custom_id", "body": {chat request}} items."""
+        items = []
+        for i, r in enumerate(requests):
+            if isinstance(r, dict) and "body" in r:
+                items.append({"custom_id": str(r.get("custom_id") or f"request-{i + 1}"), "body": r["body"]})
+                continue
+            messages = r if isinstance(r, list) else [{"role": "user", "content": str(r)}]
+            items.append({"custom_id": f"request-{i + 1}", "body": dict({"messages": messages}, **({"model": model} if model else {}))})
+        body = {"requests": items}
+        if name:
+            body["name"] = name
+        return _Obj(self.c.request("POST", "/batches", json=body).json())
+
+    def get(self, batch_id: str) -> _Obj:
+        return _Obj(self.c.request("GET", f"/batches/{batch_id}").json())
+
+    def list(self) -> list:
+        return [_Obj(b) for b in self.c.request("GET", "/batches").json().get("data", [])]
+
+    def cancel(self, batch_id: str) -> _Obj:
+        return _Obj(self.c.request("POST", f"/batches/{batch_id}/cancel").json())
+
+    def results(self, batch_id: str) -> list:
+        """[{"custom_id", "response" | "error"}], one per request (JSON Lines on the server)."""
+        import json as _json
+        text = self.c.request("GET", f"/batches/{batch_id}/results").text
+        return [_Obj(_json.loads(line)) for line in text.splitlines() if line.strip()]
+
+    def wait(self, batch_id: str, every: float = 2.0, timeout: float = 3600) -> _Obj:
+        start = time.time()
+        while True:
+            b = self.get(batch_id)
+            if b["status"] in ("completed", "failed", "cancelled", "expired") or time.time() - start > timeout:
+                return b
+            time.sleep(every)
+
+
+class _Audio:
+    """Voice messages in your own app: client.audio.transcribe("note.m4a") and client.audio.speech("Hello")."""
+
+    def __init__(self, client: Client):
+        self.c = client
+
+    def transcribe(self, audio, filename: str = "", language: str = "") -> str:
+        """Speech to text in any language. audio: a file path or bytes (WAV, WebM, OGG, M4A/MP4, MP3, FLAC)."""
+        if isinstance(audio, (bytes, bytearray)):
+            raw, name = bytes(audio), filename or "speech.wav"
+        else:
+            raw, name = open(str(audio), "rb").read(), filename or os.path.basename(str(audio))
+        data = {"language": language} if language else {}
+        r = self.c.request("POST", "/audio/transcriptions", files={"file": (name, raw)}, data=data)
+        return r.json().get("text", "")
+
+    def speech(self, text: str, voice: str = "", speed: str = "") -> bytes:
+        """Gink's natural voice: WAV bytes (voice: e.g. "Female (Jenny)"; speed: "slow" or "fast")."""
+        body = {"input": text}
+        if voice:
+            body["voice"] = voice
+        if speed:
+            body["speed"] = speed
+        return self.c.request("POST", "/audio/speech", json=body).content
 
 
 class _Workspace:

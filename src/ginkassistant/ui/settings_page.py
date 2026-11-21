@@ -49,6 +49,16 @@ ICONS = {
 }
 
 
+# Settings > Privacy > Privacy choices when the server doesn't list its own (the same as backend_server.POLICY_PAGES)
+GINK_SITE = "https://amgib00.github.io/GinkAssistant/"
+POLICY_PAGES = (("privacy", "Privacy policy", "privacy.html"),
+                ("disclosure", "Responsible disclosure policy", "responsible-disclosure.html"),
+                ("terms_commercial", "Terms of service: Commercial", "terms-commercial.html"),
+                ("terms_consumer", "Terms of service: Consumer", "terms.html"),
+                ("dpa", "Data Processing Agreement", "dpa.html"),
+                ("usage", "Usage Policy", "usage-policy.html"))
+
+
 def icon(name: str, size: int = 18) -> str:
     return (f'<svg viewBox="0 0 24 24" width="{size}" height="{size}" fill="none" stroke="currentColor" '
             f'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">{ICONS[name]}</svg>')
@@ -160,6 +170,12 @@ SETTINGS_CSS = r"""
   .s-btn.danger-ghost { color: var(--danger); }
   .s-btn:disabled { opacity: 0.5; cursor: default; }
   .s-note { color: var(--text-muted); font-size: 13px; line-height: 1.5; padding: 10px 0; }
+  .s-link { border: none; background: none; padding: 0; margin: 0; font: inherit; color: var(--text-main); text-decoration: underline;
+            text-underline-offset: 2px; cursor: pointer; }
+  .s-link:hover { color: var(--accent); }
+  .s-prompt { white-space: pre-wrap; word-wrap: break-word; margin: 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px;
+              background: var(--elevated); color: var(--text-main); font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+              max-height: 220px; overflow: auto; -webkit-user-select: text; user-select: text; }
   .s-list { width: 100%; }
   .s-item { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
   .s-item:last-child { border-bottom: none; }
@@ -264,7 +280,17 @@ SETTINGS_JS = r"""
   var LANGS = [['auto','Same as my message'],['en','English'],['fr','Fran\u00e7ais'],['wo','Wolof (experimental)'],
                ['kri','Krio (experimental)'],['ar','\u0627\u0644\u0639\u0631\u0628\u064a\u0629'],['pt','Portugu\u00eas'],['es','Espa\u00f1ol']];
 
-  // Each panel: sections of rows. Row types: seg, select, toggle, input, button, info, html.
+  // Settings > Memory > "Import memory from other AI providers": what to ask the other assistant (memory_rules.IMPORT_PROMPT)
+  var MEM_IMPORT_PROMPT = __MEM_IMPORT_PROMPT__;
+  var GINK_SITE = __GINK_SITE__;
+  var DEFAULT_POLICIES = __POLICY_PAGES__;            // the same list as the server's POLICY_PAGES (a test keeps them equal)
+  function POLICIES() {                                // Settings > Privacy > Privacy choices: Gink's own pages
+    var mine = (S.info.policies || []).filter(function (p) { return p && p.url && p.label; });
+    return mine.length ? mine : DEFAULT_POLICIES.map(function (p) { return {id: p[0], label: p[1], url: GINK_SITE + p[2]}; });
+  }
+  function MEM_HELP(part) { return (S.info.memory_help_url || GINK_SITE + 'memory.html') + '#' + part; }
+
+  // Each panel: sections of rows. Row types: seg, select, toggle, input, button, info, html, prompt.
   function PANELS() {
     var v = S.values, info = S.info, L = S.lists;
     var pro = info.plan === 'pro';
@@ -364,6 +390,8 @@ SETTINGS_JS = r"""
           {type: 'button', label: 'Delete People data', desc: 'Every face group, name and photo People kept on this device.', action: 'people_delete', text: 'Delete', style: 'danger-ghost'}]},
         {title: 'Your data', rows: [
           {apps: true, type: 'toggle', key: 'use_memory', label: 'Use memories in answers', desc: 'When off, Gink ignores what you asked it to remember (they stay saved \u2014 manage them under Memory).'},
+          {type: 'toggle', key: 'location_metadata', label: 'Location metadata', desc: 'Allow Gink to use coarse location metadata (city/region) to improve product experiences. When off, Gink only knows your clock\u2019s time difference from UTC, so times stay right.',
+           learn: info.location_help_url || GINK_SITE + 'privacy.html#location-metadata'},
           {type: 'toggle', key: 'send_errors', label: 'Send error reports', desc: 'When something breaks, Gink tells its team what went wrong and where in Gink\u2019s code \u2014 never your chats, files or what you typed. It helps fix problems faster.'},
           {type: 'button', label: 'Export my data', desc: 'Save your chats, Workspace, memories and settings as a file.', action: 'export', text: 'Export'},
           {type: 'button', label: 'Download everything on the server', desc: 'Your Gink Genie projects, websites, agent runs, scheduled tasks and account records, as a ZIP. Passwords and keys are never included.', action: 'export_server', text: 'Download'},
@@ -386,10 +414,8 @@ SETTINGS_JS = r"""
           info.lockdown_on === undefined ? {type: 'note', text: 'Sign in to use Lockdown mode.'} :
           {type: 'button', label: info.lockdown_on ? 'Lockdown mode is on' : 'Lockdown mode is off', desc: info.lockdown_on ? 'Web search and connected apps are off.' : 'Turn it on if you handle sensitive information.',
            action: info.lockdown_on ? 'lockdown_off' : 'lockdown_on', text: info.lockdown_on ? 'Turn off' : 'Turn on', style: info.lockdown_on ? '' : 'danger-ghost'}]},
-        {title: 'Policies', rows: (info.privacy_url || info.terms_url) ? [
-          info.privacy_url ? {type: 'button', label: 'Privacy policy', action: 'open_url', value: info.privacy_url, text: 'Open'} : null,
-          info.terms_url ? {type: 'button', label: 'Terms of service', action: 'open_url', value: info.terms_url, text: 'Open'} : null].filter(Boolean)
-          : [{type: 'note', text: 'Your server hasn\u2019t published a privacy policy link yet (GINK_PRIVACY_URL).'}]}]},
+        {title: 'Privacy choices', rows: POLICIES().map(function (p) {
+          return {type: 'button', label: p.label, action: 'open_url', value: p.url, text: 'Open'}; })}]},
       {id: 'billing', group: 'Settings', title: 'Billing', sections: [
         {title: 'Plan', rows: [
           {type: 'html', label: pro ? 'Gink Pro' : 'Free plan', desc: pro ? ('Active until ' + (info.pro_until_text || '')) : 'Upgrade for more messages, photo and file analysis, and premium voices.',
@@ -415,11 +441,23 @@ SETTINGS_JS = r"""
            placeholder: 'e.g. Keep answers short. When I learn something new, analogies help me. I study medicine.',
            action: 'save_instructions', text: 'Save'}]},
         {title: 'What Gink remembers', rows: [
-          {type: 'toggle', key: 'memory_suggest', label: 'Remember things automatically', desc: 'When you mention something lasting about yourself (\u201cI live in\u2026\u201d, \u201cI\u2019m vegetarian\u201d), Gink remembers it by itself and tells you, with Undo. Never anything about health, never in temporary chats, and never in a healthcare workspace.'},
+          {type: 'toggle', key: 'memory_suggest', label: 'Generate memory from chats', desc: 'Allow Gink to generate memories from chats. When you mention something lasting about yourself (\u201cI live in\u2026\u201d, \u201cI\u2019m vegetarian\u201d), Gink remembers it by itself and tells you, with Undo. Never in temporary chats or a healthcare workspace.',
+           learn: MEM_HELP('generate')},
+          info.care ? {type: 'note', text: 'Sensitive topics are never kept in a healthcare workspace.'} :
+          info.teen ? {type: 'note', text: 'Sensitive topics (like health or religion) aren\u2019t kept in memory for accounts under 18.'} :
+          {type: 'toggle', key: 'memory_sensitive', label: 'Include sensitive topics in memory', desc: 'Allow Gink to save details about sensitive topics, like health conditions or religious beliefs, to memory. Off unless you turn it on. Gink still never keeps passwords, card numbers or anything about self-harm by itself.',
+           learn: MEM_HELP('sensitive')},
+          {type: 'button', label: 'Import memory from other AI providers', desc: 'Bring relevant context and data from another AI provider to Gink. We\u2019ll provide a prompt you can use to fetch the memory from your other account.',
+           learn: MEM_HELP('import'), action: S.memImport ? 'memory_import_close' : 'memory_import_open', text: S.memImport ? 'Cancel' : 'Start import'},
           {apps: true, type: 'list', items: (L.memories || []).map(function (m) {
             return {t: m.text, button: {text: 'Forget', action: 'forget_memory', value: m.uid}}; }),
           empty: 'Nothing yet. Say \u201cremember that my exams start on 12 November\u201d in the chat.'}].concat(
-          (L.memories || []).length ? [{apps: true, type: 'button', label: 'Forget everything', action: 'forget_all', text: 'Forget all', style: 'danger-ghost'}] : [])}]},
+          (L.memories || []).length ? [{apps: true, type: 'button', label: 'Forget everything', action: 'forget_all', text: 'Forget all', style: 'danger-ghost'}] : [])}].concat(
+        S.memImport ? [{title: 'Import memory from another AI', rows: [
+          {type: 'prompt', label: '1. Copy this prompt into a chat with your other AI assistant', text: MEM_IMPORT_PROMPT, action: 'memory_import_copy', button: 'Copy prompt'},
+          {type: 'textarea', key: 'memory_import_text', label: '2. Paste its whole answer here. Gink adds each lasting fact to your memory and skips anything it already knows' +
+             (v.memory_sensitive && !info.teen && !info.care ? '.' : ', and sensitive topics (they\u2019re off).'),
+           placeholder: '- I live in \u2026\n- I prefer short answers', action: 'memory_import', text: 'Add to memory'}]}] : [])},
       {id: 'personalization', group: 'Settings', title: 'Personalization', sections: [
         {title: 'Prompt library', rows: [
           {type: 'note', text: 'Type / at the start of a message to pick a prompt. Gink includes some; add your own here.'},
@@ -716,8 +754,14 @@ SETTINGS_JS = r"""
   }
 
   function rowHtml(r, pid) {
-    var v = S.values, ctl = '', lab = '<div class="lab"><b>' + esc(r.label || '') + '</b>' + (r.desc ? '<span>' + esc(r.desc) + '</span>' : '') + '</div>';
+    var learn = r.learn ? ' <button type="button" class="s-link" data-act="open_url" data-value="' + esc(r.learn) + '">Learn more</button>' : '';
+    var v = S.values, ctl = '', lab = '<div class="lab"><b>' + esc(r.label || '') + '</b>' + (r.desc ? '<span>' + esc(r.desc) + learn + '</span>' : '') + '</div>';
     if (r.type === 'note') return '<div class="s-note">' + esc(r.text) + '</div>';
+    if (r.type === 'prompt') {
+      return '<div class="s-row stack"><div class="lab"><b>' + esc(r.label) + '</b></div><div class="ctl" style="display:block">' +
+             '<pre class="s-prompt" id="s-prompt">' + esc(r.text) + '</pre><div style="text-align:right;margin-top:8px">' +
+             '<button class="s-btn" data-act="' + r.action + '">' + esc(r.button) + '</button></div></div></div>';
+    }
     if (r.type === 'toggle') {
       ctl = '<label class="sw"><input type="checkbox" data-key="' + r.key + '"' + (v[r.key] ? ' checked' : '') + (r.disabled ? ' disabled' : '') + '><i></i></label>';
     } else if (r.type === 'seg') {
@@ -929,6 +973,14 @@ SETTINGS_JS = r"""
       var name = b.getAttribute('data-act'), from = b.getAttribute('data-from'), value = b.getAttribute('data-value');
       if (from) { var inp = document.querySelector('[data-input="' + from + '"]'); value = inp ? inp.value : ''; }
       if (name === 'upgrade') { closeSettings(); ginkEmit('open', 'pro'); return; }
+      if (name === 'memory_import_open' || name === 'memory_import_close') { S.memImport = name === 'memory_import_open'; renderSettings(); return; }
+      if (name === 'memory_import_copy') { copyPrompt(); return; }
+      if (name === 'memory_import') {
+        if (!String(value || '').trim()) { settingsToast('Paste what your other AI assistant answered first.', 'err'); return; }
+        S.memImport = false; renderSettings();
+        ginkEmit('settings_action', {name: 'memory_import', value: String(value).slice(0, 200000)});
+        return;
+      }
       if (name === 'people_open') { closeSettings(); if (window.openPeople) openPeople(); return; }   // People lives in the page
       if (name === 'sch_add') {                       // Scheduled tasks: the task, how often and when, together
         var q = function (k) { var x = document.querySelector('[data-input="' + k + '"]'); return x ? x.value : ''; };
@@ -992,6 +1044,20 @@ SETTINGS_JS = r"""
   });
   document.addEventListener('input', function (e) { if (e.target && e.target.id === 'lang-q') renderLangs(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.getElementById('lang-back').classList.contains('open')) { e.stopPropagation(); closeLangPicker(); } }, true);
+
+  // Copy the import prompt: the clipboard API where there is one, else the selected text (older WebKit)
+  function copyPrompt() {
+    var done = function () { settingsToast('Prompt copied. Paste it into a chat with your other AI assistant.'); };
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(MEM_IMPORT_PROMPT).then(done, fallback); return; } } catch (e) {}
+    fallback();
+    function fallback() {
+      var box = document.getElementById('s-prompt'); if (!box) return;
+      var range = document.createRange(); range.selectNodeContents(box);
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+      if (ok) done(); else ginkEmit('settings_action', {name: 'memory_import_copy'});   // the apps copy it themselves
+    }
+  }
 
   // a reusable confirm dialog (re-uses the delete-chat modal)
   function confirmDanger(title, text, typeWord, onOk) {
@@ -1062,7 +1128,11 @@ def inject(page: str) -> str:
     for name in ICONS:
         html = html.replace(f"__I_{name}__", icon(name))
     sicons = {k: icon(k) for k in ICONS}
-    js = SETTINGS_JS.replace("__SICONS__", _json.dumps(sicons))
+    from ..services import memory_rules
+    js = (SETTINGS_JS.replace("__SICONS__", _json.dumps(sicons))
+          .replace("__MEM_IMPORT_PROMPT__", _json.dumps(memory_rules.IMPORT_PROMPT))
+          .replace("__GINK_SITE__", _json.dumps(GINK_SITE))
+          .replace("__POLICY_PAGES__", _json.dumps([list(p) for p in POLICY_PAGES])))
     # the page is already built (placeholders filled), so append to its style block
     assert "</style>" in page
     page = page.replace("</style>", SETTINGS_CSS + "</style>", 1)

@@ -68,8 +68,9 @@ gives an account Pro. 10 wrong keys from one address lock it out for 10 minutes.
 
 ## Website
 The site lives in `website/` (one shared layout in `tools/build_website.py`). Preview it with
-`python tools/build_website.py` and open `website/_site/index.html`. It's published on GitHub
-Pages automatically. To show Gink Pro prices, set them in `website/assets/pricing.js`.
+`python tools/build_website.py`, then `python -m http.server -d website/_site 8000` and open
+http://localhost:8000 (served, so its own font loads). It's published on GitHub Pages automatically.
+To show Gink Pro prices, set them in `website/assets/pricing.js`.
 
 ## Server
 Gink's AI, voices, images, sync and payments go through your own server, so no keys are

@@ -236,9 +236,11 @@ def _send_email(to: str, subject: str, text: str, html: str = "") -> str:
                 server.login(user, password)
                 server.send_message(msg)
             return ""
-        except Exception as exc:
+        except smtplib.SMTPAuthenticationError:
+            return "Gmail SMTP refused the sign-in -- check GMAIL_USER and GMAIL_APP_PASSWORD (an app password, not your normal one)"
+        except Exception as exc:                       # only the kind of failure: never the server's own words
             blocked = isinstance(exc, (OSError, TimeoutError)) and not isinstance(exc, smtplib.SMTPException)
-            return (f"Gmail SMTP failed ({type(exc).__name__}: {str(exc)[:120]})"
+            return (f"Gmail SMTP failed ({type(exc).__name__})"
                     + (" -- Render's free plan blocks SMTP; set BREVO_API_KEY instead" if blocked else ""))
     return "no email service is set up (BREVO_API_KEY, or GMAIL_USER + GMAIL_APP_PASSWORD)"
 
@@ -912,7 +914,9 @@ def _identity_from_code(provider: str, code: str, redirect_uri: str, apple_user:
     r = httpx.post(token_url, data=data, headers={"Accept": "application/json"}, timeout=15)
     tok = r.json()
     if r.status_code != 200 or ("id_token" not in tok and "access_token" not in tok):
-        raise ValueError(tok.get("error_description") or tok.get("error") or "token exchange failed")
+        why = re.sub(r"[^a-z_]", "", str(tok.get("error") or "").lower())[:40] or "no error code"
+        print(f"[Gink] {p['label']} sign-in: the code exchange failed ({r.status_code}, {why})", flush=True)
+        raise ValueError("token exchange failed")
     if provider == "github":
         h = {"Authorization": f"Bearer {tok['access_token']}", "Accept": "application/vnd.github+json"}
         user = httpx.get("https://api.github.com/user", headers=h, timeout=15).json()
@@ -943,6 +947,27 @@ def _identity_from_code(provider: str, code: str, redirect_uri: str, apple_user:
         except Exception:
             pass
     return email, name
+
+
+# What a person may see when a sign-in fails: these fixed sentences, never an exception's own text.
+_SIGN_IN_MESSAGES = {
+    "token exchange failed": "The sign-in didn't go through (the link may have expired). Please start again from Gink.",
+    "Your GitHub account has no verified email.": "Your GitHub account has no verified email.",
+    "ID token was issued for a different app.": "This sign-in was meant for a different app. Please start again from Gink.",
+    "ID token expired.": "This sign-in expired. Please start again from Gink.",
+    "ID token came from an unexpected issuer.": "This sign-in came from an unexpected place. Please start again from Gink.",
+    "Your account didn't share a verified email address.": "Your account didn't share a verified email address.",
+}
+_SIGN_IN_FAILED = "The sign-in didn't finish. Please start again from Gink."
+
+
+def _sign_in_message(exc: Exception) -> str:
+    """A plain sentence for a failed sign-in, from the list above (the details go to the server log)."""
+    text = str(exc)
+    for known, shown in _SIGN_IN_MESSAGES.items():
+        if text == known:
+            return shown
+    return _SIGN_IN_FAILED
 
 
 def _result_page(ok: bool, message: str, title: Optional[str] = None) -> str:
@@ -981,8 +1006,11 @@ async def _oauth_callback(provider: str, request: Request):
         entry["result"] = _login_response(email, name or (existing or {}).get("name", ""))
         return HTMLResponse(_result_page(True, "Go back to Gink \u2014 you can close this tab."))
     except Exception as exc:
-        entry["result"] = {"error": f"{PROVIDERS[provider]['label']} sign-in failed: {exc}"}
-        return HTMLResponse(_result_page(False, str(exc)), status_code=400)
+        shown = _sign_in_message(exc)
+        if shown == _SIGN_IN_FAILED:
+            print(f"[Gink] {PROVIDERS[provider]['label']} sign-in failed ({type(exc).__name__})", flush=True)
+        entry["result"] = {"error": f"{PROVIDERS[provider]['label']} sign-in failed: {shown}"}
+        return HTMLResponse(_result_page(False, shown), status_code=400)
 
 
 @app.get("/auth/{provider}/callback")
@@ -1136,8 +1164,17 @@ def sync(request: Request, data: dict = Body(...)):
 # (services/memory_rules.py) -- for the web app (signed in) and for developers (API key: /v1/memories, SDKs, CLI).
 #   POST /memory/suggest  {"text"} -> {"fact" | null}   a lasting fact worth OFFERING to remember (nothing is saved)
 #   POST /memory/remember {"text"} -> {"id", "text", "replaced"}   a single fact said again replaces the old one
+#   POST /memory/generate {"messages", "save"?, "sensitive"?} -> {"memories", "saved"}   "Generate memory from chats":
+#        the AI picks the lasting facts out of a conversation (at most 5; the same checks as memory_rules)
+#   POST /memory/import   {"text", "sensitive"?} -> {"saved", "skipped", "skipped_sensitive"}   what another AI listed
+#   GET  /memory/import-prompt -> {"prompt"}   what to ask the other AI assistant
 #   GET /v1/memories   POST /v1/memories {"text"}   DELETE /v1/memories/{id}   POST /v1/memories/suggest {"text"}
+#   POST /v1/memories/generate   POST /v1/memories/import   GET /v1/memories/import-prompt
+# Sensitive topics (health, religion...) only with "Include sensitive topics in memory" on -- never for teens, never
+# in a healthcare workspace; never_keep() topics (self-harm, crime, passwords...) never by themselves.
 MEMORY_MAX = 500
+MEMGEN_PER_DAY = int(os.environ.get("GINK_MEMORY_GENERATE_DAILY", "60"))
+_memgen_calls = {}                                       # email -> [times]: generating memories is a small AI call
 
 
 def _memory_rules():
@@ -1214,17 +1251,147 @@ def _memory_forget(email: str, doc_id: str) -> bool:
     return bool(n)
 
 
-def _memory_suggest_for(email: str, text: str):
-    rules = _org_rules(email)
-    if rules and rules.get("healthcare"):              # hospitals and clinics: Gink never remembers anything by itself
+def _account_prefs(email: str) -> dict:
+    """The account's synced settings (Settings on every device), or {}."""
+    try:
+        row = _prefs_db(lambda con: con.execute("SELECT data FROM account_preferences WHERE email=?", (email,)).fetchone())
+        return _json.loads(row[0]) if row else {}
+    except Exception:
+        return {}
+
+
+def _memory_policy(email: str, sensitive=None) -> dict:
+    """What Gink may remember by itself for this account: {"allowed", "sensitive", "why"}. `sensitive` is what the
+    device says ("Include sensitive topics in memory"); without it, the account's synced setting. Healthcare
+    workspaces and under-13s: nothing by itself. Teens: never sensitive topics."""
+    org = _org_rules(email)
+    if org and org.get("healthcare"):                   # hospitals and clinics: Gink never remembers anything by itself
+        return {"allowed": False, "sensitive": False, "why": "Gink doesn\u2019t remember things by itself in a healthcare workspace."}
+    fam = _family_rules(email)
+    if fam and fam.get("blocked"):
+        return {"allowed": False, "sensitive": False, "why": UNDER_13_MSG}
+    want = _account_prefs(email).get("memory_sensitive", False) if sensitive is None else sensitive
+    return {"allowed": True, "sensitive": bool(want is True) and not fam, "why": ""}
+
+
+def _memory_suggest_for(email: str, text: str, sensitive=None):
+    policy = _memory_policy(email, sensitive)
+    if not policy["allowed"]:
         return None
     known = [d["text"] for d in _memory_list(email)]
-    return _memory_rules().suggest(str(text or "")[:2000], known)
+    return _memory_rules().suggest(str(text or "")[:2000], known, sensitive=policy["sensitive"])
+
+
+def _flag(value):
+    """A request's true/false, or None when it wasn't sent (then the account's own setting decides)."""
+    return value if isinstance(value, bool) else None
+
+
+MEMGEN_SYSTEM = (
+    "You pick out lasting facts about a person from a conversation they had with Gink, an AI assistant, so Gink can "
+    "remember them in later chats. Answer with JSON only: {\"memories\": [\"...\"]}.\n"
+    "Keep only what the PERSON said about themselves that will still be true in a month: their name or what to call "
+    "them, where they live or work, their job or studies, languages they speak, the people and pets in their life, "
+    "lasting preferences about how Gink should answer, and long-running projects or goals. Write each one short, in "
+    "the first person, the way they would say it (\"I live in Nairobi\", \"I prefer short answers\"). At most 5.\n"
+    "Never include: one-off requests or tasks, anything Gink said or suggested, guesses, facts about the world, "
+    "today's plans or moods, passwords, codes, card or account numbers, or private details about other people. "
+    "{sensitive}If there is nothing lasting, answer {\"memories\": []}.")
+
+
+def _memgen_transcript(messages) -> str:
+    """The conversation as plain text for MEMGEN_SYSTEM: the newest 16 messages, text only (no photos or files)."""
+    lines = []
+    for m in (messages if isinstance(messages, list) else [])[-16:]:
+        if not isinstance(m, dict) or m.get("role") not in ("user", "assistant"):
+            continue
+        content = m.get("content")
+        if isinstance(content, list):
+            content = " ".join(str(p.get("text") or "") for p in content if isinstance(p, dict) and p.get("type") == "text")
+        text = " ".join(str(content or "").split())[:1500]
+        if text:
+            lines.append(("Person: " if m["role"] == "user" else "Gink: ") + text)
+    return "\n".join(lines)[-12000:]
+
+
+async def _memgen_ask(system: str, transcript: str) -> list:
+    """The AI's picks (a list of strings); [] when it can't answer. Tests replace this."""
+    import httpx
+    body = {"model": _env("GINK_MEMORY_MODEL") or "openai/gpt-oss-20b", "temperature": 0, "max_tokens": 900,
+            "reasoning_effort": "low", "messages": [{"role": "system", "content": system}, {"role": "user", "content": transcript}]}
+    try:
+        async with httpx.AsyncClient(timeout=25) as client:
+            r = await client.post(f"{GROQ_BASE}/chat/completions", json=body,
+                                  headers={"Authorization": f"Bearer {_env('GROQ_API_KEY')}"})
+    except Exception:
+        return []
+    if r.status_code != 200:
+        print(f"[Gink] memory: the AI provider answered HTTP {r.status_code}", flush=True)
+        return []
+    try:
+        content = str(r.json()["choices"][0]["message"].get("content") or "")
+        m = re.search(r"\{.*\}", content, re.S)
+        found = (_json.loads(m.group(0)) if m else {}).get("memories") or []
+    except Exception:
+        return []
+    return [str(x) for x in found if isinstance(x, str)][:10]
+
+
+async def _memory_generate(email: str, messages, sensitive=None, save: bool = True) -> dict:
+    """"Generate memory from chats": {"memories": [facts], "saved": [{"id", "text", "replaced"}], "note"?}."""
+    policy = _memory_policy(email, sensitive)
+    if not policy["allowed"]:
+        return {"memories": [], "saved": [], "note": policy["why"]}
+    transcript = _memgen_transcript(messages)
+    if "Person: " not in transcript or not _env("GROQ_API_KEY"):
+        return {"memories": [], "saved": []}
+    now = time.time()
+    calls = [t for t in _memgen_calls.get(email, []) if t > now - 86400]
+    if len(calls) >= MEMGEN_PER_DAY or (calls and calls[-1] > now - 10):
+        return {"memories": [], "saved": [], "note": "Gink will look for more to remember a little later."}
+    _memgen_calls[email] = calls + [now]
+    system = MEMGEN_SYSTEM.replace("{sensitive}", (
+        "Health, religion and other sensitive details may be kept, but only when the person stated them plainly about "
+        "themselves. " if policy["sensitive"] else
+        "Never include health (conditions, medicines, allergies, pregnancy, mental health), religion, sexuality, "
+        "politics, ethnicity or other sensitive topics. "))
+    rules = _memory_rules()
+    known = [d["text"] for d in _memory_list(email)]
+    facts = rules.clean_generated(await _memgen_ask(system, transcript), known, policy["sensitive"], limit=5)
+    saved = []
+    if save:
+        for fact in facts:
+            try:
+                saved.append(_memory_add(email, fact))
+            except HTTPException:
+                break                                     # memory full: keep what fitted
+    return {"memories": facts, "saved": saved}
+
+
+def _memory_import(email: str, text, sensitive=None) -> dict:
+    """"Import memory from other AI providers": {"saved": [...], "skipped", "skipped_sensitive", "full"}."""
+    if len(str(text or "").strip()) < 4:
+        raise HTTPException(status_code=422, detail="Paste what your other AI assistant answered first.")
+    fam = _family_rules(email)
+    if fam and fam.get("blocked"):
+        raise HTTPException(status_code=403, detail=UNDER_13_MSG)
+    want = _account_prefs(email).get("memory_sensitive", False) if sensitive is None else sensitive
+    found = _memory_rules().import_lines(str(text)[:200000], [d["text"] for d in _memory_list(email)],
+                                         sensitive=bool(want is True) and not fam, limit=200)
+    saved, full = [], False
+    for fact in found["facts"]:
+        try:
+            saved.append(_memory_add(email, fact))
+        except HTTPException as exc:
+            if exc.status_code == 409:
+                full = True
+                break
+    return {"saved": saved, "skipped": found["skipped"], "skipped_sensitive": found["skipped_sensitive"], "full": full}
 
 
 @app.post("/memory/suggest")
 def memory_suggest(request: Request, data: dict = Body(...)):
-    return {"fact": _memory_suggest_for(_email_from_auth(request), data.get("text"))}
+    return {"fact": _memory_suggest_for(_email_from_auth(request), data.get("text"), _flag(data.get("sensitive")))}
 
 
 @app.post("/memory/remember")
@@ -1237,7 +1404,7 @@ def memory_auto(request: Request, data: dict = Body(...)):
     """The web app, after each answer: a lasting fact in what they said is remembered by itself (no button).
     Never health, never in a healthcare workspace; the web app shows "Remembered" with Undo."""
     email = _email_from_auth(request)
-    fact = _memory_suggest_for(email, data.get("text"))
+    fact = _memory_suggest_for(email, data.get("text"), _flag(data.get("sensitive")))
     if not fact:
         return {"saved": None}
     try:
@@ -1249,6 +1416,24 @@ def memory_auto(request: Request, data: dict = Body(...)):
 @app.post("/memory/forget")
 def memory_forget(request: Request, data: dict = Body(...)):
     return {"deleted": _memory_forget(_email_from_auth(request), str(data.get("id") or ""))}
+
+
+@app.post("/memory/generate")
+async def memory_generate(request: Request, data: dict = Body(...)):
+    """The apps and the web app, every few messages of a chat: lasting facts from the conversation, remembered by
+    themselves (save=false: only returned -- the apps keep memories on the device and sync them)."""
+    email = _email_from_auth(request)
+    return await _memory_generate(email, data.get("messages"), _flag(data.get("sensitive")), data.get("save") is not False)
+
+
+@app.post("/memory/import")
+def memory_import(request: Request, data: dict = Body(...)):
+    return _memory_import(_email_from_auth(request), data.get("text"), _flag(data.get("sensitive")))
+
+
+@app.get("/memory/import-prompt")
+def memory_import_prompt():
+    return {"prompt": _memory_rules().IMPORT_PROMPT}
 
 
 @app.get("/v1/memories")
@@ -1285,7 +1470,43 @@ def api_memory_suggest(request: Request, data: dict = Body(...)):
     owner, err = _api_owner_or_error(request)
     if err:
         return err
-    return {"fact": _memory_suggest_for(owner[0], data.get("text"))}
+    return {"fact": _memory_suggest_for(owner[0], data.get("text"), _flag(data.get("sensitive")))}
+
+
+@app.post("/v1/memories/generate")
+async def api_memory_generate(request: Request, data: dict = Body(...)):
+    """Lasting facts from a conversation ({"messages"}), saved to the account's memory unless "save": false."""
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    if not isinstance(data.get("messages"), list) or not data["messages"]:
+        return _api_error(400, "messages must be a list of chat messages.", "invalid_messages")
+    out = await _memory_generate(owner[0], data["messages"], _flag(data.get("sensitive")), data.get("save") is not False)
+    items = [dict(s, object="memory") for s in out["saved"]] if data.get("save") is not False else \
+        [{"object": "memory", "text": t} for t in out["memories"]]
+    return dict({"object": "list", "data": items}, **({"note": out["note"]} if out.get("note") else {}))
+
+
+@app.post("/v1/memories/import")
+def api_memory_import(request: Request, data: dict = Body(...)):
+    """What another AI assistant listed (GET /v1/memories/import-prompt says what to ask it), added to memory."""
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    try:
+        out = _memory_import(owner[0], data.get("text"), _flag(data.get("sensitive")))
+    except HTTPException as exc:
+        return _api_error(exc.status_code, str(exc.detail), "invalid_import" if exc.status_code == 422 else "forbidden")
+    return {"object": "list", "data": [dict(s, object="memory") for s in out["saved"]], "skipped": out["skipped"],
+            "skipped_sensitive": out["skipped_sensitive"], "memory_full": out["full"]}
+
+
+@app.get("/v1/memories/import-prompt")
+def api_memory_import_prompt(request: Request):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    return {"object": "memory_import_prompt", "prompt": _memory_rules().IMPORT_PROMPT}
 
 
 # =====================================================================
@@ -1642,6 +1863,8 @@ def billing_return(ref: str = ""):
 # =====================================================================
 GROQ_BASE = os.environ.get("GINK_GROQ_BASE", "https://api.groq.com/openai/v1")   # override only for testing
 MAX_CALLS_PER_TURN = 10
+AGENT_TURN_CALLS = int(os.environ.get("GINK_AGENT_TURN_CALLS") or 40)    # the apps' agent mode (X-Gink-Agent: 1):
+# longer turns, but every MAX_CALLS_PER_TURN calls count as one more message (a 30-round task = 3 messages)
 MAX_TOKENS = {"free": 1024, "pro": 4096}
 _models_cache = {"at": 0.0, "data": None}
 
@@ -1711,10 +1934,13 @@ def _usage_for(email: str) -> dict:
             "images_used": images, "images_limit": _image_limit(plan)}
 
 
-def _count_call(email: str, turn: str, plan: str, teen_limit: int = 0):
+def _count_call(email: str, turn: str, plan: str, teen_limit: int = 0, cap: int = 0):
     """Returns an error response if over the limit, else None (and records the call).
-    teen_limit: a parent's daily message limit for a linked teen (0 = none)."""
+    teen_limit: a parent's daily message limit for a linked teen (0 = none).
+    cap: the most calls one turn may make (default MAX_CALLS_PER_TURN). A bigger cap is for agents: their turn
+    then counts one more message every MAX_CALLS_PER_TURN calls, so long tasks use the allowance fairly."""
     day = _today()
+    cap = cap or MAX_CALLS_PER_TURN
     with _db_lock:
         con = _usage_db()
         try:
@@ -1722,9 +1948,9 @@ def _count_call(email: str, turn: str, plan: str, teen_limit: int = 0):
             if turn:
                 t = con.execute("SELECT calls FROM ai_turns WHERE email=? AND turn=?", (email, turn)).fetchone()
                 if t:
-                    if t[0] >= MAX_CALLS_PER_TURN:
+                    if t[0] >= cap:
                         return _ai_error(429, "That request needed too many steps. Try asking in a simpler way.", "turn_limit")
-                    new_message = False
+                    new_message = cap > MAX_CALLS_PER_TURN and t[0] % MAX_CALLS_PER_TURN == 0
             row = con.execute("SELECT messages FROM ai_usage WHERE email=? AND day=?", (email, day)).fetchone()
             used = row[0] if row else 0
             if new_message and teen_limit and used >= teen_limit:
@@ -2449,9 +2675,12 @@ _activity = []                                    # (time, anonymous person id, 
 _models_used = {}                                # model -> requests since the server started
 
 
+_ACTIVITY_KEY = secrets.token_bytes(32)                # this process only: the "who" below can't be looked up later
+
+
 def _record_activity(email: str, model: str) -> None:
     now = time.time()
-    who = hashlib.sha256(("gink-activity:" + (email or "")).encode()).hexdigest()[:12]   # counted, never shown
+    who = hmac.new(_ACTIVITY_KEY, (email or "").encode(), hashlib.sha256).hexdigest()[:12]   # counted, never shown
     _activity.append((now, who, str(model or "")))
     while _activity and _activity[0][0] < now - 3600:
         _activity.pop(0)
@@ -2627,10 +2856,18 @@ _TZ_RE = re.compile(r"^[A-Za-z]+(?:/[A-Za-z0-9_+\-]+){1,2}$")
 _LOCALE_RE = re.compile(r"^([a-z]{2,3})(?:[-_]([A-Za-z]{4}))?(?:[-_]([A-Z]{2}|[0-9]{3}))?$", re.I)
 
 
+_OFFSET_RE = re.compile(r"^[+-](?:0\d|1[0-4]):[0-5]\d$")
+
+
 def _client_place_from(request) -> dict:
     """The device's time zone and region (X-Gink-TZ, X-Gink-Locale: sent by the apps, the web app, Genie and the
-    console; the SDKs can too). Never a location fix -- the settings the person chose on their device."""
+    console; the SDKs can too). Never a location fix -- the settings the person chose on their device.
+    Settings > Privacy > "Location metadata" off: the device sends X-Gink-Location: off and only its clock's UTC
+    offset (X-Gink-UTC-Offset), so times are right but no city or region is used."""
     out = {}
+    if str(request.headers.get("x-gink-location") or "").strip().lower() == "off":
+        off = str(request.headers.get("x-gink-utc-offset") or "").strip()
+        return {"utc_offset": off, "location": "off"} if _OFFSET_RE.match(off) else {"location": "off"}
     tz = str(request.headers.get("x-gink-tz") or "").strip()
     if _TZ_RE.match(tz) and not tz.startswith(("Etc/", "UTC", "GMT")):
         out["tz"] = tz
@@ -2648,6 +2885,14 @@ def _place_note(place) -> str:
     if not place:
         return ""
     import datetime as _dtm
+    if place.get("location") == "off":                 # Location metadata off: the clock only, never a place
+        off = place.get("utc_offset") or ""
+        if not off:
+            return "The person turned off location metadata: don't assume where they are; ask if a place matters."
+        sign, hh, mm = (1 if off[0] == "+" else -1), int(off[1:3]), int(off[4:6])
+        local = _dtm.datetime.now(_dtm.timezone(sign * _dtm.timedelta(hours=hh, minutes=mm)))
+        return (f"The person's clock is UTC{off} (their local time: {local:%A %H:%M}). They turned off location "
+                "metadata: don't assume their country or city; ask if a place matters.")
     bits = []
     if place.get("tz"):
         try:
@@ -2762,6 +3007,7 @@ async def _ai_chat(request: Request):
     turn = "" if getattr(request.state, "gink_api_email", None) else request.headers.get("x-gink-turn", "")
     # Claude (Anthropic) or Groq: decided once, here
     asked = body.pop("gink_web", None)
+    maps = body.pop("gink_maps", None)               # developers: true = answers about places end with a ```map block
     own = _own_model()                              # Gink's own model (tools/gink_model), when set up
     if own and str(body["model"]).lower() == own["name"]:
         if not _own_allowed(email, own):
@@ -2791,6 +3037,8 @@ async def _ai_chat(request: Request):
     wants_own = bool(own) and str(body["model"]).lower() == own["name"] and not web
     body["model"] = GINK_MODEL_NAMES.get(str(body["model"]).lower(), body["model"])   # "gink-frost" -> Claude Sonnet
     await _add_live_context(body)                    # today's date; live data (weather...) when asked
+    if maps is True:
+        body["messages"] = [{"role": "system", "content": MAP_PROMPT}] + list(body["messages"])
     if org_text:
         body["messages"] = [{"role": "system", "content": org_text}] + list(body["messages"])
     if _has_images(body["messages"]):                # a photo: work out what it needs; careful with health; patients
@@ -2808,7 +3056,8 @@ async def _ai_chat(request: Request):
         wants_claude, body["model"] = False, TEXT_MODELS_BEST_FIRST[0]   # no Anthropic key here: Groq instead
     if wants_claude and plan != "pro":
         return _ai_error(403, "Claude models are part of Gink Pro.", "pro_required")
-    blocked = _count_call(email, turn, plan, int(controls.get("daily_limit") or 0))
+    agent_turn = bool(turn) and str(request.headers.get("x-gink-agent") or "") == "1"     # the apps' agent mode
+    blocked = _count_call(email, turn, plan, int(controls.get("daily_limit") or 0), AGENT_TURN_CALLS if agent_turn else 0)
     if blocked is not None:
         return blocked
     if wants_claude:
@@ -2937,14 +3186,32 @@ async def _ai_chat(request: Request):
 #                             and everything synced; payment records are kept
 #                             for accounting but no longer linked to the person.
 # =====================================================================
-POLICIES_UPDATED = "2026-11-15"            # bump with an important change to privacy.html / terms.html
+POLICIES_UPDATED = "2026-11-20"            # bump with an important change to privacy.html / terms.html
+GINK_SITE = "https://amgib00.github.io/GinkAssistant/"
+# Settings > Privacy > Privacy choices: Gink's own policies, on its website (website/pages). GINK_POLICY_<ID>_URL
+# points one somewhere else (GINK_PRIVACY_URL / GINK_TERMS_URL for the first and fourth, as before).
+POLICY_PAGES = (("privacy", "Privacy policy", "privacy.html"),
+                ("disclosure", "Responsible disclosure policy", "responsible-disclosure.html"),
+                ("terms_commercial", "Terms of service: Commercial", "terms-commercial.html"),
+                ("terms_consumer", "Terms of service: Consumer", "terms.html"),
+                ("dpa", "Data Processing Agreement", "dpa.html"),
+                ("usage", "Usage Policy", "usage-policy.html"))
+
+
+def _policies(site: str = GINK_SITE) -> list:
+    own = {"privacy": _env("GINK_PRIVACY_URL"), "terms_consumer": _env("GINK_TERMS_URL")}
+    return [{"id": pid, "label": label, "url": own.get(pid) or _env(f"GINK_POLICY_{pid.upper()}_URL") or site + page}
+            for pid, label, page in POLICY_PAGES]
 
 
 @app.get("/info")
 def app_info():
-    site = "https://amgib00.github.io/GinkAssistant/"
-    out = {"support_email": _env("GINK_SUPPORT_EMAIL"), "privacy_url": _env("GINK_PRIVACY_URL") or site + "privacy.html",
-           "terms_url": _env("GINK_TERMS_URL") or site + "terms.html", "help_url": _env("GINK_HELP_URL"),
+    site = GINK_SITE
+    policies = _policies(site)
+    out = {"support_email": _env("GINK_SUPPORT_EMAIL"), "privacy_url": policies[0]["url"],
+           "terms_url": policies[3]["url"], "help_url": _env("GINK_HELP_URL"), "policies": policies,
+           # "Learn more" in Settings > Memory and Settings > Privacy
+           "memory_help_url": site + "memory.html", "location_help_url": site + "privacy.html#location-metadata",
            # when the privacy policy / terms last changed in an important way: the apps show a notice once
            "policies_updated": _env("GINK_POLICIES_UPDATED") or POLICIES_UPDATED}
     if _env("GINK_OFFLINE_MODEL_URL"):          # the desktop apps' offline model (services/local_llm.py)
@@ -3425,16 +3692,22 @@ def _extract_audio(resp: dict):
 @app.post("/voice/speak")
 async def voice_speak(request: Request):
     email = _email_from_auth(request)
+    try:
+        data = await request.json()
+    except Exception:
+        return _ai_error(400, "Bad request.", "bad_request")
+    return await _speak(email, data)
+
+
+async def _speak(email: str, data: dict):
+    """Natural voice for {"text", "persona", "speed"}: {"audio_b64", "mime_type", ...} or an error response.
+    The apps, the web app (voice replies, read aloud) and the API's /v1/audio/speech."""
     why = _family_refusal(email, "voice")
     if why:
         return _ai_error(403, why, "family_rule")
     if not _env("GEMINI_API_KEY"):
         print("[Gink server] Natural voice: GEMINI_API_KEY is not set on this server.")
         return _ai_error(503, "Natural voices aren't set up on this server yet (GEMINI_API_KEY is missing).", "not_configured")
-    try:
-        data = await request.json()
-    except Exception:
-        return _ai_error(400, "Bad request.", "bad_request")
     text = " ".join(str(data.get("text") or "").split())[:MAX_TTS_CHARS]
     if not text:
         return _ai_error(422, "Nothing to say.", "bad_request")
@@ -3530,11 +3803,13 @@ WEB_APP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web_app"
 _WEB_HEADERS = {
     "Content-Security-Policy": ("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
                                 "img-src 'self' data: blob: https:; media-src 'self' data: blob:; connect-src 'self'; "
+                                "worker-src 'self' blob:; child-src 'self' blob:; "
                                 "font-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"),
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "no-referrer",
     "X-Frame-Options": "DENY",
-    "Permissions-Policy": "microphone=(self), camera=(self)",        # camera: the + menu's Camera (only when chosen)
+    "Permissions-Policy": "microphone=(self), camera=(self), display-capture=(self)",   # camera: the + menu's Camera;
+    # display-capture: Live screen view (only when someone shares their screen)
     "Cache-Control": "no-cache",
 }
 
@@ -3655,11 +3930,489 @@ async def source_icon(host: str, request: Request):
         "Content-Security-Policy": "default-src 'none'"})
 
 
+# =====================================================================
+# Maps in answers (0.1.159): when an answer is about real places, the AI adds a ```map block
+# ({"title", "places": [{"name", "query", "lat", "lon", "note"}]}) and every Gink chat page draws a live map by itself
+# (pan, zoom) -- no button. Tiles and place search go through this server, never straight from the device:
+#   GET /tiles/{z}/{x}/{y}.png      OpenStreetMap tiles (GINK_TILES_URL for another provider), cached here
+#   GET /geo/search?q=&limit=       places by name or address (OpenStreetMap Nominatim; Open-Meteo for towns as backup)
+#   GET /v1/geo/search              the same for developers (API key); chat with "gink_maps": true for map blocks
+# OpenStreetMap's rules: a real User-Agent, caching, no bulk downloads (limits per address), attribution on the map.
+# =====================================================================
+MAP_PROMPT = (
+    "When your answer is about real places someone could find on a map -- where something is, places to visit, "
+    "eat or stay, an address, a route between towns, a list of locations -- add a map after your text: a fenced "
+    "code block with the language map containing JSON like {\"title\": \"Short title\", \"places\": [{\"name\": \"Place "
+    "name\", \"query\": \"Place name, street, city, country\", \"lat\": 0.0, \"lon\": 0.0, \"category\": \"museum\", \"note\": "
+    "\"a few words\"}]} (1 to 10 places; category is one of food, cafe, bar, shop, museum, sight, park, beach, "
+    "hotel, transport, health, school, worship, other; give lat and lon only when you know them precisely, and "
+    "always a query precise enough to find the place). The map appears by itself: don't mention the block. Don't "
+    "add a map for general knowledge with no particular place, and never for a private person's home.")
+GEO_UA = "Gink/1.0 (+https://amgib00.github.io/GinkAssistant/; maps in answers)"
+_TILE_CACHE: dict = {}
+_TILE_ASKS: dict = {}
+_TILE_LOCK = threading.Lock()
+TILE_CACHE_MAX = int(os.environ.get("GINK_TILE_CACHE") or 1500)
+_GEO_CACHE: dict = {}
+_GEO_ASKS: dict = {}
+_geo_gate = {"last": 0.0}
+
+
+def _per_ip(table: dict, request: Request, limit: int, window: int = 600) -> bool:
+    """True when this address may go on (at most `limit` new requests in `window` seconds)."""
+    now, ip = time.time(), _client_ip(request)
+    with _TILE_LOCK:
+        asks = [t for t in table.get(ip, []) if now - t < window]
+        if len(asks) >= limit:
+            return False
+        table[ip] = asks + [now]
+        if len(table) > 5000:
+            table.clear()
+    return True
+
+
+@app.get("/tiles/{z}/{x}/{y}.png")
+async def map_tile(z: int, x: int, y: int, request: Request):
+    """One square of the map (256x256 PNG), from OpenStreetMap through this server (cached for a week)."""
+    from fastapi.responses import Response
+    if not (0 <= z <= 19 and 0 <= x < 2 ** z and 0 <= y < 2 ** z):
+        raise HTTPException(status_code=404, detail="Not found.")
+    key = (z, x, y)
+    with _TILE_LOCK:
+        hit = _TILE_CACHE.get(key)
+    if hit is None or time.time() - hit[1] > 7 * 86400:
+        if not _per_ip(_TILE_ASKS, request, 900):
+            raise HTTPException(status_code=429, detail="Too many map squares at once. Please try again in a few minutes.")
+        import httpx
+        url = (_env("GINK_TILES_URL") or "https://tile.openstreetmap.org/{z}/{x}/{y}.png").format(z=z, x=x, y=y)
+        try:
+            async with httpx.AsyncClient(timeout=15, follow_redirects=False) as client:
+                r = await client.get(url, headers={"User-Agent": GEO_UA, "Referer": GINK_SITE})
+        except Exception:
+            raise HTTPException(status_code=502, detail="The map service didn't answer.")
+        if r.status_code != 200 or not r.content.startswith((b"\x89PNG", b"\xff\xd8")):
+            raise HTTPException(status_code=502, detail="The map service had a problem.")
+        hit = (r.content, time.time())
+        with _TILE_LOCK:
+            _TILE_CACHE[key] = hit
+            while len(_TILE_CACHE) > TILE_CACHE_MAX:
+                _TILE_CACHE.pop(next(iter(_TILE_CACHE)))
+    kind = "image/png" if hit[0].startswith(b"\x89PNG") else "image/jpeg"
+    return Response(content=hit[0], media_type=kind, headers={
+        "Cache-Control": "public, max-age=604800", "Access-Control-Allow-Origin": "*", "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": "default-src 'none'"})
+
+
+async def _geo_lookup(query: str, limit: int = 5) -> list:
+    """[{"name", "display", "lat", "lon", "type"}] for a place name or address (cached; one request a second to
+    OpenStreetMap's Nominatim, as its rules ask; Open-Meteo's town search when Nominatim can't answer)."""
+    import httpx
+    q = " ".join(str(query or "").split())[:200]
+    if len(q) < 2:
+        return []
+    key = (q.lower(), limit)
+    hit = _GEO_CACHE.get(key)
+    if hit and time.time() - hit[1] < 30 * 86400:
+        return hit[0]
+    wait = _geo_gate["last"] + 1.0 - time.time()
+    if wait > 0:
+        await asyncio.sleep(min(wait, 2.0))
+    _geo_gate["last"] = time.time()
+    found = []
+    try:
+        async with httpx.AsyncClient(timeout=12) as client:
+            r = await client.get(_env("GINK_GEOCODE_URL") or "https://nominatim.openstreetmap.org/search",
+                                 params={"q": q, "format": "jsonv2", "limit": limit, "addressdetails": 0},
+                                 headers={"User-Agent": GEO_UA, "Accept-Language": "en"})
+            if r.status_code == 200:
+                for p in r.json()[:limit]:
+                    found.append({"name": (p.get("name") or str(p.get("display_name") or "").split(",")[0]).strip(),
+                                  "display": str(p.get("display_name") or "")[:300], "lat": round(float(p["lat"]), 6),
+                                  "lon": round(float(p["lon"]), 6), "type": str(p.get("type") or p.get("category") or "")})
+            if not found:
+                r = await client.get("https://geocoding-api.open-meteo.com/v1/search",
+                                     params={"name": q.split(",")[0], "count": limit, "language": "en"})
+                if r.status_code == 200:
+                    for p in (r.json().get("results") or [])[:limit]:
+                        found.append({"name": p.get("name", q), "display": ", ".join(str(x) for x in (
+                            p.get("name"), p.get("admin1"), p.get("country")) if x), "lat": round(float(p["latitude"]), 6),
+                            "lon": round(float(p["longitude"]), 6), "type": "town"})
+    except Exception:
+        return []
+    _GEO_CACHE[key] = (found, time.time())
+    while len(_GEO_CACHE) > 5000:
+        _GEO_CACHE.pop(next(iter(_GEO_CACHE)))
+    return found
+
+
+@app.get("/geo/search")
+async def geo_search(request: Request, q: str = "", limit: int = 5):
+    """Places for the chat page's maps (public, like /icon: no account needed; limited per address)."""
+    from fastapi.responses import JSONResponse
+    if not _per_ip(_GEO_ASKS, request, 120):
+        raise HTTPException(status_code=429, detail="Too many place searches. Please try again in a few minutes.")
+    places = await _geo_lookup(q, max(1, min(int(limit or 5), 10)))
+    return JSONResponse({"places": places}, headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=86400"})
+
+
+@app.get("/v1/geo/search")
+async def api_geo_search(request: Request, q: str = "", limit: int = 5):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    if len(" ".join(q.split())) < 2:
+        return _api_error(400, "Give a place to search for (q).", "missing_query")
+    places = await _geo_lookup(q, max(1, min(int(limit or 5), 10)))
+    return {"object": "list", "data": [dict(p, object="place", map_url=f"https://www.openstreetmap.org/?mlat={p['lat']}"
+                                                                        f"&mlon={p['lon']}#map=16/{p['lat']}/{p['lon']}")
+                                        for p in places]}
+
+
+# ---- Real maps (0.1.160): vector maps drawn on the device by MapLibre GL (vendored in web_app/vendor, BSD-3-Clause),
+# in Gink's own style (services/map_style.py), from OpenStreetMap data served by OpenFreeMap -- all through this server,
+# so a phone or browser only ever talks to Gink:
+#   GET /vendor/maplibre-gl.js | .css                the map library
+#   GET /vmap/style.json?theme=light|dark&lang=xx    the style (its tiles and fonts point back here)
+#   GET /vmap/t/{z}/{x}/{y}.pbf                      vector tiles (GINK_VECTOR_TILES: another TileJSON), cached here
+#   GET /vmap/fonts/{fontstack}/{range}.pbf          label fonts (Noto Sans), cached here
+#   GET /place/photo?name=&lat=&lon=                 a picture of a place: Wikipedia's for the article about it, or 404
+#   GET /place/img/{key}                             that picture, through this server (also /v1/places/photo)
+# The old picture-square maps (/tiles) stay for devices that can't draw vector maps (no WebGL).
+from collections import OrderedDict as _OrderedDict
+
+VENDOR_FILES = {"maplibre-gl.js": "application/javascript; charset=utf-8", "maplibre-gl.css": "text/css; charset=utf-8"}
+_VENDOR_CACHE: dict = {}
+VTILES_URL = "https://tiles.openfreemap.org/planet"          # TileJSON: its "tiles" template changes with each weekly build
+VFONTS_URL = "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf"
+VTILE_CACHE_BYTES = int(float(os.environ.get("GINK_VTILE_CACHE_MB") or 48) * 1e6)
+_VT = {"template": "", "at": 0.0}
+_VT_CACHE: "_OrderedDict" = _OrderedDict()                      # (z, x, y) -> (gzip bytes or b"", time)
+_VT_BYTES = [0]
+_VFONT_CACHE: dict = {}
+_VMAP_ASKS: dict = {}
+_PHOTO_CACHE: dict = {}                                        # (name, lat, lon) -> (info or None, time)
+_PHOTO_IMG: "_OrderedDict" = _OrderedDict()                     # thumbnail path -> (bytes, content type)
+PHOTO_CACHE_BYTES = 24_000_000
+_PHOTO_ASKS: dict = {}
+
+
+def _map_style_module():
+    try:
+        from . import map_style
+    except ImportError:                                        # backend_server.py run on its own (deploy/)
+        import map_style
+    return map_style
+
+
+def _gz_response(data: bytes, kind: str, max_age: int, request: Request = None):
+    """Gzipped bytes as they are -- or unpacked for the rare client that doesn't take gzip."""
+    import gzip as _gzip
+    from fastapi.responses import Response
+    headers = {"Cache-Control": f"public, max-age={max_age}", "Access-Control-Allow-Origin": "*",
+               "X-Content-Type-Options": "nosniff", "Vary": "Accept-Encoding"}
+    if request is not None and "gzip" not in (request.headers.get("accept-encoding") or "").lower():
+        return Response(content=_gzip.decompress(data), media_type=kind, headers=headers)
+    return Response(content=data, media_type=kind, headers=dict(headers, **{"Content-Encoding": "gzip"}))
+
+
+@app.get("/vendor/{name}")
+def vendor_file(name: str, request: Request):
+    """The map library (MapLibre GL JS), gzipped when the browser takes it."""
+    import gzip as _gzip
+    from fastapi.responses import Response
+    kind = VENDOR_FILES.get(name)
+    if not kind:
+        raise HTTPException(status_code=404, detail="Not found.")
+    hit = _VENDOR_CACHE.get(name)
+    if hit is None:
+        with open(os.path.join(WEB_APP_DIR, "vendor", name), "rb") as f:
+            raw = f.read()
+        hit = _VENDOR_CACHE[name] = (raw, _gzip.compress(raw, 9))
+    if "gzip" in (request.headers.get("accept-encoding") or "").lower():
+        return _gz_response(hit[1], kind, 604800)
+    return Response(content=hit[0], media_type=kind, headers={"Cache-Control": "public, max-age=604800",
+                    "Access-Control-Allow-Origin": "*", "X-Content-Type-Options": "nosniff", "Vary": "Accept-Encoding"})
+
+
+@app.get("/vmap/style.json")
+def vmap_style(request: Request, theme: str = "light", lang: str = "en"):
+    """Gink's map style, light or dark, with labels in the person's language where the map has them."""
+    from fastapi.responses import JSONResponse
+    # The address the page used (not GINK_PUBLIC_URL): the map's pieces must come from where the page can fetch them.
+    style = _map_style_module().style(theme, _request_base(request), (lang or "en")[:3].lower())
+    return JSONResponse(style, headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=3600"})
+
+
+async def _vt_template() -> str:
+    """The vector tiles' address template, from the TileJSON (checked every 6 hours)."""
+    configured = _env("GINK_VECTOR_TILES")
+    if configured and "{z}" in configured:
+        return configured
+    if _VT["template"] and time.time() - _VT["at"] < 6 * 3600:
+        return _VT["template"]
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(configured or VTILES_URL, headers={"User-Agent": GEO_UA})
+        tiles = (r.json().get("tiles") or []) if r.status_code == 200 else []
+        if tiles and str(tiles[0]).startswith("https://") and "{z}" in tiles[0]:
+            _VT.update(template=str(tiles[0]), at=time.time())
+    except Exception:
+        pass
+    return _VT["template"]
+
+
+def _vt_remember(key, value) -> None:
+    with _TILE_LOCK:
+        old = _VT_CACHE.pop(key, None)
+        if old:
+            _VT_BYTES[0] -= len(old[0])
+        _VT_CACHE[key] = value
+        _VT_BYTES[0] += len(value[0])
+        while _VT_BYTES[0] > VTILE_CACHE_BYTES and _VT_CACHE:
+            _, dropped = _VT_CACHE.popitem(last=False)
+            _VT_BYTES[0] -= len(dropped[0])
+
+
+@app.get("/vmap/t/{z}/{x}/{y}.pbf")
+async def vmap_tile(z: int, x: int, y: int, request: Request):
+    """One vector tile (OpenStreetMap data, OpenMapTiles schema), cached here for a week."""
+    import gzip as _gzip
+    from fastapi.responses import Response
+    if not (0 <= z <= 14 and 0 <= x < 2 ** z and 0 <= y < 2 ** z):
+        raise HTTPException(status_code=404, detail="Not found.")
+    key = (z, x, y)
+    with _TILE_LOCK:
+        hit = _VT_CACHE.get(key)
+        if hit is not None:
+            _VT_CACHE.move_to_end(key)
+    if hit is None or time.time() - hit[1] > 7 * 86400:
+        if not _per_ip(_VMAP_ASKS, request, 2400):
+            raise HTTPException(status_code=429, detail="Too many map pieces at once. Please try again in a few minutes.")
+        template = await _vt_template()
+        if not template:
+            raise HTTPException(status_code=502, detail="The map service didn't answer.")
+        import httpx
+        try:
+            async with httpx.AsyncClient(timeout=15, follow_redirects=False) as client:
+                r = await client.get(template.replace("{z}", str(z)).replace("{x}", str(x)).replace("{y}", str(y)),
+                                     headers={"User-Agent": GEO_UA, "Referer": GINK_SITE})
+        except Exception:
+            raise HTTPException(status_code=502, detail="The map service didn't answer.")
+        if r.status_code in (204, 404) or (r.status_code == 200 and not r.content):
+            data = b""                                         # nothing there (open sea): an empty tile
+        elif r.status_code == 200:
+            raw = r.content
+            if raw[:2] == b"\x1f\x8b":
+                raw = _gzip.decompress(raw)
+            data = _gzip.compress(raw, 6)
+        else:
+            raise HTTPException(status_code=502, detail="The map service had a problem.")
+        hit = (data, time.time())
+        _vt_remember(key, hit)
+    if not hit[0]:
+        return Response(status_code=204, headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=86400"})
+    return _gz_response(hit[0], "application/x-protobuf", 86400, request)
+
+
+@app.get("/vmap/fonts/{fontstack}/{rng}.pbf")
+async def vmap_font(fontstack: str, rng: str, request: Request):
+    """Letters for the map's labels (Noto Sans), cached here."""
+    import gzip as _gzip
+    import urllib.parse as _up
+    names = [n.strip() for n in fontstack.split(",") if n.strip()]
+    if not names or any(n not in _map_style_module().FONT_NAMES for n in names) or not re.fullmatch(r"\d{1,5}-\d{1,5}", rng):
+        raise HTTPException(status_code=404, detail="Not found.")
+    key = (names[0], rng)
+    hit = _VFONT_CACHE.get(key)
+    if hit is None:
+        if not _per_ip(_VMAP_ASKS, request, 2400):
+            raise HTTPException(status_code=429, detail="Too many map pieces at once. Please try again in a few minutes.")
+        import httpx
+        url = (_env("GINK_VECTOR_FONTS") or VFONTS_URL).replace("{fontstack}", _up.quote(names[0])).replace("{range}", rng)
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                r = await client.get(url, headers={"User-Agent": GEO_UA})
+        except Exception:
+            raise HTTPException(status_code=502, detail="The map service didn't answer.")
+        if r.status_code != 200:
+            raise HTTPException(status_code=404 if r.status_code == 404 else 502, detail="No letters for that.")
+        raw = r.content
+        if raw[:2] == b"\x1f\x8b":
+            raw = _gzip.decompress(raw)
+        hit = _VFONT_CACHE[key] = _gzip.compress(raw, 6)
+        while len(_VFONT_CACHE) > 600:
+            _VFONT_CACHE.pop(next(iter(_VFONT_CACHE)))
+    return _gz_response(hit, "application/x-protobuf", 30 * 86400, request)
+
+
+_PHOTO_STOP = {"the", "of", "and", "de", "la", "le", "les", "du", "des", "del", "di", "da", "a", "an", "museum", "musee",
+               "museo", "gallery", "restaurant", "hotel", "park", "cafe", "bar", "market", "church", "mosque", "national"}
+# Only Wikimedia's thumbnails: the key in /place/img/{key} is the thumbnail's path (base64url), so a picture still
+# loads after the server restarts, and nothing else can be fetched through it.
+_THUMB_PATH = re.compile(r"wikipedia/[a-z]+/thumb/[0-9a-f]/[0-9a-f]{2}/[^/?#]{1,240}/\d{2,4}px-[^/?#]{1,250}")
+
+
+def _photo_words(text: str) -> set:
+    import unicodedata
+    plain = unicodedata.normalize("NFKD", str(text or "")).encode("ascii", "ignore").decode().lower()
+    return set(re.findall(r"[a-z0-9]+", plain))
+
+
+def _photo_key(thumb: str) -> str:
+    path = thumb[len("https://upload.wikimedia.org/"):] if thumb.startswith("https://upload.wikimedia.org/") else ""
+    if not _THUMB_PATH.fullmatch(path):
+        return ""
+    return base64.urlsafe_b64encode(path.encode()).decode().rstrip("=")
+
+
+def _photo_path(key: str) -> str:
+    try:
+        path = base64.urlsafe_b64decode(key + "=" * (-len(key) % 4)).decode()
+    except Exception:
+        return ""
+    return path if _THUMB_PATH.fullmatch(path) else ""
+
+
+def _photo_pick(name: str, lat: float, lon: float, pages: list):
+    """The page whose title is this place's name (most words in common, then nearest); None when none is."""
+    import math
+    want = _photo_words(name)
+    core = (want - _PHOTO_STOP) or want
+    best = None
+    for p in pages:
+        thumb = (p.get("thumbnail") or {}).get("source", "")
+        key = _photo_key(thumb)
+        if not key:
+            continue
+        words = _photo_words(p.get("title", ""))
+        title = (words - _PHOTO_STOP) or words
+        both = len(core & title)
+        if not both:
+            continue
+        cover = both / max(len(core), len(title))
+        c = (p.get("coordinates") or [{}])[0]
+        far = 9e9
+        if "lat" in c and "lon" in c:
+            dy = math.radians(c["lat"] - lat)
+            dx = math.radians(c["lon"] - lon) * math.cos(math.radians(lat))
+            far = 6371000 * math.hypot(dx, dy)
+        if cover >= 0.5 or (both == min(len(core), len(title)) and far <= 150):
+            rank = (round(cover, 2), -far)
+            if best is None or rank > best[0]:
+                best = (rank, p, key)
+    return best
+
+
+async def _place_photo(name: str, lat: float, lon: float):
+    """Wikipedia's picture for the article about this place (an article within 1 km whose title matches the name)."""
+    key = (" ".join(str(name).lower().split())[:120], round(lat, 3), round(lon, 3))
+    hit = _PHOTO_CACHE.get(key)
+    if hit and time.time() - hit[1] < 30 * 86400:
+        return hit[0]
+    import httpx
+    info = None
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get("https://en.wikipedia.org/w/api.php", headers={"User-Agent": GEO_UA}, params={
+                "action": "query", "format": "json", "formatversion": 2, "generator": "geosearch",
+                "ggscoord": f"{lat}|{lon}", "ggsradius": 1000, "ggslimit": 20, "prop": "pageimages|coordinates",
+                "piprop": "thumbnail", "pithumbsize": 480})
+        pages = ((r.json().get("query") or {}).get("pages") or []) if r.status_code == 200 else []
+        best = _photo_pick(name, lat, lon, pages)
+        if best:
+            p = best[1]
+            info = {"key": best[2], "title": p.get("title", ""),
+                    "page": "https://en.wikipedia.org/wiki/" + urllib.parse.quote(str(p.get("title", "")).replace(" ", "_"))}
+    except Exception:
+        info = None
+    _PHOTO_CACHE[key] = (info, time.time())
+    while len(_PHOTO_CACHE) > 5000:
+        _PHOTO_CACHE.pop(next(iter(_PHOTO_CACHE)))
+    return info
+
+
+def _photo_reply(base: str, info: dict) -> dict:
+    return {"image": base.rstrip("/") + "/place/img/" + info["key"], "title": info["title"], "page": info["page"],
+            "credit": "Wikipedia"}
+
+
+@app.get("/place/photo")
+async def place_photo(request: Request, name: str = "", lat: float = 0.0, lon: float = 0.0):
+    """A picture of a place for the map's cards (public, like /geo/search; limited per address)."""
+    from fastapi.responses import JSONResponse
+    if len(name.strip()) < 2 or not (-90 <= lat <= 90 and -180 <= lon <= 180) or (lat == 0 and lon == 0):
+        raise HTTPException(status_code=400, detail="Give a place's name, lat and lon.")
+    if not _per_ip(_PHOTO_ASKS, request, 200):
+        raise HTTPException(status_code=429, detail="Too many pictures at once. Please try again in a few minutes.")
+    info = await _place_photo(name, lat, lon)
+    if not info:
+        return JSONResponse({"error": "No picture of this place."}, status_code=404,
+                            headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=86400"})
+    return JSONResponse(_photo_reply(_request_base(request), info), headers={"Access-Control-Allow-Origin": "*",
+                                                                             "Cache-Control": "public, max-age=86400"})
+
+
+@app.get("/place/img/{key}")
+async def place_image(key: str, request: Request):
+    """The picture itself, fetched from Wikimedia through this server (kept here for a while)."""
+    from fastapi.responses import Response
+    path = _photo_path(key) if len(key) <= 700 else ""
+    if not path:
+        raise HTTPException(status_code=404, detail="Not found.")
+    with _TILE_LOCK:
+        hit = _PHOTO_IMG.get(path)
+    if hit is None:
+        if not _per_ip(_PHOTO_ASKS, request, 200):
+            raise HTTPException(status_code=429, detail="Too many pictures at once. Please try again in a few minutes.")
+        import httpx
+        try:
+            async with httpx.AsyncClient(timeout=15, follow_redirects=False) as client:
+                r = await client.get("https://upload.wikimedia.org/" + path, headers={"User-Agent": GEO_UA})
+        except Exception:
+            raise HTTPException(status_code=502, detail="Wikimedia didn't answer.")
+        body = r.content if r.status_code == 200 else b""
+        kind = ("image/jpeg" if body[:3] == b"\xff\xd8\xff" else "image/png" if body[:8] == b"\x89PNG\r\n\x1a\n"
+                else "image/webp" if body[:4] == b"RIFF" and body[8:12] == b"WEBP" else "")
+        if not kind or len(body) > 2_000_000:
+            raise HTTPException(status_code=502, detail="That picture couldn't be used.")
+        hit = (body, kind)
+        with _TILE_LOCK:
+            _PHOTO_IMG[path] = hit
+            while sum(len(v[0]) for v in _PHOTO_IMG.values()) > PHOTO_CACHE_BYTES and len(_PHOTO_IMG) > 1:
+                _PHOTO_IMG.popitem(last=False)
+    return Response(content=hit[0], media_type=hit[1], headers={
+        "Cache-Control": "public, max-age=604800", "Access-Control-Allow-Origin": "*", "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": "default-src 'none'"})
+
+
+@app.get("/v1/places/photo")
+async def api_place_photo(request: Request, name: str = "", lat: float = 0.0, lon: float = 0.0):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    if len(name.strip()) < 2 or not (-90 <= lat <= 90 and -180 <= lon <= 180) or (lat == 0 and lon == 0):
+        return _api_error(400, "Give the place's name, lat and lon.", "missing_place")
+    info = await _place_photo(name, lat, lon)
+    if not info:
+        return _api_error(404, "No picture of this place.", "not_found")
+    return dict(_photo_reply(_public_base(request), info), object="place_photo")
+
+
 @app.get("/genie", response_class=HTMLResponse)
 def genie_page():
-    """Gink Genie: the coding workspace (web_app/genie.html)."""
+    """Gink Genie: the coding workspace (web_app/genie.html), with the chat's code colours (light and dark)."""
     with open(os.path.join(WEB_APP_DIR, "genie.html"), encoding="utf-8") as f:
-        return HTMLResponse(f.read(), headers=_WEB_HEADERS)
+        page = f.read()
+    try:
+        try:
+            from .markdown_render import code_css_for_media
+        except ImportError:                                    # backend_server.py run on its own (deploy/)
+            from markdown_render import code_css_for_media
+        page = page.replace("/*__GINK_CODE_CSS__*/", code_css_for_media(), 1)
+    except Exception:
+        pass
+    return HTMLResponse(page, headers=_WEB_HEADERS)
 
 
 PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/"     # pinned (Python 3.14.2); never "latest"
@@ -3674,7 +4427,7 @@ def genie_runner(request: Request, pyodide: str = ""):
     if base.startswith("/"):
         base = origin + base
     with open(os.path.join(WEB_APP_DIR, "runner.html"), encoding="utf-8") as f:
-        page = f.read().replace("__PYODIDE__", base)
+        page = f.read().replace("__PYODIDE__", base).replace("__ORIGIN__", origin)
     csp = (f"default-src 'none'; script-src 'unsafe-inline' 'wasm-unsafe-eval' {origin} https://cdn.jsdelivr.net; "
            f"connect-src {origin} https://cdn.jsdelivr.net; worker-src blob:; frame-ancestors {origin}; base-uri 'none'; form-action 'none'")
     return HTMLResponse(page, headers={"Content-Security-Policy": csp, "X-Content-Type-Options": "nosniff",
@@ -5310,10 +6063,12 @@ def org_delete(request: Request, data: dict = Body(default={})):
 #   PUT  /v1/environments/{id}/files/{path}   DELETE /v1/environments/{id}
 # An environment is a Gink Genie project (open it in Gink Genie to see, change or download its files); files
 # persist across interactions. Every interaction saves a version first, so Genie's Undo works for agents too.
-# The agent can read, write, edit, find and search files and search the web. It does NOT run code on the
-# server (that needs a sandboxed computer per environment -- not this server): it says so when asked to.
-# Limits: each interaction counts as one message toward the key owner's daily allowance (with its tool steps
-# as calls); max_steps 1-30 (default 15). Age, parental, workspace and lockdown rules apply as everywhere.
+# The agent can read, write, edit, find and search files, search the web and read web pages. It plans first
+# (update_plan: the interaction's "plan"), works through every step, and is told to carry on when it stops with
+# steps still open (AGENT_AUTO_CONTINUE). It does NOT run code on the server (that needs a sandboxed computer per
+# environment -- not this server): it says so when asked to.
+# Limits: an interaction counts as one message toward the key owner's daily allowance per 10 steps (its tool steps
+# are calls); max_steps 1-60 (default 30). Age, parental, workspace and lockdown rules apply as everywhere.
 # =====================================================================
 AGENT_NAMES = {"gink-agent"}
 AGENT_CONCURRENT_MAX = int(os.environ.get("GINK_AGENT_CONCURRENT") or 3)   # runs going at once, per account
@@ -5322,11 +6077,38 @@ AGENT_TABLE = ("CREATE TABLE IF NOT EXISTS agent_interactions (id TEXT PRIMARY K
                "created REAL, finished REAL)")
 AGENT_SYSTEM = (
     "You are Gink's managed agent, working for a developer through the Gink API. You have a persistent environment: "
-    "a folder of files that is still there next time. Plan briefly, then act with your tools: look before you change "
-    "(list_files, find_files, search_files, read_file), change existing files with edit_file and create files with "
-    "write_file, and use web_search for facts you don't know or that may have changed. You can't run code or "
+    "a folder of files that is still there next time. Work like a capable engineer who finishes the job by "
+    "themselves: for anything with more than one step, call update_plan FIRST with every step, then do the steps "
+    "one after another, updating the plan as each is done. Look before you change (list_files, find_files, "
+    "search_files, read_file), change existing files with edit_file and create files with write_file, use "
+    "web_search for facts you don't know or that may have changed, and read_page to read a web page someone gave "
+    "you. Check your own work (read the files back) before you finish. Don't stop half-way to ask whether to go "
+    "on: carry on until every step is done, and only ask when an essential detail is missing. You can't run code or "
     "commands here: if a task needs that, write the code and say how to run it. Finish with a clear, complete answer "
     "that says what you did and which files you created or changed.")
+AGENT_DEFAULT_STEPS, AGENT_MAX_STEPS = 30, 60
+AGENT_AUTO_CONTINUE = 2                     # times an agent that stops with steps of its plan open is told to go on
+AGENT_PLAN_TOOL = {"type": "function", "function": {"name": "update_plan", "description": (
+    "Write or update your plan: every step of the task, in order, each 'todo', 'doing' or 'done'. Call it first "
+    "for any task with several steps, then again as steps finish."), "parameters": {"type": "object", "properties": {
+        "steps": {"type": "array", "items": {"type": "object", "properties": {
+            "title": {"type": "string"}, "status": {"type": "string", "enum": ["todo", "doing", "done"]}},
+            "required": ["title"]}}}, "required": ["steps"]}}}
+AGENT_PAGE_TOOL = {"type": "function", "function": {"name": "read_page", "description": (
+    "Read a public web page (an http(s):// address) and get what it says, or the answer to a question about it."),
+    "parameters": {"type": "object", "properties": {"url": {"type": "string"}, "question": {"type": "string"}},
+                   "required": ["url"]}}}
+
+
+def _agent_plan(steps) -> list:
+    """update_plan's steps, tidied: at most 20 {"title", "status"}."""
+    out = []
+    for s in (steps if isinstance(steps, list) else [])[:20]:
+        s = {"title": s} if isinstance(s, str) else s
+        if isinstance(s, dict) and " ".join(str(s.get("title") or "").split()):
+            out.append({"title": " ".join(str(s["title"]).split())[:140],
+                        "status": s.get("status") if s.get("status") in ("todo", "doing", "done") else "todo"})
+    return out
 def _agent_file_tools() -> list:
     """Genie's file tools without run_command (GENIE_TOOLS is defined further down this file)."""
     return [t for t in GENIE_TOOLS if t["function"]["name"] != "run_command"]
@@ -5368,10 +6150,22 @@ async def _search_for_agent(email: str, query: str) -> str:
                                                        for x in found["sources"]) if found["sources"] else "")
 
 
+async def _read_page_for_agent(email: str, url: str, question: str = "") -> str:
+    """read_page: what a public web page says. The search provider opens it (never this server: no requests to
+    private addresses from here)."""
+    from urllib.parse import urlparse
+    u = urlparse(str(url or "").strip())
+    if u.scheme not in ("http", "https") or not u.hostname or u.username or u.password or len(url) > 2000:
+        return "Error: give a full http:// or https:// address."
+    ask = (f" and answer: {question.strip()[:300]}" if question and question.strip() else
+           " and report its main content in detail (headings, key facts, figures, dates)")
+    return await _search_for_agent(email, f"Open the web page {u.geturl()}{ask}")
+
+
 AGENT_STEP_KIND = {"write_file": ("write", "Wrote"), "edit_file": ("write", "Changed"), "read_file": ("read", "Read"),
                    "delete_file": ("delete", "Deleted"), "list_files": ("list", "Looked at the files"),
                    "find_files": ("search", "Found files"), "search_files": ("search", "Searched the files for"),
-                   "web_search": ("search", "Searched the web:")}
+                   "web_search": ("search", "Searched the web:"), "read_page": ("search", "Read the page")}
 
 
 def _agent_to_genie(env_id: str, messages: list, steps: list, reply: str) -> None:
@@ -5551,7 +6345,8 @@ def _agent_public(row) -> dict:
            "output_text": r["output_text"] or "", "steps": steps, "files_changed": sorted({s["path"] for s in steps if s.get("path")
                                                                                            and s.get("changed")}),
            "previous_interaction_id": r["previous_id"], "created": int(r["created"] or 0),
-           "finished": int(r["finished"]) if r["finished"] else None, "usage": {"steps": len(steps)}}
+           "finished": int(r["finished"]) if r["finished"] else None, "usage": {"steps": len(steps)},
+           "plan": next((s.get("plan") or [] for s in reversed(steps) if s.get("tool") == "plan"), [])}
     if r["error"]:
         out["error"] = {"message": r["error"]}
     if r.get("webhook_url"):
@@ -5597,7 +6392,8 @@ async def _agent_loop(iid: str, email: str, env_id: str, messages: list, tools_a
                       teen: bool, removed: list = None):
     """Runs the agent to the end, saving progress (steps, status, output) as it goes."""
     import httpx
-    tools = (_agent_file_tools() if "files" in tools_allowed else []) + ([AGENT_SEARCH_TOOL] if "web_search" in tools_allowed else [])
+    tools = [AGENT_PLAN_TOOL] + (_agent_file_tools() if "files" in tools_allowed else []) + \
+        ([AGENT_SEARCH_TOOL, AGENT_PAGE_TOOL] if "web_search" in tools_allowed else [])
     place = _client_place.get()
     live = [{"role": "system", "content": " ".join(x for x in (_now_note(), _place_note(place)) if x)
                                           + await _live_note(_last_user_text(messages))}]
@@ -5607,14 +6403,14 @@ async def _agent_loop(iid: str, email: str, env_id: str, messages: list, tools_a
     if removed:                                       # healthcare workspace: said in the steps, like any other step
         steps.append({"tool": "privacy", "result": f"Patient details were removed before the agent read the task "
                                                    f"({_removed_words(removed)})."})
-    fixes, last_problems = 0, None
+    fixes, last_problems, nudges, todo = 0, None, 0, []
     plan = _plan_status(email)["plan"]
     try:
         _genie_checkpoint(env_id, "Before agent interaction " + iid)
-        for _ in range(max_steps):
+        for step_no in range(max_steps):
             if _agent_tasks.get(iid) == "cancel":
                 return _agent_save(iid, status="cancelled", steps=_json.dumps(steps), finished=time.time())
-            blocked = _count_call(email, iid, plan)
+            blocked = _count_call(email, iid, plan, cap=max_steps + AGENT_AUTOFIX_ROUNDS + AGENT_AUTO_CONTINUE + 2)
             if blocked is not None:
                 msg = _json.loads(bytes(blocked.body))["error"]["message"]
                 return _agent_save(iid, status="failed", error=msg, steps=_json.dumps(steps), finished=time.time())
@@ -5633,6 +6429,14 @@ async def _agent_loop(iid: str, email: str, env_id: str, messages: list, tools_a
             calls = msg.get("tool_calls") or []
             if not calls:
                 text = (msg.get("content") or "").strip()
+                left = [s["title"] for s in todo if s["status"] != "done"]
+                if left and nudges < AGENT_AUTO_CONTINUE and step_no < max_steps - 2:     # finish the plan by itself
+                    nudges += 1
+                    messages.append({"role": "assistant", "content": text})
+                    messages.append({"role": "user", "content": "Keep going without waiting for me: these steps of your "
+                                     "plan aren't done yet: " + "; ".join(left) + ". Do them now with your tools and update "
+                                     "the plan. If one truly can't be done, mark it done and say why in your final answer."})
+                    continue
                 if changes and "files" in tools_allowed and fixes < AGENT_AUTOFIX_ROUNDS:
                     check = _genie_project_check(env_id)    # the WHOLE environment, by itself, before finishing
                     if check["problems"]:
@@ -5659,9 +6463,21 @@ async def _agent_loop(iid: str, email: str, env_id: str, messages: list, tools_a
                     args = _json.loads(call.get("function", {}).get("arguments") or "{}")
                 except ValueError:
                     args = {}
+                if name == "update_plan":
+                    todo = _agent_plan(args.get("steps"))
+                    done = sum(1 for s in todo if s["status"] == "done")
+                    result = f"Plan saved ({len(todo)} steps). Now do the next step."
+                    step = {"tool": "plan", "plan": todo}
+                    step["result"] = f"{len(todo)} steps, {done} done"
+                    steps.append(step)
+                    messages.append({"role": "tool", "tool_call_id": call.get("id"), "content": result})
+                    continue
                 if name == "web_search" and "web_search" in tools_allowed:
                     result = await _search_for_agent(email, str(args.get("query") or "")[:400])
                     step = {"tool": "web_search", "query": str(args.get("query") or "")[:200]}
+                elif name == "read_page" and "web_search" in tools_allowed:
+                    result = await _read_page_for_agent(email, str(args.get("url") or ""), str(args.get("question") or ""))
+                    step = {"tool": "read_page", "query": str(args.get("url") or "")[:200]}
                 elif name in {t["function"]["name"] for t in _agent_file_tools()} and "files" in tools_allowed:
                     before = len(changes)
                     result = _genie_tool(env_id, name, args, changes)
@@ -5714,9 +6530,9 @@ async def _interaction_start(email: str, key_id, data: dict, place: dict = None)
     if org_refusal:
         return _api_error(422, org_refusal, "patient_data")
     try:
-        max_steps = max(1, min(int(data.get("max_steps") or 15), 30))
+        max_steps = max(1, min(int(data.get("max_steps") or AGENT_DEFAULT_STEPS), AGENT_MAX_STEPS))
     except (TypeError, ValueError):
-        return _api_error(400, "max_steps must be a number from 1 to 30.", "invalid_max_steps")
+        return _api_error(400, f"max_steps must be a number from 1 to {AGENT_MAX_STEPS}.", "invalid_max_steps")
     tools = set(data.get("tools") or ["files", "web_search"]) & {"files", "web_search"}
     history, env_hint = [], data.get("environment")
     prev = str(data.get("previous_interaction_id") or "")
@@ -6814,27 +7630,54 @@ STT_MODELS = ("whisper-large-v3-turbo", "whisper-large-v3")
 _stt_recent = {}
 
 
+AUDIO_FORMATS = {"wav": "audio/wav", "webm": "audio/webm", "ogg": "audio/ogg", "mp4": "audio/mp4", "m4a": "audio/mp4",
+                 "mp3": "audio/mpeg", "mpeg": "audio/mpeg", "flac": "audio/flac"}
+
+
+def _audio_format(name: str, raw: bytes) -> str:
+    """The recording's format, from what was said (format or file name) or from its first bytes. "wav" if unsure."""
+    ext = str(name or "").lower().rsplit(".", 1)[-1].split(";")[0].replace("audio/", "").replace("x-", "")
+    ext = {"mpeg3": "mp3", "mp4a": "m4a", "aac": "m4a"}.get(ext, ext)
+    if ext in AUDIO_FORMATS:
+        return ext
+    head = raw[:12]
+    return ("webm" if head.startswith(b"\x1aE\xdf\xa3") else "ogg" if head.startswith(b"OggS") else
+            "flac" if head.startswith(b"fLaC") else "mp3" if head.startswith((b"ID3", b"\xff\xfb", b"\xff\xf3")) else
+            "m4a" if head[4:8] == b"ftyp" else "wav")
+
+
 @app.post("/voice/transcribe")
 async def voice_transcribe(request: Request, data: dict = Body(...)):
+    """{"audio_b64", "format"?: "wav" | "webm" | "ogg" | "m4a" | "mp3" | "flac", "language"?} -> {"text", "language"}.
+    The apps send WAV; the web app's voice messages send what the browser records (WebM or MP4)."""
     email = _email_from_auth(request)
+    why = _family_refusal(email, "voice")             # under-13s, or voice turned off by a parent: before anything else
+    if why:
+        return _ai_error(403, why, "family_rule")
+    try:
+        raw = base64.b64decode(str(data.get("audio_b64") or ""), validate=True)
+    except Exception:
+        raise HTTPException(status_code=422, detail="That recording couldn't be read.")
+    return await _transcribe(email, raw, str(data.get("format") or ""), str(data.get("language") or ""))
+
+
+async def _transcribe(email: str, raw: bytes, fmt: str = "", hint: str = ""):
+    """Speech to text in any language (Whisper on Groq): {"text", "language"} or an error response."""
     why = _family_refusal(email, "voice")
     if why:
         return _ai_error(403, why, "family_rule")
     if not _env("GROQ_API_KEY"):
         return _ai_error(503, "Speech recognition isn't set up on this server yet.", "not_configured")
-    try:
-        raw = base64.b64decode(str(data.get("audio_b64") or ""), validate=True)
-    except Exception:
-        raise HTTPException(status_code=422, detail="That recording couldn't be read.")
-    if not raw or len(raw) > 4_000_000:
-        raise HTTPException(status_code=422, detail="Recordings must be short (under about a minute).")
+    if not raw or len(raw) > 8_000_000:
+        raise HTTPException(status_code=422, detail="Recordings must be short (under about two minutes).")
+    fmt = _audio_format(fmt, raw)
     now = time.time()
     recent = [t for t in _stt_recent.get(email, []) if now - t < 60]
     if len(recent) >= 20:
         return _ai_error(429, "That's a lot of speaking in one minute. Try again in a moment.", "rate_limited")
     _stt_recent[email] = recent + [now]
     import httpx
-    hint = str(data.get("language") or "")[:5]
+    hint = str(hint or "")[:5]
     async with httpx.AsyncClient(timeout=httpx.Timeout(60, connect=15)) as client:
         for model in STT_MODELS:
             form = {"model": model, "response_format": "verbose_json", "temperature": "0"}
@@ -6842,7 +7685,7 @@ async def voice_transcribe(request: Request, data: dict = Body(...)):
                 form["language"] = hint.split("-")[0]
             try:
                 r = await client.post(f"{GROQ_BASE}/audio/transcriptions", data=form,
-                                      files={"file": ("speech.wav", raw, "audio/wav")},
+                                      files={"file": (f"speech.{fmt}", raw, AUDIO_FORMATS[fmt])},
                                       headers={"Authorization": f"Bearer {_env('GROQ_API_KEY')}"})
             except Exception:
                 return _ai_error(502, "The speech service didn't answer. Please try again.", "upstream")
@@ -6852,6 +7695,52 @@ async def voice_transcribe(request: Request, data: dict = Body(...)):
             if r.status_code not in (400, 404) or "model" not in r.text.lower():
                 break                                   # not a "this model is gone" answer: stop here
     return _ai_error(502, "The speech service had a problem. Please try again.", "upstream")
+
+
+# ---- Audio for developers (OpenAI-compatible): voice messages in your own app.
+#   POST /v1/audio/transcriptions  multipart "file" (+ "language") -- or JSON {"audio_b64", "format"} -> {"text", "language"}
+#   POST /v1/audio/speech          {"input", "voice"?, "speed"?} -> the audio itself (WAV)
+@app.post("/v1/audio/transcriptions")
+async def api_audio_transcriptions(request: Request):
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    if (request.headers.get("content-type") or "").startswith("multipart/form-data"):
+        form = await request.form()
+        upload = form.get("file")
+        if upload is None or not hasattr(upload, "read"):
+            return _api_error(400, "Send the recording as the form field \"file\".", "missing_file")
+        raw, fmt, hint = await upload.read(), str(getattr(upload, "filename", "") or ""), str(form.get("language") or "")
+    else:
+        try:
+            data = await request.json()
+            raw = base64.b64decode(str(data.get("audio_b64") or ""), validate=True)
+        except Exception:
+            return _api_error(400, "Send a multipart \"file\", or JSON with audio_b64.", "invalid_audio")
+        fmt, hint = str(data.get("format") or ""), str(data.get("language") or "")
+    try:
+        out = await _transcribe(owner[0], raw, fmt, hint)
+    except HTTPException as exc:
+        return _api_error(exc.status_code if exc.status_code != 422 else 400, str(exc.detail), "invalid_audio")
+    return out
+
+
+@app.post("/v1/audio/speech")
+async def api_audio_speech(request: Request, data: dict = Body(...)):
+    from fastapi.responses import JSONResponse, Response
+    owner, err = _api_owner_or_error(request)
+    if err:
+        return err
+    text = str(data.get("input") or data.get("text") or "")
+    if not text.strip():
+        return _api_error(400, "Give the text to speak (input).", "missing_input")
+    voice = str(data.get("voice") or "Female (Jenny)")
+    out = await _speak(owner[0], {"text": text, "persona": voice if voice in TTS_PERSONAS else "Female (Jenny)",
+                                  "speed": data.get("speed")})
+    if isinstance(out, JSONResponse):
+        return out
+    return Response(content=base64.b64decode(out["audio_b64"]), media_type=out.get("mime_type") or "audio/wav",
+                    headers={"X-Gink-Voice": str(out.get("voice") or "")})
 
 
 # ---- The Developer API's own description (OpenAPI 3.1) -- only the public /v1 endpoints.
@@ -6882,7 +7771,10 @@ def _developer_openapi(base_url: str) -> dict:
                         "messages": {"type": "array", "items": message},
                         "stream": {"type": "boolean", "default": False, "description": "Server-sent events, OpenAI chunk format."},
                         "max_tokens": {"type": "integer"}, "temperature": {"type": "number"},
-                        "tools": {"type": "array", "items": {"type": "object"}, "description": "OpenAI function tools."}}}}}},
+                        "tools": {"type": "array", "items": {"type": "object"}, "description": "OpenAI function tools."},
+                        "gink_web": {"type": "boolean", "description": "true: search the web first; false: never."},
+                        "gink_maps": {"type": "boolean", "description": "true: answers about real places end with a "
+                                      "```map block ({title, places: [{name, query, lat, lon, note}]}) to draw a map."}}}}}},
                 "responses": {"200": {"description": "A chat completion (or an event stream when stream is true). In a "
                                                       "workspace in healthcare mode, a patient's details are removed before "
                                                       "anything is sent: the answer then starts with a short notice.",
@@ -6907,10 +7799,137 @@ def _developer_openapi(base_url: str) -> dict:
                         "type": "object", "properties": {"b64_json": {"type": "string"}}}}}}}}},
                               "401": err("Missing, invalid or revoked API key."),
                               "429": err("Daily image allowance reached.")}}},
+            **_openapi_more(err),
         },
         "components": {"securitySchemes": {"GinkKey": {"type": "http", "scheme": "bearer", "bearerFormat": "gink_live_..."}},
-                       "schemas": {"Error": error}},
+                       "schemas": dict({"Error": error}, **_OPENAPI_SCHEMAS)},
     }
+
+
+# The rest of the Developer API in the OpenAPI description: (method, path, operationId, summary, request body
+# properties or None, required fields, response schema ref or description). Kept next to the routes' own notes.
+_S, _I, _B, _N = {"type": "string"}, {"type": "integer"}, {"type": "boolean"}, {"type": "number"}
+_REF = lambda name: {"$ref": f"#/components/schemas/{name}"}
+_OPENAPI_SCHEMAS = {
+    "Memory": {"type": "object", "properties": {"id": _S, "object": {"const": "memory"}, "text": _S, "created": _N,
+                                                "replaced": {"type": ["string", "null"]}}},
+    "Place": {"type": "object", "properties": {"object": {"const": "place"}, "name": _S, "display": _S, "lat": _N, "lon": _N,
+                                               "type": _S, "map_url": _S}},
+    "Step": {"type": "object", "properties": {"tool": _S, "path": _S, "query": _S, "changed": _B, "result": _S,
+                                              "plan": {"type": "array", "items": _REF("PlanStep")}}},
+    "PlanStep": {"type": "object", "properties": {"title": _S, "status": {"type": "string", "enum": ["todo", "doing", "done"]}}},
+    "Interaction": {"type": "object", "properties": {
+        "id": _S, "object": {"const": "interaction"}, "status": {"type": "string", "enum": ["queued", "running", "completed",
+                                                                                            "failed", "cancelled"]},
+        "input": _S, "output_text": _S, "environment": _S, "previous_interaction_id": {"type": ["string", "null"]},
+        "steps": {"type": "array", "items": _REF("Step")}, "plan": {"type": "array", "items": _REF("PlanStep")},
+        "files_changed": {"type": "array", "items": _S}, "created": _I, "finished": {"type": ["integer", "null"]},
+        "usage": {"type": "object", "properties": {"steps": _I}}}},
+    "Environment": {"type": "object", "properties": {"id": _S, "object": {"const": "environment"}, "name": _S,
+                                                     "files": {"type": "array", "items": _S}}},
+    "Schedule": {"type": "object", "properties": {"id": _S, "object": {"const": "schedule"}, "input": _S, "every": _S,
+                                                  "at": _S, "timezone": _S, "paused": _B, "next_run": {"type": ["integer", "null"]}}},
+    "Batch": {"type": "object", "properties": {"id": _S, "object": {"const": "batch"}, "name": {"type": ["string", "null"]},
+                                               "status": _S, "created_at": _I, "completed_at": {"type": ["integer", "null"]},
+                                               "request_counts": {"type": "object", "properties": {"total": _I, "completed": _I,
+                                                                                                   "failed": _I}}}},
+}
+_OPENAPI_OPS = [
+    ("get", "/memories", "listMemories", "What Gink remembers about the key's owner (the same as their apps)", None, (), "list:Memory"),
+    ("post", "/memories", "createMemory", "Remember a fact (a single fact said again replaces the old one)",
+     {"text": _S}, ("text",), "Memory"),
+    ("delete", "/memories/{memory_id}", "deleteMemory", "Forget a memory", None, (), "Deleted."),
+    ("post", "/memories/suggest", "suggestMemory", "A lasting fact in some text, worth remembering (nothing saved)",
+     {"text": _S, "sensitive": _B}, ("text",), "{\"fact\": string | null}"),
+    ("post", "/memories/generate", "generateMemories", "Generate memory from chats: the lasting facts in a conversation (at "
+     "most 5), saved unless save is false. sensitive: also health, religion... (never for teens or healthcare workspaces)",
+     {"messages": {"type": "array", "items": {"type": "object"}}, "save": _B, "sensitive": _B}, ("messages",), "list:Memory"),
+    ("get", "/memories/import-prompt", "memoryImportPrompt", "What to ask another AI assistant so it lists what it remembers",
+     None, (), "{\"prompt\": string}"),
+    ("post", "/memories/import", "importMemories", "Import memory from other AI providers: its answer, one fact per line",
+     {"text": _S, "sensitive": _B}, ("text",), "list:Memory"),
+    ("post", "/interactions", "createInteraction", "Run a managed agent: it plans, then reads, writes and edits files in its "
+     "environment, searches the web and reads pages, until the task is done (stream: server-sent events)",
+     {"input": _S, "agent": _S, "environment": _S, "previous_interaction_id": _S, "max_steps": {"type": "integer",
+      "minimum": 1, "maximum": 60, "default": 30}, "background": _B, "stream": _B,
+      "tools": {"type": "array", "items": {"type": "string", "enum": ["files", "web_search"]}}}, ("input",), "Interaction"),
+    ("get", "/interactions/{interaction_id}", "getInteraction", "An agent run: status, steps, plan, answer", None, (), "Interaction"),
+    ("post", "/interactions/{interaction_id}/cancel", "cancelInteraction", "Stop an agent run", None, (), "Interaction"),
+    ("post", "/environments", "createEnvironment", "A persistent folder of files for agents (a Genie project)",
+     {"name": _S}, (), "Environment"),
+    ("get", "/environments", "listEnvironments", "Your environments", None, (), "list:Environment"),
+    ("get", "/environments/{environment_id}", "getEnvironment", "One environment and its files", None, (), "Environment"),
+    ("delete", "/environments/{environment_id}", "deleteEnvironment", "Delete an environment and its files", None, (), "Deleted."),
+    ("get", "/environments/{environment_id}/files/{path}", "downloadFile", "A file's contents", None, (), "The file."),
+    ("put", "/environments/{environment_id}/files/{path}", "uploadFile", "Create or replace a file (the request body is the "
+     "file)", None, (), "The file's new state."),
+    ("get", "/environments/{environment_id}/check", "checkEnvironment", "Problems in the project's code (like the agent's own "
+     "check)", None, (), "{\"problems\": [...]}"),
+    ("post", "/schedules", "createSchedule", "An agent task that runs by itself (daily, weekdays, weekly or hourly)",
+     {"input": _S, "every": _S, "at": _S, "timezone": _S, "environment": _S, "webhook_url": _S}, ("input",), "Schedule"),
+    ("get", "/schedules", "listSchedules", "Your scheduled tasks", None, (), "list:Schedule"),
+    ("patch", "/schedules/{schedule_id}", "updateSchedule", "Pause, resume or change a scheduled task",
+     {"paused": _B, "every": _S, "at": _S, "input": _S}, (), "Schedule"),
+    ("delete", "/schedules/{schedule_id}", "deleteSchedule", "Delete a scheduled task", None, (), "Deleted."),
+    ("post", "/schedules/{schedule_id}/run", "runSchedule", "Run a scheduled task now", None, (), "Interaction"),
+    ("post", "/batches", "createBatch", "Many chat requests at once (up to 100), answered in the background",
+     {"name": _S, "requests": {"type": "array", "items": {"type": "object", "properties": {"custom_id": _S,
+                                                                                           "body": {"type": "object"}}}}},
+     ("requests",), "Batch"),
+    ("get", "/batches", "listBatches", "Your latest batches", None, (), "list:Batch"),
+    ("get", "/batches/{batch_id}", "getBatch", "A batch's status and counts", None, (), "Batch"),
+    ("get", "/batches/{batch_id}/results", "batchResults", "The answers, one JSON line per request", None, (),
+     "JSON Lines: {\"custom_id\", \"response\" | \"error\"}."),
+    ("post", "/batches/{batch_id}/cancel", "cancelBatch", "Stop a batch", None, (), "Batch"),
+    ("get", "/geo/search", "searchPlaces", "Places by name or address (OpenStreetMap), for maps: ask chat with "
+     "\"gink_maps\": true and answers about places end with a ```map block", None, (), "list:Place"),
+    ("get", "/places/photo", "placePhoto", "A picture of a place (Wikipedia's, for the article about it), by name and "
+     "coordinates: {\"image\", \"title\", \"page\", \"credit\"}; 404 when there's none", None, (),
+     "{\"image\", \"title\", \"page\", \"credit\"}"),
+    ("post", "/audio/transcriptions", "createTranscription", "Speech to text in any language: a multipart \"file\" (WAV, "
+     "WebM, OGG, M4A, MP3, FLAC; + \"language\"), or JSON {\"audio_b64\", \"format\"}", None, (), "{\"text\", \"language\"}"),
+    ("post", "/audio/speech", "createSpeech", "Gink's natural voice (WAV audio)", {"input": _S, "voice": _S,
+     "speed": {"type": "string", "enum": ["slow", "fast"]}}, ("input",), "audio/wav"),
+    ("get", "/images/ideas", "imageIdeas", "Ready-made looks and styles for images", None, (), "The catalog."),
+    ("get", "/workspace", "getWorkspace", "The key owner's workspace (and their role in it)", None, (), "The workspace."),
+    ("get", "/workspace/safety", "workspaceSafety", "Healthcare mode's safety report for workspace managers (counts only, never chats)",
+     None, (), "Counts by day."),
+    ("get", "/webhooks/secret", "webhookSecret", "The secret that signs your webhooks (Gink-Signature)", None, (), "{\"secret\"}"),
+    ("post", "/webhooks/secret/rotate", "rotateWebhookSecret", "A new webhook secret (the old one stops working)", None, (),
+     "{\"secret\"}"),
+    ("get", "/account/export.zip", "exportAccount", "Everything Gink keeps for the key's owner, as a ZIP", None, (), "application/zip"),
+    ("get", "/openapi.json", "openapi", "This description", None, (), "OpenAPI 3.1"),
+]
+
+
+def _openapi_more(err) -> dict:
+    paths: dict = {}
+    for method, path, op_id, summary, props, required, out in _OPENAPI_OPS:
+        spec = {"summary": summary, "operationId": op_id}
+        params = [{"name": p, "in": "path", "required": True, "schema": _S} for p in re.findall(r"{(\w+)}", path)]
+        if path == "/geo/search":
+            params += [{"name": "q", "in": "query", "required": True, "schema": _S},
+                       {"name": "limit", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 10, "default": 5}}]
+        if path == "/places/photo":
+            params += [{"name": "name", "in": "query", "required": True, "schema": _S},
+                       {"name": "lat", "in": "query", "required": True, "schema": {"type": "number"}},
+                       {"name": "lon", "in": "query", "required": True, "schema": {"type": "number"}}]
+        if params:
+            spec["parameters"] = params
+        if props is not None:
+            spec["requestBody"] = {"required": True, "content": {"application/json": {"schema": dict(
+                {"type": "object", "properties": props}, **({"required": list(required)} if required else {}))}}}
+        if out.startswith("list:"):
+            ok = {"description": "A list.", "content": {"application/json": {"schema": {"type": "object", "properties": {
+                "object": {"const": "list"}, "data": {"type": "array", "items": _REF(out[5:])}}}}}}
+        elif out in _OPENAPI_SCHEMAS:
+            ok = {"description": out + ".", "content": {"application/json": {"schema": _REF(out)}}}
+        else:
+            ok = {"description": out}
+        spec["responses"] = {"200": ok, "401": err("Missing, invalid or revoked API key."),
+                             "429": err("Daily allowance or per-minute limit reached (see Retry-After).")}
+        paths.setdefault(path, {})[method] = spec
+    return paths
 
 
 @app.get("/v1/openapi.json")
@@ -8533,6 +9552,18 @@ def _genie_checkpoint(pid: str, label: str) -> int:
                     (pid, *kept))
         return new_id
     return _genie_db(save)
+def _about_gink_note() -> str:
+    """Gink's own website, source code and support (services/about_gink.py), for Genie's prompt (0.1.160)."""
+    try:
+        try:
+            from .about_gink import about_gink
+        except ImportError:                                    # backend_server.py run on its own (deploy/)
+            from about_gink import about_gink
+        return about_gink().replace("About you: you are Gink,", "About Gink (you are part of it):", 1)
+    except Exception:
+        return ""
+
+
 GENIE_SYSTEM = (
     "You are Gink Genie, an expert software engineer working inside the user's project. Use the tools to look at "
     "and change files: list_files, find_files (by name), search_files (inside files), read_file (numbered lines; "
@@ -9142,7 +10173,8 @@ async def _genie_run(email: str, pid: str, instruction: str, progress: str = "",
              "mode": "plan" if mode == "plan" else "auto",
              "pending": None, "model": await _current_model("openai/gpt-oss-120b"),
              "messages": [{"role": "system", "content": GENIE_SYSTEM + "\n\n" + _now_note() + " " + _place_note(_client_place.get())
-                           + " Use web_search for anything current (versions, prices, news, docs) instead of guessing."}]
+                           + " Use web_search for anything current (versions, prices, news, docs) instead of guessing."
+                           + _about_gink_note()}]
                          + ([{"role": "system", "content": TEEN_SAFETY}] if teen else [])
                          + ([{"role": "system", "content": org_text}] if org_text else []) + history +
                          [{"role": "user", "content": f"Project files:\n{listing}\n\nRequest: {instruction}"
@@ -9998,6 +11030,7 @@ SYNCED_PREFS = frozenset({
     "reply_language", "voice_speed", "read_aloud", "speech_lang", "web_search", "use_memory", "video_suggestions",
     "notify_reminders", "agent_confirm", "send_key", "briefing_enabled", "briefing_time", "briefing_city",
     "briefing_speak", "wake_followup", "voice", "model", "genie_mode", "instructions", "effort", "memory_suggest",
+    "memory_sensitive", "location_metadata",
 })
 _PREFS_TABLE = "CREATE TABLE IF NOT EXISTS account_preferences (email TEXT PRIMARY KEY, data TEXT NOT NULL, updated REAL NOT NULL)"
 

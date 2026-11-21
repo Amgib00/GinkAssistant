@@ -131,4 +131,4 @@ def test_page_apps_and_web_wiring():
     bridge = read("webapp", "bridge.js")
     assert '"/memory/auto"' in bridge and "memory_undo: function" in bridge and "!s.temporary" in bridge
     assert "memory_rules.py ./memory_rules.py" in read("deploy", "Dockerfile")
-    assert "Remember things automatically" in read("src", "ginkassistant", "ui", "settings_page.py")
+    assert "Generate memory from chats" in read("src", "ginkassistant", "ui", "settings_page.py")

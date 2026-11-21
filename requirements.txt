@@ -34,8 +34,8 @@ uvicorn
 python-multipart
 PyJWT
 cryptography<49; sys_platform == "darwin" and platform_machine == "x86_64"     # 49+ has no Intel-Mac builds
-cryptography>=49; sys_platform == "darwin" and platform_machine == "arm64"     # the same as pyproject's Mac list
-cryptography; sys_platform != "darwin"                                         # Sign in with Apple (ES256)
+cryptography>=50; sys_platform == "darwin" and platform_machine == "arm64"     # the same as pyproject's Mac list
+cryptography>=50; sys_platform != "darwin"                                     # Sign in with Apple (ES256)
 
 # --- voice, wake word, music ---
 edge-tts

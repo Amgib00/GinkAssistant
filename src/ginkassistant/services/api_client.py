@@ -230,6 +230,13 @@ class ApiClient:
     async def family(self, token: str) -> dict:
         return await self._authed("GET", "/family", token)
 
+    async def memory_generate(self, token: str, messages: list, sensitive: bool = False) -> list:
+        """Settings > Memory > "Generate memory from chats": the lasting facts in a conversation (not saved on the
+        server: the app keeps memories on the device and syncs them)."""
+        j = await self._authed("POST", "/memory/generate", token, timeout=30,
+                               json={"messages": messages, "sensitive": bool(sensitive), "save": False})
+        return [str(x) for x in (j.get("memories") or []) if isinstance(x, str)]
+
     async def family_invite(self, token: str, teen: str) -> dict:
         return await self._authed("POST", "/family/invite", token, json={"teen": teen})
 

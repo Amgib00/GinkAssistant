@@ -1,0 +1,50 @@
+<!--
+title: How Gink's memory works
+description: Generate memory from chats, sensitive topics, importing memory from another AI assistant, and how to see or forget what Gink remembers.
+-->
+<section class="page-head">
+  <div class="wrap">
+    <h1>How Gink&rsquo;s memory works</h1>
+    <p>Settings &gt; Memory, in the apps and on the web</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap prose">
+    <p class="note">Gink can remember lasting things about you &mdash; where you live, your work, how you like answers &mdash; so you don&rsquo;t have to repeat them. You decide: everything below can be turned off, and any memory can be forgotten.</p>
+
+    <h2>Telling Gink to remember</h2>
+    <p>Say &ldquo;remember that my exams start on 12 November&rdquo; in any chat. A single thing said again replaces the old one: tell Gink you moved to another city and the new city takes the old one&rsquo;s place. Memories follow your account to all your devices.</p>
+
+    <h2 id="generate">Generate memory from chats</h2>
+    <p>With <strong>Generate memory from chats</strong> on (it is, until you turn it off), Gink also remembers lasting things you mention in passing, by itself:</p>
+    <ul>
+      <li>Right away, when a message plainly states a lasting fact (&ldquo;I live in Accra&rdquo;, &ldquo;I&rsquo;m vegetarian&rdquo;).</li>
+      <li>Every few messages, Gink&rsquo;s AI reads the recent conversation and picks out at most five lasting facts about you &mdash; never one-off requests, guesses, what Gink said, or details about other people.</li>
+    </ul>
+    <p>Each time, Gink shows what it remembered, with <strong>Undo</strong>. It never does this in a temporary chat, and never in a workspace in healthcare mode. Passwords, codes, card and account numbers, and anything about self-harm, abuse or crime are never kept by themselves, whatever your settings.</p>
+
+    <h2 id="sensitive">Include sensitive topics in memory</h2>
+    <p>Sensitive topics &mdash; health conditions, allergies and medicines, religious beliefs, sexuality, political views and the like &mdash; are left out of memories Gink makes by itself, unless you turn on <strong>Include sensitive topics in memory</strong>. With it on, Gink may keep what you plainly said about yourself (&ldquo;I&rsquo;m allergic to penicillin&rdquo;), so answers can take it into account. It stays off for accounts of people under 18 and in healthcare workspaces. Food choices like vegetarian, halal or kosher aren&rsquo;t treated as sensitive.</p>
+
+    <h2 id="import">Import memory from other AI providers</h2>
+    <p>Used another AI assistant before? Bring what it knows about you:</p>
+    <ol>
+      <li>In Gink, open Settings &gt; Memory and choose <strong>Start import</strong> next to &ldquo;Import memory from other AI providers&rdquo;.</li>
+      <li>Copy the prompt Gink shows, and send it in a chat with your other assistant. It asks for one lasting fact per line, and leaves out secrets.</li>
+      <li>Copy its whole answer, paste it into Gink and choose <strong>Add to memory</strong>.</li>
+    </ol>
+    <p>Gink adds each lasting fact, turns &ldquo;The user lives in&hellip;&rdquo; into &ldquo;I live in&hellip;&rdquo;, skips what it already knows and anything it never keeps, and skips sensitive topics unless you turned them on. Check the list in Settings &gt; Memory afterwards and forget anything you don&rsquo;t want.</p>
+    <p>Developers: <code>GET /v1/memories/import-prompt</code>, then <code>POST /v1/memories/import</code> with the answer; in Python <code>client.memories.import_text(answer)</code>, in JavaScript <code>gink.memories.import(answer)</code>, or <code>gink memories import answer.txt</code> in a terminal. <code>POST /v1/memories/generate</code> picks the lasting facts out of a conversation.</p>
+
+    <h2>Seeing and forgetting</h2>
+    <ul>
+      <li>Settings &gt; Memory lists everything Gink remembers: forget one, or forget everything.</li>
+      <li>Say &ldquo;forget that I live in Lima&rdquo; in a chat.</li>
+      <li>Turn off <strong>Use memories in answers</strong> (Settings &gt; Privacy) to keep your memories but stop Gink from using them.</li>
+    </ul>
+
+    <h2>Where memories are kept</h2>
+    <p>On your devices and, when you&rsquo;re signed in, with your account on Gink&rsquo;s server so they reach your other devices. When Gink uses its AI to pick memories, the recent messages go through Gink&rsquo;s server to the AI service that answers you, just like a normal answer; nothing else is kept. More in the <a href="privacy.html">privacy policy</a>.</p>
+  </div>
+</section>

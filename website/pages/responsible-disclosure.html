@@ -1,0 +1,61 @@
+<!--
+title: Responsible disclosure policy
+description: How to report a security problem in Gink, what we promise in return, and the rules for testing safely.
+-->
+<section class="page-head">
+  <div class="wrap">
+    <h1>Responsible disclosure policy</h1>
+    <p>Last updated 20 November 2026</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap prose">
+    <p class="note">Found a security problem in Gink? Thank you. Please tell us privately first, give us a fair chance to fix it, and don&rsquo;t harm anyone&rsquo;s data while you look. If you do that, we won&rsquo;t take legal action against you.</p>
+
+    <h2>What this covers</h2>
+    <ul>
+      <li>The Gink apps for Mac, Windows, Linux, iPhone, iPad and Android, and Gink Genie.</li>
+      <li>The Gink server, including Gink on the web (<code>/app</code>), the developer console, the Developer API (<code>/v1</code>), managed agents, scheduled tasks and webhooks.</li>
+      <li>The Gink SDKs and command-line tool (<code>gink-ai</code> for Python and JavaScript), and this website.</li>
+    </ul>
+    <p>Services we use (for example our AI, email, payment and hosting providers) have their own disclosure programmes: report problems in their systems to them. If you&rsquo;re not sure, report it to us and we&rsquo;ll pass it on.</p>
+
+    <h2>How to report</h2>
+    <ul>
+      <li><strong>Best:</strong> GitHub&rsquo;s private reporting on our repository &mdash; <a href="{{REPO}}/security/advisories/new">report a vulnerability</a>.</li>
+      <li>Or email <a href="mailto:gink@ginkaisupport.com">gink@ginkaisupport.com</a> with &ldquo;Security&rdquo; in the subject.</li>
+    </ul>
+    <p>Please include what you found, where (the app or page, its version, your platform), the steps to reproduce it, and what an attacker could do with it. Screenshots, a short video or a proof of concept help a lot. Never put the details in a public issue, a review or social media before we&rsquo;ve fixed it.</p>
+
+    <h2>What we promise</h2>
+    <ul>
+      <li>We acknowledge your report within <strong>48 hours</strong>, and tell you within 7 days what we think of it.</li>
+      <li>We keep you updated while we fix it, and tell you when the fix is released.</li>
+      <li>We aim to fix serious problems within 30 days and others within 90 days. If it takes longer, we explain why.</li>
+      <li>With your permission, we thank you by name in the release notes. We don&rsquo;t run a paid bug bounty at the moment.</li>
+      <li>We won&rsquo;t take legal action against you, or ask anyone else to, for research that follows this policy. If someone else does, we&rsquo;ll make it clear that you acted with our permission.</li>
+    </ul>
+
+    <h2>Rules for testing</h2>
+    <ul>
+      <li>Use only accounts you own, or accounts whose owners agreed. Never try to read, change or delete other people&rsquo;s chats, files, memories or accounts. If you reach someone else&rsquo;s data by accident, stop, don&rsquo;t keep a copy, and tell us.</li>
+      <li>Do as little as needed to show the problem: no mass downloads, no keeping access, no moving deeper into our systems.</li>
+      <li>Don&rsquo;t slow down or break the service for others: no denial-of-service, load or spam testing, and respect the rate limits.</li>
+      <li>No social engineering, phishing or physical attacks on people who work on Gink, and no attacks on our providers.</li>
+      <li>Don&rsquo;t share what you found with anyone until we&rsquo;ve released a fix, or 90 days have passed since your report, whichever comes first (tell us before you publish).</li>
+    </ul>
+
+    <h2>Usually not in scope</h2>
+    <ul>
+      <li>Reports from automated scanners with no real impact shown.</li>
+      <li>Missing security headers or cookie flags where nothing can actually be exploited.</li>
+      <li>Clickjacking on pages with no sensitive action, and &ldquo;self-XSS&rdquo; that needs the victim to paste code themselves.</li>
+      <li>Problems that need a phone or computer that is already unlocked and in the attacker&rsquo;s hands, or a jailbroken or rooted device.</li>
+      <li>An AI answer you got Gink to write (a &ldquo;jailbreak&rdquo;) &mdash; please tell us at <a href="mailto:gink@ginkaisupport.com">gink@ginkaisupport.com</a> instead, unless it leaks other people&rsquo;s data, keys or Gink&rsquo;s system access, which is in scope.</li>
+    </ul>
+
+    <h2>Keys found by mistake</h2>
+    <p>If you come across a key, password or token (ours or anyone&rsquo;s), don&rsquo;t use it: tell us straight away so it can be revoked. See also our <a href="{{REPO}}/blob/main/SECURITY.md">security policy</a> on GitHub.</p>
+  </div>
+</section>

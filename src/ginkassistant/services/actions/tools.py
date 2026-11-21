@@ -36,13 +36,36 @@ TOOL_SPECS = [
         {"query": {**S, "description": "words from the file name, e.g. 'cv' or 'budget'"}}, ["query"]),
     _fn("open_file", "Open a file: a number or name from the last file search, or a full path.",
         {"which": {**S, "description": "e.g. '1', 'CV.pdf' or a path"}}, ["which"]),
-    _fn("quit_app", "Quit an app that's open (it still asks to save unsaved work).", {"name": S}, ["name"]),
+    _fn("quit_app", "Quit (close) an app that's open (it still asks to save unsaved work).", {"name": S}, ["name"]),
+    _fn("find_app", "Find the apps installed on this computer (by name; empty = list them).",
+        {"query": {**S, "description": "part of the app's name, e.g. 'adobe' or 'studio'"}}, []),
+    _fn("running_apps", "List the apps that are open right now.", {}, []),
+    _fn("open_in_editor", "Open a file or project folder in a code editor or IDE (VS Code, PyCharm, Xcode, Android "
+        "Studio, Sublime Text, Cursor, Zed, IntelliJ...). Without editor: the first one installed.",
+        {"path": {**S, "description": "a file or folder: a number/name from the last file list, a project folder's name, or a path"},
+         "editor": {**S, "description": "e.g. 'vs code', 'pycharm', 'xcode' (optional)"}}, []),
+    _fn("read_text_file", "Read a text or code file on this computer (numbered lines; long files in parts).",
+        {"which": {**S, "description": "a number/name from the last file list, or a path like ~/Documents/notes.txt"},
+         "start_line": {"type": "integer"}, "max_lines": {"type": "integer"}}, ["which"]),
+    _fn("write_text_file", "Create a text or code file on this computer (a name alone goes in Documents). Replaces an "
+        "existing file only with overwrite=true (a backup is kept). Write the COMPLETE content.",
+        {"path": {**S, "description": "e.g. ~/Projects/site/index.html or notes.md"}, "content": S,
+         "overwrite": {"type": "boolean"}}, ["path", "content"]),
+    _fn("edit_text_file", "Change a text or code file on this computer: replace one exact piece of text (read the file "
+        "first and copy the text exactly). all=true replaces every copy. A backup is kept, so it can be undone.",
+        {"which": S, "find": S, "replace": S, "all": {"type": "boolean"}}, ["which", "find", "replace"]),
     _fn("set_dark_mode", "Turn the computer's dark mode on or off.",
         {"mode": {**S, "description": "on | off | toggle"}}, []),
     _fn("lock_screen", "Lock the computer's screen.", {}, []),
     _fn("create_note", "Make a note in Apple Notes (a text file elsewhere).", {"title": S, "body": S}, ["title"]),
     _fn("copy_to_clipboard", "Copy text to the clipboard so the user can paste it.", {"text": S}, ["text"]),
     _fn("system_status", "The computer's battery, Wi-Fi, free disk space and OS version.", {}, []),
+    _fn("device_check", "Check this computer (or phone) yourself, read-only: its system and whether it still gets "
+        "security updates, time since the last restart, processor load and the busiest apps, memory, storage, battery "
+        "charge and health, and protections (disk encryption, firewall, antivirus). Use it when the user asks to check, "
+        "scan or diagnose their device, why it's slow, about its battery, storage or security, or what device they have "
+        "-- never ask them which device or system they use, and never hand them steps to check it themselves.",
+        {"updates": {"type": "boolean", "description": "also look for waiting system updates (slow; when they ask about updates)"}}, []),
     _fn("open_folder", "Open a folder in Finder / the file manager: Downloads, Documents, Desktop, home, or any "
         "folder by name (e.g. a project folder).", {"name": {**S, "description": "e.g. 'downloads' or 'GinkAssistant'"}}, ["name"]),
     _fn("reveal_in_finder", "Show a file in Finder (a number or name from the last file list).", {"which": S}, []),
@@ -255,6 +278,24 @@ class ToolRunner:
     def _t_quit_app(self, name):
         return self._pc().quit_app(name)
 
+    def _t_find_app(self, query=""):
+        return self._pc().find_app(query)
+
+    def _t_running_apps(self):
+        return self._pc().running_apps()
+
+    def _t_open_in_editor(self, path="", editor=""):
+        return self._pc().open_in_editor(path, editor)
+
+    def _t_read_text_file(self, which, start_line=1, max_lines=400):
+        return self._pc().read_text_file(which, start_line, max_lines)
+
+    def _t_write_text_file(self, path, content, overwrite=False):
+        return self._pc().write_text_file(path, content, bool(overwrite))
+
+    def _t_edit_text_file(self, which, find, replace, all=False):
+        return self._pc().edit_text_file(which, find, replace, bool(all))
+
     def _t_set_dark_mode(self, mode="toggle"):
         return self._pc().set_dark_mode(mode)
 
@@ -269,6 +310,10 @@ class ToolRunner:
 
     def _t_system_status(self):
         return self._pc().system_status()
+
+    def _t_device_check(self, updates=False):
+        from .health import check_device
+        return check_device(bool(updates))
 
     def _t_open_folder(self, name="home"):
         return self._pc().open_folder(name)

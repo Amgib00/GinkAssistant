@@ -1,5 +1,5 @@
 # Runs Gink's test suite on every push and pull request.
-# requirements-test.txt is the minimal set -- checked in clean Python 3.10 and 3.13 environments.
+# requirements-test.txt is the minimal set -- checked in clean Python 3.11 and 3.13 environments.
 name: Tests
 
 on:
@@ -7,6 +7,9 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: read          # build and test only: nothing here writes to the repository
 
 jobs:
   test:
@@ -26,6 +29,35 @@ jobs:
         run: python -m pip install -r requirements-test.txt
       - name: Run the tests
         run: python -m pytest tests -q
+
+  browser:
+    # The tests that open Gink's pages in a real browser (Chromium through Playwright): the sidebar,
+    # the phone layout, People, the old-WebKit layout fix. The job above has no browser, so they skip there.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-test.txt
+      - name: Install test requirements and Chromium
+        run: |
+          python -m pip install -r requirements-test.txt "playwright==1.65.2"
+          python -m playwright install --with-deps chromium
+      - name: Run the browser tests
+        run: python -m pytest -q $(grep -l "sync_playwright" tests/test_*.py)
+
+  dependency-review:
+    # A pull request that adds or updates a package with a known high-severity problem fails here
+    # (GitHub's advisory database; it compares the dependency graph before and after, no secrets needed).
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/dependency-review-action@v5.0.1
+        with:
+          fail-on-severity: high
 
   lint:
     # The warnings PyCharm shows that are real problems: unused imports and variables, names that don't

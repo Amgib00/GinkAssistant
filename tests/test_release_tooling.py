@@ -29,15 +29,20 @@ def test_publish_works_when_the_whole_block_is_pasted(tmp_path):
        "git add -A && git -c user.email=t@t -c user.name=t commit -qm old && git push -q " + str(fake) + " main", seed)
     work = tmp_path / "gink"
     shutil.copytree(ROOT, work, ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache", ".git", "*.egg-info"))
+    locked = [work / "src" / "ginkassistant" / "services" / "web_app" / "vendor", work / "website" / "assets" / "fonts"]
+    for folder in locked:                       # how the 0.1.159 / first 0.1.160 packages left new folders: drw-------
+        folder.chmod(0o600)
     pasted = "gh workflow run release.yml -R x/y -f version=v9.9.9\necho next\n"           # the lines after it
     r = subprocess.run(["bash", "tools/publish_to_github.sh"], cwd=work, input=pasted, capture_output=True, text=True, timeout=240,
                        env={**os.environ, "GINK_REPO": str(fake), "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
                             "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"})
     v = version_of(work)
     assert f"GitHub now has version {v}." in r.stdout, r.stdout[-1500:] + r.stderr[-800:]
+    assert "opened 2 locked folder(s)" in r.stdout and all(f.stat().st_mode & 0o755 == 0o755 for f in locked)
     assert "Nothing pushed" not in r.stdout
     shown = sh(f"git --git-dir={fake} show main:pyproject.toml", tmp_path).stdout
     assert f'version = "{v}"' in shown
+    assert "MapLibre GL JS" in sh(f"git --git-dir={fake} show main:src/ginkassistant/services/web_app/vendor/maplibre-gl.js", tmp_path).stdout[:200]
     assert sh(f"git --git-dir={fake} log -1 --format=%s main", tmp_path).stdout.strip() == f"Gink {v}"
 
 

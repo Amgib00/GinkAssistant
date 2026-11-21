@@ -1,0 +1,83 @@
+<!--
+title: Data Processing Agreement
+description: How Gink processes personal data on behalf of organisations and developers: instructions, security, sub-processors, breaches, deletion.
+-->
+<section class="page-head">
+  <div class="wrap">
+    <h1>Data Processing Agreement</h1>
+    <p>Last updated 20 November 2026</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap prose">
+    <p class="note">When your organisation uses Gink (a workspace, the Developer API or managed agents) and personal data about your users or other people goes through Gink, you decide why and how it&rsquo;s used, and Gink processes it for you. This agreement sets out the rules. It&rsquo;s part of our <a href="terms-commercial.html">commercial terms</a>. Need a signed copy? Write to <a href="mailto:gink@ginkaisupport.com">gink@ginkaisupport.com</a>.</p>
+
+    <h2>1. Roles</h2>
+    <p>You (the organisation or developer) are the <strong>controller</strong> of the personal data in the content you and your users send to Gink. Gink AI is your <strong>processor</strong>. For running our own business &mdash; accounts, sign-in, billing, security, fraud prevention and usage limits &mdash; Gink AI is a controller, as described in the <a href="privacy.html">privacy policy</a>.</p>
+
+    <h2>2. What we process</h2>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Item</th><th>Details</th></tr></thead>
+      <tbody>
+        <tr><td>Purpose</td><td>Providing Gink to you: answering messages, reading files and photos you send, speaking and transcribing, web search, building and running projects and agent tasks, syncing, scheduled tasks and webhooks.</td></tr>
+        <tr><td>People concerned</td><td>Your users (staff, students, members, customers), and anyone they mention or include in content.</td></tr>
+        <tr><td>Kinds of data</td><td>Account details (name, email or phone), messages and attachments, project and agent files, memories and instructions, audio sent for transcription, technical data (device, time zone, request logs without contents).</td></tr>
+        <tr><td>Special categories</td><td>You shouldn&rsquo;t send health, biometric or other special-category data unless your use is lawful and necessary. Workspaces in healthcare mode must not be used with patient data; Gink removes the patient details it recognises before anything is sent to an AI service.</td></tr>
+        <tr><td>Duration</td><td>While you use Gink, then until deletion as described in section 8.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2>3. Your instructions</h2>
+    <p>We process personal data only on your documented instructions &mdash; these terms, your settings (for example healthcare mode, Lockdown mode, workspace instructions) and what your users ask Gink to do &mdash; unless the law requires otherwise, in which case we tell you first where the law allows. If we think an instruction breaks data-protection law, we&rsquo;ll tell you.</p>
+
+    <h2>4. People who can see it</h2>
+    <p>Only people who need it to run, secure and support Gink can reach personal data, and they&rsquo;re bound to keep it confidential. Workspace admins see members&rsquo; names and daily message counts, never their chats.</p>
+
+    <h2>5. Security</h2>
+    <ul>
+      <li>Connections are encrypted (HTTPS). Passwords are stored only as salted hashes; two-step sign-in secrets are encrypted.</li>
+      <li>AI-service keys live only on the server, never in the apps. Sessions can be signed out from Settings, and API keys can be revoked.</li>
+      <li>Code that Gink Genie runs, and websites Gink makes, run in sandboxes that can&rsquo;t reach Gink sign-ins.</li>
+      <li>The server runs as an unprivileged user, its storage is backed up daily by the host, and we keep dependencies up to date with automated security checks.</li>
+      <li>We review these measures regularly and may improve them, never in a way that lowers the overall protection.</li>
+    </ul>
+
+    <h2>6. Sub-processors</h2>
+    <p>You allow us to use these sub-processors. We bind each one to data-protection terms that protect your data at least as well as this agreement, and we&rsquo;re responsible for them. We&rsquo;ll list any new sub-processor here at least 30 days before it starts processing your data; if you object for a reasonable data-protection reason, tell us and we&rsquo;ll work with you, and you may stop using the affected feature or end the service.</p>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Sub-processor</th><th>What for</th></tr></thead>
+      <tbody>
+        <tr><td>Render</td><td>Hosting the Gink server and its storage</td></tr>
+        <tr><td>Groq</td><td>AI answers, transcription and web search</td></tr>
+        <tr><td>Anthropic</td><td>AI answers, only when someone chooses a Claude model</td></tr>
+        <tr><td>Google (Gemini, speech recognition)</td><td>Images, natural voices and speech recognition</td></tr>
+        <tr><td>Brevo</td><td>Sign-in codes and emails you asked for</td></tr>
+        <tr><td>Twilio, Africa&rsquo;s Talking</td><td>Sign-in codes by SMS, only for phone sign-in</td></tr>
+        <tr><td>Cloudflare R2</td><td>Large project files, only if storage is set up there</td></tr>
+        <tr><td>OpenStreetMap Foundation (map tiles, place search)</td><td>Maps in answers: place names and map squares, never who asked</td></tr>
+        <tr><td>OpenFreeMap (street map data)</td><td>Maps in answers: which pieces of the map to draw, never who asked</td></tr>
+        <tr><td>Wikimedia Foundation (place photos)</td><td>Photos on map cards: a place&rsquo;s name and position, never who asked</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2>7. Helping you</h2>
+    <ul>
+      <li><strong>People&rsquo;s rights:</strong> Settings and the API let you and your users see, export, correct and delete data. If we receive a request directly, we pass it to you.</li>
+      <li><strong>Assessments:</strong> we give you the information you reasonably need for data-protection impact assessments and for talking to regulators.</li>
+      <li><strong>Breaches:</strong> we tell you without undue delay, and within 72 hours, after we become aware of a personal-data breach affecting your data, with what we know, what we&rsquo;re doing about it and who to contact.</li>
+    </ul>
+
+    <h2>8. Deletion</h2>
+    <p>When you delete content, a workspace or an account, we delete the personal data from our live systems straight away, and from backups as they expire (within 30 days). Before that, you can download everything (Settings &gt; Privacy &gt; &ldquo;Download everything on the server&rdquo;, or <code>GET /v1/account/export.zip</code>). We keep only what the law requires us to keep, such as payment records, without linking them to the person.</p>
+
+    <h2>9. Checks</h2>
+    <p>We make available the information needed to show we follow this agreement and, once a year (or after a breach), answer your reasonable written questions. Audits beyond that are by agreement, with reasonable notice, at your cost, and without access to other customers&rsquo; data.</p>
+
+    <h2>10. Data across borders</h2>
+    <p>Gink&rsquo;s server and sub-processors may process data in other countries, including the United States. Where the law requires it for a transfer (for example from the European Economic Area, the United Kingdom or another country with transfer rules), the standard contractual clauses or another lawful transfer mechanism apply, and we&rsquo;ll sign them with you on request.</p>
+
+    <h2>11. If this agreement and other terms disagree</h2>
+    <p>For personal data we process for you, this agreement comes first, then the commercial terms.</p>
+  </div>
+</section>

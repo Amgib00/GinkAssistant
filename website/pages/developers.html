@@ -1,0 +1,110 @@
+<!--
+title: Developers
+description: Build with Gink: the Developer API, Python and JavaScript SDKs and a CLI for chat, managed agents, maps, voice messages, memory and batches.
+-->
+<section class="page-head">
+  <div class="wrap">
+    <h1>Build with Gink</h1>
+    <p>Gink&rsquo;s answers, agents, maps, voice and memory, in your own app or your terminal. It&rsquo;s OpenAI-compatible, and it uses the same account as the app.</p>
+    <div class="actions">
+      <a class="button" href="{{API}}/developers#keys">Get an API key</a>
+      <a class="button button-quiet" href="{{API}}/developers#docs">API reference</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap docs">
+    <nav class="toc" aria-label="On this page">
+      <ol>
+        <li><a href="#start">Get started</a></li>
+        <li><a href="#chat">Chat</a></li>
+        <li><a href="#agents">Agents</a></li>
+        <li><a href="#maps">Maps and places</a></li>
+        <li><a href="#voice">Voice messages</a></li>
+        <li><a href="#memory">Memory</a></li>
+        <li><a href="#batches">Many requests at once</a></li>
+        <li><a href="#location">Location metadata</a></li>
+        <li><a href="#limits">Limits</a></li>
+      </ol>
+    </nav>
+    <div class="prose">
+      <h2 id="start">Get started</h2>
+      <p>Sign in to the <a href="{{API}}/developers#keys">Developer Console</a> with your Gink account and create a key. Keep it secret: put it in the <code>GINK_API_KEY</code> environment variable, or run <code>gink login</code> once and the SDK finds it.</p>
+<pre><code>pip install gink-ai     # the Python SDK and the gink command
+npm install gink-ai     # the JavaScript SDK</code></pre>
+
+      <h2 id="chat">Chat</h2>
+      <p>Answers come with live information (weather, currency, the time where you are) and, with the search model, sources from the web.</p>
+<pre><code>from gink import Client
+
+client = Client()
+print(client.chat("What's the weather where I am?"))
+print(client.search("When does the rainy season start in Nairobi?"))</code></pre>
+      <p>Already using an OpenAI client? Point it at Gink:</p>
+<pre><code>curl {{API}}/v1/chat/completions \
+  -H "Authorization: Bearer $GINK_API_KEY" -H "Content-Type: application/json" \
+  -d '{"messages": [{"role": "user", "content": "Hello, Gink"}]}'</code></pre>
+
+      <h2 id="agents">Agents</h2>
+      <p>A managed agent takes a task, writes a plan, and works through up to 60 steps in a workspace that keeps its files between runs. It reads web pages, searches, and reads and writes files. If it stops with steps of its plan still open, it&rsquo;s told to carry on.</p>
+<pre><code>run = client.interactions.create(
+    input="Put the prices from example.org/prices in prices.md",
+    max_steps=30,          # 1 to 60
+)
+print(run.plan)            # each step, "todo", "doing" or "done"
+print(run.output_text, run.files_changed)
+
+for event in client.interactions.create(input="Plan a week of meals", stream=True):
+    print(event.type, event.data)       # every step as it happens</code></pre>
+      <p>In JavaScript, <code>await gink.interactions.create({ input, max_steps: 30 })</code>; in a terminal, <code>gink agent "task"</code>. Agents can also run on a schedule (<code>client.schedules.create(task, every="daily", at="08:00")</code>) and call a webhook when they finish.</p>
+
+      <h2 id="maps">Maps and places</h2>
+      <p>Ask with <code>gink_maps</code> and answers about places end with a map block: a title, and each place&rsquo;s name, coordinates and kind (museum, cafe, park and so on), ready to draw on your own map. Places by name or address come from OpenStreetMap, and a picture of a place comes from its Wikipedia article, like the photos on Gink&rsquo;s map cards.</p>
+<pre><code>answer = client.chat("Three places to see art in Cape Town", gink_maps=True)
+for m in client.maps(answer):
+    print(m["title"], [(p["name"], p.get("category")) for p in m["places"]])
+
+client.geo("Zeitz MOCAA, Cape Town")                  # name, address, lat, lon, map_url
+client.place_photo("Zeitz MOCAA", -33.9085, 18.4228)  # image, title, page, credit (None when there's none)</code></pre>
+      <p>In JavaScript, <code>gink.placePhoto(name, lat, lon)</code>; in a terminal, <code>gink map "Zeitz MOCAA, Cape Town" --photos</code>.</p>
+
+      <h2 id="voice">Voice messages</h2>
+      <p>Speech to text in any language (WAV, WebM, OGG, M4A, MP3, FLAC), and Gink&rsquo;s natural voice back.</p>
+<pre><code>text = client.audio.transcribe("voice-note.m4a")
+wav = client.audio.speech("Your table is booked for 8.")
+open("reply.wav", "wb").write(wav)</code></pre>
+      <p>In a terminal: <code>gink transcribe voice-note.m4a</code> and <code>gink say "Hello" -o hello.wav</code>.</p>
+
+      <h2 id="memory">Memory</h2>
+      <p>The same memory as the app, with the same rules: sensitive topics only if you ask for them, and never passwords, codes or card numbers. <a href="memory.html">How memory works</a>.</p>
+<pre><code>client.memories.generate(messages)       # the lasting facts in a conversation, remembered
+prompt = client.memories.import_prompt() # what to ask your other AI assistant
+client.memories.import_text(its_answer)  # add what it remembered about you</code></pre>
+
+      <h2 id="batches">Many requests at once</h2>
+      <p>Up to 100 chat requests, answered in the background.</p>
+<pre><code>batch = client.batches.create(["Summarise chapter 1", "Summarise chapter 2"])
+batch = client.batches.wait(batch["id"])
+for r in client.batches.results(batch["id"]):
+    print(r["custom_id"], r["response"]["choices"][0]["message"]["content"])</code></pre>
+
+      <h2 id="location">Location metadata</h2>
+      <p>Requests carry your device&rsquo;s time zone and language, so answers fit where you are. To send only your clock&rsquo;s difference from UTC, use <code>Client(location=False)</code>, <code>new Gink({ location: false })</code>, <code>gink --no-location</code> or <code>GINK_LOCATION=off</code>.</p>
+
+      <h2 id="limits">Limits</h2>
+      <p>Your key uses your plan&rsquo;s daily messages: 30 on Free, 500 with <a href="pricing.html">Gink Pro</a>. A long agent task counts one message for every 10 steps. Photos and screen images need Gink Pro.</p>
+    </div>
+  </div>
+</section>
+
+<section class="band cta">
+  <div class="wrap">
+    <h2>Questions about the API?</h2>
+    <p>Write to us, or open an issue where everyone can follow it.</p>
+    <div class="actions">
+      <a class="button" href="mailto:gink@ginkaisupport.com?subject=Gink%20Developer%20API">Email the team</a>
+      <a class="button button-quiet" href="community.html">Go to Community</a>
+    </div>
+  </div>
+</section>

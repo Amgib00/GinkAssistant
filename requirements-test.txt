@@ -1,5 +1,5 @@
 # What the test suite needs (used by .github/workflows/tests.yml) -- checked by
-# running every test in clean Python 3.10 and 3.13 environments.
+# running every test in clean Python 3.11 and 3.13 environments (as tests.yml does).
 # The full app installs more (requirements.txt); the tests don't need audio/AI engines.
 PyJWT
 SpeechRecognition

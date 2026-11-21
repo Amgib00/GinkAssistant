@@ -2,9 +2,14 @@
 
 It sends the request to Groq with the tool list, runs whatever tools the model
 asks for, feeds the real results back, and loops until the model gives a final
-answer (max 6 rounds). This is what lets Gink *analyse* a goal ("help me get
+answer (up to MAX_ROUNDS). This is what lets Gink *analyse* a goal ("help me get
 ready for my exam on Friday"), work out a plan, and actually save steps / set
 reminders, instead of only talking about it.
+
+0.1.159 -- a stronger, automatic agent: it writes a plan first (update_plan, shown live above the message box),
+works through it with up to 30 rounds, and if it stops with steps of its plan still open it's told to carry on
+(AUTO_CONTINUE times) instead of handing the work back. Apps, editors and text files are tools too (find, open,
+close apps; open a project in an IDE; read, write and edit files, with a backup kept before every change).
 
 Talks to Groq's OpenAI-compatible REST endpoint with plain httpx — no groq SDK,
 so this path carries no pydantic dependency (good news for Android builds).
@@ -28,13 +33,22 @@ GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 class GinkLimit(Exception):
     """Gink Cloud said no (daily limit, Pro-only feature...): show the message, don't fall back."""
 DEFAULT_MODEL = "openai/gpt-oss-120b"     # llama-3.3-70b-versatile was retired by Groq on 16 Aug 2026
-MAX_ROUNDS = 12          # agent mode: enough for real multi-step tasks
+MAX_ROUNDS = 30          # agent mode: long, real multi-step tasks (the server counts one message per 10 rounds)
+AUTO_CONTINUE = 2        # times the agent is told to finish its own plan before it may stop
 
 # ---- Agent mode: actions that need the user's OK before they run.
 # Always: it leaves the device, or can't be undone. In a chain: fine when asked for directly
 # ("lock my screen"), but asked about when Gink decides on it as part of a longer task.
 ALWAYS_ASK = {"compose_message", "make_call", "delete_item", "forget"}
-ASK_IN_CHAIN = {"quit_app", "lock_screen", "sleep_computer", "read_clipboard", "take_screenshot"}
+ASK_IN_CHAIN = {"lock_screen", "sleep_computer", "read_clipboard", "take_screenshot"}    # closing apps is automatic:
+# an app still asks to save unsaved work, and file changes keep a backup, so they're undoable without asking first
+PLAN_SPEC = {"type": "function", "function": {
+    "name": "update_plan", "description": (
+        "Write or update your plan for a task with several steps: every step, in order, each 'todo', 'doing' or "
+        "'done'. Call it first for any multi-step task, then again as steps finish. The person sees it live."),
+    "parameters": {"type": "object", "properties": {"steps": {"type": "array", "items": {"type": "object", "properties": {
+        "title": {"type": "string"}, "status": {"type": "string", "enum": ["todo", "doing", "done"]}},
+        "required": ["title"]}}}, "required": ["steps"]}}}
 # Connected Apps: writing to someone's calendar or email ALWAYS needs an OK on screen, whatever the
 # "Ask before sensitive actions" setting; without a screen to ask on (voice), it isn't done.
 MUST_ASK = {"calendar_create", "email_draft", "email_send"}
@@ -61,7 +75,20 @@ def describe(name: str, args: dict) -> str:
     if name == "forget":
         return "Forget" + (f" \u201c{a.get('what')}\u201d" if a.get("what") else " a memory")
     if name == "quit_app":
-        return "Quit " + (a.get("name") or "an app")
+        return "Close " + (a.get("name") or "an app")
+    if name == "open_in_editor":
+        return "Open " + (os.path.basename(str(a.get("path") or "").rstrip("/\\")) or "the editor") + \
+            (f" in {a.get('editor')}" if a.get("editor") else " in your code editor")
+    if name in ("write_text_file", "edit_text_file", "read_text_file"):
+        what = os.path.basename(str(a.get("path") or a.get("which") or "a file")) or "a file"
+        return {"write_text_file": ("Replace " if a.get("overwrite") else "Create ") + what,
+                "edit_text_file": "Change " + what, "read_text_file": "Read " + what}[name]
+    if name == "find_app":
+        return "Find apps" + (f" like \u201c{a.get('query')}\u201d" if a.get("query") else "")
+    if name == "running_apps":
+        return "See which apps are open"
+    if name == "update_plan":
+        return "Plan the steps"
     if name in ("lock_screen", "sleep_computer"):
         return {"lock_screen": "Lock the screen", "sleep_computer": "Put the computer to sleep"}[name]
     if name == "read_clipboard":
@@ -96,7 +123,11 @@ _ACTION_WORDS = re.compile(
     r"quit|dark mode|light mode|lock (?:my |the )?(?:screen|computer|mac)|make a note|take a note|note that|"
     r"copy (?:this|that|it)|clipboard|battery|disk space|storage left|wi-?fi|system status|"
     r"finder|terminal|folder|downloads|desktop|documents|settings|preferences|go to sleep|sleep the|"
-    r"recent files|recently|working on|google (?:it|for)|search google)\b"
+    r"recent files|recently|working on|google (?:it|for)|search google|"
+    r"check (?:up )?(?:on )?(?:my |the |this )?(?:computer|laptop|mac|macbook|pc|device|phone|system|machine)|"
+    r"health ?check|(?:do|run|make) a (?:quick |full )?(?:check|scan|diagnos\w*)|diagnos\w*|"
+    r"(?:is|why is) (?:my |the |this )?(?:computer|laptop|mac|macbook|pc|phone|device|machine) (?:ok|okay|fine|healthy|slow|so slow|hot|lagging)|"
+    r"speed (?:up|it up)|running slow|so slow|which device|what device|my specs|how much (?:ram|memory|storage))\b"
     # maths -> the exact calculator: "15% of 80000", "12 x 7", "1250*12" ('%' isn't a word
     # character, so it can't sit inside the \b(...)\b group above -- it never matched there)
     r"|\d\s*%|\b\d[\d,.]*\s*[x\u00d7*/+^]\s*\d"          # no "-": scores, dates and ranges use dashes
@@ -131,7 +162,9 @@ def _system_prompt(city: str = "") -> str:
         "android": "Alarms/timers go into the phone's own Clock app and ring even if Gink is closed.",
         "ios": "iOS doesn't allow apps to set Clock alarms; Gink's alarms ring only while Gink is open.",
     }.get(plat, "Alarms and reminders are added to the computer's own scheduler so they fire even if Gink is closed.")
-    return f"""You are Gink, a personal assistant that can take real actions on the user's {plat} device.
+    from .. import device_info
+    from ..about_gink import about_gink
+    return f"""You are Gink, a personal assistant that can take real actions on the user's {plat} device.{device_info.prompt_note()}{about_gink()}
 Current local date/time: {now:%A %Y-%m-%d %H:%M} (UTC{now:%z}).
 User's location: {city or "unknown (the live tools fall back to an approximate location)"}.
 {notes}
@@ -156,6 +189,17 @@ How to work:
   the videos as cards under your answer, so don't paste video links into your text.
 - For other factual or current questions, use web_search and base your answer on the results; say if results are thin.
 - Only say something is done if the tool result has ok=true. If a tool fails, say what went wrong and offer the next best option.
+- "Check my computer", "do a check", "why is it so slow", battery, storage or security questions: call device_check
+  (updates=true if they mention updates), then explain what's fine and what needs attention in plain words, and offer
+  what you can do about it (close the busiest app, open Storage settings...). Never ask which device or system they use.
+- Apps, editors and files: find_app / running_apps see what's installed and open; open_app opens one, quit_app
+  closes one. open_in_editor opens a file or project folder in an IDE (VS Code, PyCharm, Xcode...). read_text_file,
+  write_text_file and edit_text_file read, create and change text or code files in the user's home folder (a backup
+  is kept). To change code: find the file, read it, then edit_text_file with the exact text.
+- Work like a capable assistant that finishes jobs: for anything with several steps, call update_plan FIRST with
+  every step, then do the steps one after another with your tools, updating the plan as each is done. Don't stop
+  half-way to ask "shall I continue?" -- carry on until the whole task is done. Only ask when an essential detail is
+  missing or a step needs the user's OK.
 - Messages and calls are drafts: tell the user they need to tap send/call.
 - If an essential detail is missing (e.g. who to message), ask one short question instead of guessing.
 - If the user tells you something lasting about themselves and asks you to remember it, call remember. If they ask you to forget something, call forget.
@@ -177,12 +221,13 @@ class TaskAgent:
         body = {"model": self.model, "messages": messages, "temperature": 0.3}
         if use_tools:
             off = getattr(self.runner, "disabled_tools", set())
-            body["tools"] = [t for t in TOOL_SPECS if t["function"]["name"] not in off]
+            body["tools"] = [PLAN_SPEC] + [t for t in TOOL_SPECS if t["function"]["name"] not in off]
             body["tool_choice"] = "auto"
-        client = self._http or httpx.AsyncClient(timeout=45)
+        client = self._http or httpx.AsyncClient(timeout=60)
         headers = {"Authorization": f"Bearer {self.api_key}"}
         if getattr(self, "_turn", None):
             headers["X-Gink-Turn"] = self._turn
+            headers["X-Gink-Agent"] = "1"            # Gink Cloud: a long agent turn counts one message per 10 rounds
         try:
             r = await client.post(self.base_url, json=body, headers=headers)
         finally:
@@ -204,12 +249,15 @@ class TaskAgent:
                   on_status: Optional[Callable[[str], Awaitable[None]]] = None,
                   on_step: Optional[Callable[[int, str, str], Awaitable[None]]] = None,
                   confirm: Optional[Callable[[str, dict, str], Awaitable[bool]]] = None,
-                  ask_sensitive: bool = True) -> AgentReply:
+                  ask_sensitive: bool = True,
+                  on_plan: Optional[Callable[[list], Awaitable[None]]] = None) -> AgentReply:
         """on_step(index, label, state) drives the live checklist (state: running/done/failed/skipped);
-        confirm(tool, args, description) -> bool asks the user before sensitive actions."""
+        confirm(tool, args, description) -> bool asks the user before sensitive actions;
+        on_plan([{"title", "status"}]) shows the agent's plan as it changes."""
         import uuid as _uuid
-        self._turn = _uuid.uuid4().hex          # all AI rounds for this request count as ONE message
-        self._on_step, self._confirm, self._ask_sensitive = on_step, confirm, ask_sensitive
+        self._turn = _uuid.uuid4().hex          # all AI rounds for this request are one request
+        self._on_step, self._confirm, self._ask_sensitive, self._on_plan = on_step, confirm, ask_sensitive, on_plan
+        self.plan = []
         try:
             return await self._run(user_text, history, on_status)
         except GinkLimit as limit:
@@ -252,11 +300,21 @@ class TaskAgent:
         messages.append({"role": "user", "content": user_text})
         actions = []
         on_step, confirm = getattr(self, "_on_step", None), getattr(self, "_confirm", None)
+        nudges = 0
         try:
             for round_no in range(MAX_ROUNDS):
                 msg = await self._chat(messages)
                 calls = msg.get("tool_calls") or []
                 if not calls:
+                    left = [s["title"] for s in self.plan if s.get("status") != "done"]
+                    if left and nudges < AUTO_CONTINUE and round_no < MAX_ROUNDS - 2:   # automatic: finish the plan
+                        nudges += 1
+                        messages.append({"role": "assistant", "content": msg.get("content") or ""})
+                        messages.append({"role": "user", "content": (
+                            "Keep going without waiting for me: these steps of your plan aren't done yet: " + "; ".join(left)
+                            + ". Do them now with your tools (and update the plan). If one truly can't be done, mark it "
+                              "done and say why in your final answer.")})
+                        continue
                     return AgentReply(_with_held_back((msg.get("content") or "").strip() or _done_text(actions), actions), actions)
                 messages.append({"role": "assistant", "content": msg.get("content") or "",
                                  "tool_calls": calls})
@@ -266,6 +324,16 @@ class TaskAgent:
                         args = json.loads(call["function"].get("arguments") or "{}")
                     except json.JSONDecodeError:
                         args = {}
+                    if name == "update_plan":                       # the plan: shown live, not a step of its own
+                        self.plan = _clean_plan(args.get("steps"))
+                        if getattr(self, "_on_plan", None):
+                            try:
+                                await self._on_plan([dict(s) for s in self.plan])
+                            except Exception:
+                                pass
+                        messages.append({"role": "tool", "tool_call_id": call["id"], "content": json.dumps(
+                            {"ok": True, "message": f"Plan saved ({len(self.plan)} steps). Now do the next step."})})
+                        continue
                     if on_status:
                         await on_status(_status_text(name))
                     step, label = len(actions), describe(name, args)
@@ -316,6 +384,20 @@ class TaskAgent:
                               + (f" Already done: {done}." if done else ""), actions)
 
 
+def _clean_plan(steps) -> list:
+    """update_plan's steps, tidied: at most 20, each {"title", "status"} with a known status."""
+    out = []
+    for s in (steps if isinstance(steps, list) else [])[:20]:
+        if isinstance(s, str):
+            s = {"title": s}
+        if not isinstance(s, dict):
+            continue
+        title = " ".join(str(s.get("title") or "").split())[:140]
+        if title:
+            out.append({"title": title, "status": s.get("status") if s.get("status") in ("todo", "doing", "done") else "todo"})
+    return out
+
+
 def _with_held_back(text: str, actions) -> str:
     """Steps that needed an OK on screen and couldn't get one (voice) are ALWAYS reported, whatever
     the AI wrote -- so nobody believes an email was sent when it wasn't."""
@@ -360,8 +442,12 @@ def _status_text(tool):
         "create_file": "Making your file…", "create_image": "Creating your image…",
         "set_volume": "Changing the volume…", "media_control": "Controlling your music…",
         "take_screenshot": "Taking a screenshot…", "find_files": "Searching your files…", "open_file": "Opening the file…",
-        "quit_app": "Quitting the app…", "set_dark_mode": "Switching the appearance…", "lock_screen": "Locking the screen…",
+        "quit_app": "Closing the app…", "set_dark_mode": "Switching the appearance…", "lock_screen": "Locking the screen…",
+        "find_app": "Looking for apps…", "running_apps": "Checking which apps are open…",
+        "open_in_editor": "Opening the editor…", "read_text_file": "Reading the file…",
+        "write_text_file": "Writing the file…", "edit_text_file": "Changing the file…", "update_plan": "Planning…",
         "create_note": "Making a note…", "copy_to_clipboard": "Copying…", "system_status": "Checking your computer…",
+        "device_check": "Checking your device…",
         "open_folder": "Opening the folder…", "reveal_in_finder": "Showing it in Finder…", "open_terminal": "Opening Terminal…",
         "open_settings_pane": "Opening settings…", "sleep_computer": "Going to sleep…",
         "show_recent_files": "Looking at what you worked on…", "read_clipboard": "Reading your clipboard…",
@@ -371,6 +457,9 @@ def _status_text(tool):
 
 
 def _summarise(name, result) -> str:
+    if name == "device_check":
+        from .health import format_report
+        return format_report(result)
     if name == "list_items" and result.get("ok"):
         items = result.get("items", [])
         if not items:

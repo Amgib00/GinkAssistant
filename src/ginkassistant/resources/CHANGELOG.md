@@ -1,5 +1,62 @@
 # Changelog
 
+## 0.1.160 (November 2026)
+
+- Real maps: when an answer is about places, a real street map appears in the chat, drawn on your device from
+  OpenStreetMap: rivers, parks, buildings, stations and street names, light or dark like Gink. Each place is marked,
+  numbered and named, and the cards under the map show its photo, what kind of place it is and Directions in your own
+  maps app (Apple Maps on Apple devices, Google Maps elsewhere). Zoom in to the buildings, or open the map bigger.
+  Scrolling the chat over a map scrolls the chat; hold ⌘ or Ctrl to zoom
+- Gink knows which device it's on: "which computer am I using?" gets a straight answer, and it never asks which
+  operating system you use
+- A real device check: say "do a check" or "why is my laptop so slow" and Gink checks your computer itself -- system
+  and whether it still gets security updates, storage, memory, battery health, what's using the processor and
+  whether protection is on -- then says what to do about anything it found
+- Cleaner code blocks: the language at the top, copy and download one click away, Gink's own colours in light and
+  dark, long lines that wrap when you want. Gink Genie's answers now show the same code blocks, lists and tables
+- Fixes: answered question cards stay answered when you open a chat again, and Gink reads your answers as answers;
+  tables and lists right after a sentence show properly, and sub-lists nest; a question sent twice is kept once; on
+  macOS Catalina, Gink now asks for the microphone, so Hey Gink hears you; Gink knows its own website, source code
+  and support address
+- Developers: map places have a `category`, `GET /v1/places/photo` finds a picture of a place, and the SDKs read
+  them (`maps()`, `place_photo` / `placePhoto`, gink-ai 0.3.15); `gink map PLACE --photos` in the CLI
+- The website's hero now shows a real street map
+
+## 0.1.159 (November 2026)
+
+- Voice messages: hold the microphone, talk and let go. Gink writes down what you said, in any language, and answers
+  out loud. In Gink Genie, tap the microphone to speak an instruction
+- Maps by themselves: when an answer is about places, a map appears in the chat with numbered pins and a list. Drag
+  it, zoom it, open a place. There's no button to press
+- Screen view: say "look at my screen" and Live opens with your screen instead of the camera. Gink sees it only while
+  you share it, and only when you ask. On a Mac, allow Screen Recording for Gink the first time (Gink Pro)
+- A stronger agent: for a task with several steps, Gink writes a plan you can watch, works through it and keeps going
+  by itself if it stops with steps still open. It finds, opens and closes apps, opens projects in your code editor
+  (VS Code, Cursor, Zed, Xcode, PyCharm and others), and reads, writes and edits text files, keeping a backup of
+  every file it changes. A long agent task counts one message for every 10 steps
+- Memory you control (Settings > Memory): "Generate memory from chats" remembers lasting things you mention and
+  shows each one with Undo; "Include sensitive topics in memory" stays off until you turn it on (never for people
+  under 18 or in healthcare workspaces); "Import memory from other AI providers" brings over what another assistant
+  knows about you
+- Location metadata (Settings > Privacy): choose whether answers use your device's time zone and language, or only
+  your clock's difference from UTC
+- Privacy choices in Settings: Gink's privacy policy, responsible disclosure policy, consumer and commercial terms of
+  service, Data Processing Agreement and usage policy, each one tap away
+- Developers: managed agents plan first and take up to 60 steps (30 by default); maps (`gink_maps`,
+  `GET /v1/geo/search`), voice (`/v1/audio/transcriptions`, `/v1/audio/speech`), memory import and generation, many
+  requests at once (`/v1/batches`) and `location: false`, in the API, the CLI and both SDKs (gink-ai 0.3.14)
+- A new website: a premium design that shows Gink at work, a Developers page and the new features. It still loads
+  nothing from anyone else
+- Safer and sturdier: Gink's server runs as its own user, stricter checks in Gink Genie's preview and the sign-in
+  pages, tighter permissions for GitHub workflows, and updated dependencies
+
+## 0.1.158 (November 2026)
+
+- The new Gink logo -- the lime snowflake on its dark navy tile -- next to "Gink" at the top of the sidebar and at the
+  top of the closed sidebar
+- The closed sidebar has its lighter look back: light grey icons straight on the page (no grey column), the pencil
+  for New chat, and Gink Genie above Media Studio. The open sidebar uses the same icons
+
 ## 0.1.157 (November 2026)
 
 - A plain, quiet sidebar, like the ones you already know: the new glowing Gink logo and "Gink" at the top, with the

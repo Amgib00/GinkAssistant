@@ -2,6 +2,7 @@
 The device's time zone (IANA name, e.g. "Africa/Dakar") and region setting
 (e.g. "fr_SN"), sent to the server as hints for the user's country.
 Only these two settings are read -- no GPS, no IP lookup, nothing stored.
+Settings > Privacy > "Location metadata" off: only the clock's UTC offset is sent (X-Gink-Location: off).
 """
 
 import locale as _locale
@@ -42,11 +43,27 @@ def timezone_name() -> str:
 
 
 _cache = {}
+metadata_allowed = [lambda: True]          # the app sets this to Settings > Privacy > "Location metadata"
+
+
+def utc_offset() -> str:
+    """The clock's offset from UTC, like "+01:00" (no time zone name, no region)."""
+    from datetime import datetime
+    off = datetime.now().astimezone().utcoffset()
+    mins = int(off.total_seconds() // 60) if off else 0
+    return f"{'+' if mins >= 0 else '-'}{abs(mins) // 60:02d}:{abs(mins) % 60:02d}"
 
 
 def place_headers() -> dict:
     """X-Gink-TZ / X-Gink-Locale for the server: answers then fit the user's own country automatically (local
-    time, currency, units, examples) -- wherever they are. Read once per run."""
+    time, currency, units, examples) -- wherever they are. Read once per run. Location metadata off: the UTC
+    offset only, so times stay right but no place is used."""
+    try:
+        allowed = bool(metadata_allowed[0]())
+    except Exception:
+        allowed = True
+    if not allowed:
+        return {"X-Gink-Location": "off", "X-Gink-UTC-Offset": utc_offset()}
     if "h" not in _cache:
         h = {}
         try:

@@ -13,6 +13,15 @@ gink -- Gink in your terminal (the Gink Developer API, OpenAI-compatible).
                                     scheduled agents (the time is your computer's time zone)
     gink export [FILE]              everything Gink's server keeps for you, as a ZIP
     gink remember "fact" | memories | forget ID   what Gink remembers about you
+    gink memories prompt            what to ask your other AI assistant, to bring its memory to Gink
+    gink memories import FILE|-     add what it answered (one fact per line; --sensitive keeps health, religion...)
+    gink memories generate TEXT|-   the lasting facts in a conversation, remembered (--dry-run: only show them)
+    gink --no-location ...          no location metadata (city/region): only the clock's UTC offset (or GINK_LOCATION=off)
+    gink batch FILE [--name N]      many requests at once (one prompt per line); gink batches | batch results ID
+    gink map PLACE [--photos]       find a place by name or address (with an OpenStreetMap link; --photos: a picture)
+    gink say "text" [-o file.wav]   Gink's natural voice, saved as audio
+    gink transcribe RECORDING       a voice message as text (any language)
+    gink screen ["question"]        what's on this computer's screen (like Live screen view; Gink Pro)
     gink workspace [safety --days 30]   your workspace; admins: healthcare mode's safety report (counts only)
     gink status                     is Gink working right now?
     gink webhook secret             the secret Gink signs webhooks with (schedule add --webhook URL)
@@ -197,7 +206,7 @@ def make_image(key: str, base: str, prompt: str, path: str, idea: str = "", styl
     return path
 
 
-def run_agent(key: str, base: str, task: str, env: str = "remote", previous: str = "", max_steps: int = 15) -> dict:
+def run_agent(key: str, base: str, task: str, env: str = "remote", previous: str = "", max_steps: int = 30) -> dict:
     """A managed agent (POST /v1/interactions): runs in the background while we show its steps."""
     need_key(key)
     import httpx
@@ -218,6 +227,11 @@ def run_agent(key: str, base: str, task: str, env: str = "remote", previous: str
                     raise _explain(r)
                 it = r.json()
                 for step in it.get("steps", [])[shown:]:
+                    if step.get("tool") == "plan":                 # the agent's plan, as it changes
+                        marks = {"done": "\u2713", "doing": "\u25d0", "todo": "\u25cb"}      # (no backslash in f-strings: 3.11)
+                        print("  \u2022 plan: " + "  ".join(marks.get(p.get("status"), marks["todo"]) + " " + str(p.get("title"))
+                                                          for p in step.get("plan", [])), file=sys.stderr)
+                        continue
                     what = step.get("query") or step.get("path") or (
                         str(step.get("result") or "")[:140] if step.get("tool") == "check" else "")   # "2 problems found -- fixing"
                     print(f"  \u2022 {step.get('tool')} {what}".rstrip(), file=sys.stderr)
@@ -491,6 +505,9 @@ def login(base: str, paste_key: bool = False) -> int:
 
 def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
+    if "--no-location" in argv:                        # like Settings > Privacy > "Location metadata" off
+        argv = [a for a in argv if a != "--no-location"]
+        os.environ["GINK_LOCATION"] = "off"
     key, base = settings()
     try:
         if argv[:1] == ["login"]:
@@ -509,7 +526,7 @@ def main(argv=None) -> int:
             ag.add_argument("task", nargs="+", help="what the agent should do")
             ag.add_argument("--env", default="remote", help="an environment id (default: a new one)")
             ag.add_argument("--continue", dest="previous", default="", help="an interaction id to continue")
-            ag.add_argument("--max-steps", type=int, default=15)
+            ag.add_argument("--max-steps", type=int, default=30, help="1-60 (default 30)")
             b = ag.parse_args(argv[1:])
             return show_agent_result(run_agent(key, base, " ".join(b.task), b.env, b.previous, b.max_steps))
         if argv[:1] == ["workspace"]:                 # your workspace; admins: healthcare mode's safety report
@@ -556,6 +573,98 @@ def main(argv=None) -> int:
             stream_answer(key, base, [{"role": "user", "content": [{"type": "text", "text": question},
                                                                    {"type": "image_url", "image_url": {"url": url}}]}])
             return 0
+        if argv[:1] in (["batch"], ["batches"]):      # many requests at once, answered in the background
+            sub = argv[1] if len(argv) > 1 else ("list" if argv[0] == "batches" else "")
+            if sub == "list" or (argv[0] == "batches" and len(argv) == 1):
+                for b in _env_call(key, base, "GET", "/batches").json()["data"]:
+                    c = b["request_counts"]
+                    print(f"{b['id']}  {b['status']:<10} {c['completed']}/{c['total']} done" + (f", {c['failed']} failed" if c["failed"] else "")
+                          + (f"  {b['name']}" if b.get("name") else ""))
+                return 0
+            if sub in ("status", "results", "cancel") and len(argv) > 2:
+                bid = argv[2]
+                if sub == "results":
+                    print(_env_call(key, base, "GET", f"/batches/{bid}/results").text, end="")
+                    return 0
+                b = _env_call(key, base, "POST" if sub == "cancel" else "GET", f"/batches/{bid}" + ("/cancel" if sub == "cancel" else "")).json()
+                print(f"{b['id']}  {b['status']}  {b['request_counts']['completed']}/{b['request_counts']['total']} done")
+                return 0
+            if not sub:
+                raise GinkError("gink batch FILE [--name NAME]   (one prompt per line, or JSON Lines {\"custom_id\", \"body\"})\n"
+                                "gink batches | gink batch status|results|cancel BATCH_ID")
+            name = ""
+            if "--name" in argv:
+                i = argv.index("--name")
+                name = argv[i + 1] if i + 1 < len(argv) else ""
+            try:
+                lines = [ln for ln in open(sub, encoding="utf-8").read().splitlines() if ln.strip()]
+            except OSError:
+                raise GinkError(f"can't read {sub}")
+            items = []
+            for i, ln in enumerate(lines):
+                try:
+                    obj = json.loads(ln)
+                except ValueError:
+                    obj = None
+                if isinstance(obj, dict) and "body" in obj:
+                    items.append({"custom_id": str(obj.get("custom_id") or f"request-{i + 1}"), "body": obj["body"]})
+                else:
+                    items.append({"custom_id": f"request-{i + 1}", "body": {"messages": [{"role": "user", "content": ln}]}})
+            b = _env_call(key, base, "POST", "/batches", json=dict({"requests": items}, **({"name": name} if name else {}))).json()
+            print(f"{b['id']}  {b['status']}  ({len(items)} requests) -- gink batch results {b['id']} when it's done")
+            return 0
+        if argv[:1] == ["screen"]:                    # like Live screen view: what's on this computer's screen
+            from gink.client import GinkAPIError as _SdkError, image_data_url, screen_image
+            try:
+                url = image_data_url(screen_image())
+            except _SdkError as exc:
+                raise GinkError(str(exc))
+            question = " ".join(argv[1:]).strip() or "What's on my screen?"
+            stream_answer(key, base, [{"role": "user", "content": [{"type": "text", "text": question},
+                                                                   {"type": "image_url", "image_url": {"url": url}}]}])
+            return 0
+        if argv[:1] == ["map"]:                       # places by name or address, with a map link each
+            photos = "--photos" in argv                 # and a picture of each, like Gink's map cards
+            query = " ".join(a for a in argv[1:] if a != "--photos").strip()
+            if not query:
+                raise GinkError('gink map PLACE [--photos]   e.g. gink map "National Museum, Lagos" --photos')
+            places = _env_call(key, base, "GET", "/geo/search", params={"q": query, "limit": 5}).json()["data"]
+            if not places:
+                print(f"No place found for \u201c{query}\u201d.")
+            for p in places:
+                print(f"\U0001F4CD {p['name']}  ({p['lat']}, {p['lon']})\n   {p['display']}\n   {p['map_url']}")
+                if photos:
+                    try:
+                        pic = _env_call(key, base, "GET", "/places/photo",
+                                        params={"name": p["name"], "lat": p["lat"], "lon": p["lon"]}).json()
+                        print(f"   Photo: {pic['image']}  ({pic['credit']}: {pic['page']})")
+                    except GinkError:
+                        print("   (no photo)")
+            return 0
+        if argv[:1] == ["say"]:                       # Gink's natural voice, saved as a WAV file
+            out = "gink-voice.wav"
+            if "-o" in argv:
+                i = argv.index("-o")
+                out = argv[i + 1] if i + 1 < len(argv) else out
+                argv = argv[:i] + argv[i + 2:]
+            text = " ".join(argv[1:]).strip() or (sys.stdin.read() if not sys.stdin.isatty() else "")
+            if not text:
+                raise GinkError('gink say "text" [-o hello.wav]')
+            audio = _env_call(key, base, "POST", "/audio/speech", json={"input": text[:1500]}).content
+            with open(out, "wb") as f:
+                f.write(audio)
+            print(f"Saved {out} ({len(audio) // 1024} KB).")
+            return 0
+        if argv[:1] == ["transcribe"]:                # a voice message (any language) as text
+            if len(argv) < 2:
+                raise GinkError("gink transcribe RECORDING   (WAV, WebM, OGG, M4A, MP3 or FLAC)")
+            try:
+                raw = open(argv[1], "rb").read()
+            except OSError:
+                raise GinkError(f"can't read {argv[1]}")
+            r = _env_call(key, base, "POST", "/audio/transcriptions", files={"file": (os.path.basename(argv[1]), raw)}).json()
+            print(r.get("text", ""))
+            return 0
         if argv[:1] == ["ideas"]:                     # Media Studio's looks, for --image --idea
             import httpx
             with httpx.Client(timeout=30) as c:
@@ -575,6 +684,33 @@ def main(argv=None) -> int:
             for k, v in st.get("components", {}).items():
                 print(f"  {k:<8} {v}")
             return 0 if st["status"] in ("ok", "notice") else 1
+        if argv[:2] == ["memories", "prompt"]:          # what to ask the other AI assistant
+            print(_env_call(key, base, "GET", "/memories/import-prompt").json()["prompt"])
+            return 0
+        if argv[:2] in (["memories", "import"], ["memories", "generate"]):
+            flags = {a for a in argv[2:] if a.startswith("--")}
+            rest = [a for a in argv[2:] if not a.startswith("--")]
+            if argv[1] == "import":                     # what the other assistant answered
+                src = rest[0] if rest else "-"
+                text = sys.stdin.read() if src == "-" else open(src, encoding="utf-8").read()
+                r = _env_call(key, base, "POST", "/memories/import",
+                              json={"text": text, "sensitive": "--sensitive" in flags}).json()
+                for m in r["data"]:
+                    print("Remembered: " + m["text"])
+                print(f"Added {len(r['data'])}." + (f" Skipped {r['skipped_sensitive']} about sensitive topics (--sensitive keeps them)."
+                                                   if r.get("skipped_sensitive") else "")
+                      + (f" Skipped {r['skipped']} Gink never keeps." if r.get("skipped") else "")
+                      + (" Gink's memory is full." if r.get("memory_full") else ""))
+                return 0
+            text = sys.stdin.read() if rest[:1] == ["-"] or not rest else " ".join(rest)
+            r = _env_call(key, base, "POST", "/memories/generate", json={
+                "messages": [{"role": "user", "content": text[:20000]}], "save": "--dry-run" not in flags,
+                "sensitive": "--sensitive" in flags}).json()
+            for m in r["data"]:
+                print(("Would remember: " if "--dry-run" in flags else "Remembered: ") + m["text"])
+            if not r["data"]:
+                print(r.get("note") or "Nothing lasting to remember in that.")
+            return 0
         if argv[:1] in (["remember"], ["memories"], ["forget"]):    # what Gink remembers (the same as the apps)
             if argv[0] == "remember":
                 if len(argv) < 2:

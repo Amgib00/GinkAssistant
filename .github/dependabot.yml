@@ -28,3 +28,31 @@ updates:
       interval: "monthly"
     labels: ["dependencies", "ci"]
     assignees: ["Amgib00"]
+  # the server's own packages (deploy/requirements-server.txt): Linux only, so no Intel-Mac pins here
+  - package-ecosystem: "pip"
+    directory: "/deploy"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 2
+    labels: ["dependencies", "server"]
+    assignees: ["Amgib00"]
+    groups:
+      server-dependencies:
+        patterns: ["*"]
+  # the server image (deploy/Dockerfile): python:3.12-slim security updates
+  - package-ecosystem: "docker"
+    directory: "/deploy"
+    schedule:
+      interval: "monthly"
+    labels: ["dependencies", "server"]
+    assignees: ["Amgib00"]
+    ignore:
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]   # 3.12 on purpose
+  # the gink CLI and Python SDK (cli/pyproject.toml)
+  - package-ecosystem: "pip"
+    directory: "/cli"
+    schedule:
+      interval: "monthly"
+    labels: ["dependencies"]
+    assignees: ["Amgib00"]

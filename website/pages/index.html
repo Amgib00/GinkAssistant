@@ -1,119 +1,218 @@
 <!--
 title: Think. Talk. Create.
-description: Gink is an AI assistant that listens, answers out loud and gets things done on your computer and phone. Free to start.
+description: Gink is an AI assistant that listens, answers out loud and gets things done on your computer and phone: voice messages, maps, your screen, your apps and a memory you control. Free to start.
 -->
-<section class="hero">
+<section class="hero night">
   <div class="wrap hero-grid">
-    <div>
-      <h1>Think. Talk. Create.</h1>
-      <p class="lede">Gink is an AI assistant that listens, answers out loud and gets things done for you on your computer and your phone.</p>
+    <div class="hero-copy">
+      <h1 class="display"><span>Think<span class="dot">.</span></span> <span>Talk<span class="dot">.</span></span> <span>Create<span class="dot">.</span></span></h1>
+      <p class="lede">Gink is an AI assistant that listens, answers out loud and gets things done for you, on your computer and your phone.</p>
       <div class="actions">
         <a class="button" href="download.html">Download Gink</a>
-        <a class="button button-quiet" href="demo.html">Try the demo</a>
+        <a class="button button-quiet" href="{{API}}/app">Open Gink on the web</a>
       </div>
-      <p class="platforms">Free to start. For Mac, Windows, Linux, Android and iPhone.</p>
+      <p class="platforms">Free to start. For Mac, Windows, Linux, Android and the web.</p>
     </div>
-    <div class="hero-art">{{SNOWFLAKE}}</div>
-  </div>
-</section>
 
-<section class="band">
-  <div class="wrap">
-    <h2>Ask the way you'd ask a friend</h2>
-    <p class="muted">A few things people say to Gink, and what happens.</p>
-    <div class="examples">
-      <div>
-        <h3>Hands-free</h3>
-        <div class="chat">
-          <div class="say">Hey Gink, wake me up at 6:30</div>
-          <div class="reply"><img src="assets/icon-64.png" alt=""><div><p>Done. Your alarm is set for 6:30 tomorrow.</p><span class="chip">Alarm 6:30</span></div></div>
+    <figure class="window" role="img" aria-label="Gink in a chat: someone sends a voice message asking where to see art in Zurich on Saturday. Gink answers with three stops on a real street map: the Kunsthaus, Cabaret Voltaire and Haus Konstruktiv. Then they ask for a reminder on Saturday at 10, and Gink sets it.">
+      <div class="window-bar" aria-hidden="true"><span class="lights"><i></i><i></i><i></i></span><span class="window-title">Gink</span></div>
+      <div class="window-feed" aria-hidden="true">
+        <div class="w-user">
+          <div class="vmsg">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+            <span>Voice message</span>
+            <span class="wave"><i style="--i:0;height:5px"></i><i style="--i:1;height:8px"></i><i style="--i:2;height:12px"></i><i style="--i:3;height:9px"></i><i style="--i:4;height:14px"></i><i style="--i:5;height:17px"></i><i style="--i:6;height:12px"></i><i style="--i:7;height:8px"></i><i style="--i:8;height:6px"></i><i style="--i:9;height:10px"></i><i style="--i:10;height:15px"></i><i style="--i:11;height:18px"></i><i style="--i:12;height:16px"></i><i style="--i:13;height:11px"></i><i style="--i:14;height:7px"></i><i style="--i:15;height:5px"></i><i style="--i:16;height:9px"></i><i style="--i:17;height:13px"></i><i style="--i:18;height:16px"></i><i style="--i:19;height:12px"></i><i style="--i:20;height:9px"></i><i style="--i:21;height:14px"></i><i style="--i:22;height:10px"></i><i style="--i:23;height:7px"></i><i style="--i:24;height:11px"></i><i style="--i:25;height:8px"></i><i style="--i:26;height:6px"></i><i style="--i:27;height:9px"></i><i style="--i:28;height:5px"></i><i style="--i:29;height:4px"></i></span>
+            <span>0:04</span>
+          </div>
+          <p class="bubble">Where can I see art in Zurich on Saturday?</p>
+        </div>
+        <div class="w-gink">
+          <span class="avatar">{{FLAKE}}</span>
+          <div class="w-reply">
+            <p>A good Saturday: the Kunsthaus on Heimplatz, Cabaret Voltaire in the old town, where Dada began, then Haus Konstruktiv by the Sihl.</p>
+            <div class="mapcard">
+              <div class="mapcard-head"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span>Saturday in Zurich</span></div>
+              <div class="map">
+                <img src="assets/hero-map.png" width="400" height="176" alt="" decoding="async">
+                <span class="pin p1" style="left:88.50%;top:81.25%">1</span>
+                <span class="pin p2" style="left:68.17%;top:59.77%">2</span>
+                <span class="pin p3" style="left:11.50%;top:43.75%">3</span>
+                <span class="map-credit">&copy; OpenStreetMap</span>
+              </div>
+              <ol>
+                <li><span class="n">1</span><span><b>Kunsthaus Z&uuml;rich</b> <span class="where">Heimplatz</span></span></li>
+                <li><span class="n">2</span><span><b>Cabaret Voltaire</b> <span class="where">Spiegelgasse, old town</span></span></li>
+                <li><span class="n">3</span><span><b>Haus Konstruktiv</b> <span class="where">Selnaustrasse</span></span></li>
+              </ol>
+            </div>
+          </div>
+        </div>
+        <div class="w-user w-more"><p class="bubble">Remind me on Saturday at 10</p></div>
+        <div class="w-gink w-more">
+          <span class="avatar">{{FLAKE}}</span>
+          <div class="w-reply"><p>Done. I&rsquo;ll remind you on Saturday at 10:00.</p><span class="w-chip">Reminder Saturday 10:00</span></div>
         </div>
       </div>
-      <div>
-        <h3>Making things</h3>
-        <div class="chat">
-          <div class="say">Turn my revision plan into a PDF</div>
-          <div class="reply"><img src="assets/icon-64.png" alt=""><div><p>Here it is, ready to open or share.</p><span class="chip">Revision plan.pdf</span></div></div>
-        </div>
-      </div>
-      <div>
-        <h3>On your computer</h3>
-        <div class="chat">
-          <div class="say">Open Terminal in my GinkAssistant folder</div>
-          <div class="reply"><img src="assets/icon-64.png" alt=""><div><p>Opened Terminal in GinkAssistant.</p></div></div>
-        </div>
-      </div>
-      <div>
-        <h3>Every morning</h3>
-        <div class="chat">
-          <div class="say">Brief me</div>
-          <div class="reply"><img src="assets/icon-64.png" alt=""><div><p>Morning! You're 3 of 4 steps into your revision plan, so the flashcards would wrap it up today. Study group at 16:00, sunny and 31&deg;.</p></div></div>
-        </div>
-      </div>
-    </div>
+      <div class="window-composer" aria-hidden="true"><span>Message Gink</span><span class="mic-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span></div>
+    </figure>
   </div>
 </section>
 
 <section>
   <div class="wrap">
-    <h2>One assistant for everything you're doing</h2>
+    <h2>Ask the way you&rsquo;d ask a friend</h2>
+    <p class="intro">A few things people say to Gink, and what happens next.</p>
+    <div class="exchanges">
+      <figure class="exchange">
+        <div class="chat">
+          <div class="say">Hey Gink, wake me up at 6:30</div>
+          <div class="reply"><img src="assets/icon-64.png" alt=""><div><p>Done. Your alarm is set for 6:30 tomorrow.</p><span class="chip">Alarm 6:30</span></div></div>
+        </div>
+        <figcaption><strong>Hands-free.</strong> Say &ldquo;Hey Gink&rdquo; and ask, without touching anything. Listening for the wake word happens on your device.</figcaption>
+      </figure>
+      <figure class="exchange">
+        <div class="chat">
+          <span class="sharing">Sharing your screen</span>
+          <div class="say">Look at my screen. Why won&rsquo;t this build?</div>
+          <div class="reply"><img src="assets/icon-64.png" alt=""><div><p>Line 14 imports <code>requests</code>, but it isn&rsquo;t installed in this project. Run <code>pip install requests</code>, then build again.</p></div></div>
+        </div>
+        <figcaption><strong>Your screen.</strong> With Gink Pro, Gink sees what you see, only while you share it and only when you ask.</figcaption>
+      </figure>
+      <figure class="exchange">
+        <div class="chat">
+          <div class="say">Open my portfolio in VS Code and fix the broken link</div>
+          <div class="reply"><img src="assets/icon-64.png" alt=""><div>
+            <p>Fixed. The Contact link pointed to contact.htm instead of contact.html.</p>
+            <div class="agent-plan"><b>Plan: 3 of 3 done</b><ol><li>Open the portfolio in VS Code</li><li>Find the broken link</li><li>Fix it, keeping a backup</li></ol></div>
+          </div></div>
+        </div>
+        <figcaption><strong>Your apps and files.</strong> Gink plans the steps, works through them on its own and shows you each one. Every file it changes keeps a backup.</figcaption>
+      </figure>
+      <figure class="exchange">
+        <div class="chat">
+          <div class="say">I just moved to Kigali</div>
+          <div class="reply"><img src="assets/icon-64.png" alt=""><div>
+            <p>Welcome to Kigali! I&rsquo;ll use it for your weather and local times.</p>
+            <div class="remembered"><span class="chip">Remembered: you live in Kigali</span><span class="undo">Undo</span></div>
+          </div></div>
+        </div>
+        <figcaption><strong>A memory you control.</strong> Gink remembers lasting things you mention and tells you, with Undo. See or forget anything in Settings.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <h2>One assistant for everything you&rsquo;re doing</h2>
     <div class="groups">
       <div class="group">
         <h3>Talk</h3>
         <ul>
-          <li><strong>Say &ldquo;Hey Gink&rdquo;</strong> <span>and ask, without touching anything.</span></li>
-          <li><strong>Natural voices</strong> <span>that sound like a person, including Nigerian, Kenyan, British and French voices.</span></li>
-          <li><strong>124 languages</strong> <span>for answers, from English and French to Wolof and Krio.</span></li>
+          <li><strong>&ldquo;Hey Gink&rdquo;</strong> <span>and ask, without touching anything.</span></li>
+          <li><strong>Voice messages:</strong> <span>hold the microphone and talk, in any language. Gink writes what you said and answers.</span></li>
+          <li><strong>Live camera and screen view</strong> <span>to show Gink what you&rsquo;re looking at, with Gink Pro.</span></li>
+          <li><strong>Natural voices</strong> <span>that sound like a person, and answers in 124 languages, from English and French to Swahili and Krio.</span></li>
         </ul>
       </div>
       <div class="group">
         <h3>Do</h3>
         <ul>
+          <li><strong>An agent that finishes the job:</strong> <span>it plans, works through every step and keeps going until it&rsquo;s done.</span></li>
+          <li><strong>Your apps and files:</strong> <span>find, open and close apps, open a project in your code editor, edit text files with a backup first.</span></li>
           <li><strong>Alarms, reminders and tasks</strong> <span>set in a sentence.</span></li>
-          <li><strong>On your computer</strong> <span>open apps and folders, control music and volume, take screenshots.</span></li>
-          <li><strong>Live answers</strong> <span>weather, prayer times, currency and maths.</span></li>
+          <li><strong>Live answers:</strong> <span>weather, prayer times, currency and exact maths.</span></li>
         </ul>
       </div>
       <div class="group">
         <h3>Create</h3>
         <ul>
-          <li><strong>Files</strong> <span>PDF, Word, Excel and more, ready to open or share.</span></li>
+          <li><strong>Maps</strong> <span>of the places in an answer, right in the chat, by themselves.</span></li>
+          <li><strong>Files:</strong> <span>PDF, Word, Excel and more, ready to open or share.</span></li>
           <li><strong>Images</strong> <span>from a description, in the chat or in Media Studio.</span></li>
-          <li><strong>Writing and code</strong> <span>drafts, emails, explanations and scripts.</span></li>
+          <li><strong>Apps and websites:</strong> <span>describe one, and Gink Genie builds the whole project with you.</span></li>
         </ul>
       </div>
       <div class="group">
         <h3>Remember</h3>
         <ul>
+          <li><strong>Memory from your chats,</strong> <span>shown as it&rsquo;s made, with Undo.</span></li>
+          <li><strong>Your memory from other assistants,</strong> <span>brought over in a minute.</span></li>
           <li><strong>A morning briefing</strong> <span>that picks up where you left off.</span></li>
-          <li><strong>Memory and instructions</strong> <span>so Gink answers the way you like.</span></li>
-          <li><strong>Sync</strong> <span>your chats and tasks across your devices.</span></li>
+          <li><strong>Sync</strong> <span>for your chats, tasks and memories, on every device.</span></li>
         </ul>
       </div>
     </div>
-    <div class="actions"><a class="button button-quiet" href="features.html">See all features</a></div>
-  </div>
-</section>
-
-<section class="band">
-  <div class="wrap split">
-    <div>
-      <h2>Private where it matters</h2>
-      <p>&ldquo;Hey Gink&rdquo; is detected on your device, so nothing is sent anywhere until you say it. AI keys live on our server, never inside the app, and you can delete your account and synced data from Settings at any time.</p>
-      <p><a href="privacy.html">Read the privacy policy</a></p>
-    </div>
-    <div>
-      <h2>Pay the way you already pay</h2>
-      <p>Gink Pro is prepaid for 1, 3 or 12 months with Wave, Orange Money, MTN MoMo, M-Pesa or a card, and it never renews by itself.</p>
-      <p><a href="pricing.html">See plans</a></p>
-    </div>
+    <p class="more"><a class="button button-quiet" href="features.html">See all features</a></p>
   </div>
 </section>
 
 <section>
+  <div class="wrap split">
+    <div>
+      <h2>Private by design</h2>
+      <p>&ldquo;Hey Gink&rdquo; is detected on your device, so nothing is sent until you say it. Your screen is shared only while you choose to share it. Sensitive topics stay out of memory unless you turn them on, and you can download or delete everything from Settings.</p>
+      <p><a href="privacy.html">Read the privacy policy</a></p>
+    </div>
+    <div>
+      <h2>Pay the way you already pay</h2>
+      <p>Gink Pro is prepaid for 1, 3 or 12 months with mobile money, such as Wave, Orange Money, MTN MoMo and M-Pesa, or with a card. It never renews by itself.</p>
+      <p><a href="pricing.html">See plans and prices</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="night">
+  <div class="wrap dev-grid">
+    <div>
+      <h2>Build with Gink</h2>
+      <p>Give your own app Gink&rsquo;s answers, maps, voice and memory, or hand a task to a managed agent. It plans, works through up to 60 steps in a workspace that keeps its files, and tells you what changed.</p>
+      <ul class="dev-links">
+        <li><a href="developers.html">Start building</a></li>
+        <li><a href="{{API}}/developers#docs">API reference</a></li>
+        <li><a href="https://pypi.org/project/gink-ai/">Python SDK</a></li>
+        <li><a href="https://www.npmjs.com/package/gink-ai">JavaScript SDK</a></li>
+      </ul>
+    </div>
+    <div class="code-window" data-tabs>
+      <div class="code-bar" role="tablist" aria-label="Language">
+        <button type="button" role="tab" id="tab-py" aria-controls="code-py" aria-selected="true">Python</button>
+        <button type="button" role="tab" id="tab-js" aria-controls="code-js" aria-selected="false">JavaScript</button>
+        <button type="button" role="tab" id="tab-sh" aria-controls="code-sh" aria-selected="false">Terminal</button>
+      </div>
+      <div role="tabpanel" id="code-py" aria-labelledby="tab-py" tabindex="0"><pre><code><span class="c"># pip install gink-ai</span>
+<span class="k">from</span> gink <span class="k">import</span> Client
+
+client = Client()  <span class="c"># your GINK_API_KEY</span>
+run = client.interactions.create(
+    input=<span class="s">"Put the prices from example.org/prices in prices.md"</span>,
+)
+print(run.output_text)    <span class="c"># Wrote prices.md from the page.</span>
+print(run.files_changed)  <span class="c"># ['prices.md']</span></code></pre></div>
+      <div role="tabpanel" id="code-js" aria-labelledby="tab-js" tabindex="0"><pre><code><span class="c">// npm install gink-ai</span>
+<span class="k">import</span> Gink <span class="k">from</span> <span class="s">"gink-ai"</span>;
+
+<span class="k">const</span> gink = <span class="k">new</span> Gink();  <span class="c">// your GINK_API_KEY</span>
+<span class="k">const</span> run = <span class="k">await</span> gink.interactions.create({
+  input: <span class="s">"Put the prices from example.org/prices in prices.md"</span>,
+});
+console.log(run.output_text, run.files_changed);</code></pre></div>
+      <div role="tabpanel" id="code-sh" aria-labelledby="tab-sh" tabindex="0"><pre><code><span class="c"># pip install gink-ai, then sign in once</span>
+gink login
+gink agent <span class="s">"Put the prices from example.org/prices in prices.md"</span>
+gink map <span class="s">"Zeitz MOCAA, Cape Town"</span>
+gink transcribe voice-note.m4a</code></pre></div>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
   <div class="wrap">
     <h2>Start with Gink today</h2>
-    <p class="muted">Free on every platform. Upgrade only if you need more.</p>
-    <div class="actions"><a class="button" href="download.html">Download Gink</a></div>
+    <p>Free on every platform. Upgrade only if you need more.</p>
+    <div class="actions">
+      <a class="button" href="download.html">Download Gink</a>
+      <a class="button button-quiet" href="demo.html">Try the demo</a>
+    </div>
   </div>
 </section>

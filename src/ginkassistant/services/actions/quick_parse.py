@@ -100,9 +100,11 @@ def parse(text: str, now: Optional[datetime] = None) -> Optional[Tuple[str, dict
             what = re.sub(r"^to\s+", "", what)
             return "add_reminder", {"text": what[:1].upper() + what[1:], "when": f"{due:%Y-%m-%d %H:%M}"}
 
-    # --- "open whatsapp" / "launch spotify"
+    # --- "open whatsapp" / "launch spotify" (an app's name only: "open my project in VS Code and fix it" is a task
+    # with several steps, for the agent)
     m = re.match(r"(?:open|launch|start)\s+(?:the\s+)?(.+?)(?:\s+app)?$", t)
-    if m and not re.search(r"https?://|\.\w{2,}/", m.group(1)):
+    if (m and not re.search(r"https?://|\.\w{2,}/", m.group(1)) and len(m.group(1).split()) <= 4
+            and not re.search(r"\b(?:and|then|in|with|so|to|for|from|after|my)\b|[,;]", m.group(1))):
         return "open_app", {"name": m.group(1).strip()}
 
     # --- "call +221..."
@@ -198,6 +200,10 @@ def _parse_computer(t):
         return "set_dark_mode", {"mode": mode}
     if re.fullmatch(r"(?:how(?:'s| is) my |what(?:'s| is) my |check my )?(?:battery|battery level|disk space|storage)(?: left| level)?|system status", t):
         return "system_status", {}
+    if re.fullmatch(r"(?:please )?(?:(?:do|run) a (?:quick |full )?(?:health )?(?:check|scan)(?: now)?|"
+                    r"(?:check|scan|diagnose) (?:my |the |this )?(?:computer|laptop|mac|macbook|pc|device|phone|system)|"
+                    r"health ?check)(?: (?:now|please))*", t):
+        return "device_check", {}
     m = re.fullmatch(r"open (?:number |file )?(\d{1,2})", t)
     if m:
         return "open_file", {"which": m.group(1)}

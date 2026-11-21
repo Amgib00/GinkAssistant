@@ -14906,3 +14906,434 @@ es,¿Cuánto son 1000 euros en yen?,"Hey, can you tell me how much 1000 euros is
 es,¿Cuánto son 1000 euros en yen?,Please let me know the conversion for 1000 euros to yen.,Gink (via openai/gpt-oss-120b),yes
 es,¿Cuánto son 1000 euros en yen?,What's the yen equivalent of 1000 euros?,Gink (via openai/gpt-oss-120b),yes
 es,¿Cuánto son 1000 euros en yen?,Could you convert 1000 euros into yen for me?,Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 45 minutos,Set a timer for 45 minutes.,Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 45 minutos,Could you start a 45 minute timer?,Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 45 minutos,Please put a 45‑minute timer on.,Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 45 minutos,"Timer, 45 minutes, please.",Gink (via openai/gpt-oss-120b),yes
+es,Persona: Calcula 171 por 10,,Gink (via openai/gpt-oss-120b),no
+es,Persona: Convierte 10 libras egipcias a pesos filipinos,,Gink (via openai/gpt-oss-120b),no
+es,Persona: Calcula 587 por 3,,Gink (via openai/gpt-oss-120b),no
+es,Clima São Paulo mañana,"Hey, can you tell me the weather forecast for São Paulo tomorrow?",Gink (via openai/gpt-oss-120b),yes
+es,Clima São Paulo mañana,Please give me the climate details for São Paulo tomorrow.,Gink (via openai/gpt-oss-120b),yes
+es,Clima São Paulo mañana,What's the weather like in São Paulo tomorrow?,Gink (via openai/gpt-oss-120b),yes
+es,Clima São Paulo mañana,"Need the São Paulo forecast for tomorrow, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma a las 6h,Set an alarm for 6h.,Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma a las 6h,Could you please set an alarm at 6h?,Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma a las 6h,"Hey, alarm at 6h, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma a las 6h,"Alarm 6h, please.",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Chicago hoy?,What's the weather like in Chicago today?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Chicago hoy?,Can you tell me the current weather in Chicago for today?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Chicago hoy?,"Hey, what's the forecast for Chicago right now?",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Chicago hoy?,Please let me know today's weather in Chicago.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 100 libras a yen,Convert 100 pounds to yen.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 100 libras a yen,Could you change 100 pounds into yen for me?,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 100 libras a yen,Please convert 100 lbs to yen.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 100 libras a yen,I need to turn 100 pounds into yen.,Gink (via openai/gpt-oss-120b),yes
+es,alarma a las 07:00,Set an alarm for 07:00.,Gink (via openai/gpt-oss-120b),yes
+es,alarma a las 07:00,Could you please schedule an alarm at 07:00?,Gink (via openai/gpt-oss-120b),yes
+es,alarma a las 07:00,"Hey, I need an alarm at 07:00.",Gink (via openai/gpt-oss-120b),yes
+es,alarma a las 07:00,"Alarm at 07:00, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Riyadh mañana?,"Hey, can you tell me the weather in Riyadh tomorrow?",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Riyadh mañana?,Could you let me know what the forecast is for Riyadh mañana?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Riyadh mañana?,What's the weather looking like in Riyadh tomorrow?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Riyadh mañana?,Please give me the weather update for Riyadh mañana.,Gink (via openai/gpt-oss-120b),yes
+es,Persona: Calcula 599 por 50,,Gink (via openai/gpt-oss-120b),no
+es,¿Puedes despertarme a las 5 a.m.?,"Hey, could you set an alarm for 5 a.m.?",Gink (via openai/gpt-oss-120b),yes
+es,¿Puedes despertarme a las 5 a.m.?,Please wake me up at 5 a.m.,Gink (via openai/gpt-oss-120b),yes
+es,¿Puedes despertarme a las 5 a.m.?,"I need an alarm at 5 a.m., thanks.",Gink (via openai/gpt-oss-120b),yes
+es,¿Puedes despertarme a las 5 a.m.?,Can you make sure I’m up by 5 a.m.?,Gink (via openai/gpt-oss-120b),yes
+es,Persona: ¿Puedes abrir Notes?,,Gink (via openai/gpt-oss-120b),no
+es,Persona: Calcule 537 por 26,,Gink (via openai/gpt-oss-120b),no
+es,Clima en Karachi mañana,What's the weather in Karachi tomorrow?,Gink (via openai/gpt-oss-120b),yes
+es,Clima en Karachi mañana,Can you tell me the forecast for Karachi tomorrow?,Gink (via openai/gpt-oss-120b),yes
+es,Clima en Karachi mañana,"Weather in Karachi tomorrow, please.",Gink (via openai/gpt-oss-120b),yes
+es,Clima en Karachi mañana,"Hey, what's the climate like in Karachi tomorrow?",Gink (via openai/gpt-oss-120b),yes
+es,Pon el volumen a 30,Set the volume to 30.,Gink (via openai/gpt-oss-120b),yes
+es,Pon el volumen a 30,Could you please turn the volume up to 30?,Gink (via openai/gpt-oss-120b),yes
+es,Pon el volumen a 30,"Hey, volume 30 please.",Gink (via openai/gpt-oss-120b),yes
+es,Pon el volumen a 30,Raise the volume level to 30.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 25000 chelines kenianos a libras esterlinas,Please convert 25000 Kenyan shillings to British pounds.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 25000 chelines kenianos a libras esterlinas,Can you change 25000 Kenyan shillings into British pounds for me?,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 25000 chelines kenianos a libras esterlinas,I need 25000 Kenyan shillings turned into British pounds.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 25000 chelines kenianos a libras esterlinas,"Hey, convert 25000 Kenyan shillings to British pounds, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,Persona: Calcula 233 por 7,,Gink (via openai/gpt-oss-120b),no
+es,Pon un temporizador de 1 hora,"Set a timer for 1 hour, please.",Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 1 hora,"Hey, can you start a 1 hour timer?",Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 1 hora,Please put a 1 hour timer on.,Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 1 hora,Timer 1 hour.,Gink (via openai/gpt-oss-120b),yes
+es,Persona: ¿Cuál es el pronóstico del tiempo en Chicago para mañana?,,Gink (via openai/gpt-oss-120b),no
+es,Convierte 100 Kenyan shillings a naira,Could you convert 100 Kenyan shillings to naira for me?,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 100 Kenyan shillings a naira,Please change 100 Kenyan shillings into naira.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 100 Kenyan shillings a naira,"Hey, what's 100 Kenyan shillings in naira?",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 100 Kenyan shillings a naira,"Convert 100 Kenyan shillings a naira, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma para las 7:45 a.m.,Set an alarm for 7:45 a.m.,Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma para las 7:45 a.m.,Can you please set an alarm at 7:45 a.m.?,Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma para las 7:45 a.m.,"Hey, I need an alarm for 7:45 a.m.",Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma para las 7:45 a.m.,Please schedule an alarm for 7:45 a.m.,Gink (via openai/gpt-oss-120b),yes
+es,Persona: Weather Dhaka today,What's the weather like in Dhaka today?,Gink (via openai/gpt-oss-120b),yes
+es,Persona: Weather Dhaka today,"Could you give me the Dhaka weather forecast for today, please?",Gink (via openai/gpt-oss-120b),yes
+es,Persona: Weather Dhaka today,"Dhaka weather today, thanks!",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Casablanca mañana?,What's the weather like in Casablanca tomorrow?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Casablanca mañana?,"Hey, can you tell me the forecast for Casablanca for tomorrow?",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Casablanca mañana?,Please give me tomorrow's weather in Casablanca.,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Casablanca mañana?,Weather in Casablanca tomorrow?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 5000 pounds en pesos filipinos?,How much is 5000 pounds in Filipino pesos?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 5000 pounds en pesos filipinos?,Can you tell me the conversion for 5000 pounds to pesos filipinos?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 5000 pounds en pesos filipinos?,What's the value of 5000 pounds in pesos filipinos?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 5000 pounds en pesos filipinos?,5000 pounds equals how many pesos filipinos?,Gink (via openai/gpt-oss-120b),yes
+es,"Person: Open Calendar
+Gink: Opened Calendar.",,Gink (via openai/gpt-oss-120b),no
+es,Despiértame a las 7h,Wake me up at 7h.,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 7h,Could you please set an alarm for 7h?,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 7h,"Hey, remind me to get up at 7h.",Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 7h,"Set a 7h wake‑up alarm, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 10000 libras turcas en pesos filipinos?,How much is 10000 libras turcas in pesos filipinos?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 10000 libras turcas en pesos filipinos?,Can you tell me the conversion for 10000 Turkish lira to Filipino pesos?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 10000 libras turcas en pesos filipinos?,What's the value of 10000 libras turcas when exchanged to pesos filipinos?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 10000 libras turcas en pesos filipinos?,Please let me know how many pesos filipinos 10000 libras turcas equal.,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Johannesburgo mañana?,,Gink (via openai/gpt-oss-120b),no
+es,¿Qué tiempo hará en Madrid mañana?,"Hey, can you tell me the weather forecast for Madrid tomorrow?",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Madrid mañana?,"Could you let me know what the weather will be like in Madrid tomorrow, please?",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Madrid mañana?,What's the weather supposed to be in Madrid tomorrow?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Madrid mañana?,I need the forecast for Madrid tomorrow—what's the weather going to be?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 100 dólares en pesos filipinos?,"Hey, can you tell me how much 100 dollars is in pesos filipinos?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 100 dólares en pesos filipinos?,"Could you let me know the conversion for 100 dollars to pesos filipinos, please?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 100 dólares en pesos filipinos?,What's the rate for 100 dollars in pesos filipinos?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 100 dólares en pesos filipinos?,I need to know how many pesos filipinos 100 dollars equals.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es 533 por 5?,What is 533 multiplied by 5?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es 533 por 5?,Can you tell me the result of 533 times 5?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es 533 por 5?,"Hey, do you know how much 533 * 5 is?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es 533 por 5?,Please calculate 533 × 5.,Gink (via openai/gpt-oss-120b),yes
+es,Pon el volumen a 10,Set the volume to 10,Gink (via openai/gpt-oss-120b),yes
+es,Pon el volumen a 10,Could you please raise the volume to 10?,Gink (via openai/gpt-oss-120b),yes
+es,Pon el volumen a 10,"Hey, bump the volume up to 10",Gink (via openai/gpt-oss-120b),yes
+es,Pon el volumen a 10,"Turn the volume up to 10, thanks",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Lima mañana?,What's the forecast for Lima tomorrow?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Lima mañana?,"Can you tell me the weather in Lima for tomorrow, please?",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Lima mañana?,"Hey, what's the weather looking like in Lima tomorrow?",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Lima mañana?,Please let me know what the weather will be like in Lima tomorrow.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 1000 pesos en dólares?,How much is 1000 pesos in dollars?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 1000 pesos en dólares?,Can you tell me the conversion for 1000 pesos to dollars?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 1000 pesos en dólares?,What's the dollar amount for 1000 pesos?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 1000 pesos en dólares?,Please let me know the USD value of 1000 pesos.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 reais en dólares canadienses?,How much is 50 reais in Canadian dollars?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 reais en dólares canadienses?,Can you tell me the conversion for 50 reais to Canadian dollars?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 reais en dólares canadienses?,What's the amount of Canadian dollars for 50 reais?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 reais en dólares canadienses?,Please let me know the value of 50 reais in Canadian dollars.,Gink (via openai/gpt-oss-120b),yes
+es,Clima en El Cairo ahora,Please give me the climate report for El Cairo right now.,Gink (via openai/gpt-oss-120b),yes
+es,Clima en El Cairo ahora,What's the weather like in El Cairo at the moment?,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 470 por 6,Can you calculate 470 multiplied by 6?,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 470 por 6,Please compute 470 × 6.,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 470 por 6,What is 470 times 6?,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 470 por 6,Do the math: 470 * 6.,Gink (via openai/gpt-oss-120b),yes
+es,Persona: Calcula 730 por 18,,Gink (via openai/gpt-oss-120b),no
+es,Person: Convert 100 yuan to pounds,"Hey, could you convert 100 yuan to pounds for me?",Gink (via openai/gpt-oss-120b),yes
+es,Person: Convert 100 yuan to pounds,Please convert 100 yuan to pounds.,Gink (via openai/gpt-oss-120b),yes
+es,Person: Convert 100 yuan to pounds,"Convert 100 yuan to pounds, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,Clima Johannesburgo ahora,Weather in Johannesburgo now,Gink (via openai/gpt-oss-120b),yes
+es,Clima Johannesburgo ahora,Can you tell me the current weather in Johannesburgo?,Gink (via openai/gpt-oss-120b),yes
+es,Clima Johannesburgo ahora,What's the weather like in Johannesburgo right now?,Gink (via openai/gpt-oss-120b),yes
+es,Clima Johannesburgo ahora,"Hey, what's the weather for Johannesburgo at the moment?",Gink (via openai/gpt-oss-120b),yes
+es,Persona: Convierte 50 dólares canadienses a libras,,Gink (via openai/gpt-oss-120b),no
+es,Convierte 250 reais a libras,Can you convert 250 reais to pounds for me?,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 250 reais a libras,Please change 250 reais into pounds.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 250 reais a libras,"Hey, I need to know how much 250 reais is in pounds.",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 250 reais a libras,"Convert 250 reais to pounds, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,Calcule 80 veces 14,Can you calculate 80 times 14 for me?,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 80 veces 14,Please compute 80 times 14.,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 80 veces 14,What's 80 x 14?,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 80 veces 14,"Hey, figure out 80 times 14, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 10000 nairas en réaux?,How much is 10000 nairas in réaux?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 10000 nairas en réaux?,Could you tell me the conversion for 10000 nairas to réaux?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 10000 nairas en réaux?,What's the value of 10000 nairas in réaux?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 10000 nairas en réaux?,"Hey, what's 10000 nairas worth in réaux?",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Hanoi en este momento?,"Hey, can you tell me what the weather's like in Hanoi right now?",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Hanoi en este momento?,Could you please let me know the current weather in Hanoi?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Hanoi en este momento?,What's the weather in Hanoi at the moment?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Hanoi en este momento?,Weather in Hanoi right now?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Addis Ababa mañana?,"Hey, can you tell me the weather forecast for Addis Ababa tomorrow?",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Addis Ababa mañana?,What's the weather going to be like in Addis Ababa tomorrow?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Addis Ababa mañana?,Could you check the tomorrow's weather in Addis Ababa for me?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Addis Ababa mañana?,"Weather in Addis Ababa tomorrow, please.",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Bangkok hoy?,What's the weather like in Bangkok today?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Bangkok hoy?,Can you tell me the current weather in Bangkok?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Bangkok hoy?,"Hey, what's the forecast for Bangkok today?",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Bangkok hoy?,Please let me know today's weather in Bangkok.,Gink (via openai/gpt-oss-120b),yes
+es,Person: ¿Cuál es el 10% de 5000?,,Gink (via openai/gpt-oss-120b),no
+es,Pon una alarma para las 6 a.m.,Set an alarm for 6 a.m.,Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma para las 6 a.m.,Please schedule an alarm at 6 a.m.,Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma para las 6 a.m.,"Hey, could you put an alarm on for 6 a.m.?",Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma para las 6 a.m.,"Alarm at 6 a.m., thanks.",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Casablanca ahora?,What's the weather like in Casablanca right now?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Casablanca ahora?,Can you tell me the current conditions in Casablanca?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Casablanca ahora?,"Hey, do you know what's happening with the weather in Casablanca at this moment?",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Casablanca ahora?,Please give me the present weather for Casablanca.,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Kinshasa ahora?,"Hey, can you tell me the current weather in Kinshasa?",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Kinshasa ahora?,Please let me know what the weather is like right now in Kinshasa.,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Kinshasa ahora?,What's the weather in Kinshasa at the moment?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Kinshasa ahora?,"Give me the current conditions for Kinshasa, please.",Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 8 a.m.,Wake me up at 8 a.m.,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 8 a.m.,Please set an alarm for 8 a.m.,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 8 a.m.,Can you wake me up at 8 a.m.?,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 8 a.m.,I need an alarm for 8 a.m.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 100000 Kenyan shillings en dólares australianos?,How much is 100000 Kenyan shillings in Australian dollars?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 100000 Kenyan shillings en dólares australianos?,"Could you tell me the conversion for 100000 Kenyan shillings to Australian dollars, please?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 100000 Kenyan shillings en dólares australianos?,What's the AUD value of 100000 Kenyan shillings?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 100000 Kenyan shillings en dólares australianos?,"Hey, what's 100000 Kenyan shillings worth in Aussie dollars?",Gink (via openai/gpt-oss-120b),yes
+es,Person: ¿Qué tiempo hace en Warsaw hoy?,,Gink (via openai/gpt-oss-120b),no
+es,"Person: Launch Calendar
+Gink: Opened Calendar",,Gink (via openai/gpt-oss-120b),no
+es,¿Qué tiempo hace en Jakarta ahora?,"Hey, could you tell me the current weather in Jakarta?",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Jakarta ahora?,Please let me know what the weather's like in Jakarta right now.,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Jakarta ahora?,What's the weather in Jakarta at this moment?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Jakarta ahora?,Can you give me the weather update for Jakarta right now?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 100000 Egyptian pounds en dólares?,How much is 100000 Egyptian pounds in dollars?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 100000 Egyptian pounds en dólares?,Can you tell me the USD amount for 100000 Egyptian pounds?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 100000 Egyptian pounds en dólares?,What's the conversion of 100000 Egyptian pounds to dollars?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 100000 Egyptian pounds en dólares?,"Hey, what's 100000 Egyptian pounds worth in dollars?",Gink (via openai/gpt-oss-120b),yes
+es,"Person: Lance Calendar
+Gink: Calendar est ouvert.",,Gink (via openai/gpt-oss-120b),no
+es,Convierte 5000 rupias indonesias a dólares australianos,Please convert 5000 rupias indonesias to dólares australianos.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 5000 rupias indonesias a dólares australianos,Can you change 5000 rupias indonesias into dólares australianos?,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 5000 rupias indonesias a dólares australianos,"Convert 5000 rupias indonesias to dólares australianos, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 5000 rupias indonesias a dólares australianos,"Hey, I need 5000 rupias indonesias swapped for dólares australianos.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es 946 por 4?,"Hey, what's 946 times 4?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es 946 por 4?,"Could you tell me the result of 946 multiplied by 4, please?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es 946 por 4?,What’s 946 × 4?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es 946 por 4?,I need to know 946 * 4.,Gink (via openai/gpt-oss-120b),yes
+es,Persona: Abre Spotify,,Gink (via openai/gpt-oss-120b),no
+es,"Alarma a las 6:45, por favor","Set an alarm for 6:45, please.",Gink (via openai/gpt-oss-120b),yes
+es,"Alarma a las 6:45, por favor",Could you alarm me at 6:45?,Gink (via openai/gpt-oss-120b),yes
+es,"Alarma a las 6:45, por favor","Alarm at 6:45, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,"Alarma a las 6:45, por favor","Hey, I need an alarm at 6:45.",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en New York mañana?,What's the weather going to be like in New York tomorrow?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en New York mañana?,Can you tell me the forecast for New York tomorrow?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en New York mañana?,"Hey, any idea what the weather's like in New York tomorrow?",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en New York mañana?,Please let me know the weather in New York for tomorrow.,Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 15 minutos,Set a timer for 15 minutes.,Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 15 minutos,Could you please set a 15-minute timer?,Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 15 minutos,"Hey, start a 15 minutes timer.",Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 15 minutos,"I need a timer of 15 minutes, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el 25% de 1200?,"Hey, can you tell me what 25% of 1200 is?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el 25% de 1200?,Please calculate the 25% of 1200 for me.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el 25% de 1200?,What's the result of 25% of 1200?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el 25% de 1200?,"25% of 1200, please.",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 20 wons a pesos filipinos,Convert 20 wons to Philippine pesos.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 20 wons a pesos filipinos,"Could you change 20 wons into pesos filipinos, please?",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 20 wons a pesos filipinos,"Hey, I need 20 wons converted to pesos filipinos.",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 20 wons a pesos filipinos,Please convert 20 wons to pesos filipinos.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 25000 rupees a dólares canadienses,Convert 25000 rupees to Canadian dollars.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 25000 rupees a dólares canadienses,"Hey, could you change 25000 rupees into dólares canadienses for me?",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 25000 rupees a dólares canadienses,Please convert 25000 rupees to dólares canadienses.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 25000 rupees a dólares canadienses,What's 25000 rupees in Canadian dollars?,Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma a las 5h,Set an alarm for 5h.,Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma a las 5h,Could you please set an alarm at 5h?,Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma a las 5h,"Hey, I need an alarm at 5h.",Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma a las 5h,Please schedule an alarm for 5h.,Gink (via openai/gpt-oss-120b),yes
+es,Clima Mumbai ahora,What's the weather like in Mumbai right now?,Gink (via openai/gpt-oss-120b),yes
+es,Clima Mumbai ahora,Could you tell me the current climate in Mumbai?,Gink (via openai/gpt-oss-120b),yes
+es,Clima Mumbai ahora,"Mumbai weather now, please.",Gink (via openai/gpt-oss-120b),yes
+es,Clima Mumbai ahora,"Hey, what's the current temperature in Mumbai?",Gink (via openai/gpt-oss-120b),yes
+es,Persona: Convierte 20 won a reais,,Gink (via openai/gpt-oss-120b),no
+es,Persona: ¿Qué tiempo hará en Bangkok mañana?,,Gink (via openai/gpt-oss-120b),no
+es,¿Cuántos son 100000 pesos filipinos en libras egipcias?,"Hey, could you let me know how many libras egipcias are 100000 pesos filipinos?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuántos son 100000 pesos filipinos en libras egipcias?,Please tell me the conversion: 100000 pesos filipinos to libras egipcias.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuántos son 100000 pesos filipinos en libras egipcias?,What's the amount in libras egipcias for 100000 pesos filipinos?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuántos son 100000 pesos filipinos en libras egipcias?,Quick question—how many libras egipcias do 100000 pesos filipinos equal?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Dhaka hoy?,What's the weather like in Dhaka today?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Dhaka hoy?,Can you tell me the weather in Dhaka for today?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Dhaka hoy?,"Hey, what's the weather in Dhaka right now?",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hace en Dhaka hoy?,Please let me know today's weather in Dhaka.,Gink (via openai/gpt-oss-120b),yes
+es,"Alarma a las 5h, por favor","Set an alarm for 5h, please.",Gink (via openai/gpt-oss-120b),yes
+es,"Alarma a las 5h, por favor",Could you please alarm me at 5h?,Gink (via openai/gpt-oss-120b),yes
+es,"Alarma a las 5h, por favor","Alarm at 5h, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,"Alarma a las 5h, por favor","Hey, I need an alarm at 5h.",Gink (via openai/gpt-oss-120b),yes
+es,Persona: Calcula 349 por 29,,Gink (via openai/gpt-oss-120b),no
+es,¿Cuánto son 50 dólares en yuanes?,"Hey, can you tell me how much 50 dólares is in yuanes?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 dólares en yuanes?,"What's the conversion for 50 dólares to yuanes, please?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 dólares en yuanes?,How many yuanes do I get for 50 dólares?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 dólares en yuanes?,Could you convert 50 dólares into yuanes for me?,Gink (via openai/gpt-oss-120b),yes
+es,Persona: ¿Cuánto son 1000 libras turcas en chelines kenianos?,,Gink (via openai/gpt-oss-120b),no
+es,Persona: Convierte 1000 libras a naira,,Gink (via openai/gpt-oss-120b),no
+es,Despiértame a las 7:30 a. m.,Wake me up at 7:30 a. m.,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 7:30 a. m.,Please set an alarm for 7:30 a. m.,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 7:30 a. m.,Can you wake me at 7:30 a. m.?,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 7:30 a. m.,"Set a 7:30 a. m. alarm, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 10 minutos,Set a timer for 10 minutes.,Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 10 minutos,Could you please start a 10‑minute timer?,Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 10 minutos,"Hey, timer 10 minutes, please.",Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 10 minutos,I need a timer of 10 minutes right now.,Gink (via openai/gpt-oss-120b),yes
+es,Persona: Convertir 50 reais a chelines kenianos,,Gink (via openai/gpt-oss-120b),no
+es,Pon un temporizador de 2 minutos,Set a timer for 2 minutes.,Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 2 minutos,Could you please start a 2 minute timer?,Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 2 minutos,"Hey, timer 2 minutes, please.",Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 2 minutos,Timer: 2 minutes.,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Sydney mañana?,"Hey, can you tell me the weather forecast for Sydney tomorrow?",Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Sydney mañana?,Please let me know what the weather will be like in Sydney tomorrow.,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Sydney mañana?,What's the weather looking like in Sydney tomorrow?,Gink (via openai/gpt-oss-120b),yes
+es,¿Qué tiempo hará en Sydney mañana?,"Could you check the Sydney weather for tomorrow, please?",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 50 shillings kényans a nairas,"Hey, can you convert 50 shillings kényanos to nairas for me?",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 50 shillings kényans a nairas,Please convert 50 shillings kényanos into nairas.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 50 shillings kényans a nairas,"Convert 50 shillings kényanos to nairas, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 50 shillings kényans a nairas,I need the conversion of 50 shillings kényanos to nairas.,Gink (via openai/gpt-oss-120b),yes
+es,Persona: Weather Bangkok right now,"Hey, can you tell me the weather in Bangkok right now?",Gink (via openai/gpt-oss-120b),yes
+es,Persona: Weather Bangkok right now,Please check the current weather for Bangkok.,Gink (via openai/gpt-oss-120b),yes
+es,Persona: Weather Bangkok right now,What's the weather like in Bangkok right now?,Gink (via openai/gpt-oss-120b),yes
+es,Persona: Weather Bangkok right now,Could you give me the Bangkok weather at this moment?,Gink (via openai/gpt-oss-120b),yes
+es,Persona: Weather Kinshasa right now,"Hey, can you tell me the weather in Kinshasa right now?",Gink (via openai/gpt-oss-120b),yes
+es,Persona: Weather Kinshasa right now,Please give me the current weather for Kinshasa.,Gink (via openai/gpt-oss-120b),yes
+es,Persona: Weather Kinshasa right now,What's the weather like in Kinshasa at the moment?,Gink (via openai/gpt-oss-120b),yes
+es,Persona: Weather Kinshasa right now,Weather Kinshasa right now,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 8h,Wake me up at 8h.,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 8h,Please set an alarm for 8h.,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 8h,Can you rouse me at 8h?,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 8h,"Hey, I need to be up by 8h.",Gink (via openai/gpt-oss-120b),yes
+es,Person: What's the weather in Mexico City tomorrow?,What's the weather like in Mexico City tomorrow?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 yuanes en won?,How much is 50 yuan in won?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 yuanes en won?,Can you tell me the conversion for 50 yuan to won?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 yuanes en won?,What's the amount of won for 50 yuan?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 yuanes en won?,Please let me know the won value of 50 yuan.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 yen en euros?,How much is 50 yen in euros?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 yen en euros?,Can you tell me the conversion for 50 yen to euros?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 yen en euros?,"Hey, what's 50 yen worth in euros?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es el 18 % de 5000?,What’s 18% of 5000?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es el 18 % de 5000?,Can you tell me the 18 percent of 5000?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es el 18 % de 5000?,"Hey, calculate 18% of 5000 for me.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es el 18 % de 5000?,Please compute 18 % of 5000.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 10 dólares australianos a yenes,Could you convert 10 Australian dollars to yen for me?,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 10 dólares australianos a yenes,"Hey, I need 10 Australian dollars changed into yen.",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 10 dólares australianos a yenes,Please change 10 Australian dollars into yen.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 10 dólares australianos a yenes,"Convert 10 Australian dollars to yen, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 10 pesos filipinos en wons?,How much is 10 Filipino pesos in won?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 10 pesos filipinos en wons?,"Hey, can you tell me the conversion for 10 pesos (Filipino) to wons?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 10 pesos filipinos en wons?,Please let me know the amount in Korean won for 10 PHP.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 10 pesos filipinos en wons?,10 pesos filipinos equals how many wons?,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 5:45,Wake me up at 5:45.,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 5:45,Please set an alarm for 5:45.,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 5:45,Can you make sure I’m up by 5:45?,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 5:45,"Hey, I need a wake‑up call at 5:45.",Gink (via openai/gpt-oss-120b),yes
+es,Clima El Cairo mañana,"Hey, what's the climate like in El Cairo tomorrow?",Gink (via openai/gpt-oss-120b),yes
+es,Clima El Cairo mañana,Please check the weather for El Cairo tomorrow.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es 131 por 43?,What’s 131 times 43?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es 131 por 43?,"Could you tell me the result of 131 multiplied by 43, please?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es 131 por 43?,"Hey, calculate 131 * 43 for me.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es 131 por 43?,"131 por 43, what does that equal?",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 20 dólares canadienses a rupia,"Hey, can you convert 20 dólares canadienses to rupia for me?",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 20 dólares canadienses a rupia,Please change 20 dólares canadienses into rupia.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 20 dólares canadienses a rupia,I need the conversion of 20 dólares canadienses to rupia.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 20 dólares canadienses a rupia,Could you tell me how many rupia 20 dólares canadienses are worth?,Gink (via openai/gpt-oss-120b),yes
+pt,Qual é 5% de 250000?,"Hey, could you tell me what 5% of 250000 is?",Gink (via openai/gpt-oss-120b),yes
+pt,Qual é 5% de 250000?,Please calculate 5% of 250000 for me.,Gink (via openai/gpt-oss-120b),yes
+pt,Qual é 5% de 250000?,What's 5% of 250000?,Gink (via openai/gpt-oss-120b),yes
+pt,Qual é 5% de 250000?,Can you give me the result of 5% of 250000?,Gink (via openai/gpt-oss-120b),yes
+es,Persona: ¿Qué tiempo hace en Lima hoy?,,Gink (via openai/gpt-oss-120b),no
+es,"Person: Wake me up at 6:45 am
+Gink: Done, I'll wake you at 6:45 am.",,Gink (via openai/gpt-oss-120b),no
+es,Despiértame a las 5h,Wake me up at 5h,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 5h,Please set an alarm for 5h,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 5h,Can you wake me at 5h?,Gink (via openai/gpt-oss-120b),yes
+es,Despiértame a las 5h,"Hey, remind me to get up at 5h",Gink (via openai/gpt-oss-120b),yes
+es,Calcule 609 por 20,Calculate 609 times 20.,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 609 por 20,Could you compute 609 multiplied by 20 for me?,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 609 por 20,"Hey, what's 609 * 20?",Gink (via openai/gpt-oss-120b),yes
+es,Calcule 609 por 20,Please work out 609 by 20.,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 536 por 42,"Hey, can you multiply 536 by 42 for me?",Gink (via openai/gpt-oss-120b),yes
+es,Calcule 536 por 42,Please calculate 536 * 42.,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 536 por 42,What's 536 times 42?,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 536 por 42,Could you work out 536 multiplied by 42?,Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma a las 6:30,Set an alarm for 6:30.,Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma a las 6:30,Could you please set an alarm at 6:30?,Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma a las 6:30,"Hey, alarm at 6:30.",Gink (via openai/gpt-oss-120b),yes
+es,Pon una alarma a las 6:30,Please schedule an alarm for 6:30.,Gink (via openai/gpt-oss-120b),yes
+es,¿Puedes abrir WhatsApp?,Could you open WhatsApp for me?,Gink (via openai/gpt-oss-120b),yes
+es,¿Puedes abrir WhatsApp?,"Hey, can you launch WhatsApp?",Gink (via openai/gpt-oss-120b),yes
+es,¿Puedes abrir WhatsApp?,Please open WhatsApp.,Gink (via openai/gpt-oss-120b),yes
+es,¿Puedes abrir WhatsApp?,"Open WhatsApp, please.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el 25% de 5000?,"Hey, what's 25% of 5000?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el 25% de 5000?,"Can you tell me the 25% of 5000, please?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el 25% de 5000?,What's the result of 25% of 5000?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el 25% de 5000?,25% of 5000 = ?,Gink (via openai/gpt-oss-120b),yes
+es,Temporizador 20 minutos,"Set a timer for 20 minutes, please.",Gink (via openai/gpt-oss-120b),yes
+es,Temporizador 20 minutos,Can you start a 20‑minute timer?,Gink (via openai/gpt-oss-120b),yes
+es,Temporizador 20 minutos,"Hey, I need a 20 minute timer.",Gink (via openai/gpt-oss-120b),yes
+es,Temporizador 20 minutos,Timer: 20 minutes.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es el 15 % de 80000?,What’s 15 % of 80000?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es el 15 % de 80000?,"Can you tell me the 15 % of 80000, please?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es el 15 % de 80000?,"Hey, calculate 15 % of 80000 for me.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto es el 15 % de 80000?,I need to know 15 % of 80000.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el tiempo en Hanoi hoy?,What's the weather like in Hanoi today?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el tiempo en Hanoi hoy?,"Hey, can you tell me the forecast for Hanoi right now?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el tiempo en Hanoi hoy?,"Could you let me know the current weather in Hanoi, please?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el tiempo en Hanoi hoy?,Weather in Hanoi today?,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 588 veces 45,Please calculate 588 times 45.,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 588 veces 45,Can you compute 588 x 45 for me?,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 588 veces 45,What's 588 multiplied by 45?,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 588 veces 45,Need the result of 588 * 45.,Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 1 minuto,Set a timer for 1 minute.,Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 1 minuto,Could you please start a 1 minute timer?,Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 1 minuto,"Hey, timer 1 minute, thanks!",Gink (via openai/gpt-oss-120b),yes
+es,Pon un temporizador de 1 minuto,Timer: 1 minute.,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 917 veces 51,Please calculate 917 times 51.,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 917 veces 51,Can you tell me what 917 multiplied by 51 is?,Gink (via openai/gpt-oss-120b),yes
+es,Calcule 917 veces 51,"Hey, what's 917 x 51?",Gink (via openai/gpt-oss-120b),yes
+es,Calcule 917 veces 51,"Compute 917 * 51 for me, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el tiempo en Johannesburg ahora?,What's the current weather in Johannesburg?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el tiempo en Johannesburg ahora?,Can you tell me the weather in Johannesburg right now?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el tiempo en Johannesburg ahora?,"Hey, what's it like outside in Johannesburg at the moment?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el tiempo en Johannesburg ahora?,Please give me the weather update for Johannesburg now.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 dólares en rupias indonesias?,How much is 50 dollars in Indonesian rupiah?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 dólares en rupias indonesias?,Can you tell me the conversion for 50 dollars to Indonesian rupiahs?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 dólares en rupias indonesias?,What's the rate for 50 dollars in Indonesian rupia?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 dólares en rupias indonesias?,Please convert 50 dollars to Indonesian rupiahs.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 Philippine pesos en rupias?,How much is 50 Philippine pesos in rupias?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 Philippine pesos en rupias?,Can you tell me the conversion for 50 Philippine pesos to rupias?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 Philippine pesos en rupias?,What's the value of 50 Philippine pesos in rupias?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 50 Philippine pesos en rupias?,Please convert 50 Philippine pesos into rupias for me.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuántos pesos son 100 dólares canadienses?,How many pesos is 100 Canadian dollars?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuántos pesos son 100 dólares canadienses?,Can you tell me the peso amount for 100 CAD?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuántos pesos son 100 dólares canadienses?,What's the conversion of 100 Canadian dollars to pesos?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuántos pesos son 100 dólares canadienses?,Do you know how many pesos 100 Canadian dollars equals?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 25000 Philippine pesos en lira?,How much is 25000 Philippine pesos in lira?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 25000 Philippine pesos en lira?,Can you tell me the conversion for 25000 Philippine pesos to lira?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 25000 Philippine pesos en lira?,What's the value of 25000 Philippine pesos in lira?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 25000 Philippine pesos en lira?,Please convert 25000 Philippine pesos into lira.,Gink (via openai/gpt-oss-120b),yes
+es,Persona: ¿Cuánto son 10000 Canadian dollars en yen?,,Gink (via openai/gpt-oss-120b),no
+es,Persona: Calcula 379 por 27,,Gink (via openai/gpt-oss-120b),no
+es,¿Cuál es el 15% de 1200?,"Hey, can you tell me what 15% of 1200 is?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el 15% de 1200?,What's the 15% of 1200?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el 15% de 1200?,Please calculate 15% of 1200 for me.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el 15% de 1200?,I need to know 15 percent of 1200.,Gink (via openai/gpt-oss-120b),yes
+es,Person: Weather Toronto today,"Hey, can you tell me the weather in Toronto today?",Gink (via openai/gpt-oss-120b),yes
+es,Person: Weather Toronto today,"Weather Toronto today, please.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 10 won en euros?,How much is 10 won in euros?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 10 won en euros?,What's the conversion for 10 won to euros?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 10 won en euros?,Can you tell me the value of 10 won in euros?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 10 won en euros?,10 won equals how many euros?,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 100000 dólares canadienses a rupias,Can you convert 100000 dólares canadienses to rupias?,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 100000 dólares canadienses a rupias,Please change 100000 dólares canadienses into rupias.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 100000 dólares canadienses a rupias,"Convert 100000 dólares canadienses a rupias, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 100000 dólares canadienses a rupias,"Hey, I need 100000 dólares canadienses converted to rupias.",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 20 dólares en dólares australianos?,"Hey, can you tell me how much 20 dollars is in Australian dollars?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 20 dólares en dólares australianos?,Could you please let me know the conversion for 20 dollars to Australian dollars?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 20 dólares en dólares australianos?,What's the exchange rate for 20 dollars into Australian dollars?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 20 dólares en dólares australianos?,20 dollars equals how many Australian dollars?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el clima en Jakarta ahora?,What's the weather like in Jakarta right now?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el clima en Jakarta ahora?,Can you tell me the current weather in Jakarta?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el clima en Jakarta ahora?,"Hey, what's the climate in Jakarta at the moment?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es el clima en Jakarta ahora?,Please give me the weather update for Jakarta now.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es 911 multiplicado por 3?,"Hey, can you tell me what 911 multiplied by 3 is?",Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es 911 multiplicado por 3?,What's the result of 911 * 3?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es 911 multiplicado por 3?,Could you please calculate 911 times 3 for me?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuál es 911 multiplicado por 3?,"911 multiplied by 3, what's that?",Gink (via openai/gpt-oss-120b),yes
+es,Clima Chicago ahora,"Hey, could you tell me the current weather in Chicago?",Gink (via openai/gpt-oss-120b),yes
+es,Clima Chicago ahora,"What's the weather like right now in Chicago, please?",Gink (via openai/gpt-oss-120b),yes
+es,Clima Chicago ahora,Chicago weather now?,Gink (via openai/gpt-oss-120b),yes
+es,Clima Chicago ahora,Can you give me the present climate for Chicago?,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 100 libras egipcias a euros,"Hey, could you convert 100 Egyptian pounds to euros for me?",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 100 libras egipcias a euros,Please change 100 EGP into euros.,Gink (via openai/gpt-oss-120b),yes
+es,Convierte 100 libras egipcias a euros,"Convert 100 Egyptian pounds to euros, thanks.",Gink (via openai/gpt-oss-120b),yes
+es,Convierte 100 libras egipcias a euros,I need to know how many euros 100 Egyptian pounds equals.,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 1000 Egyptian pounds en dólares?,How much is 1000 Egyptian pounds in dollars?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 1000 Egyptian pounds en dólares?,Can you tell me the conversion for 1000 Egyptian pounds to dollars?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 1000 Egyptian pounds en dólares?,What's the dollar amount for 1000 Egyptian pounds?,Gink (via openai/gpt-oss-120b),yes
+es,¿Cuánto son 1000 Egyptian pounds en dólares?,Please give me the rate: 1000 Egyptian pounds equals how many dollars?,Gink (via openai/gpt-oss-120b),yes

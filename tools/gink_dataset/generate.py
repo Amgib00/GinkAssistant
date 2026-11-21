@@ -326,7 +326,7 @@ def load_language_rows():
     """languages/*.csv from native speakers: only rows with approved = yes."""
     import csv
     out = []
-    folder = os.path.join(HERE, "languages")
+    folder = os.environ.get("GINK_LANGUAGES_DIR") or os.path.join(HERE, "languages")
     for name in sorted(os.listdir(folder)) if os.path.isdir(folder) else []:
         if not name.endswith(".csv"):
             continue
