@@ -20,6 +20,8 @@ description: Build with Gink: the Developer API, Python and JavaScript SDKs and 
         <li><a href="#start">Get started</a></li>
         <li><a href="#chat">Chat</a></li>
         <li><a href="#agents">Agents</a></li>
+        <li><a href="#tasks">Scheduled tasks</a></li>
+        <li><a href="#artifacts">Artifacts, the web and code</a></li>
         <li><a href="#maps">Maps and places</a></li>
         <li><a href="#voice">Voice messages</a></li>
         <li><a href="#memory">Memory</a></li>
@@ -58,6 +60,26 @@ print(run.output_text, run.files_changed)
 for event in client.interactions.create(input="Plan a week of meals", stream=True):
     print(event.type, event.data)       # every step as it happens</code></pre>
       <p>In JavaScript, <code>await gink.interactions.create({ input, max_steps: 30 })</code>; in a terminal, <code>gink agent "task"</code>. Agents can also run on a schedule (<code>client.schedules.create(task, every="daily", at="08:00")</code>) and call a webhook when they finish.</p>
+
+      <h2 id="tasks">Scheduled tasks</h2>
+      <p>A task runs by itself at its time, in your time zone: Gink does it (searching the web as it needs) and the result lands in the task&rsquo;s own chat in your Gink apps, and by email with <code>notify_email</code>. <code>every</code> is <code>once</code>, <code>daily</code>, <code>weekdays</code>, <code>weekly</code>, <code>monthly</code> or <code>hourly</code> (Gink Pro). Free has 3 tasks, Gink Pro 25; each run counts as one message.</p>
+<pre><code>task = client.tasks.create("Give me the three biggest news stories, with sources",
+                           every="daily", at="08:00")
+print(task.when, task.next_run)
+print(client.tasks.run(task.id).text)        # now, and wait for the result
+print(client.tasks.get(task.id).results)     # the latest results, newest last
+client.tasks.pause(task.id)</code></pre>
+      <p>Let people schedule in their own words: chat with <code>gink_tasks</code> and an answer to &ldquo;every Monday at 9, plan my week&rdquo; ends with a schedule block that <code>schedules_in()</code> reads, ready for <code>tasks.create</code>. In JavaScript, <code>gink.tasks.create({ task, every, at })</code> and <code>schedulesIn(text)</code>; in a terminal, <code>gink tasks add "..." --every weekly --day monday --at 09:00</code>.</p>
+
+      <h2 id="artifacts">Artifacts, the web and code</h2>
+      <p>Three options make chat work like Gink&rsquo;s apps. <code>gink_artifacts</code>: finished things (a page, an SVG, a diagram, a document, a long code file) come in one block with a title, and <code>artifacts()</code> gives each one with its kind, file name and version. <code>gink_web="auto"</code>: the pages linked in a question are read by Gink&rsquo;s server, and the web is searched when the answer needs it. <code>gink_code</code>: GitHub repositories in the question are read, with the files that match it.</p>
+<pre><code>answer = client.chat("Make a pomodoro timer page", gink_artifacts=True)
+for a in client.artifacts(answer):
+    open(a["filename"], "w").write(a["content"])     # pomodoro-timer.html
+
+client.chat("What changed on https://example.org/changelog this month?", gink_web="auto")
+client.chat("Where is sign-in handled in github.com/owner/app?", gink_code=True)</code></pre>
+      <p>The <code>gink</code> command does all three by itself: <code>gink --save-artifacts site "make a landing page for a bakery"</code> saves the files, and links and repositories in a question are read unless you add <code>--no-auto</code>.</p>
 
       <h2 id="maps">Maps and places</h2>
       <p>Ask with <code>gink_maps</code> and answers about places end with a map block: a title, and each place&rsquo;s name, coordinates and kind (museum, cafe, park and so on), ready to draw on your own map. Places by name or address come from OpenStreetMap, and a picture of a place comes from its Wikipedia article, like the photos on Gink&rsquo;s map cards.</p>

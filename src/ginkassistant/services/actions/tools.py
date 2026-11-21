@@ -54,6 +54,16 @@ TOOL_SPECS = [
     _fn("edit_text_file", "Change a text or code file on this computer: replace one exact piece of text (read the file "
         "first and copy the text exactly). all=true replaces every copy. A backup is kept, so it can be undone.",
         {"which": S, "find": S, "replace": S, "all": {"type": "boolean"}}, ["which", "find", "replace"]),
+    _fn("project_overview", "Map a code project on this computer: its languages, folders and files, scripts, README, "
+        "git branch and changed files, and which checks can run. Use it first when asked about or to change a project.",
+        {"project": {**S, "description": "the project's folder name (e.g. 'GinkAssistant'), a path, or a file in it"}}, []),
+    _fn("search_code", "Find where something is in a code project: every line containing the text (or regex=true), as "
+        "file:line. Use it to find where a feature, function or error message lives before reading files.",
+        {"text": S, "project": {**S, "description": "folder name or path (default: the last project)"},
+         "regex": {"type": "boolean"}, "glob": {**S, "description": "only these files, e.g. '*.py' or 'src/*.ts'"}}, ["text"]),
+    _fn("run_project_check", "Run a code project's OWN tests, linter or build (pytest, npm test, go test, cargo, gradle...) "
+        "to check work; returns passed/failed and the end of the output.",
+        {"project": S, "kind": {**S, "enum": ["tests", "lint", "build"]}}, []),
     _fn("set_dark_mode", "Turn the computer's dark mode on or off.",
         {"mode": {**S, "description": "on | off | toggle"}}, []),
     _fn("lock_screen", "Lock the computer's screen.", {}, []),
@@ -131,6 +141,17 @@ TOOL_SPECS = [
     _fn("add_reminder", "Remind the user about something at a specific date and time.",
         {"text": S, "when": {**S, "description": "YYYY-MM-DD HH:MM local time"}},
         ["text", "when"]),
+    _fn("schedule_task", "Schedule something Gink itself does LATER or on a REPEAT, on Gink's server even when the "
+        "app is closed -- 'every morning at 8, the top news', 'each Monday, plan my week', 'on the 1st, sum up my "
+        "spending', 'every day at 9 remind me to drink water'. The result arrives in the task's own chat. A plain "
+        "one-time reminder for the person ('remind me at 5 to call mom') is add_reminder instead.",
+        {"title": {**S, "description": "a short name, e.g. Morning news"},
+         "task": {**S, "description": "the complete instruction to carry out each time, written to stand alone"},
+         "every": {**S, "enum": ["once", "daily", "weekdays", "weekly", "monthly", "hourly"]},
+         "at": {**S, "description": "24h HH:MM local time"},
+         "day": {**S, "description": "weekly: monday..sunday; monthly: 1-31"},
+         "date": {**S, "description": "once: YYYY-MM-DD"}},
+        ["title", "task", "every", "at"]),
     _fn("add_task", "Save a to-do. For goals or problems, first analyse them and pass the "
         "concrete ordered steps you worked out in 'steps'.",
         {"title": S, "notes": S,
@@ -251,6 +272,15 @@ class ToolRunner:
         except Exception as e:
             return {"ok": False, "message": f"{name} failed: {e}"}
 
+    def _t_schedule_task(self, title="", task="", every="daily", at="08:00", day=None, date=None):
+        """Made by the chat's task card on Gink's server (the agent's answer carries a ```schedule block, see
+        agent._with_schedules): one place makes every scheduled task, with the same checks and limits."""
+        if not str(task or "").strip():
+            return {"ok": False, "message": "Say what the task should do."}
+        if str(every or "").lower() not in ("once", "daily", "weekdays", "weekly", "monthly", "hourly"):
+            return {"ok": False, "message": "every must be once, daily, weekdays, weekly, monthly or hourly."}
+        return {"ok": True, "message": f"Scheduled \u201c{title or task[:40]}\u201d: the card below shows it and its chat."}
+
     # ---------------- controlling this computer ----------------
     def _pc(self):
         self.computer.files_dir = self.files_dir
@@ -286,6 +316,23 @@ class ToolRunner:
 
     def _t_open_in_editor(self, path="", editor=""):
         return self._pc().open_in_editor(path, editor)
+
+    # ---------------- code projects on this computer (services/actions/codebase.py) ----------------
+    def _code(self):
+        if getattr(self, "_codebase", None) is None:
+            from .codebase import Codebase
+            self._codebase = Codebase(self._pc())
+        return self._codebase
+
+    def _t_project_overview(self, project=""):
+        return self._code().overview(project)
+
+    def _t_search_code(self, text, project="", regex=False, glob=""):
+        return self._code().search(text, project, bool(regex), glob)
+
+    async def _t_run_project_check(self, project="", kind="tests"):
+        import asyncio
+        return await asyncio.get_running_loop().run_in_executor(None, self._code().check, project, kind)
 
     def _t_read_text_file(self, which, start_line=1, max_lines=400):
         return self._pc().read_text_file(which, start_line, max_lines)

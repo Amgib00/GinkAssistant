@@ -178,9 +178,25 @@ class ApiClient:
             raise ApiError(detail if isinstance(detail, str) else "Couldn't download your data.")
         return resp.content
 
-    # -- Scheduled tasks (server: /dev/schedules) ------------------------------------
+    # -- Scheduled agents (server: /dev/schedules: they work on files in a Genie project) --------------
     async def schedules(self, token: str) -> dict:
         return await self._authed("GET", "/dev/schedules", token)
+
+    # -- Scheduled tasks (server: /tasks, 0.1.161): the result arrives in the task's own synced chat ---------
+    async def tasks(self, token: str) -> dict:
+        return await self._authed("GET", "/tasks", token)
+
+    async def task_create(self, token: str, data: dict) -> dict:
+        return await self._authed("POST", "/tasks", token, json=data)
+
+    async def task_update(self, token: str, task_id: str, data: dict) -> dict:
+        return await self._authed("PATCH", f"/tasks/{task_id}", token, json=data)
+
+    async def task_delete(self, token: str, task_id: str) -> dict:
+        return await self._authed("DELETE", f"/tasks/{task_id}", token)
+
+    async def task_run(self, token: str, task_id: str) -> dict:
+        return await self._authed("POST", f"/tasks/{task_id}/run", token, json={})
 
     # -- Workspaces (server: /org) --------------------------------------------------
     async def org(self, token: str) -> dict:

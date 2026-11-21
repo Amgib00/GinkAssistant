@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.1.161 (November 2026)
+
+- Scheduled tasks: ask "every morning at 8, give me the three biggest stories", "each Monday, plan my week" or "on
+  Friday at 17:00, remind me to send the report". Gink's server does it at that time, in your time zone, even when
+  your apps are closed, searching the web as it needs. The result arrives in the task's own chat on all your devices,
+  with a notification, and by email if you like. Every hour, day, weekday, week, month or just once. Add, pause, run
+  now or delete them in Settings > Scheduled tasks (also in the sidebar). Free has 3 tasks, Gink Pro 25 and hourly
+  ones; each run counts as one message
+- Artifacts: when Gink makes something complete (a web page or small app, a logo, a diagram, a document, a code
+  file) it shows a card in the chat that opens beside it. Try the page live, read its code, go back to an earlier
+  version, copy, download, or open it in a tab of its own. On the web, pages run sealed off from your account
+- Gink reads the web by itself: paste a link and it reads the page rather than guessing; when an answer needs
+  today's facts, it searches without being asked
+- Gink works with code: mention a GitHub repository and the answer comes from its real code (Gink's own code too,
+  when you ask how Gink works). On a computer, Gink maps a project, finds where things are, changes files with a
+  backup first and runs the project's own tests, linter or build to check its work
+- Higher abilities: harder questions get more thought, and bigger pieces of work (a whole page, a long document)
+  get room to finish
+- A new sign-in, on the web and in the apps, that shows what Gink does now, with Gink Pro beside it. Gink Pro now
+  includes 25 scheduled tasks, hourly ones too
+- Gink Genie's scheduled agents can run on weekdays; the website has a new section on all of this, and a blog post
+- Developers: `/v1/tasks` (create, list, run, pause, delete scheduled tasks), chat options `gink_tasks`,
+  `gink_artifacts`, `gink_code` and `gink_web: "auto"`; the SDKs read the results (`artifacts()`,
+  `schedules_in()` / `schedulesIn()`, `tasks`, gink-ai 0.3.16); in the CLI, `gink tasks`, `--save-artifacts` and
+  `--schedule`, and links and repositories in a question are read by themselves (`--no-auto` turns it off)
+
 ## 0.1.160 (November 2026)
 
 - Real maps: when an answer is about places, a real street map appears in the chat, drawn on your device from

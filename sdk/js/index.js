@@ -51,6 +51,7 @@ export class Gink {
     this.interactions = new Interactions(this);
     this.environments = new Environments(this);
     this.schedules = new Schedules(this);
+    this.tasks = new Tasks(this);
     this.memories = {                                  // what Gink remembers about you (the same as your apps)
       list: async () => (await this.request("GET", "/memories")).data || [],
       add: (text) => this.request("POST", "/memories", { json: { text } }),
@@ -115,6 +116,8 @@ export class Gink {
 
   // The maps in an answer (ask with { gink_maps: true }): [{ title, places: [{ name, query, lat, lon, category, note, map_url }] }]
   maps(text) { return maps(text); }
+  artifacts(text) { return artifacts(text); }
+  schedulesIn(text) { return schedulesIn(text); }
 
   // A picture of a place, like the ones on Gink's map cards (Wikipedia's): { image, title, page, credit } -- or null
   async placePhoto(name, lat, lon) {
@@ -230,6 +233,43 @@ export function maps(text) {
         return place;
       });
     if (places.length) out.push({ title: String(data.title || ""), places });
+  }
+  return out;
+}
+
+// The finished things in an answer (ask with { gink_artifacts: true }): each fenced block with a title, like
+// ```html title="Pomodoro timer" -> [{ title, language, kind, content, filename, version }]; kind is page, image (SVG),
+// diagram (Mermaid), document (Markdown) or code; a later block with the same title is its next version.
+const ARTIFACT_KINDS = { html: "page", htm: "page", svg: "image", mermaid: "diagram", document: "document", markdown: "document", md: "document" };
+const ARTIFACT_EXT = { python: "py", javascript: "js", typescript: "ts", html: "html", svg: "svg", mermaid: "mmd", document: "md",
+  markdown: "md", md: "md", css: "css", json: "json", bash: "sh", shell: "sh", sql: "sql", java: "java", kotlin: "kt",
+  swift: "swift", go: "go", rust: "rs", ruby: "rb", php: "php", csharp: "cs", cpp: "cpp", c: "c", yaml: "yaml", toml: "toml", dart: "dart" };
+export function artifacts(text) {
+  const out = [], seen = {};
+  const re = /^([ \t]*)(```|~~~)[ \t]*([\w+#.\-]*)([^\n`]*)\n([\s\S]*?)\n?[ \t]*\2[ \t]*$/gm;
+  for (const m of String(text || "").matchAll(re)) {
+    const lang = m[3].toLowerCase(), t = /\btitle[ \t]*=[ \t]*(?:"([^"\n]{1,120})"|'([^'\n]{1,120})')/.exec(m[4]);
+    if (!t) continue;
+    const title = (t[1] || t[2]).trim(), key = title.toLowerCase().replace(/\s+/g, " ");
+    seen[key] = (seen[key] || 0) + 1;
+    const ext = ARTIFACT_EXT[lang] || lang || "txt";
+    const filename = /\.[A-Za-z0-9]{1,6}$/.test(title) ? title
+      : (title.replace(/[^\w.-]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase() || "artifact") + "." + ext;
+    out.push({ title, language: lang, kind: ARTIFACT_KINDS[lang] || "code", content: m[5], filename, version: seen[key] });
+  }
+  return out;
+}
+
+// The schedules an answer offers (ask with { gink_tasks: true }): each ```schedule block, ready for
+// gink.tasks.create(s) -> [{ title, task, every, at, day?, date? }].
+export function schedulesIn(text) {
+  const out = [];
+  for (const m of String(text || "").matchAll(/```schedule[^\n]*\n([\s\S]*?)```/g)) {
+    let d; try { d = JSON.parse(m[1]); } catch { continue; }
+    if (!d || typeof d !== "object" || !String(d.task || "").trim()) continue;
+    const s = {};
+    for (const k of ["title", "task", "every", "at", "day", "date"]) if (d[k] !== undefined && d[k] !== null && d[k] !== "") s[k] = d[k];
+    out.push(s);
   }
   return out;
 }
@@ -354,6 +394,28 @@ class Schedules {
   pause(id) { return this.c.request("PATCH", `/schedules/${encodeURIComponent(id)}`, { json: { enabled: false } }); }
   resume(id) { return this.c.request("PATCH", `/schedules/${encodeURIComponent(id)}`, { json: { enabled: true } }); }
   delete(id) { return this.c.request("DELETE", `/schedules/${encodeURIComponent(id)}`); }
+}
+
+// Scheduled tasks for your account: at its time Gink does the task by itself (searching the web as it needs) and the
+// result lands in the task's own chat in your Gink apps (and by email with notify_email: true).
+//   const t = await gink.tasks.create({ task: "Give me the three biggest news stories", every: "daily", at: "08:00" });
+//   (await gink.tasks.run(t.id)).text      // now, and wait for the result
+// every: once (date), hourly (Gink Pro), daily, weekdays, weekly (day: "monday"), monthly (day: 1-31).
+class Tasks {
+  constructor(client) { this.c = client; }
+  create({ task, every = "daily", at = "08:00", title, day, date, timezone, notify_email } = {}) {
+    const body = { task, every, at };
+    for (const [k, v] of Object.entries({ title, day, date, timezone })) if (v !== undefined && v !== null && v !== "") body[k] = v;
+    if (notify_email) body.notify_email = true;
+    return this.c.request("POST", "/tasks", { json: body });
+  }
+  async list() { return (await this.c.request("GET", "/tasks")).data || []; }
+  get(id, { results = 5 } = {}) { return this.c.request("GET", `/tasks/${encodeURIComponent(id)}?results=${encodeURIComponent(results)}`); }
+  update(id, fields) { return this.c.request("PATCH", `/tasks/${encodeURIComponent(id)}`, { json: fields || {} }); }
+  pause(id) { return this.update(id, { enabled: false }); }
+  resume(id) { return this.update(id, { enabled: true }); }
+  run(id, { wait = true } = {}) { return this.c.request("POST", `/tasks/${encodeURIComponent(id)}/run`, { json: { wait: !!wait } }); }
+  delete(id) { return this.c.request("DELETE", `/tasks/${encodeURIComponent(id)}`); }
 }
 
 // Check a webhook really came from Gink, then get its JSON. body: the raw request body (string, exactly as received);

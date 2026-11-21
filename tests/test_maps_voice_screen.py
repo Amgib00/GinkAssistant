@@ -101,7 +101,10 @@ def test_the_same_maps_instruction_everywhere_and_gink_maps(world):
     bridge = read("webapp", "bridge.js")
     js = json.loads(re.search(r"var MAP_PROMPT = (\".*?\");\n", bridge).group(1))
     assert b.MAP_PROMPT == groq_worker.MAP_PROMPT == js and "fenced code block with the language map" in js
-    assert groq_worker.DEFAULT_SYSTEM_PROMPT.endswith(groq_worker.MAP_PROMPT) and "MAP_PROMPT) +" in bridge
+    # the maps instruction, then (0.1.161) artifacts and schedules -- the same order in the apps and the web app
+    g = groq_worker
+    assert g.DEFAULT_SYSTEM_PROMPT.endswith(g.MAP_PROMPT + " " + g.ARTIFACT_PROMPT + " " + g.SCHEDULE_PROMPT)
+    assert '" " + MAP_PROMPT + " " + ARTIFACT_PROMPT + " " + SCHEDULE_PROMPT)' in bridge
     c.post("/v1/chat/completions", headers=k, json={"messages": [{"role": "user", "content": "Where is the Eiffel Tower?"}],
                                                     "gink_maps": True})
     sent = seen["chat"][-1]

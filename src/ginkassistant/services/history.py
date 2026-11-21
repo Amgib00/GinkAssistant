@@ -227,15 +227,30 @@ class HistoryStore:
                                          "archived": bool(archived)}})
         return docs
 
+    TASK_PREFIX = "task-"            # a scheduled task's chat: Gink's server adds each result (0.1.161)
+
+    def pop_task_news(self) -> List[Dict[str, Any]]:
+        """Scheduled tasks' new results since the last call: [{"id", "title", "text"}] (for a notification)."""
+        news, self._task_news = getattr(self, "_task_news", []), []
+        return news
+
     def apply_remote(self, docs: List[Dict[str, Any]]) -> int:
         """Whole-chat last-writer-wins: a newer copy from another device
         replaces this device's copy of that chat."""
         applied = 0
+        if not hasattr(self, "_task_news"):
+            self._task_news = []
         with self._connect() as conn:
             for d in docs:
                 row = conn.execute("SELECT updated FROM chat_meta WHERE session_id = ?", (d["id"],)).fetchone()
                 if row and row[0] >= d["updated"]:
                     continue
+                if str(d["id"]).startswith(self.TASK_PREFIX) and not d.get("deleted"):
+                    msgs = (d.get("payload") or {}).get("messages") or []
+                    had = conn.execute("SELECT COUNT(*) FROM chat_history WHERE session_id = ?", (d["id"],)).fetchone()[0]
+                    if len(msgs) > max(had, 1) and msgs[-1].get("role") == "assistant":
+                        self._task_news.append({"id": d["id"], "title": (d.get("payload") or {}).get("title") or "",
+                                                "text": str(msgs[-1].get("content") or "")})
                 conn.execute("DELETE FROM chat_history WHERE session_id = ?", (d["id"],))
                 if not d.get("deleted"):
                     for m in (d.get("payload") or {}).get("messages", []):

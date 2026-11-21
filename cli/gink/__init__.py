@@ -15,11 +15,14 @@ The Gink Python SDK (pip install gink-ai), for the Gink Developer API.
         print(event.type, event.data)
 
     answer = client.chat("What's the weather where I am?")                  # chat, with live information
+    task = client.tasks.create("Give me the top three news stories", every="daily", at="08:00")   # Gink does it daily
     env = client.environments.create(name="notes")
     env.upload("data.csv", open("data.csv", "rb").read())
     print(env.download("report.md").decode())
 """
-from .client import Client, GinkAPIError, Interaction, Environment, Event, maps, screen_image, sources, verify_webhook
+from .client import (Client, GinkAPIError, Interaction, Environment, Event, artifacts, maps, schedules_in, screen_image,
+                     sources, verify_webhook)
 
-__all__ = ["Client", "GinkAPIError", "Interaction", "Environment", "Event", "maps", "screen_image", "sources", "verify_webhook"]
-__version__ = "0.3.15"
+__all__ = ["Client", "GinkAPIError", "Interaction", "Environment", "Event", "artifacts", "maps", "schedules_in", "screen_image",
+           "sources", "verify_webhook"]
+__version__ = "0.3.16"

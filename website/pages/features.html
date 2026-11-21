@@ -1,6 +1,6 @@
 <!--
 title: Features
-description: Everything Gink can do: Hey Gink and voice messages, your screen and camera, an agent that uses your apps and files, maps, files and images, a memory you control, and sync.
+description: Everything Gink can do: scheduled tasks, artifacts, the web and your code, Hey Gink and voice messages, your screen and camera, an agent that uses your apps and files, maps, files and images, a memory you control, and sync.
 -->
 <section class="page-head">
   <div class="wrap">
@@ -34,6 +34,8 @@ description: Everything Gink can do: Hey Gink and voice messages, your screen an
         <h2>Do</h2>
         <ul>
           <li><strong>An agent that finishes the job:</strong> <span>for a task with several steps, Gink writes a plan you can watch, works through it and keeps going by itself until every step is done.</span></li>
+          <li><strong>Scheduled tasks:</strong> <span>&ldquo;every morning at 8, the three biggest stories&rdquo;, &ldquo;each Monday, plan my week&rdquo;, &ldquo;on Friday at 17:00, remind me to send the report&rdquo;. Gink&rsquo;s server does it at that time, in your time zone, even when your apps are closed, and puts the result in its own chat on all your devices (and in your email if you like). Pause, run now or change them in Settings. Free: 3 tasks; Gink Pro: 25, and hourly ones.</span></li>
+          <li><strong>The web, by itself:</strong> <span>paste a link and Gink reads the page itself; when an answer needs today&rsquo;s facts it searches without being asked, and lists its sources.</span></li>
           <li><strong>Alarms, timers, reminders</strong> <span>and calendar events, set in a sentence.</span></li>
           <li><strong>Tasks with steps</strong> <span>in your Workspace, with progress Gink keeps track of.</span></li>
           <li><strong>Messages, calls and email drafts</strong> <span>opened ready to send.</span></li>
@@ -46,6 +48,7 @@ description: Everything Gink can do: Hey Gink and voice messages, your screen an
           <li><strong>Your apps:</strong> <span>find any installed app, open it, see what&rsquo;s running and close what you don&rsquo;t need. An app with unsaved work still asks you first.</span></li>
           <li><strong>Your code editor:</strong> <span>&ldquo;open my portfolio in VS Code&rdquo; opens the project in VS Code, Cursor, Zed, Xcode, PyCharm, Sublime Text and others.</span></li>
           <li><strong>Text and code files:</strong> <span>Gink reads, writes and edits them in your home folder and keeps a backup of every file it changes. Hidden and system files stay off-limits.</span></li>
+          <li><strong>Your code projects:</strong> <span>Gink maps a project (languages, files, scripts, git), finds where something is, makes the change and runs the project&rsquo;s own tests, linter or build to check it. In a longer task it asks before running anything.</span></li>
           <li><strong>Folders and websites</strong> <span>by name or nickname, including Finder and Terminal in any folder.</span></li>
           <li><strong>Music, volume and your Mac:</strong> <span>Spotify and Apple Music, screenshots, dark mode, Apple Notes, battery and storage.</span></li>
         </ul>
@@ -57,7 +60,8 @@ description: Everything Gink can do: Hey Gink and voice messages, your screen an
           <li><strong>Files on request:</strong> <span>PDF, Word, Excel, CSV, Markdown and web pages, shown as cards you can open or save.</span></li>
           <li><strong>Images</strong> <span>from a description, in the chat or in Media Studio with styles and shapes.</span></li>
           <li><strong>Apps and websites with Gink Genie:</strong> <span>describe one and Genie builds the whole project with you, then shares a preview when you choose.</span></li>
-          <li><strong>Code</strong> <span>with highlighting, line numbers, copy and save.</span></li>
+          <li><strong>Artifacts:</strong> <span>when Gink makes something complete, a web page or small app, a logo, a diagram, a document or a code file, it opens beside the chat: try it live, read the code, step through its versions, copy, download or open it in a tab of its own.</span></li>
+          <li><strong>Code</strong> <span>with highlighting, line numbers, copy and save. GitHub repositories you mention, and Gink&rsquo;s own source, are read so answers come from the real code.</span></li>
         </ul>
       </div>
       <div class="group">
@@ -84,6 +88,7 @@ description: Everything Gink can do: Hey Gink and voice messages, your screen an
         <ul>
           <li><strong>The Developer API:</strong> <span>chat, search, maps and places, voice, memory and many requests at once, for your own app.</span></li>
           <li><strong>Managed agents:</strong> <span>up to 60 steps in a workspace that keeps its files, on a schedule if you like, with webhooks when they finish.</span></li>
+          <li><strong>Scheduled tasks and artifacts in the API:</strong> <span><code>/v1/tasks</code>, and chat options that read links and code, search by themselves and return finished things in titled blocks.</span></li>
           <li><strong>Python and JavaScript SDKs and a CLI:</strong> <span><code>pip install gink-ai</code> or <code>npm install gink-ai</code>. <a href="developers.html">Start building</a>.</span></li>
         </ul>
       </div>

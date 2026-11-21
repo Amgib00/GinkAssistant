@@ -86,9 +86,17 @@ def code_css_for_media() -> str:
     dark = text[start:end].replace("body.theme-dark .codehilite", ".codehilite", 1)
     return text[:start] + text[end:].lstrip("\n") + "\n@media (prefers-color-scheme: dark) { " + dark + " }"
 
-_DOCUMENT_BLOCK_RE = re.compile(r"```document[ \t]*\r?\n(.*?)\r?\n```", re.DOTALL)
-# A fenced block on its own lines (also indented, inside a list): its indent, language, code
-_FENCE_RE = re.compile(r"^([ \t]*)(```|~~~)[ \t]*([\w+#.\-]*)[^\n`]*\n(.*?)\n?[ \t]*\2[ \t]*$", re.MULTILINE | re.DOTALL)
+_DOCUMENT_BLOCK_RE = re.compile(r"```document([^\n`]*)\r?\n(.*?)\r?\n```", re.DOTALL)
+# A fenced block on its own lines (also indented, inside a list): its indent, language, the rest of the first line
+# (an artifact's title="..." -- 0.1.161), code
+_FENCE_RE = re.compile(r"^([ \t]*)(```|~~~)[ \t]*([\w+#.\-]*)([^\n`]*)\n(.*?)\n?[ \t]*\2[ \t]*$", re.MULTILINE | re.DOTALL)
+_TITLE_RE = re.compile(r"""\btitle[ \t]*=[ \t]*(?:"([^"\n]{1,120})"|'([^'\n]{1,120})')""")
+
+
+def fence_title(info: str) -> str:
+    """An artifact's title from a fence's first line: ```html title="Pomodoro timer"  ->  "Pomodoro timer"."""
+    m = _TITLE_RE.search(info or "")
+    return " ".join((m.group(1) or m.group(2) or "").split()) if m else ""
 _FILENAME_LINE_RE = re.compile(r"^[ \t]*(?:#|//|--|/\*)[ \t]*([\w\-. ]+\.[a-zA-Z0-9]{1,10})[ \t]*(?:\*/)?[ \t]*$")
 _MD_EXTENSIONS = ["tables", "nl2br"]
 _MD_EXTENSION_CONFIGS = {}
@@ -202,16 +210,18 @@ def _lexer_for(key: str, filename=None):
     return TextLexer()
 
 
-def render_code_block(fence_lang: str, code: str) -> str:
+def render_code_block(fence_lang: str, code: str, title: str = "") -> str:
     """One fenced block: a header (the file's name or the language) with Copy and Download, then the code,
-    coloured for its language. The chat page (ui/chat_extras.py) turns the header into icon buttons."""
+    coloured for its language. The chat page (ui/chat_extras.py) turns the header into icon buttons -- and a block
+    with a title (or a whole web page, an SVG, a diagram, a long file) into an artifact card (0.1.161)."""
     code, filename = _strip_filename_line(fence_lang, code)
     key = code_language(fence_lang, code, filename)
     shown = (fence_lang or "").strip()
     label = filename or (shown if shown and LANG_ALIASES.get(shown.lower(), shown.lower()) == key else key) or "code"
     body = highlight(code, _lexer_for(key, filename), _FORMATTER)
     return (
-        f'<div class="code-block" data-lang="{html_module.escape(key or "text")}">'
+        f'<div class="code-block" data-lang="{html_module.escape(key or "text")}"'
+        + (f' data-title="{html_module.escape(title)}"' if title else "") + ">"
         '<div class="code-block-bar">'
         f'<span class="code-block-label">{html_module.escape(label)}</span>'
         '<button class="code-copy-btn" onclick="copyCodeBlock(this)">Copy</button>'
@@ -328,11 +338,11 @@ def _md_with_code(text: str) -> str:
     blocks = {}
 
     def _stash_fence(match: re.Match) -> str:
-        indent, language, content = match.group(1), match.group(3) or "", match.group(4)
+        indent, language, info, content = match.group(1), match.group(3) or "", match.group(4) or "", match.group(5)
         if indent:
             content = "\n".join(ln[len(indent):] if ln.startswith(indent) else ln.lstrip(" \t") for ln in content.split("\n"))
         token = f"CODEBLOCKPLACEHOLDER{uuid.uuid4().hex}"
-        blocks[token] = render_code_block(language, content)
+        blocks[token] = render_code_block(language, content, fence_title(info))
         return f"\n\n{indent}{token}\n\n"
 
     out = _to_html(_block_breaks(_FENCE_RE.sub(_stash_fence, text)))
@@ -341,15 +351,17 @@ def _md_with_code(text: str) -> str:
     return out
 
 
-def _render_document_block(raw_text: str) -> str:
+def _render_document_block(raw_text: str, title: str = "") -> str:
     inner_html = _md_with_code(raw_text)
     # Copy/Download (ui/web_chat_view.py's copyDocBlock/downloadDocBlock)
     # read this body's rendered innerText at click time, not a stored raw
     # markdown source -- that way **bold**/# headings/etc. come out as
     # clean prose (the browser already turned them into real formatting),
     # not literal markdown syntax characters. No data-raw attribute needed.
+    # data-md: the document's own Markdown, so an artifact downloads as the .md it was written as (escaped: safe)
     return (
-        '<div class="doc-block">'
+        f'<div class="doc-block" data-md="{html_module.escape(raw_text, quote=True)}"'
+        + (f' data-title="{html_module.escape(title)}"' if title else "") + ">"
         '<div class="doc-block-bar">'
         '<span class="doc-block-label">Document</span>'
         '<button class="doc-copy-btn" onclick="copyDocBlock(this)">Copy</button>'
@@ -398,7 +410,7 @@ def render_markdown_body(text: str) -> str:
 
     def _stash_document(match: re.Match) -> str:
         token = f"DOCBLOCKPLACEHOLDER{uuid.uuid4().hex}"
-        doc_placeholders[token] = _render_document_block(match.group(1))
+        doc_placeholders[token] = _render_document_block(match.group(2), fence_title(match.group(1)))
         return token
 
     text = _DOCUMENT_BLOCK_RE.sub(_stash_document, text)

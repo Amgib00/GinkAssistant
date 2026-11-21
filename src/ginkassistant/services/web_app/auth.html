@@ -6,63 +6,139 @@
 <meta name="robots" content="noindex">
 <title>Sign in to Gink</title>
 <style>
-  :root { --bg:#F6F7F4; --panel:#151D23; --card:#FFFFFF; --text:#151D23; --muted:#5D6B64; --line:#E1E5E0; --lime:#A8F03C;
-          --accent:#3F7D12; --bad:#C42B1C; --ok:#2E7D32; --field:#FFFFFF; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#0F1519; --card:#18222A; --text:#E9EFEA; --muted:#9AABA3;
-          --line:rgba(233,239,234,.14); --accent:#A8F03C; --bad:#FF8A80; --ok:#7BD88F; --field:#0F171C; } }
+  /* Sign in to Gink (0.1.161). The website's two grounds: the icon's night for the story of what Gink does, the app's
+     light theme for the form. Lexend, the website's one family (served by Gink's server, nothing from anyone else).
+     Lime only ever sits on night. */
+  @font-face { font-family: "Lexend"; font-style: normal; font-weight: 100 900; font-display: swap;
+    src: url("/vendor/lexend-latin-wght-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "Lexend"; font-style: normal; font-weight: 100 900; font-display: swap;
+    src: url("/vendor/lexend-latin-ext-wght-normal.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+  :root { --night:#151D23; --night-2:#1D2830; --night-line:rgba(230,236,232,.13); --lime:#A8F03C; --mist:#E6ECE8; --slate:#9DAEA6;
+          --bg:#F6F7F3; --card:#FFFFFF; --text:#1C211D; --muted:#5B6459; --line:#DCE0D6; --accent:#3F8212; --accent-2:#346C0E;
+          --on-accent:#FFFFFF; --bad:#B3261E; --ok:#2E7D32; --field:#FFFFFF;
+          --font:"Lexend", ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0E1418; --card:#12191E; --text:#E6ECE8; --muted:#9DAEA6;
+          --line:rgba(230,236,232,.16); --accent:#A8F03C; --accent-2:#C6F784; --on-accent:#10160F; --bad:#FF8A80; --ok:#7BD88F; --field:#12191E; } }
   * { box-sizing:border-box; }
-  body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-         display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); }
-  .side { background:var(--panel); color:#E9EFEA; padding:48px; display:flex; flex-direction:column; justify-content:space-between; }
-  .logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:20px; }
-  .logo span { width:36px; height:36px; border-radius:10px; background:#0B1013; display:grid; place-items:center; color:var(--lime); font-size:20px; }
-  .side h2 { font-size:32px; line-height:1.2; margin:0 0 14px; max-width:420px; }
-  .side p { color:#9AABA3; max-width:420px; margin:0; }
-  .side ul { list-style:none; padding:0; margin:22px 0 0; color:#C9D3CD; } .side li { margin:8px 0; } .side li::before { content:"\2713  "; color:var(--lime); }
-  .side small { color:#6F7E77; }
-  main { display:grid; place-items:center; padding:32px 20px; }
-  .card { width:100%; max-width:420px; }
-  h1 { font-size:26px; margin:0 0 6px; } .sub { color:var(--muted); margin:0 0 22px; }
-  label { display:block; font-weight:600; font-size:13.5px; margin:14px 0 6px; }
-  input[type=email], input[type=text], input[type=password] { width:100%; font:inherit; padding:11px 13px; border-radius:12px;
-         border:1.5px solid var(--line); background:var(--field); color:var(--text); }
-  input:focus { outline:none; border-color:var(--accent); }
-  .pw { position:relative; } .pw input { padding-right:64px; }
-  .pw button { position:absolute; right:6px; top:50%; transform:translateY(-50%); background:none; border:0; color:var(--muted); font:inherit; font-size:13px; font-weight:650; padding:6px 8px; cursor:pointer; }
-  .row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px; font-size:14px; }
-  .row label { margin:0; font-weight:500; display:flex; gap:8px; align-items:center; }
-  .go { width:100%; margin-top:18px; font:inherit; font-weight:700; padding:12px; border:0; border-radius:999px; background:var(--text); color:var(--bg); cursor:pointer; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font:15px/1.55 var(--font);
+         display:grid; grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr); }
+  /* ---- the night side: what Gink does now, shown, not told */
+  .side { background:var(--night); color:var(--mist); padding:44px clamp(32px,4.5vw,64px) 36px; display:flex; flex-direction:column;
+          gap:36px; position:relative; overflow:hidden; }
+  .side::after { content:""; position:absolute; inset:auto -30% -45% auto; width:80%; aspect-ratio:1; border-radius:50%;
+                 background:radial-gradient(closest-side, rgba(168,240,60,.10), transparent); pointer-events:none; }
+  .logo { display:flex; align-items:center; gap:10px; font-weight:650; font-size:20px; letter-spacing:-.01em; }
+  .logo span { width:36px; height:36px; border-radius:10px; background:#0B1013; display:grid; place-items:center; color:var(--lime);
+               box-shadow:inset 0 0 0 1px var(--night-line); }
+  .side h2 { font-size:clamp(30px,3.1vw,42px); line-height:1.1; font-weight:600; letter-spacing:-.025em; margin:0 0 14px; max-width:15ch; }
+  .side .lede { color:var(--slate); max-width:40ch; margin:0; font-size:15.5px; }
+  .story { display:grid; gap:12px; max-width:440px; position:relative; z-index:1; }
+  .b-you { justify-self:end; max-width:86%; background:var(--night-2); border:1px solid var(--night-line); color:var(--mist);
+           padding:10px 15px; border-radius:18px 18px 6px 18px; font-size:14.5px; }
+  .b-gink { font-size:14.5px; color:var(--mist); }
+  .t-card { display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center; padding:12px 14px;
+            border-radius:14px; background:var(--night-2); border:1px solid var(--night-line); }
+  .t-ic { width:38px; height:38px; border-radius:50%; display:grid; place-items:center; background:#0B1013; color:var(--lime); }
+  .t-card b { display:block; font-weight:600; font-size:14.5px; } .t-card small { color:var(--slate); font-size:12.5px; }
+  .t-pill { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:3px 10px; border-radius:999px;
+            color:var(--lime); background:rgba(168,240,60,.10); white-space:nowrap; }
+  .t-pill i { width:7px; height:7px; border-radius:50%; background:var(--lime); }
+  .note-card { display:grid; grid-template-columns:auto 1fr; gap:10px 12px; padding:12px 14px; border-radius:14px; margin-left:22px;
+               background:rgba(230,236,232,.06); border:1px solid var(--night-line); font-size:13.5px; color:var(--mist); }
+  .note-card .when { color:var(--slate); font-size:12px; }
+  .note-card b { font-weight:600; }
+  .note-card p { margin:2px 0 0; color:#C9D3CD; }
+  .pro { margin-top:auto; display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:start; padding:16px 0 0;
+         border-top:1px solid var(--night-line); max-width:480px; font-size:14px; color:#C9D3CD; position:relative; z-index:1; }
+  .pro svg { grid-row:span 2; margin-top:2px; color:var(--lime); }
+  .pro strong { color:var(--mist); font-weight:600; }
+  .pro a { color:var(--lime); font-weight:600; text-decoration:none; } .pro a:hover { text-decoration:underline; }
+  .side small { color:#71827A; font-size:12.5px; position:relative; z-index:1; } .side small a { color:#C9D3CD; }
+  @media (prefers-reduced-motion: no-preference) {
+    .story > * { opacity:0; transform:translateY(8px); animation:in .5s cubic-bezier(.2,.7,.2,1) forwards; }
+    .story > :nth-child(2) { animation-delay:.45s; } .story > :nth-child(3) { animation-delay:.75s; } .story > :nth-child(4) { animation-delay:1.6s; }
+    @keyframes in { to { opacity:1; transform:none; } }
+  }
+  /* ---- the form */
+  main { display:grid; place-items:center; padding:40px 24px; }
+  .card { width:100%; max-width:400px; }
+  .brand-m { display:none; align-items:center; gap:10px; font-weight:650; font-size:18px; margin:0 0 26px; }
+  .brand-m span { width:34px; height:34px; border-radius:9px; background:var(--night); color:var(--lime); display:grid; place-items:center; }
+  h1 { font-size:28px; line-height:1.15; font-weight:600; letter-spacing:-.02em; margin:0 0 6px; } .sub { color:var(--muted); margin:0 0 24px; }
+  label { display:block; font-weight:500; font-size:13.5px; margin:16px 0 6px; }
+  input[type=email], input[type=text], input[type=password], input[type=tel] { width:100%; font:inherit; height:48px; padding:0 14px; border-radius:12px;
+         border:1px solid var(--line); background:var(--field); color:var(--text); transition:border-color .15s ease, box-shadow .15s ease; }
+  input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+  .pw { position:relative; } .pw input { padding-right:68px; }
+  .pw button { position:absolute; right:6px; top:50%; transform:translateY(-50%); background:none; border:0; color:var(--muted); font:inherit; font-size:13px; font-weight:600; padding:8px 10px; cursor:pointer; border-radius:8px; }
+  .pw button:focus-visible { outline:2px solid var(--accent); }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:14px; font-size:14px; }
+  .row label { margin:0; font-weight:400; display:flex; gap:8px; align-items:center; }
+  input[type=checkbox] { accent-color:var(--accent); width:16px; height:16px; }
+  .go { width:100%; margin-top:20px; font:inherit; font-weight:600; height:48px; border:0; border-radius:12px; background:var(--accent);
+        color:var(--on-accent); cursor:pointer; transition:background .15s ease; }
+  .go:hover { background:var(--accent-2); } .go:focus-visible { outline:2px solid var(--text); outline-offset:2px; }
   .go:disabled { opacity:.55; cursor:default; }
-  .link { background:none; border:0; padding:0; font:inherit; color:var(--accent); cursor:pointer; font-weight:600; }
+  .go.alt { background:transparent; color:var(--text); box-shadow:inset 0 0 0 1px var(--line); margin-top:10px; }
+  .go.alt:hover { background:color-mix(in srgb, var(--text) 5%, transparent); }
+  .link { background:none; border:0; padding:0; font:inherit; color:var(--accent); cursor:pointer; font-weight:500; }
+  .link:focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
+  @media (prefers-color-scheme: light) { .link, a { color:#36740F; } }
   a { color:var(--accent); }
   .msg { min-height:22px; margin-top:12px; font-size:14px; } .msg.err { color:var(--bad); } .msg.ok { color:var(--ok); }
-  .or { display:flex; align-items:center; gap:12px; color:var(--muted); font-size:13px; margin:22px 0 14px; } .or::before, .or::after { content:""; flex:1; height:1px; background:var(--line); }
+  .or { display:flex; align-items:center; gap:12px; color:var(--muted); font-size:13px; margin:24px 0 14px; } .or::before, .or::after { content:""; flex:1; height:1px; background:var(--line); }
   .social { display:grid; gap:10px; }
-  .social button { font:inherit; font-weight:650; padding:11px; border-radius:999px; border:1.5px solid var(--line); background:transparent; color:var(--text); cursor:pointer; }
-  .switch { text-align:center; margin-top:22px; color:var(--muted); font-size:14px; }
+  .social button { font:inherit; font-weight:500; height:46px; border-radius:12px; border:1px solid var(--line); background:var(--field); color:var(--text); cursor:pointer; }
+  .social button:hover { border-color:var(--muted); }
+  .switch { text-align:center; margin-top:24px; color:var(--muted); font-size:14px; }
   .rules { list-style:none; padding:0; margin:8px 0 0; font-size:13px; color:var(--muted); } .rules li::before { content:"\25CB  "; } .rules li.met { color:var(--ok); } .rules li.met::before { content:"\2713  "; }
   .codes { display:flex; gap:8px; justify-content:space-between; margin-top:6px; }
-  .codes input { width:100%; max-width:52px; height:56px; text-align:center; font-size:22px; font-weight:700; border-radius:12px; border:1.5px solid var(--line); background:var(--field); color:var(--text); }
+  .codes input { width:100%; max-width:54px; height:58px; padding:0; text-align:center; font-size:22px; font-weight:600; border-radius:12px; border:1px solid var(--line); background:var(--field); color:var(--text); }
   .note { color:var(--muted); font-size:13px; } .wake { color:var(--muted); font-size:13.5px; margin-top:10px; }
   [hidden] { display:none !important; }
-  @media (max-width: 860px) { body { grid-template-columns:1fr; } .side { display:none; } }
+  @media (max-height: 820px) { .side { gap:26px; padding-top:34px; } .note-card { display:none; } }
+  @media (max-height: 660px) { .story { display:none; } }
+  .pro-m { display:none; margin:28px 0 0; padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px; }
+  .pro-m strong { color:var(--text); font-weight:600; }
+  @media (max-width: 860px) { body { grid-template-columns:1fr; } .side { display:none; } .brand-m { display:flex; } .pro-m { display:block; }
+                              main { place-items:start center; padding-top:32px; } }
   /* phones: 16px text in boxes, or iPhone zooms the page in when you tap one (and stays zoomed) */
   @media (hover: none) and (pointer: coarse) { input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]), textarea, select { font-size: 16px !important; } }
 </style>
 </head>
 <body>
-<aside class="side">
-  <div class="logo"><span>&#10052;</span> Gink</div>
+<aside class="side" aria-label="What Gink does">
+  <div class="logo"><span aria-hidden="true">&#10052;</span> Gink</div>
   <div>
-    <h2>Think. Talk. Create.</h2>
-    <p>Your assistant on the web, on your computer and on your phone, with one account.</p>
-    <ul><li>Your chats on every device</li><li>Voice, images, websites and web search</li><li>Two-step verification to protect your account</li></ul>
+    <h2>Ask once. Gink keeps working.</h2>
+    <p class="lede">Tasks that run on their own, pages and documents ready to use, answers from the web as it is today &mdash; on the web, your computer and your phone, with one account.</p>
   </div>
-  <small>By using Gink you agree to the <a href="https://amgib00.github.io/GinkAssistant/terms.html" style="color:#C9D3CD">Terms</a> and <a href="https://amgib00.github.io/GinkAssistant/privacy.html" style="color:#C9D3CD">Privacy Policy</a>.</small>
+  <div class="story" aria-hidden="true">
+    <div class="b-you">Every morning at 8, give me the three biggest stories.</div>
+    <div class="b-gink">Done. I&rsquo;ll do it every day at 08:00, even when your apps are closed.</div>
+    <div class="t-card">
+      <span class="t-ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg></span>
+      <span><b>Morning news</b><small>Every day at 08:00</small></span>
+      <span class="t-pill"><i></i>Scheduled</span>
+    </div>
+    <div class="note-card">
+      <span class="when">08:00</span>
+      <span><b>Morning news is ready</b><p>A new space telescope sends its first images; markets rise; a heatwave eases in the south.</p></span>
+    </div>
+  </div>
+  <div class="pro">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.6 6.1 6.6.6-5 4.4 1.5 6.5L12 16.8l-5.7 3.3 1.5-6.5-5-4.4 6.6-.6z"/></svg>
+    <strong>Gink Pro</strong>
+    <span>500 messages a day, 25 scheduled tasks that can run every hour, the most capable models, and Gink looking at your photos and screen. <a href="https://amgib00.github.io/GinkAssistant/pricing.html" target="_blank" rel="noopener">See plans</a></span>
+  </div>
+  <small>By using Gink you agree to the <a href="https://amgib00.github.io/GinkAssistant/terms.html">Terms</a> and <a href="https://amgib00.github.io/GinkAssistant/privacy.html">Privacy Policy</a>.</small>
 </aside>
 
 <main>
   <div class="card">
+    <div class="brand-m"><span aria-hidden="true">&#10052;</span> Gink</div>
     <!-- LOG IN -->
     <form id="v-login" novalidate>
       <h1>Welcome back</h1><p class="sub">Log in to continue with Gink.</p>
@@ -72,8 +148,8 @@
       <div class="row"><label><input type="checkbox" id="li-remember" checked> Remember me</label><button type="button" class="link" data-go="forgot">Forgot password?</button></div>
       <button class="go" type="submit">Log in</button>
       <div class="row" style="justify-content:center"><button type="button" class="link" id="li-codebtn">Email me a sign-in code instead</button></div>
-      <button type="button" class="go" id="li-phone" style="background:transparent;color:var(--text);box-shadow:inset 0 0 0 1.5px var(--line);margin-top:10px" hidden>Continue with phone</button>
-      <button type="button" class="go" id="li-passkey" style="background:transparent;color:var(--text);box-shadow:inset 0 0 0 1.5px var(--line);margin-top:10px" hidden>Sign in with a passkey</button>
+      <button type="button" class="go alt" id="li-phone" hidden>Continue with phone</button>
+      <button type="button" class="go alt" id="li-passkey" hidden>Sign in with a passkey</button>
     </form>
 
     <!-- CREATE ACCOUNT -->
@@ -86,7 +162,7 @@
       <label for="su-pass">Password</label>
       <div class="pw"><input id="su-pass" type="password" autocomplete="new-password" required aria-describedby="su-rules"><button type="button" data-show="su-pass">Show</button></div>
       <ul class="rules" id="su-rules"><li data-rule="len">At least 8 characters</li><li data-rule="mix">Letters and numbers or symbols</li></ul>
-      <div class="row" style="justify-content:flex-start"><label><input type="checkbox" id="su-agree"> I agree to the <a href="https://amgib00.github.io/GinkAssistant/terms.html" target="_blank" rel="noopener">Terms</a> and <a href="https://amgib00.github.io/GinkAssistant/privacy.html" target="_blank" rel="noopener">Privacy Policy</a></label></div>
+      <div class="row" style="justify-content:flex-start"><label><input type="checkbox" id="su-agree"><span>I agree to the <a href="https://amgib00.github.io/GinkAssistant/terms.html" target="_blank" rel="noopener">Terms</a> and <a href="https://amgib00.github.io/GinkAssistant/privacy.html" target="_blank" rel="noopener">Privacy Policy</a></span></label></div>
       <button class="go" type="submit">Create account</button>
     </form>
 
@@ -120,7 +196,7 @@
       <h1>Welcome to Gink</h1><p class="sub">One last thing: what should we call you?</p>
       <label for="nm-name">Name</label><input id="nm-name" type="text" autocomplete="name" maxlength="80" required>
       <label for="nm-year">Year you were born</label><input id="nm-year" type="text" inputmode="numeric" maxlength="4" autocomplete="bday-year" placeholder="e.g. 2001" required>
-      <div class="row" style="justify-content:flex-start"><label><input type="checkbox" id="nm-agree"> I agree to the <a href="https://amgib00.github.io/GinkAssistant/terms.html" target="_blank" rel="noopener">Terms</a> and <a href="https://amgib00.github.io/GinkAssistant/privacy.html" target="_blank" rel="noopener">Privacy Policy</a></label></div>
+      <div class="row" style="justify-content:flex-start"><label><input type="checkbox" id="nm-agree"><span>I agree to the <a href="https://amgib00.github.io/GinkAssistant/terms.html" target="_blank" rel="noopener">Terms</a> and <a href="https://amgib00.github.io/GinkAssistant/privacy.html" target="_blank" rel="noopener">Privacy Policy</a></span></label></div>
       <button class="go" type="submit">Create my account</button>
     </form>
 
@@ -147,6 +223,8 @@
     <div id="social-wrap" hidden><div class="or">or</div><div class="social" id="social"></div></div>
     <div class="switch" id="sw-login">New to Gink? <button type="button" class="link" data-go="signup">Create an account</button></div>
     <div class="switch" id="sw-signup" hidden>Already have an account? <button type="button" class="link" data-go="login">Log in</button></div>
+    <p class="pro-m"><strong>Gink Pro:</strong> 500 messages a day, 25 scheduled tasks that can run every hour, the most capable models, and Gink looking at your photos and screen.
+      <a href="https://amgib00.github.io/GinkAssistant/pricing.html" target="_blank" rel="noopener">See plans</a></p>
   </div>
 </main>
 

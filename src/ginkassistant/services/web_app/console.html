@@ -207,7 +207,7 @@
           <button id="ag-run">Run agent</button><button class="ghost" id="ag-stop" hidden>Stop</button></div>
         <div class="row" style="margin-top:6px">
           <span class="note">Or run it on a schedule:</span>
-          <select id="sch-every" aria-label="How often"><option value="daily">Every day</option><option value="hourly">Every hour</option><option value="weekly">Every week</option></select>
+          <select id="sch-every" aria-label="How often"><option value="daily">Every day</option><option value="weekdays">Weekdays</option><option value="hourly">Every hour</option><option value="weekly">Every week</option></select>
           <label>at <input id="sch-at" type="time" value="08:00" aria-label="Time"></label>
           <input id="sch-hook" type="url" placeholder="Notify https://… (optional)" aria-label="Webhook address" style="min-width:220px">
           <label><input type="checkbox" id="sch-email"> Email me the result</label>
@@ -493,7 +493,7 @@ cat notes.txt | gink "summarise this"</code></pre>
       rows.forEach(function (s) {
         var tr = el("tr");
         tr.appendChild(el("td", "", s.input.slice(0, 80)));
-        tr.appendChild(el("td", "", (s.every === "hourly" ? "Every hour at :" + s.at.slice(3) : (s.every === "weekly" ? "Every week at " : "Every day at ") + s.at)
+        tr.appendChild(el("td", "", (s.every === "hourly" ? "Every hour at :" + s.at.slice(3) : (s.every === "weekly" ? "Every week at " : s.every === "weekdays" ? "Weekdays at " : "Every day at ") + s.at)
                                  + " (" + s.timezone + ")" + (s.notify_email ? " \u00b7 emails you" : "") + (s.enabled ? "" : " \u00b7 paused")));
         tr.appendChild(el("td", "", s.enabled ? new Date(s.next_run * 1000).toLocaleString() : "\u2014"));
         var last = el("td");

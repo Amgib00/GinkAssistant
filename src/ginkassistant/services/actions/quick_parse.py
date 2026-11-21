@@ -77,8 +77,11 @@ def parse(text: str, now: Optional[datetime] = None) -> Optional[Tuple[str, dict
             return "set_alarm", {"time": f"{due:%H:%M}", "label": "Wake up",
                                  "date": due.date().isoformat()}
 
-    # --- reminders: "remind me to call mom at 5pm", "remind me in 20 minutes to stretch"
+    # --- reminders: "remind me to call mom at 5pm", "remind me in 20 minutes to stretch". On a repeat ("every day at
+    # 8", "each Monday") it's a scheduled task instead: the AI makes it (0.1.161), so it isn't a one-time reminder here
     m = re.match(r"remind me (?:to |about )?(.+)", t)
+    if m and re.search(r"\b(every|each|daily|weekly|monthly|hourly|weekdays?|weekends?)\b", m.group(1)):
+        m = None
     if m:
         rest = m.group(1)
         rel = re.search(r"\bin\s+(\d+\s*(?:hours?|hrs?|minutes?|mins?|seconds?|secs?)(?:\s*(?:and\s*)?\d+\s*(?:minutes?|mins?))?)", rest)

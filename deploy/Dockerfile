@@ -26,7 +26,12 @@ COPY src/ginkassistant/services/vision_rules.py ./vision_rules.py
 # real maps (0.1.160): Gink's map style for /vmap/style.json; Gink's own links for Genie's prompt
 COPY src/ginkassistant/services/map_style.py ./map_style.py
 COPY src/ginkassistant/services/about_gink.py ./about_gink.py
+# reading for answers (0.1.161): pasted pages, GitHub code
+COPY src/ginkassistant/services/web_reader.py ./web_reader.py
+COPY src/ginkassistant/services/code_reader.py ./code_reader.py
 COPY src/ginkassistant/services/web_app ./web_app
+# server-only libraries (0.1.161: Mermaid for diagram artifacts) -- not in the apps' packages
+COPY deploy/vendor ./vendor
 # starts the server as "gink" (Render mounts /var/data owned by root: this hands it over, then drops root)
 COPY deploy/start.py ./start.py
 RUN chown -R gink:gink /srv

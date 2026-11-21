@@ -2722,3 +2722,43 @@ New services/live_info.py (all free, no API keys):
   before unzipping: `for i in 1 2 3; do find . -type d ! -perm -u+x -exec chmod 755 {} \; 2>/dev/null; done`.
   tools/publish_to_github.sh now opens any such folder itself (tests/test_release_tooling.py locks two and publishes).
 
+
+## 0.1.161: scheduled tasks; artifacts; the web and code by themselves; higher abilities; the premium sign-in
+- Scheduled tasks for everyone (backend_server: TASK_TABLE chat_tasks, _task_next, _task_create/_task_update,
+  _task_fire, _tasks_tick in _schedules_loop, _task_routes("", session) and ("/v1", API key)). A task's result is
+  written as Gink's message into the synced chat "task-<id>" (sync_docs kind chats; server_ts = now, updated = max(now,
+  the stored copy + 1) so devices whose clock runs ahead still take it). The run is a small agent: web_search /
+  read_page (counted as one search turn), the place note, the person's name and memories (unless memory is off), the
+  previous result ("say what's new"), MAP/ARTIFACT prompts, TEEN_SAFETY, workspace rules (_org_check at creation and
+  every run), parental quiet time (postponed 30 min) and limits (_count_call once per run). Busy AI: one retry 10
+  minutes later. A one-time task ends after its run; "Run now" keeps the next time. Free 3 / Pro 25 (env
+  GINK_FREE_TASKS / GINK_PRO_TASKS), hourly is Pro. Dedupe by `source` (the chat card's hash).
+- In chats: SCHEDULE_PROMPT (groq_worker == backend_server == bridge.js, tested) makes the AI end with a ```schedule
+  block; chat_extras.upgradeSchedules turns it into a card; a new answer creates the task (task_create -> apps
+  main_screen.task_event / web bridge.task_create), a reopened chat only shows its state (setTasks). The apps' agent
+  has schedule_task (it only checks: agent._with_schedules appends the block, so the card makes the task -- one
+  path). quick_parse leaves "remind me ... every day" to the AI. Results arriving by sync: HistoryStore.pop_task_news
+  -> in-page notification + system notification (apps); bridge taskNews (+ the browser's Notification, offered once).
+- Settings > Scheduled tasks lists tasks (Open its chat, Run now, Pause/Resume, Delete; rows with `buttons`), then
+  the Genie agents' schedules; the sidebar's "Scheduled" opens it. Agent schedules gained "weekdays".
+- Artifacts: titled fences (markdown_render.fence_title -> data-title; ```document keeps data-md), the viewer in
+  chat_extras (cvOpen / ARTS / versions by title / preview, code, document views), Mermaid 11.17.2 from
+  deploy/vendor (server only, so app packages don't grow). Web previews run in /artifact/frame (CSP sandbox without
+  same-origin, postMessage); "Open in a new tab" is the web bridge's artifact_tab (the page itself never calls
+  window.open -- the apps can't). Accent colours come from the theme (--accent), so dark mode is right.
+- The web and code: web_reader.py (links in the last message, public addresses only -- checked before and after
+  connecting, redirects by hand, 2 MB, 10-minute cache; text given as DATA) and code_reader.py (GitHub links,
+  owner/repo next to code words, Gink's own code; tree + README + the best-matching files, source before tests;
+  GITHUB_TOKEN raises GitHub's limit -- set it on Render). Automatic for the apps and web app, gink_web "auto" /
+  gink_code for developers. Desktop agent: actions/codebase.py (project_overview, search_code, run_project_check --
+  only the project's own command, no shell, 5-minute limit, asked first inside a longer task; hidden on phones).
+- Higher abilities: _abilities raises max_tokens to MAKE_TOKENS when something is being built and asks GPT-OSS for
+  high reasoning on hard questions (apps and web app; developers keep what they ask for).
+- Sign-in: web_app/auth.html redesigned (the night side shows a scheduled task and its result arriving, Gink Pro
+  beside it; Lexend served from deploy/vendor via /vendor/), the apps' login got the same look (flat surfaces, the
+  night side on wide windows, "See plans" opens the browser through open_url). about_gink lists the new abilities.
+- SDKs 0.3.16: artifacts(), schedules_in()/schedulesIn(), client.tasks; CLI: gink tasks, --save-artifacts,
+  --schedule, auto reading by default (--no-auto).
+- Website: home "Ask once. Gink keeps working." section, features, pricing (3 / 25 tasks), developers (#tasks,
+  #artifacts), blog post.
+- Tests: tests/test_scheduled_tasks.py, tests/test_artifacts.py, tests/test_codebase_and_web.py.

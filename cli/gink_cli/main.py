@@ -5,10 +5,16 @@ gink -- Gink in your terminal (the Gink Developer API, OpenAI-compatible).
     gink                            a chat (type /help inside)
     cat file | gink "summarise"     send a file's text with the question
     gink -s "question"              search the web (answers list their sources)
+    gink --save-artifacts [DIR] "make a pomodoro timer page"   the finished things in the answer, saved as files
+    gink --schedule "every morning at 8, the top news"        make the scheduled tasks the answer offers
+                                    (links in a question are read and the web searched when needed: --no-auto turns it off)
     gink see PHOTO ["question"]     about a photo: Gink reads it, finds what's wrong, solves it... (Gink Pro)
     gink --image "prompt" -o x.png  make an image
     gink agent "task"               a managed agent does it in a workspace that persists (--env ID, --continue)
     gink env list | new NAME | files ID | check ID [--fix] | pull ID [DIR] | push ID DIR | rm ID
+    gink tasks add "task" --every daily --at 08:00 [--day monday] [--date 2026-12-24] [--email]
+    gink tasks | show ID | run ID | pause ID | resume ID | rm ID
+                                    scheduled tasks: Gink does it at its time; the result is in its chat in your apps
     gink schedule add "task" --every daily --at 08:00 [--env ID] | list | run ID | pause ID | resume ID | rm ID
                                     scheduled agents (the time is your computer's time zone)
     gink export [FILE]              everything Gink's server keeps for you, as a ZIP
@@ -137,12 +143,13 @@ def list_models(key: str, base: str) -> list:
     return [m["id"] for m in r.json().get("data", [])]
 
 
-def stream_answer(key: str, base: str, messages: list, model: str = "", out=None) -> str:
-    """Send the chat; print the answer as it arrives; return the full text."""
+def stream_answer(key: str, base: str, messages: list, model: str = "", out=None, extra: dict = None) -> str:
+    """Send the chat; print the answer as it arrives; return the full text. extra: Gink's own options
+    (gink_web, gink_code, gink_artifacts, gink_tasks)."""
     need_key(key)
     import httpx
     out = out or sys.stdout
-    body = {"messages": messages, "stream": True}
+    body = dict({"messages": messages, "stream": True}, **(extra or {}))
     if model:
         body["model"] = model
     text = []
@@ -327,7 +334,7 @@ def schedule_command(key: str, base: str, args: list) -> int:
     if what == "add":
         ap = argparse.ArgumentParser(prog="gink schedule add")
         ap.add_argument("task", nargs="+")
-        ap.add_argument("--every", default="daily", choices=["hourly", "daily", "weekly"])
+        ap.add_argument("--every", default="daily", choices=["hourly", "daily", "weekdays", "weekly"])
         ap.add_argument("--at", default="08:00", help="24-hour time, in your computer's time zone")
         ap.add_argument("--env", default="remote")
         ap.add_argument("--webhook", default="", help="https address Gink notifies after each run (signed)")
@@ -366,6 +373,91 @@ def schedule_command(key: str, base: str, args: list) -> int:
         print(f"Deleted {sid}")
         return 0
     raise GinkError("gink schedule add | list | run ID | pause ID | resume ID | rm ID")
+
+
+def _when(t: dict) -> str:
+    nxt = time.strftime("%a %d %b %H:%M", time.localtime(t["next_run"])) if t.get("next_run") else ""
+    return t.get("when", "") + (f" ({t.get('timezone')})" if t.get("timezone") else "") + (f"  next: {nxt}" if nxt else "")
+
+
+def tasks_command(key: str, base: str, args: list) -> int:
+    """gink tasks add|list|show|run|pause|resume|rm: scheduled tasks -- the result lands in the task's chat."""
+    what = args[0] if args else "list"
+    if what == "add":
+        ap = argparse.ArgumentParser(prog="gink tasks add")
+        ap.add_argument("task", nargs="+")
+        ap.add_argument("--every", default="daily", choices=["once", "hourly", "daily", "weekdays", "weekly", "monthly"])
+        ap.add_argument("--at", default="08:00", help="the time, in your computer's time zone (08:00, 8am, 17:30)")
+        ap.add_argument("--day", default="", help="weekly: monday ... sunday; monthly: 1-31")
+        ap.add_argument("--date", default="", help="once: YYYY-MM-DD")
+        ap.add_argument("--title", default="")
+        ap.add_argument("--email", action="store_true", help="email me each result")
+        b = ap.parse_args(args[1:])
+        body = {"task": " ".join(b.task), "every": b.every, "at": b.at}
+        for k in ("day", "date", "title"):
+            if getattr(b, k):
+                body[k] = getattr(b, k)
+        if b.email:
+            body["notify_email"] = True
+        t = _env_call(key, base, "POST", "/tasks", json=body).json()
+        print(f"{t['id']}  “{t['title']}”  {_when(t)}")
+        print("Each result arrives in its own chat in your Gink apps (and the web app). See them here: gink tasks show " + t["id"])
+        return 0
+    if what == "list":
+        j = _env_call(key, base, "GET", "/tasks").json()
+        for t in j["data"]:
+            state = "on " if t["enabled"] else "off"
+            print(f"{t['id']}  {state} {t['title'][:40]:<40}  {_when(t)}")
+        lim = j.get("limits") or {}
+        if not j["data"]:
+            print("No scheduled tasks. Add one: gink tasks add \"Give me the top three news stories\" --every daily --at 08:00")
+        elif lim.get("max"):
+            print(f"\n{lim.get('used', len(j['data']))} of {lim['max']} tasks on your plan.")
+        return 0
+    if len(args) < 2:
+        raise GinkError("say which task (its id from 'gink tasks')")
+    tid = args[1]
+    if what == "show":
+        t = _env_call(key, base, "GET", f"/tasks/{tid}", params={"results": 3}).json()
+        print(f"“{t['title']}”  {_when(t)}\n{t['task']}\n")
+        for r in t.get("results") or []:
+            print(time.strftime("%a %d %b %H:%M", time.localtime(r["created"])) if r.get("created") else "")
+            print(r["text"] + "\n")
+        if not t.get("results"):
+            print("No results yet.")
+        return 0
+    if what == "run":
+        print("Running it now (this takes a minute or so)…", file=sys.stderr)
+        r = _env_call(key, base, "POST", f"/tasks/{tid}/run", json={"wait": True}).json()
+        if r.get("text"):
+            print(r["text"])
+            return 0
+        print(f"gink: {r.get('status')}: {r.get('note') or ''}", file=sys.stderr)
+        return 1
+    if what in ("pause", "resume"):
+        _env_call(key, base, "PATCH", f"/tasks/{tid}", json={"enabled": what == "resume"})
+        print(("Resumed " if what == "resume" else "Paused ") + tid)
+        return 0
+    if what == "rm":
+        _env_call(key, base, "DELETE", f"/tasks/{tid}")
+        print(f"Deleted {tid} (its chat and results stay in your apps)")
+        return 0
+    raise GinkError("gink tasks add | list | show ID | run ID | pause ID | resume ID | rm ID")
+
+
+def save_artifacts(text: str, folder: str) -> list:
+    """The answer's finished things (titled blocks) as files in `folder`; a newer version of the same one replaces it."""
+    from gink.client import artifacts
+    os.makedirs(folder or ".", exist_ok=True)
+    saved = []
+    for a in artifacts(text):
+        name = os.path.basename(a["filename"]) or "artifact.txt"
+        path = os.path.join(folder or ".", name)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(a["content"] + ("" if a["content"].endswith("\n") else "\n"))
+        if path not in saved:
+            saved.append(path)
+    return saved
 
 
 def show_agent_result(it: dict) -> int:
@@ -740,6 +832,8 @@ def main(argv=None) -> int:
         if argv[:2] == ["webhook", "secret"]:           # the secret webhooks are signed with
             print(_env_call(key, base, "GET", "/webhooks/secret").json()["secret"])
             return 0
+        if argv[:1] in (["tasks"], ["task"]):
+            return tasks_command(key, base, argv[1:])
         if argv[:1] == ["schedule"]:
             return schedule_command(key, base, argv[1:])
         if argv[:1] == ["env"]:
@@ -760,6 +854,10 @@ def main(argv=None) -> int:
         ap.add_argument("--style", default="", help="with --image: photo, 3d, illustration, sticker, anime... or your own words")
         ap.add_argument("--aspect", default="", help="with --image: 1:1, 16:9, 9:16, 4:3 or 3:4")
         ap.add_argument("--photo", default="", help="with --image: start from this photo (JPEG, PNG or WebP)")
+        ap.add_argument("--save-artifacts", nargs="?", const=".", default=None, metavar="DIR",
+                        help="save the finished things in the answer (pages, SVGs, documents, code files) in DIR")
+        ap.add_argument("--schedule", action="store_true", help="make the scheduled tasks the answer offers")
+        ap.add_argument("--no-auto", action="store_true", help="don't read linked pages or code, or search by itself")
         a = ap.parse_args(argv)
         model = "gink-search" if a.search else a.model
 
@@ -774,7 +872,23 @@ def main(argv=None) -> int:
             return chat(key, base, model, a.system)
         messages = ([{"role": "system", "content": a.system}] if a.system else []) + \
                    [{"role": "user", "content": with_piped_text(question, piped)}]
-        stream_answer(key, base, messages, model)
+        extra = {} if a.no_auto else {"gink_web": "auto", "gink_code": True}   # like the apps (0.1.161)
+        if a.save_artifacts is not None:
+            extra["gink_artifacts"] = True
+        if a.schedule:
+            extra["gink_tasks"] = True
+        if not extra:
+            stream_answer(key, base, messages, model)
+            return 0
+        answer = stream_answer(key, base, messages, model, extra=extra)
+        if a.save_artifacts is not None:
+            for path in save_artifacts(answer, a.save_artifacts):
+                print(f"Saved {path}", file=sys.stderr)
+        if a.schedule:
+            from gink.client import schedules_in
+            for offer in schedules_in(answer):
+                t = _env_call(key, base, "POST", "/tasks", json=offer).json()
+                print(f"Scheduled \u201c{t['title']}\u201d: {_when(t)} (results in its chat in your Gink apps)", file=sys.stderr)
         return 0
     except GinkError as exc:
         print(f"gink: {exc}", file=sys.stderr)

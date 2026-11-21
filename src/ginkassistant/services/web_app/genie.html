@@ -392,11 +392,11 @@
 
 <dialog id="schdlg">
   <h2>Run on a schedule</h2>
-  <p class="note">Genie&rsquo;s agent does this task in this project on its own &mdash; every hour, day or week at your time. What it did appears here in the conversation.</p>
+  <p class="note">Genie&rsquo;s agent does this task in this project on its own &mdash; every hour, day, weekday or week at your time. What it did appears here in the conversation. (For results in a chat instead, ask Gink in any chat: &ldquo;every morning at 8, &hellip;&rdquo;.)</p>
   <label for="sch-task">Task</label>
   <textarea id="sch-task" rows="3" style="width:100%" placeholder="e.g. Update news.md with today&rsquo;s top three tech stories, with links"></textarea>
   <div class="row" style="margin-top:8px">
-    <select id="sch-every" aria-label="How often"><option value="daily">Every day</option><option value="hourly">Every hour</option><option value="weekly">Every week</option></select>
+    <select id="sch-every" aria-label="How often"><option value="daily">Every day</option><option value="weekdays">Weekdays</option><option value="hourly">Every hour</option><option value="weekly">Every week</option></select>
     <label>at <input type="time" id="sch-at" value="08:00"></label>
     <label><input type="checkbox" id="sch-email"> Email me the result</label>
     <div class="grow"></div><button id="sch-add">Schedule</button></div>
@@ -1416,7 +1416,7 @@
       var ul = $("sch-list"); ul.innerHTML = "";
       if (!mine.length) { ul.appendChild(el("li", "", "Nothing scheduled for this project yet.")); return; }
       mine.forEach(function (x) {
-        var li = el("li", "", (x.every === "hourly" ? "Every hour at :" + x.at.slice(3) : (x.every === "weekly" ? "Every week at " : "Every day at ") + x.at) +
+        var li = el("li", "", (x.every === "hourly" ? "Every hour at :" + x.at.slice(3) : (x.every === "weekly" ? "Every week at " : x.every === "weekdays" ? "Weekdays at " : "Every day at ") + x.at) +
                     " (" + x.timezone + ")" + (x.notify_email ? " \u00b7 emails you" : "") + (x.enabled ? "" : " \u00b7 paused") + " \u2014 " + x.input.slice(0, 70) + " ");
         [[x.enabled ? "Pause" : "Resume", "PATCH", "", { enabled: !x.enabled }], ["Run now", "POST", "/run", {}], ["Delete", "DELETE", "", undefined]].forEach(function (b) {
           var btn = el("button", "ghost", b[0]); btn.style.marginLeft = "6px";

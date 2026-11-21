@@ -83,8 +83,10 @@ class SettingsController:
             self.audio_engine.voice_key = voice
         voice_bridge.set_speed(p.get("voice_speed", "normal"))
         runner = self.app.task_runner
+        from ..services.actions.codebase import MOBILE as _phone
         runner.disabled_tools = ({"web_search"} if not p.get("web_search", True) else set()) | \
-                                ({"find_video"} if not p.get("video_suggestions", True) else set())
+                                ({"find_video"} if not p.get("video_suggestions", True) else set()) | \
+                                ({"project_overview", "search_code", "run_project_check"} if _phone else set())   # computers only
         runner.use_memory = bool(p.get("use_memory", True))
         runner.reply_language_note = self.reply_language_note
         self.brain.reply_language_note = self.reply_language_note
@@ -212,11 +214,20 @@ class SettingsController:
                 extra_info["twofa"] = dict(status, **self._twofa)
             except Exception:
                 extra_info["twofa"] = dict(self._twofa)
-        if token and panel == "schedules":                    # Scheduled tasks (agents)
+        if token and panel == "schedules":                    # Scheduled tasks (0.1.161), and scheduled agents
+            try:
+                got = await asyncio.wait_for(api.tasks(token), timeout=8)
+                extra_info["tasks"], extra_info["tasks_limits"] = got.get("data", []), got.get("limits", {})
+                if self.on_tasks:
+                    await self.on_tasks(extra_info["tasks"])     # the chat's task cards too
+            except Exception:
+                extra_info["tasks_error"] = "Scheduled tasks aren't available right now (offline, or the server is older)."
             try:
                 extra_info["schedules"] = (await asyncio.wait_for(api.schedules(token), timeout=8)).get("data", [])
             except Exception:
-                extra_info["schedules_error"] = "Scheduled tasks aren't available right now (offline, or the server is older)."
+                extra_info["schedules"] = []
+        elif not token and panel == "schedules":
+            extra_info["tasks_error"] = "Sign in to Gink to schedule tasks."
         if token and panel == "workspace":                    # Workspace (organisations)
             try:
                 extra_info["org"] = await asyncio.wait_for(api.org(token), timeout=8)
@@ -377,6 +388,9 @@ class SettingsController:
             await self.web.settings_toast(f"Something went wrong ({exc.__class__.__name__}).", "err")
 
     on_profile_change = None           # main screen: refresh avatar + greeting
+    on_tasks = None                    # main screen: the chat's task cards get the new list (0.1.161)
+    on_open_chat = None                # main screen: open a chat (a scheduled task's)
+    on_task_ran = None                 # main screen: sync a few times so a "Run now" result shows soon
     on_wake_change = None              # main screen: start / stop listening for "Hey Gink"
     wake_status_fn = None
     wake_supported = True
@@ -597,6 +611,54 @@ class SettingsController:
 
     async def _a_sch_delete(self, sid):
         await self._sch("DELETE", f"/dev/schedules/{sid}", None, "Deleted.")
+
+    # ---- Settings > Scheduled tasks (0.1.161, server: /tasks): results come into each task's own chat ----
+    async def _tsk(self, call, done: str = ""):
+        token = getattr(self.app, "session_token", None)
+        if not token:
+            return await self.web.settings_toast("Sign in to Gink to schedule tasks.", "err")
+        try:
+            await call(ApiClient(self.app.state.base_url), token)
+        except ApiError as exc:
+            return await self.web.settings_toast(str(exc), "err")
+        if done:
+            await self.web.settings_toast(done)
+        await self.refresh("schedules")
+
+    async def _a_tsk_add(self, raw):
+        import json as _json
+        try:
+            v = _json.loads(raw) if isinstance(raw, str) else dict(raw or {})
+        except Exception:
+            return
+        if not str(v.get("task") or "").strip():
+            return await self.web.settings_toast("Write the task first.", "err")
+        body = {k: v[k] for k in ("task", "every", "at", "day", "date", "notify_email") if k in v}
+        await self._tsk(lambda api, token: api.task_create(token, body),
+                        "Scheduled. Its results will be in its own chat.")
+        sync = getattr(self.app, "_sync_service", None)
+        if sync is not None:
+            sync.changed()                                     # its chat comes with the next sync
+
+    async def _a_tsk_pause(self, tid):
+        await self._tsk(lambda api, token: api.task_update(token, str(tid), {"enabled": False}), "Paused.")
+
+    async def _a_tsk_resume(self, tid):
+        await self._tsk(lambda api, token: api.task_update(token, str(tid), {"enabled": True}), "Resumed.")
+
+    async def _a_tsk_run(self, tid):
+        await self._tsk(lambda api, token: api.task_run(token, str(tid)),
+                        "Running now \u2014 the result will be in its chat in a minute.")
+        if self.on_task_ran:
+            self.on_task_ran()
+
+    async def _a_tsk_delete(self, tid):
+        await self._tsk(lambda api, token: api.task_delete(token, str(tid)), "Deleted. Its results stay in its chat.")
+
+    async def _a_tsk_open(self, chat_id):
+        if self.on_open_chat:
+            await self.web.close_settings()
+            await self.on_open_chat(str(chat_id or ""))
 
     # ---- Settings > Workspace (server: /org) ----
     async def _org(self, method: str, path: str, body: dict = None, done: str = ""):

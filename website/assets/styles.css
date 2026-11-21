@@ -283,6 +283,24 @@ section { padding: 96px 0; }
 .remembered .undo { color: var(--link); font-weight: 600; text-decoration: underline; text-underline-offset: 0.2em; }
 code.inline, .reply code, .bubble code { font-family: var(--mono); font-size: 0.88em; background: var(--inset); padding: 1px 6px; border-radius: 6px; }
 @media (max-width: 860px) { .exchanges { grid-template-columns: minmax(0, 1fr); gap: 56px; } }
+/* new in 0.1.161: a scheduled task, its result arriving, an artifact, a page Gink read */
+.task-mini, .art-mini { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; margin-top: 12px;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); max-width: 360px; }
+.tm-ic, .am-ic { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--inset); color: var(--link); }
+.am-ic { border-radius: 10px; }
+.task-mini b, .art-mini b { display: block; font-weight: 600; font-size: 0.95rem; }
+.task-mini small, .art-mini small { color: var(--muted); font-size: 0.82rem; }
+.tm-pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--accent-soft);
+  color: var(--link); font-size: 0.8rem; font-weight: 600; }
+.tm-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.am-open { font-size: 0.85rem; font-weight: 600; padding: 5px 12px; border-radius: 9px; border: 1px solid var(--line); }
+.arrived { display: grid; grid-template-columns: auto 1fr; gap: 10px; margin-left: 40px; padding: 10px 14px; border-radius: 14px;
+  background: var(--inset); font-size: 0.92rem; max-width: 400px; }
+.arrived .when { color: var(--muted); font-size: 0.82rem; padding-top: 2px; }
+.arrived b { font-weight: 600; }
+.link-mini { display: inline-block; margin-left: 4px; padding: 1px 8px; border-radius: 8px; background: var(--paper); color: var(--link);
+  font-size: 0.86rem; border: 1px solid var(--line); }
+@media (prefers-color-scheme: dark) { .task-mini, .art-mini { background: var(--inset); } .tm-ic, .am-ic { background: var(--ground); } }
 
 /* ---------- what Gink does, by what you're doing ---------- */
 .groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 56px 72px; margin-top: 52px; }

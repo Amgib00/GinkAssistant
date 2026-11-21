@@ -40,7 +40,7 @@ AUTO_CONTINUE = 2        # times the agent is told to finish its own plan before
 # Always: it leaves the device, or can't be undone. In a chain: fine when asked for directly
 # ("lock my screen"), but asked about when Gink decides on it as part of a longer task.
 ALWAYS_ASK = {"compose_message", "make_call", "delete_item", "forget"}
-ASK_IN_CHAIN = {"lock_screen", "sleep_computer", "read_clipboard", "take_screenshot"}    # closing apps is automatic:
+ASK_IN_CHAIN = {"lock_screen", "sleep_computer", "read_clipboard", "take_screenshot", "run_project_check"}    # closing apps is automatic:
 # an app still asks to save unsaved work, and file changes keep a backup, so they're undoable without asking first
 PLAN_SPEC = {"type": "function", "function": {
     "name": "update_plan", "description": (
@@ -87,6 +87,13 @@ def describe(name: str, args: dict) -> str:
         return "Find apps" + (f" like \u201c{a.get('query')}\u201d" if a.get("query") else "")
     if name == "running_apps":
         return "See which apps are open"
+    if name == "run_project_check":
+        kind = {"lint": "linter", "build": "build"}.get(str(a.get("kind") or ""), "tests")
+        return f"Run the {kind} of " + (os.path.basename(str(a.get("project") or "").rstrip("/\\")) or "the project")
+    if name == "project_overview":
+        return "Look at " + (os.path.basename(str(a.get("project") or "").rstrip("/\\")) or "the project")
+    if name == "search_code":
+        return f"Search the code for \u201c{str(a.get('text') or '')[:60]}\u201d"
     if name == "update_plan":
         return "Plan the steps"
     if name in ("lock_screen", "sleep_computer"):
@@ -171,6 +178,9 @@ User's location: {city or "unknown (the live tools fall back to an approximate l
 
 How to work:
 - If the user asks you to DO something (alarm, timer, reminder, task, open an app, message, call, calendar), call the matching tool. Convert times to 24h HH:MM and dates to YYYY-MM-DD HH:MM in local time.
+- Something Gink itself should do LATER or on a REPEAT (the news every morning, a weekly plan, a summary on the 1st,
+  "every day at 9 remind me to drink water"): call schedule_task -- Gink's server does it at that time, even when the
+  app is closed, and the result arrives in its own chat. A plain one-time reminder stays add_reminder.
 - If the user describes a goal or problem, analyse it first: identify what actually needs doing, the order, and realistic timing. Then save it with add_task including concrete 'steps', and add reminders for steps with deadlines. Give a short explanation of your reasoning.
 - For anything live -- time anywhere, dates and countdowns, weather/forecast/rain, air quality, sunrise/sunset,
   prayer times, exchange rates, crypto prices -- ALWAYS call the matching tool; never guess numbers. Use calculate for
@@ -192,6 +202,10 @@ How to work:
 - "Check my computer", "do a check", "why is it so slow", battery, storage or security questions: call device_check
   (updates=true if they mention updates), then explain what's fine and what needs attention in plain words, and offer
   what you can do about it (close the busiest app, open Storage settings...). Never ask which device or system they use.
+- Code projects on this computer: project_overview maps one (languages, files, scripts, git); search_code finds where
+  something is; read_text_file then edit_text_file change it (a backup is kept); run_project_check runs the project's
+  own tests, linter or build to check the change. To fix or change code: overview -> search -> read -> edit -> check,
+  then say what you changed (files and lines) and whether the checks pass.
 - Apps, editors and files: find_app / running_apps see what's installed and open; open_app opens one, quit_app
   closes one. open_in_editor opens a file or project folder in an IDE (VS Code, PyCharm, Xcode...). read_text_file,
   write_text_file and edit_text_file read, create and change text or code files in the user's home folder (a backup
@@ -315,7 +329,8 @@ class TaskAgent:
                             + ". Do them now with your tools (and update the plan). If one truly can't be done, mark it "
                               "done and say why in your final answer.")})
                         continue
-                    return AgentReply(_with_held_back((msg.get("content") or "").strip() or _done_text(actions), actions), actions)
+                    text = _with_held_back((msg.get("content") or "").strip() or _done_text(actions), actions)
+                    return AgentReply(_with_schedules(text, actions), actions)
                 messages.append({"role": "assistant", "content": msg.get("content") or "",
                                  "tool_calls": calls})
                 for call in calls:
@@ -409,6 +424,17 @@ def _with_held_back(text: str, actions) -> str:
         ". This needs your OK on screen \u2014 type the request in the chat to approve it."
 
 
+def _with_schedules(text: str, actions) -> str:
+    """schedule_task calls become ```schedule blocks at the end of the answer: the chat page turns each into a task
+    card and makes the task on Gink's server (the same path as a schedule in an ordinary answer)."""
+    blocks = []
+    for a in actions:
+        if a.get("tool") == "schedule_task" and (a.get("result") or {}).get("ok"):
+            d = {k: a["args"][k] for k in ("title", "task", "every", "at", "day", "date") if a["args"].get(k) not in (None, "")}
+            blocks.append("```schedule\n" + json.dumps(d, ensure_ascii=False) + "\n```")
+    return text + "".join("\n\n" + b for b in blocks) if blocks else text
+
+
 def _done_text(actions) -> str:
     """When the AI gives no final words: say what actually happened."""
     done = [a["result"].get("message") or describe(a["tool"], a["args"]) for a in actions
@@ -453,6 +479,9 @@ def _status_text(tool):
         "show_recent_files": "Looking at what you worked on…", "read_clipboard": "Reading your clipboard…",
         "search_in_browser": "Searching Google…",
         "complete_item": "Updating your Workspace…", "delete_item": "Updating your Workspace…",
+        "schedule_task": "Scheduling it…",
+        "project_overview": "Looking at the project…", "search_code": "Searching the code…",
+        "run_project_check": "Running the project’s checks…",
     }.get(tool, "Working on it…")
 
 

@@ -7,6 +7,14 @@ export interface MapPlace { name?: string; query?: string; lat?: number; lon?: n
 export interface PlacePhoto { image: string; title: string; page: string; credit: string; object?: "place_photo" }
 /** The maps in an answer (```map blocks; ask with { gink_maps: true }). */
 export declare function maps(text: string): Array<{ title: string; places: MapPlace[] }>;
+/** A finished thing in an answer (a titled block; ask with { gink_artifacts: true }). */
+export interface Artifact { title: string; language: string; kind: "page" | "image" | "diagram" | "document" | "code";
+  content: string; filename: string; version: number }
+/** The finished things in an answer: each fenced block with a title (a later one with the same title is its next version). */
+export declare function artifacts(text: string): Artifact[];
+/** A schedule an answer offers (a ```schedule block; ask with { gink_tasks: true }), ready for gink.tasks.create(). */
+export interface ScheduleOffer { title?: string; task: string; every?: Task["every"]; at?: string; day?: string | number; date?: string }
+export declare function schedulesIn(text: string): ScheduleOffer[];
 /** The clock's offset from UTC, like "+01:00". */
 export declare function utcOffset(): string;
 
@@ -82,8 +90,18 @@ export interface SafetyReport {
   by_feature: Record<string, number>; workspace?: { id: string; name: string; healthcare: boolean };
 }
 
+/** A scheduled task: Gink does it by itself at its time; the result lands in its own chat in your Gink apps. */
+export interface Task {
+  id: string; object: "task"; title: string; task: string;
+  every: "once" | "hourly" | "daily" | "weekdays" | "weekly" | "monthly"; at: string;
+  /** weekly: 0 = Monday ... 6 = Sunday; monthly: 1-31 */
+  day?: number; date?: string; timezone: string; when: string; chat_id: string; enabled: boolean; notify_email: boolean;
+  next_run: number | null; last_run: number | null; last_status: "ok" | "skipped" | "failed" | "retrying" | null;
+  last_note: string; runs: number; created: number; source?: string; existing?: boolean;
+  results?: Array<{ text: string; created: number }>;
+}
 export interface Schedule {
-  id: string; object: "schedule"; input: string; every: "hourly" | "daily" | "weekly"; at: string; timezone: string;
+  id: string; object: "schedule"; input: string; every: "hourly" | "daily" | "weekdays" | "weekly"; at: string; timezone: string;
   environment: string; tools: Array<"files" | "web_search">; enabled: boolean; next_run: number; last_run: number | null;
   last_interaction_id: string | null; created: number; notify_email: boolean; webhook_url?: string;
 }
@@ -110,6 +128,19 @@ export declare class Gink {
     run(id: string): Promise<{ schedule: Schedule; interaction_id: string | null }>;
     pause(id: string): Promise<Schedule>;
     resume(id: string): Promise<Schedule>;
+    delete(id: string): Promise<{ id: string; deleted: true }>;
+  };
+  /** Scheduled tasks: Free 3, Pro 25 (and hourly); each run counts as one message. */
+  tasks: {
+    create(params: { task: string; every?: Task["every"]; at?: string; title?: string; day?: string | number; date?: string;
+      timezone?: string; notify_email?: boolean }): Promise<Task>;
+    list(): Promise<Task[]>;
+    get(id: string, options?: { results?: number }): Promise<Task>;
+    update(id: string, fields: Partial<Pick<Task, "title" | "task" | "every" | "at" | "day" | "date" | "timezone" | "notify_email" | "enabled">>): Promise<Task>;
+    pause(id: string): Promise<Task>;
+    resume(id: string): Promise<Task>;
+    /** Run it now; wait (default): its result in the answer. */
+    run(id: string, options?: { wait?: boolean }): Promise<{ task: Task; status: string; text?: string; note?: string }>;
     delete(id: string): Promise<{ id: string; deleted: true }>;
   };
   webhooks: { secret(): Promise<string>; rotate(): Promise<string> };
@@ -141,6 +172,10 @@ export declare class Gink {
     type: string; map_url: string }>>;
   /** The maps in an answer (ask with { gink_maps: true }). */
   maps(text: string): Array<{ title: string; places: MapPlace[] }>;
+  /** The finished things in an answer (ask with { gink_artifacts: true }). */
+  artifacts(text: string): Artifact[];
+  /** The schedules an answer offers (ask with { gink_tasks: true }). */
+  schedulesIn(text: string): ScheduleOffer[];
   /** A picture of a place, like the ones on Gink's map cards -- null when there's none. */
   placePhoto(name: string, lat: number, lon: number): Promise<PlacePhoto | null>;
   memories: {
@@ -158,9 +193,12 @@ export declare class Gink {
     import(text: string, options?: { sensitive?: boolean }): Promise<{ data: Array<{ id: string; text: string; replaced: string | null }>;
       skipped: number; skipped_sensitive: number; memory_full: boolean }>;
   };
-  /** gink_maps: true -- answers about places end with a ```map block (read it with maps()). */
+  /** gink_maps: true -- answers about places end with a ```map block (read it with maps()); gink_artifacts: finished
+   *  things in titled blocks (artifacts()); gink_tasks: "every morning..." gets a ```schedule block (schedulesIn());
+   *  gink_web: "auto" reads linked pages and searches when needed; gink_code: GitHub repositories are read. */
   chat(message: string | Array<{ role: string; content: string | Array<Record<string, unknown>> }>,
-       options?: { model?: string; system?: string; gink_maps?: boolean }): Promise<string>;
+       options?: { model?: string; system?: string; gink_maps?: boolean; gink_artifacts?: boolean; gink_tasks?: boolean;
+                   gink_web?: boolean | "auto"; gink_code?: boolean }): Promise<string>;
   /** An answer from the web, its sources listed (official ones first); { withSources: true } adds them as data. */
   search(question: string): Promise<string>;
   search(question: string, options: { withSources: true }): Promise<{ answer: string; sources: Source[] }>;

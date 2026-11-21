@@ -949,6 +949,11 @@ body.theme-dark .codehilite { --tk-kw: #79C0FF; --tk-fn: #D2A8FF; --tk-str: #7EE
   .s-item:last-child { border-bottom: none; }
   .s-item .t { flex: 1; min-width: 0; }
   .s-item .m { color: var(--text-muted); font-size: 12.5px; margin-left: 10px; white-space: nowrap; }
+  .s-item.tall { flex-wrap: wrap; gap: 8px 12px; align-items: flex-start; padding: 12px 0; }
+  .s-item.tall .tm { flex: 1 1 260px; min-width: 0; }
+  .s-item.tall .t { font-weight: 600; }
+  .s-item.tall .m { margin: 3px 0 0; white-space: normal; line-height: 1.45; }
+  .s-item-acts { display: flex; flex-wrap: wrap; gap: 6px; }
   .meter2 { width: 100%; height: 10px; border-radius: 999px; background: var(--elevated); overflow: hidden; margin: 6px 0 4px; }
   .meter2 i { display: block; height: 100%; border-radius: 999px; background: var(--accent); transition: width 0.4s; }
   .meter2.high i { background: #E0812A; } .meter2.full i { background: var(--danger); }
@@ -1262,6 +1267,55 @@ body.theme-dark .codehilite { --tk-kw: #79C0FF; --tk-fn: #D2A8FF; --tk-str: #7EE
   #codeview .cvbody .code-block-body { border: 0; border-radius: 0; max-height: none !important; }
   body.viewer-open #shell { right: min(50vw, 780px); }
   @media (max-width: 899px) { #codeview { width: 100vw; } body.viewer-open #shell { right: 0; } }
+  /* Artifacts (0.1.161): the finished things Gink makes -- a card in the chat, opened in the viewer */
+  .artcard { display: flex; align-items: center; gap: 12px; margin: 10px 0; padding: 10px 12px 10px 10px; max-width: 520px;
+             border: 1px solid var(--border); border-radius: 14px; background: var(--surface); cursor: pointer; color: var(--text-main);
+             transition: border-color .15s ease, box-shadow .15s ease; }
+  .artcard:hover { border-color: var(--text-muted); box-shadow: 0 2px 12px rgba(0,0,0,.07); }
+  .artcard:focus-visible { outline: 2px solid var(--accent, #3F8212); outline-offset: 2px; }
+  .artcard.on { border-color: var(--accent, #3F8212); box-shadow: 0 0 0 1px var(--accent, #3F8212); }
+  .artcard .arti { flex: none; width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center;
+                   background: var(--elevated); color: var(--accent, #3F8212); }
+  .artcard .artm { min-width: 0; flex: 1; }
+  .artcard .artt { font-weight: 650; font-size: 14.5px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .artcard .artk { display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 12.5px; color: var(--text-muted); }
+  .artcard .artv { font-size: 11px; font-weight: 700; padding: 0 6px; border-radius: 6px; background: var(--elevated); color: var(--text-main); }
+  .artcard .arto { flex: none; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 9px; border: 1px solid var(--border); }
+  /* Scheduled tasks (0.1.161): the AI's ```schedule block becomes this card; the server runs the task at its time */
+  .tskcard { margin: 10px 0; padding: 12px 14px; max-width: 520px; border: 1px solid var(--border); border-radius: 14px;
+             background: var(--surface); color: var(--text-main); }
+  .tskcard .tsk-top { display: flex; align-items: flex-start; gap: 12px; }
+  .tskcard .tsk-ic { flex: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                     background: var(--elevated); color: var(--accent, #3F8212); }
+  .tskcard .tsk-m { min-width: 0; flex: 1; }
+  .tskcard .tsk-t { font-weight: 650; font-size: 14.5px; line-height: 1.3; overflow-wrap: anywhere; }
+  .tskcard .tsk-w { margin-top: 2px; font-size: 12.5px; color: var(--text-muted); }
+  .tskcard .tsk-s { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600;
+                    padding: 3px 9px; border-radius: 999px; background: var(--elevated); color: var(--text-muted); white-space: nowrap; }
+  .tskcard .tsk-s i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .tskcard.on .tsk-s { color: var(--accent, #3F8212); background: var(--accent-soft, #EEF8E1); }
+  .tskcard.err .tsk-s { color: var(--danger, #C93B32); }
+  .tskcard .tsk-q { margin: 10px 0 0 52px; font-size: 13.5px; line-height: 1.45; color: var(--text-main);
+                    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .tskcard .tsk-n { margin: 8px 0 0 52px; font-size: 12.5px; color: var(--text-muted); }
+  .tskcard.err .tsk-n { color: var(--danger, #C93B32); }
+  .tskcard .tsk-a { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0 52px; }
+  .tskcard .tsk-a button { font: inherit; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 9px; cursor: pointer;
+                           border: 1px solid var(--border); background: transparent; color: var(--text-main); }
+  .tskcard .tsk-a button.primary { background: var(--accent, #3F8212); border-color: var(--accent, #3F8212); color: var(--on-accent, #fff); }
+  .tskcard .tsk-a button:hover { border-color: var(--text-muted); }
+  .tskcard .tsk-a button:focus-visible { outline: 2px solid var(--accent, #3F8212); outline-offset: 2px; }
+  .tskcard .tsk-a button[disabled] { opacity: .5; cursor: default; }
+  @media (max-width: 480px) { .tskcard .tsk-q, .tskcard .tsk-n, .tskcard .tsk-a { margin-left: 0; } }
+  #codeview .cvver { display: inline-flex; align-items: center; gap: 2px; font-size: 12.5px; color: var(--text-muted); white-space: nowrap; }
+  #codeview .cvver button { border: 0 !important; background: transparent !important; padding: 2px 6px !important; font-size: 16px !important; }
+  #codeview .cvver button:disabled { opacity: .35; cursor: default; }
+  #codeview .cvdoc { flex: 1; overflow: auto; padding: 28px clamp(18px, 5vw, 56px) 56px; }
+  #codeview .cvdoc-in { max-width: 720px; margin: 0 auto; font-size: 15.5px; line-height: 1.65; }
+  #codeview .cvdoc-in h1 { font-size: 1.7em; line-height: 1.2; margin: 0 0 .6em; } #codeview .cvdoc-in h2 { font-size: 1.3em; margin: 1.4em 0 .5em; }
+  #codeview .cvimg { flex: 1; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 24px;
+                     background: repeating-conic-gradient(var(--elevated) 0 25%, transparent 0 50%) 0 0 / 20px 20px; }
+  #codeview .cvimg img { max-width: 100%; max-height: 100%; }
   /* Sources: a button in the answer's action row, opening the list (official ones first, with a badge) */
   .ga.gsrc { width: auto; display: inline-flex; align-items: center; gap: 7px; padding: 0 10px 0 6px; border-radius: 999px;
              font-size: 13px; font-weight: 600; color: var(--text-main); }
@@ -1604,6 +1658,7 @@ body.theme-dark .codehilite { --tk-kw: #79C0FF; --tk-fn: #D2A8FF; --tk-str: #7EE
       <button type="button" class="srow" data-nav="new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h8"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span class="lbl">New chat</span><span class="nk" id="nk-new"></span></button>
       <label class="srow" id="side-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><input id="side-q" placeholder="Search chats" autocomplete="off" aria-label="Search chats"><span class="nk" id="nk-search"></span></label>
       <button type="button" class="srow" data-nav="tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg><span class="lbl">Workspace</span></button>
+      <button type="button" class="srow" data-nav="scheduled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg><span class="lbl">Scheduled</span></button>
       <button type="button" class="srow" data-nav="media"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8 8.5"/></svg><span class="lbl">Media Studio</span></button>
       <button type="button" class="srow" data-nav="genie"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><g transform="matrix(-1 0 0 1 24 0)"><path d="M2 10.2c1.9.1 3.4 1.2 4.7 2.2 1 .8 2.2 1.4 3.7 1.4h4c2 0 3.7-1.2 4.2-3"/><path d="M7.2 13.4c.7 2 2.6 3.2 4.8 3.2h1.6c2.1 0 3.9-1.3 4.5-3.2"/><path d="M10.6 10.9c0-1.5 1.1-2.6 2.6-2.6s2.6 1.1 2.6 2.6"/><path d="M13.2 8.3V6.9"/><circle cx="13.2" cy="5.9" r="1.1" fill="currentColor" stroke="none"/><path d="M18.6 11.2c1.3-.4 2.7.2 3 1.4.3 1.2-.6 2.4-2 2.6-.5.1-1 0-1.4-.2"/><path d="M11.4 16.6l-.6 2.2h5l-.6-2.2"/><path d="M9.6 18.8h6.6"/></g></svg><span class="lbl">Gink Genie</span></button>
     </div>
@@ -2049,7 +2104,9 @@ body.theme-dark .codehilite { --tk-kw: #79C0FF; --tk-fn: #D2A8FF; --tk-str: #7EE
     side.addEventListener('click', function (e) {                       // New chat and the places
       var b = e.target.closest('[data-nav]'); if (!b) return;
       var what = b.getAttribute('data-nav');
-      if (what === 'new') ginkEmit('new_chat'); else ginkEmit('open', what);
+      if (what === 'new') ginkEmit('new_chat');
+      else if (what === 'scheduled') { if (window.openSettings) openSettings('schedules'); }   // scheduled tasks (0.1.161)
+      else ginkEmit('open', what);
       if (window.innerWidth < 760) setPinned(false);
     });
     document.getElementById('side-scrim').addEventListener('click', function () { setPinned(false); hoverBlocked = true; });
@@ -3293,8 +3350,12 @@ body.theme-dark .codehilite { --tk-kw: #79C0FF; --tk-fn: #D2A8FF; --tk-str: #7EE
   // While an answer streams in, its map and question blocks (JSON) stay out of sight: they become the map and the
   // question card when the answer is done (finalizeMessage).
   function streamView(text) {
-    return String(text == null ? '' : text).replace(/(^|\n)```(?:map|ask)[^\n]*(?:\n[\s\S]*?(?:\n```[ \t]*(?=\n|$)|$)|$)/g,
-                                                    function (m, pre) { return pre; }).replace(/\s+$/, '');
+    return String(text == null ? '' : text).replace(/(^|\n)```(?:map|ask|schedule)[^\n]*(?:\n[\s\S]*?(?:\n```[ \t]*(?=\n|$)|$)|$)/g,
+                                                    function (m, pre) { return pre; })
+      // an artifact being written: its name, not its code ("Making “Pomodoro timer”…")
+      .replace(/(^|\n)```[\w+#.\-]*[ \t]+title=["']([^"'\n]{1,120})["'][^\n]*(?:\n[\s\S]*?(\n```[ \t]*(?=\n|$))|[\s\S]*$)/g,
+               function (m, pre, title, end) { return pre + (end ? '\u2713 \u201c' + title + '\u201d is ready' : '\u270e Making \u201c' + title + '\u201d\u2026'); })
+      .replace(/\s+$/, '');
   }
   window.streamView = streamView;
   function setPlainText(id, text) {
@@ -3322,7 +3383,9 @@ body.theme-dark .codehilite { --tk-kw: #79C0FF; --tk-fn: #D2A8FF; --tk-str: #7EE
     upgradeVideoLinks(el);
     upgradeFileLinks(el);
     if (window.upgradeQuestionCards) upgradeQuestionCards(el);     // before code blocks: ```ask``` becomes a card
+    if (window.upgradeSchedules) upgradeSchedules(el, !LOADING_CHAT);  // ```schedule``` becomes a task card (0.1.161)
     if (window.upgradeMaps) upgradeMaps(el);                       // ```map``` becomes a live map, by itself
+    if (window.upgradeArtifacts) upgradeArtifacts(el);             // finished things become artifact cards (0.1.161)
     enhanceCodeBlocks(el);
     if (!LOADING_CHAT && window.autoOpenCode) autoOpenCode(el);        // long code in a new answer: the viewer
     addGinkActions(el, id);
@@ -3443,7 +3506,7 @@ body.theme-dark .codehilite { --tk-kw: #79C0FF; --tk-fn: #D2A8FF; --tk-str: #7EE
           {type: 'button', label: 'Delete your account', desc: 'Permanently deletes your account and everything synced to it. Payment records are kept for accounting, without your name or email. This can\u2019t be undone.', action: 'delete_account', text: 'Delete account', style: 'danger-ghost'}]}]},
       {id: 'family', group: 'Settings', title: 'Parental controls', sections: familySections(info.family, info.family_error)},
       {id: 'workspace', group: 'Settings', title: 'Workspace', sections: workspaceSections(info.org, info.org_error)},
-      {id: 'schedules', group: 'Settings', title: 'Scheduled tasks', sections: scheduleSections(info.schedules, info.schedules_error)},
+      {id: 'schedules', group: 'Settings', title: 'Scheduled tasks', sections: scheduleSections(info.tasks, info.tasks_error, info.schedules, info.tasks_limits)},
       {id: 'privacy', group: 'Settings', title: 'Privacy', sections: [
         {title: info.web ? 'Lock Gink in this browser' : 'Lock Gink', rows: info.web ? [
           {type: 'toggle', key: 'app_lock', label: 'Lock with a passkey', desc: 'Gink covers itself when it opens and after you\u2019ve been away, until you unlock with Face ID, Touch ID, Windows Hello or your phone \u2014 a passkey (Account > Passkeys). Gink Genie and the developer console in this browser lock too.'},
@@ -3685,20 +3748,60 @@ body.theme-dark .codehilite { --tk-kw: #79C0FF; --tk-fn: #D2A8FF; --tk-str: #7EE
     return out;
   }
 
-  // Settings > Scheduled tasks (server: /dev/schedules -- the same scheduled agents as the API, console and Genie)
-  function scheduleSections(list, err) {
-    if (!list) return [{title: 'Scheduled tasks', rows: [{type: 'list', items: [], empty: err || 'Loading\u2026'}]}];
-    return [{title: 'New scheduled task', rows: [
-      {type: 'note', text: 'Gink\u2019s agent does a task on its own, every hour, day or week at your time \u2014 for example \u201cevery morning, write today\u2019s top news in news.md\u201d. The results are saved in a Gink Genie project.'},
-      {type: 'input', key: 'sch_task', label: 'Task', placeholder: 'e.g. Write the three biggest news stories of the day in news.md', wide: true},
-      {type: 'html', label: 'When', html: '<select class="s-input" data-input="sch_every" style="width:auto"><option value="daily">Every day</option><option value="hourly">Every hour</option><option value="weekly">Every week</option></select> ' +
-        '<input class="s-input" type="time" data-input="sch_at" value="08:00" style="width:auto"> ' +
-        '<label style="font-size:13px"><input type="checkbox" data-sch-email checked> Email me the result</label> <button class="s-btn primary" data-act="sch_add">Schedule</button>'}]},
-      {title: 'Your scheduled tasks', rows: [{type: 'list', items: list.map(function (x) {
-        return {t: x.input.slice(0, 80), m: (x.every === 'hourly' ? 'Every hour at :' + x.at.slice(3) : (x.every === 'weekly' ? 'Every week at ' : 'Every day at ') + x.at) +
-                   ' \u00b7 ' + x.timezone + (x.notify_email ? ' \u00b7 emails you' : '') + (x.enabled ? '' : ' \u00b7 paused') + (x.last_run ? ' \u00b7 last ran ' + new Date(x.last_run * 1000).toLocaleString() : ''),
+  // Settings > Scheduled tasks (0.1.161, server: /tasks): Gink does a task by itself at its time and puts the result in
+  // the task's own chat. Below them: the scheduled agents (/dev/schedules, files in a Genie project) if there are any.
+  var TSK_EVERY = [['daily', 'Every day'], ['weekdays', 'Weekdays'], ['weekly', 'Every week'], ['monthly', 'Every month'],
+                   ['once', 'Once'], ['hourly', 'Every hour']];
+  function tskNextText(ts) {
+    if (!ts) return '';
+    var d = new Date(ts * 1000);
+    return 'next: ' + d.toLocaleDateString([], {weekday: 'short', day: 'numeric', month: 'short'}) + ', ' +
+           d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+  }
+  function scheduleSections(list, err, agents, limits) {
+    if (!list) return [{title: 'Scheduled tasks', rows: [{type: 'list', items: [], empty: err || 'Loading…'}]}];
+    var lim = limits || {}, pro = !!lim.hourly, full = lim.max && lim.used >= lim.max;
+    var days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    var today = new Date(), iso = today.getFullYear() + '-' + ('0' + (today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2);
+    var out = [{title: 'New scheduled task', rows: [
+      {type: 'note', text: 'Gink does a task by itself at the time you choose — the day’s news at 8, a reminder on Friday, a summary every month — and puts the result in its own chat on all your devices, even when your apps are closed. You can also ask in any chat: “every morning at 8, give me the top news”.'},
+      {type: 'input', key: 'tsk_task', label: 'Task', placeholder: 'e.g. Give me the three biggest news stories of the day, with sources', wide: true},
+      {type: 'html', label: 'When', html:
+        '<select class="s-input" data-input="tsk_every" aria-label="How often" style="width:auto">' + TSK_EVERY.map(function (e) {
+          return '<option value="' + e[0] + '"' + (e[0] === 'hourly' && !pro ? ' disabled' : '') + '>' + e[1] + (e[0] === 'hourly' && !pro ? ' (Pro)' : '') + '</option>'; }).join('') + '</select> ' +
+        '<select class="s-input" data-input="tsk_day" data-tsk-for="weekly" aria-label="Day of the week" style="width:auto" hidden>' +
+          days.map(function (d, i) { return '<option value="' + i + '"' + (i === (today.getDay() + 6) % 7 ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select>' +
+        '<input class="s-input" type="number" min="1" max="31" value="' + today.getDate() + '" data-input="tsk_mday" data-tsk-for="monthly" aria-label="Day of the month" style="width:72px" hidden>' +
+        '<input class="s-input" type="date" min="' + iso + '" value="' + iso + '" data-input="tsk_date" data-tsk-for="once" aria-label="Date" style="width:auto" hidden> ' +
+        '<input class="s-input" type="time" data-input="tsk_at" value="08:00" aria-label="Time" style="width:auto">'},
+      {type: 'html', label: '', html: '<label style="font-size:13px"><input type="checkbox" data-tsk-email> Email me the result</label> ' +
+        '<button class="s-btn primary" data-act="tsk_add"' + (full ? ' disabled' : '') + '>Schedule</button>'}]}];
+    var meta = function (x) {
+      var bits = [x.when + (x.timezone ? ' (' + x.timezone + ')' : '')];
+      if (x.enabled && x.next_run) bits.push(tskNextText(x.next_run));
+      if (!x.enabled) bits.push(x.every === 'once' && x.runs ? 'done' : 'paused');
+      if (x.notify_email) bits.push('emails you');
+      if (x.last_status === 'ok' && x.last_run) bits.push('last ran ' + new Date(x.last_run * 1000).toLocaleString([], {weekday: 'short', hour: '2-digit', minute: '2-digit'}));
+      else if (x.last_status && x.last_status !== 'ok' && x.last_note) bits.push('last run: ' + x.last_note);
+      return bits.join(' · ');
+    };
+    out.push({title: 'Your scheduled tasks', rows: [
+      lim.max ? {type: 'note', text: (lim.used || 0) + ' of ' + lim.max + ' tasks' + (pro ? '.' : ' on the Free plan. Gink Pro has ' + 25 + ', and hourly tasks.')} : null,
+      {type: 'list', items: list.map(function (x) {
+        return {t: x.title, m: meta(x), buttons: [
+          {text: 'Open its chat', action: 'tsk_open', value: x.chat_id, style: 'plain'},
+          x.enabled ? {text: 'Run now', action: 'tsk_run', value: x.id, style: 'plain'} : null,
+          (x.every === 'once' && x.runs && !x.enabled) ? null : {text: x.enabled ? 'Pause' : 'Resume', action: x.enabled ? 'tsk_pause' : 'tsk_resume', value: x.id, style: 'plain'},
+          {text: 'Delete', action: 'tsk_delete', value: x.id, style: 'danger'}].filter(Boolean)}; }),
+        empty: 'Nothing scheduled yet.'}].filter(Boolean)});
+    if (agents && agents.length) out.push({title: 'Scheduled agents', rows: [
+      {type: 'note', text: 'Agents that work on files in a Gink Genie project at their time (made in Genie, the console or the API).'},
+      {type: 'list', items: agents.map(function (x) {
+        return {t: x.input.slice(0, 80), m: (x.every === 'hourly' ? 'Every hour at :' + x.at.slice(3) : (x.every === 'weekly' ? 'Every week at ' : x.every === 'weekdays' ? 'Weekdays at ' : 'Every day at ') + x.at) +
+                   ' · ' + x.timezone + (x.notify_email ? ' · emails you' : '') + (x.enabled ? '' : ' · paused') + (x.last_run ? ' · last ran ' + new Date(x.last_run * 1000).toLocaleString() : ''),
                 button: {text: x.enabled ? 'Pause' : 'Resume', action: x.enabled ? 'sch_pause' : 'sch_resume', value: x.id, style: 'plain'},
-                button2: {text: 'Delete', action: 'sch_delete', value: x.id}}; }), empty: 'Nothing scheduled yet.'}]}];
+                button2: {text: 'Delete', action: 'sch_delete', value: x.id}}; }), empty: ''}]});
+    return out;
   }
 
   // The device's time zone names a nearby city ("Europe/Paris" -> "Paris"): local examples, not one country's
@@ -3838,6 +3941,10 @@ body.theme-dark .codehilite { --tk-kw: #79C0FF; --tk-fn: #D2A8FF; --tk-str: #7EE
     } else if (r.type === 'select') {
       ctl = '<select class="s-select" data-key="' + r.key + '">' + r.options.map(function (o) {
         return '<option value="' + esc(o[0]) + '"' + (String(v[r.key]) === String(o[0]) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>';
+    } else if (r.type === 'input' && r.wide) {      // a long entry (a scheduled task): the label above, the box full width
+      return '<div class="s-row stack" data-search="' + esc((r.label || '').toLowerCase()) + '"><div class="lab"><span>' + esc(r.label) + '</span></div>' +
+             '<div class="ctl" style="display:block"><input class="s-input" style="width:100%;max-width:none" data-input="' + r.key + '" value="' + esc(v[r.key] || '') +
+             '" placeholder="' + esc(r.placeholder || '') + '" aria-label="' + esc(r.label) + '" maxlength="4000"></div></div>';
     } else if (r.type === 'input') {
       ctl = '<input class="s-input" data-input="' + r.key + '" value="' + esc(v[r.key] || '') + '" placeholder="' + esc(r.placeholder || '') + '"' + (r.narrow ? ' style="width:90px"' : '') + '>' +
             (r.action ? '<button class="s-btn" data-act="' + r.action + '" data-from="' + r.key + '">' + esc(r.text) + '</button>' : '');
@@ -3877,6 +3984,12 @@ body.theme-dark .codehilite { --tk-kw: #79C0FF; --tk-fn: #D2A8FF; --tk-str: #7EE
       }
       if (!r.items.length) return '<div class="s-empty">' + esc(r.empty || '') + '</div>';
       return '<div class="s-list">' + r.items.map(function (it) {
+        if (it.buttons && it.buttons.length) {      // a row with its own actions: title and details, buttons beside or below
+          return '<div class="s-item tall"><div class="tm"><div class="t">' + esc(it.t) + '</div>' + (it.m ? '<div class="m">' + esc(it.m) + '</div>' : '') +
+                 '</div><div class="s-item-acts">' + it.buttons.map(function (b) {
+                   return '<button class="s-btn ' + (b.style === 'danger' ? 'danger-ghost' : b.style === 'primary' ? 'primary' : '') + '" data-act="' + b.action +
+                          '" data-value="' + esc(b.value) + '">' + esc(b.text) + '</button>'; }).join('') + '</div></div>';
+        }
         return '<div class="s-item"><div class="t">' + esc(it.t) + '</div>' + (it.m ? '<div class="m">' + esc(it.m) + '</div>' : '') +
                (it.button ? '<button class="s-btn ' + (it.button.style === 'plain' ? '' : 'danger-ghost') + '" data-act="' + it.button.action + '" data-value="' + esc(it.button.value) + '">' + esc(it.button.text) + '</button>' : '') +
                (it.button2 ? ' <button class="s-btn danger-ghost" data-act="' + it.button2.action + '" data-value="' + esc(it.button2.value) + '">' + esc(it.button2.text) + '</button>' : '') + '</div>'; }).join('') + '</div>';
@@ -4013,6 +4126,10 @@ body.theme-dark .codehilite { --tk-kw: #79C0FF; --tk-fn: #D2A8FF; --tk-str: #7EE
     var body = document.getElementById('s-body');
     body.addEventListener('change', function (e) {
       var t = e.target, fk = t.getAttribute('data-fam') || t.getAttribute('data-famtime') || t.getAttribute('data-famnum');
+      if (t.getAttribute('data-input') === 'tsk_every') {   // Scheduled tasks: the day or date field that fits
+        Array.prototype.forEach.call(document.querySelectorAll('[data-tsk-for]'), function (x) { x.hidden = x.getAttribute('data-tsk-for') !== t.value; });
+        return;
+      }
       if (t.getAttribute('data-org')) {          // Workspace: healthcare mode, and what happens to patient details
         ginkEmit('settings_action', {name: 'org_set', value: JSON.stringify({key: t.getAttribute('data-org'),
                                                                             value: t.type === 'checkbox' ? t.checked : t.value})});
@@ -4050,6 +4167,17 @@ body.theme-dark .codehilite { --tk-kw: #79C0FF; --tk-fn: #D2A8FF; --tk-str: #7EE
         return;
       }
       if (name === 'people_open') { closeSettings(); if (window.openPeople) openPeople(); return; }   // People lives in the page
+      if (name === 'tsk_add') {                       // Scheduled tasks (0.1.161): the task, how often and when, together
+        var g = function (k) { var x = document.querySelector('[data-input="' + k + '"]'); return x ? x.value : ''; };
+        var ev = g('tsk_every'), te = document.querySelector('[data-tsk-email]');
+        if (!g('tsk_task').trim()) { settingsToast('Write the task first.', 'err'); return; }
+        var t = {task: g('tsk_task').trim(), every: ev, at: g('tsk_at') || '08:00', notify_email: !!(te && te.checked)};
+        if (ev === 'weekly') t.day = parseInt(g('tsk_day'), 10) || 0;
+        if (ev === 'monthly') t.day = parseInt(g('tsk_mday'), 10) || 1;
+        if (ev === 'once') t.date = g('tsk_date');
+        ginkEmit('settings_action', {name: 'tsk_add', value: JSON.stringify(t)});
+        return;
+      }
       if (name === 'sch_add') {                       // Scheduled tasks: the task, how often and when, together
         var q = function (k) { var x = document.querySelector('[data-input="' + k + '"]'); return x ? x.value : ''; };
         var em = document.querySelector('[data-sch-email]');
@@ -4746,12 +4874,19 @@ body.theme-dark .codehilite { --tk-kw: #79C0FF; --tk-fn: #D2A8FF; --tk-str: #7EE
     row.onclick = function () { row.classList.toggle('open'); };
     feed.appendChild(row);
   };
-  // ---- The code viewer (like Claude's): a panel with the file's name, Copy / Download, Expand, Close
-  var CV = { text: '', name: '' };
+  // ---- The viewer (like Claude's): long code -- and artifacts, the finished things Gink makes (0.1.161): a web page or
+  // app, an SVG, a Mermaid diagram, a document, a long code file. A card in the chat; the viewer shows a preview (a
+  // sealed sandbox: its scripts run, but it can't reach Gink), the code or the document, its versions, Copy, Download,
+  // Publish (pages, images), Expand and Close.
+  var CV = { text: '', name: '', art: null };
   var CV_LANGS = {python: ['Python', 'py'], javascript: ['JavaScript', 'js'], typescript: ['TypeScript', 'ts'], html: ['HTML', 'html'],
                   css: ['CSS', 'css'], java: ['Java', 'java'], kotlin: ['Kotlin', 'kt'], swift: ['Swift', 'swift'], go: ['Go', 'go'],
                   rust: ['Rust', 'rs'], bash: ['Shell', 'sh'], shell: ['Shell', 'sh'], sql: ['SQL', 'sql'], json: ['JSON', 'json'],
-                  c: ['C', 'c'], cpp: ['C++', 'cpp'], csharp: ['C#', 'cs'], php: ['PHP', 'php'], ruby: ['Ruby', 'rb'], dart: ['Dart', 'dart']};
+                  c: ['C', 'c'], cpp: ['C++', 'cpp'], csharp: ['C#', 'cs'], php: ['PHP', 'php'], ruby: ['Ruby', 'rb'], dart: ['Dart', 'dart'],
+                  svg: ['SVG', 'svg'], mermaid: ['Diagram', 'mmd'], markdown: ['Markdown', 'md'], yaml: ['YAML', 'yml'],
+                  jsx: ['React', 'jsx'], tsx: ['React', 'tsx'], vue: ['Vue', 'vue'], xml: ['XML', 'xml'], r: ['R', 'r']};
+  var MERMAID_VERSION = '11.17.2';
+  var GINK_WEBAPP = /^https?:$/.test(location.protocol) && location.hostname !== 'gink.local';
   function cvName(block, lang) {
     if (lang.indexOf('.') > 0) return lang;                              // the label is already a file name
     var prev = block.previousElementSibling, re = /([A-Za-z0-9_-]+\.(py|js|ts|jsx|tsx|html|css|json|java|kt|swift|go|rs|sh|sql|c|cpp|cs|php|rb|dart|yml|yaml|toml|md))\b/;
@@ -4764,53 +4899,80 @@ body.theme-dark .codehilite { --tk-kw: #79C0FF; --tk-fn: #D2A8FF; --tk-str: #7EE
     var ext = file ? file.split('.').pop() : info[1];
     var title = file ? file.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').replace(/^./, function (c) { return c.toUpperCase(); })
                      : info[0] + ' code';
-    CV.text = codeText(block).replace(/\n$/, ''); CV.name = file || ('gink-code.' + ext);
+    var text = codeText(block).replace(/\n$/, ''), body = block.querySelector('.code-block-body');
+    var design = /^(html?|svg|xml)$/.test(ext) && /<(html|body|div|svg|style|section|main|h1|p)\b/i.test(text);
+    cvOpen({ title: title, badge: ext.toUpperCase().slice(0, 4), text: text, name: file || ('gink-code.' + ext),
+             codeHTML: body ? body.outerHTML : '', kind: design ? (/^\s*<svg\b/i.test(text) ? 'image' : 'page') : 'code' });
+  };
+  function cvPanel() {
     var v = document.getElementById('codeview');
-    if (!v) {
-      v = document.createElement('aside'); v.id = 'codeview'; v.setAttribute('aria-label', 'Code viewer');
-      v.innerHTML = '<div class="cvh"><span class="cvt"></span><span class="cvb"></span>' +
-        '<span class="cvtabs" hidden><button data-tab="preview">Preview</button><button data-tab="code">Code</button></span><span class="cvg"></span>' +
-        '<button class="cvpub" hidden>Publish</button>' +
-        '<button class="cvcopy">Copy</button><button class="cvmore" aria-label="More">\u2304</button>' +
-        '<button class="cvicon cvwide" title="Expand" aria-label="Expand">\u2922</button>' +
-        '<button class="cvicon cvclose" title="Close" aria-label="Close">\u00d7</button></div><div class="cvbody"></div>';
-      document.body.appendChild(v);
-      v.querySelector('.cvcopy').onclick = function () { var b = this; copyText(CV.text, function () { b.textContent = 'Copied';
-        setTimeout(function () { b.textContent = 'Copy'; }, 1500); }); };
-      v.querySelector('.cvmore').onclick = function (e) {
-        e.stopPropagation(); var old = v.querySelector('.cvmenu'); if (old) { old.remove(); return; }
-        var m = document.createElement('div'); m.className = 'cvmenu';
-        m.innerHTML = '<button data-cv="copy">Copy</button><button data-cv="download">Download</button>';
-        m.onclick = function (ev) { var a = ev.target.getAttribute('data-cv'); m.remove();
-          if (a === 'copy') v.querySelector('.cvcopy').click(); else ginkEmit('save_code', {name: CV.name, code: CV.text}); };
-        v.appendChild(m);
-      };
-      v.querySelector('.cvpub').onclick = function () {
-        this.disabled = true; this.textContent = 'Publishing\u2026';
-        ginkEmit('publish_design', {html: cvFullPage(CV.text, v.querySelector('.cvt').textContent), title: v.querySelector('.cvt').textContent});
-      };
-      v.querySelector('.cvtabs').onclick = function (e) { var t = e.target.getAttribute && e.target.getAttribute('data-tab'); if (t) cvShow(t); };
-      v.querySelector('.cvwide').onclick = function () { var w = v.classList.toggle('wide'); this.title = w ? 'Make smaller' : 'Expand'; };
-      v.querySelector('.cvclose').onclick = function () { v.remove(); document.body.classList.remove('viewer-open'); };
-      document.addEventListener('click', function () { var m = v.querySelector('.cvmenu'); if (m) m.remove(); });
+    if (v) return v;
+    v = document.createElement('aside'); v.id = 'codeview'; v.setAttribute('aria-label', 'Code viewer');
+    v.innerHTML = '<div class="cvh"><span class="cvt"></span><span class="cvb"></span>' +
+      '<span class="cvver" hidden><button class="cvprev" aria-label="Older version">‹</button><span class="cvvn"></span>' +
+      '<button class="cvnext" aria-label="Newer version">›</button></span>' +
+      '<span class="cvtabs" hidden><button data-tab="preview">Preview</button><button data-tab="code">Code</button></span><span class="cvg"></span>' +
+      '<button class="cvpub" hidden>Publish</button>' +
+      '<button class="cvcopy">Copy</button><button class="cvmore" aria-label="More">⌄</button>' +
+      '<button class="cvicon cvwide" title="Expand" aria-label="Expand">⤢</button>' +
+      '<button class="cvicon cvclose" title="Close" aria-label="Close">×</button></div><div class="cvbody"></div>' +
+      '<div class="cvdoc" hidden></div><div class="cvimg" hidden></div>';
+    document.body.appendChild(v);
+    v.querySelector('.cvcopy').onclick = function () { var b = this; copyText(CV.text, function () { b.textContent = 'Copied';
+      setTimeout(function () { b.textContent = 'Copy'; }, 1500); }); };
+    v.querySelector('.cvmore').onclick = function (e) {
+      e.stopPropagation(); var old = v.querySelector('.cvmenu'); if (old) { old.remove(); return; }
+      var m = document.createElement('div'); m.className = 'cvmenu';
+      m.innerHTML = '<button data-cv="copy">Copy</button><button data-cv="download">Download</button>' +
+        (CV.art && CV.art.kind === 'page' && (GINK_WEBAPP || !(window.matchMedia && matchMedia('(hover: none)').matches)) ?   // computers: the app opens the browser
+          '<button data-cv="tab">' + (GINK_WEBAPP ? 'Open in a new tab' : 'Open in your browser') + '</button>' : '');
+      m.onclick = function (ev) { var a = ev.target.getAttribute('data-cv'); m.remove();
+        if (a === 'copy') v.querySelector('.cvcopy').click();
+        else if (a === 'tab') cvNewTab(cvFullPage(CV.text, CV.art ? CV.art.title : ''));
+        else ginkEmit('save_code', {name: CV.name, code: CV.text}); };
+      v.appendChild(m);
+    };
+    v.querySelector('.cvpub').onclick = function () {
+      this.disabled = true; this.textContent = 'Publishing…';
+      ginkEmit('publish_design', {html: cvFullPage(CV.text, v.querySelector('.cvt').textContent), title: v.querySelector('.cvt').textContent});
+    };
+    v.querySelector('.cvtabs').onclick = function (e) { var t = e.target.getAttribute && e.target.getAttribute('data-tab'); if (t) cvShow(t); };
+    v.querySelector('.cvwide').onclick = function () { var w = v.classList.toggle('wide'); this.title = w ? 'Make smaller' : 'Expand'; };
+    v.querySelector('.cvclose').onclick = function () { v.remove(); document.body.classList.remove('viewer-open'); artMark(null); };
+    v.querySelector('.cvprev').onclick = function () { artStep(-1); };
+    v.querySelector('.cvnext').onclick = function () { artStep(1); };
+    document.addEventListener('click', function () { var m = v.querySelector('.cvmenu'); if (m) m.remove(); });
+    v.addEventListener('keydown', function (e) { if (e.key === 'Escape') v.querySelector('.cvclose').click(); });
+    return v;
+  }
+  function cvOpen(o) {
+    var v = cvPanel();
+    CV.text = o.text || ''; CV.name = o.name || 'gink-file.txt'; CV.art = o;
+    v.querySelector('.cvt').textContent = o.title; v.querySelector('.cvb').textContent = o.badge || '';
+    var ver = v.querySelector('.cvver'), many = o.versions && o.versions.length > 1;
+    ver.hidden = !many;
+    if (many) {
+      var at = o.versions.indexOf(o.id);
+      v.querySelector('.cvvn').textContent = 'v' + (at + 1) + ' of ' + o.versions.length;
+      v.querySelector('.cvprev').disabled = at <= 0; v.querySelector('.cvnext').disabled = at >= o.versions.length - 1;
     }
-    v.querySelector('.cvt').textContent = title; v.querySelector('.cvb').textContent = ext.toUpperCase().slice(0, 4);
-    var body = block.querySelector('.code-block-body');
-    // inside a .code-block wrapper so the numbers and the code share the same styling (they drifted apart otherwise)
-    v.querySelector('.cvbody').innerHTML = body ? '<div class="code-block cv-inner" data-enh="1">' + body.outerHTML + '</div>' : '';
+    // the code, with line numbers (the chat's blocks have none); a document: its reading view
+    v.querySelector('.cvbody').innerHTML = o.codeHTML ? '<div class="code-block cv-inner" data-enh="1">' + o.codeHTML + '</div>' : '';
     var cvb = v.querySelector('.cvbody .code-block-body'), cvn = CV.text ? CV.text.split('\n').length : 0;
-    if (cvb && cvn > 1 && !cvb.querySelector('.lns')) {           // line numbers in the viewer (the chat's blocks have none)
+    if (cvb && cvn > 1 && !cvb.querySelector('.lns')) {
       var lns = document.createElement('div'); lns.className = 'lns';
       var nums = []; for (var li = 1; li <= cvn; li++) nums.push(li);
       lns.textContent = nums.join('\n'); cvb.insertBefore(lns, cvb.firstChild);
     }
-    var design = /^(html?|svg|xml)$/.test(ext) && /<(html|body|div|svg|style|section|main|h1|p)\b/i.test(CV.text);
+    v.querySelector('.cvdoc').innerHTML = o.kind === 'document' ? '<div class="cvdoc-in">' + (o.docHTML || '') + '</div>' : '';
+    var design = o.kind === 'page' || o.kind === 'image' || o.kind === 'diagram';
     v.querySelector('.cvtabs').hidden = !design;
-    var pub = v.querySelector('.cvpub'); pub.hidden = !design; pub.disabled = false; pub.textContent = 'Publish';
+    var pub = v.querySelector('.cvpub'); pub.hidden = !(o.kind === 'page' || o.kind === 'image'); pub.disabled = false; pub.textContent = 'Publish';
     var bar = v.querySelector('.cvpubbar'); if (bar) bar.remove();
-    cvShow(design ? 'preview' : 'code');
+    cvShow(o.kind === 'document' ? 'doc' : design ? 'preview' : 'code');
     document.body.classList.add('viewer-open');
-  };
+  }
+  window.cvOpen = cvOpen;
   // A fragment or an SVG becomes a whole page (to preview and to publish)
   function cvFullPage(text, title) {
     if (/<!doctype html|<html[\s>]/i.test(text)) return text;
@@ -4818,6 +4980,41 @@ body.theme-dark .codehilite { --tk-kw: #79C0FF; --tk-fn: #D2A8FF; --tk-str: #7EE
     return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
       '<title>' + t.innerHTML + '</title></head><body' + (svg ? ' style="margin:0;display:grid;place-items:center;min-height:100vh"' : '') +
       '>' + text + '</body></html>';
+  }
+  // A diagram: Mermaid draws it inside the sealed preview (the library comes from Gink's server only when needed)
+  function cvDiagramPage(code) {
+    var t = document.createElement('div'); t.textContent = code;
+    var dark = document.body.classList.contains('theme-dark');
+    var src = (typeof window.GINK_ICONS === 'string' && window.GINK_ICONS ? window.GINK_ICONS : location.origin) +
+              '/vendor/mermaid.min.js?v=' + MERMAID_VERSION;
+    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
+      '<style>html,body{margin:0;min-height:100%;background:' + (dark ? '#1d2023' : '#ffffff') + '}body{display:flex;justify-content:center;' +
+      'padding:28px 16px;box-sizing:border-box;font-family:system-ui,sans-serif}.mermaid{width:100%;text-align:center}' +
+      '.mermaid svg{min-width:min(100%,620px);max-width:100%;height:auto}#e{color:#b3261e;white-space:pre-wrap}</style>' +
+      '</head><body><pre class="mermaid">' + t.innerHTML + '</pre><div id="e"></div><script src="' + src + '"><\/script><script>' +
+      'try{mermaid.initialize({startOnLoad:false,securityLevel:"strict",theme:"' + (dark ? 'dark' : 'default') + '"});' +
+      'mermaid.run().catch(function(x){document.getElementById("e").textContent="This diagram has a mistake: "+(x&&x.message||x);});}' +
+      'catch(x){document.getElementById("e").textContent="The diagram couldn\\u2019t be drawn (are you online?).";}<\/script></body></html>';
+  }
+  // The sealed preview: in the apps, a sandboxed srcdoc frame; on the web, Gink's /artifact/frame (its own sandbox CSP,
+  // so the page's libraries from the web load, and it never inherits the web app's rights)
+  function cvFrame(v, html) {
+    var old = v.querySelector('.cvframe'); if (old) old.remove();
+    old = document.createElement('iframe'); old.className = 'cvframe';
+    old.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-popups');   // never the page's own origin
+    old.setAttribute('title', 'Preview'); v.appendChild(old);
+    if (GINK_WEBAPP) {
+      var sent = false;
+      old.addEventListener('load', function () {
+        if (sent) return; sent = true;
+        try { old.contentWindow.postMessage({ type: 'gink-artifact', html: html }, '*'); } catch (e) {}
+      });
+      old.src = '/artifact/frame';
+    } else old.srcdoc = html;
+    return old;
+  }
+  function cvNewTab(html) {                       // the web app opens it: the same sealed page, in a tab of its own
+    ginkEmit('artifact_tab', { html: html });
   }
   // Publishing finished: the link (Copy link, Open), or why it failed
   window.cvPublished = function (url, error) {
@@ -4831,30 +5028,122 @@ body.theme-dark .codehilite { --tk-kw: #79C0FF; --tk-fn: #D2A8FF; --tk-str: #7EE
       var cp = document.createElement('button'); cp.textContent = 'Copy link';
       cp.onclick = function () { copyText(url, function () { cp.textContent = 'Copied'; setTimeout(function () { cp.textContent = 'Copy link'; }, 1500); }); };
       var op = document.createElement('button'); op.textContent = 'Open'; op.onclick = function () { ginkEmit('open_url', url); };
-      bar.appendChild(document.createTextNode('Published \u00b7 ')); bar.appendChild(a); bar.appendChild(cp); bar.appendChild(op);
-    } else bar.textContent = error || 'Publishing didn\u2019t work. Please try again.';
+      bar.appendChild(document.createTextNode('Published · ')); bar.appendChild(a); bar.appendChild(cp); bar.appendChild(op);
+    } else bar.textContent = error || 'Publishing didn’t work. Please try again.';
     v.querySelector('.cvh').insertAdjacentElement('afterend', bar);
   };
-  // Designs (HTML, SVG): Preview | Code. The preview is a sealed sandbox: its scripts run, but it can't reach Gink.
+  // Preview | Code for designs; the reading view for documents
   function cvShow(tab) {
     var v = document.getElementById('codeview'); if (!v) return;
-    var body = v.querySelector('.cvbody'), old = v.querySelector('.cvframe');
+    var body = v.querySelector('.cvbody'), doc = v.querySelector('.cvdoc'), img = v.querySelector('.cvimg'), old = v.querySelector('.cvframe');
+    var o = CV.art || {};
     v.querySelectorAll('.cvtabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-tab') === tab); });
-    if (tab === 'preview') {
-      body.hidden = true;
-      if (!old) {
-        old = document.createElement('iframe'); old.className = 'cvframe'; old.setAttribute('sandbox', 'allow-scripts allow-modals');
-        old.setAttribute('title', 'Preview'); v.appendChild(old);
-      }
-      old.srcdoc = cvFullPage(CV.text, ''); old.hidden = false;
-    } else {
-      body.hidden = false; if (old) old.hidden = true;
+    body.hidden = tab !== 'code'; doc.hidden = tab !== 'doc'; img.hidden = true;
+    if (old) old.hidden = true;
+    if (tab !== 'preview') return;
+    if (o.kind === 'image' && /^\s*<svg\b/i.test(CV.text)) {         // an SVG: shown as a picture (no scripts at all)
+      img.hidden = false; img.innerHTML = '';
+      var pic = new Image(); pic.alt = o.title || 'Image';
+      pic.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(CV.text.indexOf('xmlns') > 0 ? CV.text : CV.text.replace(/<svg\b/i, '<svg xmlns="http://www.w3.org/2000/svg"'));
+      img.appendChild(pic);
+      return;
     }
+    if (old && old.getAttribute('data-for') === String(o.id || CV.text.length)) { old.hidden = false; return; }
+    old = cvFrame(v, o.kind === 'diagram' ? cvDiagramPage(CV.text) : cvFullPage(CV.text, o.title || ''));
+    old.setAttribute('data-for', String(o.id || CV.text.length));
   }
-  // A new answer with long code opens it by itself on larger screens (never for chats opened from history)
+
+  // ---- Artifacts in the chat: which blocks are artifacts, their cards, versions (same title = a new version)
+  var ARTS = [];                                   // {id, key, title, kind, ...} in the order they appeared
+  var ART_ICONS = {
+    page: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/></svg>',
+    image: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>',
+    diagram: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="5" rx="1.2"/><rect x="14" y="16" width="7" height="5" rx="1.2"/><rect x="14" y="3" width="7" height="5" rx="1.2"/><path d="M6.5 8v5.5a2 2 0 0 0 2 2H14M10 5.5h4"/></svg>',
+    document: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6M9 9h2"/></svg>',
+    code: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 4l-3 16"/></svg>'
+  };
+  var ART_KIND = { page: ['Web page', '#2F6FB3'], image: ['Image', '#A3274F'], diagram: ['Diagram', '#0F7C74'],
+                   document: ['Document', '#B4530F'], code: ['Code', '#7A3FB3'] };
+  function artKey(t) { return String(t || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+  function artWhat(block) {                       // a code block -> its artifact kind ('' = stays in the chat)
+    var lang = (block.getAttribute('data-lang') || '').toLowerCase(), title = block.getAttribute('data-title') || '';
+    if (lang === 'map' || lang === 'ask' || lang === 'schedule') return '';
+    var text = codeText(block), lines = text.split('\n').length;
+    if (lang === 'mermaid') return 'diagram';
+    if ((lang === 'svg' || lang === 'xml' || lang === 'html') && /^\s*(<\?xml[^>]*>\s*)?<svg\b[\s\S]*<\/svg>\s*$/i.test(text)) return 'image';
+    if ((lang === 'html' || lang === 'htm') && (/<!doctype html|<html[\s>]/i.test(text) || (title && /<(body|div|main|section|style|script)\b/i.test(text)))) return 'page';
+    if ((lang === 'markdown' || lang === 'md') && title) return 'document';
+    if (title && lines >= 3) return 'code';
+    return lines >= 40 && lang !== 'text' && lang !== 'bash' ? 'code' : '';
+  }
+  function artTitle(kind, block, text) {
+    var t = block.getAttribute('data-title') || '';
+    if (t) return t;
+    if (kind === 'page') { var m = /<title[^>]*>([^<]{1,80})<\/title>/i.exec(text); if (m) return m[1].trim(); }
+    if (kind === 'document') { var h = block.querySelector('h1, h2, h3'); if (h && h.textContent.trim()) return h.textContent.trim().slice(0, 80); }
+    var label = (block.querySelector('.code-block-label') || {}).textContent || '';
+    if (label.indexOf('.') > 0) return label.trim();
+    return { page: 'Web page', image: 'Image', diagram: 'Diagram', document: 'Document' }[kind] ||
+           ((CV_LANGS[label.trim().toLowerCase()] || [''])[0] || 'Code') + (kind === 'code' ? ' code' : '');
+  }
+  function artMark(id) { Array.prototype.forEach.call(document.querySelectorAll('.artcard'), function (c) { c.classList.toggle('on', c.getAttribute('data-art') === id); }); }
+  function artEntry(id) { for (var i = 0; i < ARTS.length; i++) if (ARTS[i].id === id) return ARTS[i]; return null; }
+  function artOpen(entry) {
+    var same = ARTS.filter(function (a) { return a.key === entry.key; }).map(function (a) { return a.id; });
+    entry.versions = same;
+    cvOpen(entry); artMark(entry.id);
+  }
+  function artStep(d) {
+    var o = CV.art; if (!o || !o.versions) return;
+    var at = o.versions.indexOf(o.id) + d, next = artEntry(o.versions[at]);
+    if (next) artOpen(next);
+  }
+  window.openArtifact = function (id) { var e = artEntry(id); if (e) artOpen(e); };
+  window.upgradeArtifacts = function (root) {     // after an answer is drawn: its artifacts become cards
+    ARTS = ARTS.filter(function (a) { return a.card && a.card.isConnected; });
+    var found = [];
+    Array.prototype.slice.call((root || document).querySelectorAll('.code-block, .doc-block')).forEach(function (block) {
+      if (block.closest('.artcard, #codeview, .qcard, .gmap')) return;
+      var isDoc = block.classList.contains('doc-block'), kind = isDoc ? 'document' : artWhat(block);
+      if (!kind) return;
+      var text = isDoc ? (block.getAttribute('data-md') || (block.querySelector('.doc-block-body') || block).innerText || '') : codeText(block).replace(/\n$/, '');
+      var title = artTitle(kind, block, text), key = artKey(title);
+      var lang = isDoc ? 'markdown' : (block.getAttribute('data-lang') || 'text').toLowerCase();
+      var info = CV_LANGS[lang] || [lang.toUpperCase(), lang || 'txt'];
+      var label = (block.querySelector('.code-block-label') || {}).textContent || '';
+      var ext = kind === 'page' ? 'html' : kind === 'image' ? 'svg' : kind === 'diagram' ? 'mmd' : kind === 'document' ? 'md' : info[1];
+      var name = label.indexOf('.') > 0 ? label.trim() : (title.replace(/[\\/:*?"<>|]+/g, '').trim().slice(0, 60) || 'gink-file') +
+                 (/\.[a-z0-9]{1,6}$/i.test(title) ? '' : '.' + ext);
+      var body = block.querySelector('.code-block-body');
+      var entry = { id: 'art' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), key: key, title: title, kind: kind,
+                    text: text, name: name, codeHTML: body ? body.outerHTML : '',
+                    docHTML: isDoc ? ((block.querySelector('.doc-block-body') || {}).innerHTML || '') : '',
+                    badge: kind === 'code' ? (ext || 'txt').toUpperCase().slice(0, 4) : ART_KIND[kind][0].toUpperCase() };
+      entry.version = ARTS.filter(function (a) { return a.key === key; }).length + 1;
+      var card = document.createElement('div');
+      card.className = 'artcard'; card.tabIndex = 0; card.setAttribute('role', 'button'); card.setAttribute('data-art', entry.id);
+      card.style.setProperty('--ac', ART_KIND[kind][1]);
+      card.innerHTML = '<div class="arti">' + ART_ICONS[kind] + '</div><div class="artm"><div class="artt"></div><div class="artk"><span></span></div></div>' +
+                       '<span class="arto">Open</span>';
+      card.querySelector('.artt').textContent = title;
+      var nLines = text ? text.split('\n').length : 0;
+      card.querySelector('.artk span').textContent = kind === 'code' ? info[0] + ', ' + nLines + ' lines' : ART_KIND[kind][0];
+      if (entry.version > 1) { var vb = document.createElement('span'); vb.className = 'artv'; vb.textContent = 'v' + entry.version; card.querySelector('.artk').appendChild(vb); }
+      card.setAttribute('aria-label', 'Open ' + title + ', ' + card.querySelector('.artk span').textContent + (entry.version > 1 ? ', version ' + entry.version : ''));
+      card.addEventListener('click', function () { artOpen(entry); });
+      card.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); artOpen(entry); } });
+      block.parentNode.replaceChild(card, block);
+      entry.card = card; ARTS.push(entry); found.push(entry);
+    });
+    return found.length;
+  };
+  // A new answer opens its artifact by itself (the last one), or its longest code, on larger screens -- never for
+  // chats opened from history
   window.__sentAt = 0;
   window.autoOpenCode = function (el) {
     if (!window.__sentAt || Date.now() - window.__sentAt > 10 * 60 * 1000 || window.innerWidth < 900) return;
+    var cards = el.querySelectorAll('.artcard');
+    if (cards.length) { window.openArtifact(cards[cards.length - 1].getAttribute('data-art')); return; }
     var best = null, most = 0;
     Array.prototype.forEach.call(el.querySelectorAll('.code-block'), function (b) {
       var n = codeText(b).split('\n').length; if (n > most) { most = n; best = b; } });
@@ -4930,6 +5219,111 @@ body.theme-dark .codehilite { --tk-kw: #79C0FF; --tk-fn: #D2A8FF; --tk-str: #7EE
     btn.onclick = function (e) { e.stopPropagation(); panel.hidden = !panel.hidden; btn.setAttribute('aria-expanded', String(!panel.hidden)); };
     bar.insertBefore(btn, bar.firstChild);
     bar.parentNode.insertBefore(panel, bar.nextSibling);
+  };
+
+  // ---- Scheduled tasks (0.1.161): a ```schedule block ({title, task, every, at, day, date}) becomes a card. In a new
+  // answer the task is made at once (the apps / web app ask Gink's server: POST /tasks); in a chat opened again the
+  // card shows the task as it is now. The server runs it at its time and puts the result in the task's own chat.
+  var TSK = { loaded: false, asked: false, bySource: {}, byId: {}, pending: {}, errors: {} };
+  var TSK_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  var TSK_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>';
+  function tskHash(t) { var h = 2166136261; for (var i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(36); }
+  function tskData(raw) {
+    var d = raw && typeof raw === 'object' ? raw : null; if (!d) return null;
+    var task = String(d.task || d.prompt || '').trim(); if (!task) return null;
+    var every = String(d.every || 'daily').toLowerCase().replace(/^every\s+/, '').replace(/^(day)$/, 'daily').replace(/^(week)$/, 'weekly')
+      .replace(/^(month)$/, 'monthly').replace(/^(hour)$/, 'hourly').replace(/^weekday$/, 'weekdays');
+    var out = { title: String(d.title || '').trim().slice(0, 80), task: task.slice(0, 4000), every: every, at: String(d.at || '08:00').trim() };
+    if (d.day !== undefined && d.day !== null && d.day !== '') out.day = d.day;
+    if (d.date) out.date = String(d.date).slice(0, 10);
+    return out;
+  }
+  function tskWhen(d) {
+    var at = d.at || '08:00';
+    if (d.when) return d.when;
+    if (d.every === 'hourly') return 'Every hour at :' + String(at).slice(-2);
+    if (d.every === 'weekdays') return 'Weekdays at ' + at;
+    if (d.every === 'weekly') { var n = typeof d.day === 'number' ? TSK_DAYS[d.day % 7] : String(d.day || ''); return 'Every ' + (n ? n.charAt(0).toUpperCase() + n.slice(1) : 'week') + ' at ' + at; }
+    if (d.every === 'monthly') return 'Every month on day ' + (d.day || 1) + ' at ' + at;
+    if (d.every === 'once') return 'Once' + (d.date ? ', ' + d.date : '') + ' at ' + at;
+    return 'Every day at ' + at;
+  }
+  function tskNext(ts) {
+    if (!ts) return '';
+    var d = new Date(ts * 1000), now = new Date(), tm = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    var day = new Date(now.getFullYear(), now.getMonth(), now.getDate()), diff = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - day) / 86400000);
+    return 'next: ' + (diff === 0 ? 'today' : diff === 1 ? 'tomorrow' : d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' })) + ', ' + tm;
+  }
+  function tskDraw(card) {
+    var src = card.getAttribute('data-src'), d = card._data, t = TSK.bySource[src] || null, err = TSK.errors[src];
+    if (t && TSK.byId[t.id]) t = TSK.byId[t.id];
+    var gone = card._made && !t && TSK.loaded && !TSK.pending[src];
+    var state = TSK.pending[src] ? 'busy' : err ? 'err' : t ? (t.enabled ? 'on' : (t.runs && t.every === 'once' ? 'done' : 'paused')) : (gone ? 'gone' : (TSK.loaded ? 'none' : 'wait'));
+    card.className = 'tskcard' + (state === 'on' ? ' on' : state === 'err' ? ' err' : '');
+    var label = { busy: 'Scheduling…', err: 'Not scheduled', on: 'Scheduled', paused: 'Paused', done: 'Done', gone: 'Deleted', none: 'Not scheduled', wait: '…' }[state];
+    var shown = t || d, el = function (tag, cls, txt) { var x = document.createElement(tag); if (cls) x.className = cls; if (txt != null) x.textContent = txt; return x; };
+    card.innerHTML = '';
+    var top = el('div', 'tsk-top'), ic = el('div', 'tsk-ic'); ic.innerHTML = TSK_ICON;
+    var m = el('div', 'tsk-m'); m.appendChild(el('div', 'tsk-t', shown.title || 'Scheduled task'));
+    var w = tskWhen(shown) + (t && t.enabled && t.next_run ? ' · ' + tskNext(t.next_run) : '');
+    m.appendChild(el('div', 'tsk-w', w));
+    var pill = el('span', 'tsk-s'); pill.appendChild(el('i')); pill.appendChild(document.createTextNode(label));
+    top.appendChild(ic); top.appendChild(m); top.appendChild(pill); card.appendChild(top);
+    card.appendChild(el('div', 'tsk-q', shown.task || ''));
+    var note = err || (state === 'on' ? 'Gink does this by itself at that time and puts the result in its own chat — even when your apps are closed.' :
+                       state === 'none' ? 'This task isn’t scheduled.' : state === 'gone' ? 'This task was deleted. Its results stay in its chat.' : '');
+    if (t && t.last_status && t.last_status !== 'ok' && t.last_note && state !== 'err') note = 'Last run: ' + t.last_note;
+    if (note) card.appendChild(el('div', 'tsk-n', note));
+    var acts = el('div', 'tsk-a');
+    function btn(text, fn, primary) { var b = el('button', primary ? 'primary' : '', text); b.type = 'button'; b.onclick = function (e) { e.stopPropagation(); fn(b); }; acts.appendChild(b); return b; }
+    if (t) {
+      btn('Open its chat', function () { ginkEmit('task_open', { id: t.id, chat_id: t.chat_id }); }, true);
+      if (t.enabled) btn('Run now', function (b) { b.disabled = true; ginkEmit('task_action', { action: 'run', id: t.id }); });
+      if (state !== 'done') btn(t.enabled ? 'Pause' : 'Resume', function (b) { b.disabled = true; ginkEmit('task_action', { action: t.enabled ? 'pause' : 'resume', id: t.id }); });
+      btn('Delete', function (b) { b.disabled = true; ginkEmit('task_action', { action: 'delete', id: t.id }); });
+    } else if (state === 'err' || state === 'none' || state === 'gone') {
+      btn(state === 'gone' ? 'Schedule again' : (state === 'err' ? 'Try again' : 'Schedule it'), function () { tskCreate(card); }, true);
+    }
+    if (acts.children.length) card.appendChild(acts);
+    card.setAttribute('aria-label', 'Scheduled task: ' + (shown.title || '') + ' — ' + label);
+  }
+  function tskCards() { return Array.prototype.slice.call(document.querySelectorAll('.tskcard[data-src]')); }
+  function tskRefresh() { tskCards().forEach(tskDraw); }
+  function tskCreate(card) {
+    var src = card.getAttribute('data-src');
+    if (TSK.pending[src]) return;
+    TSK.pending[src] = true; delete TSK.errors[src]; card._made = true;
+    tskRefresh();
+    ginkEmit('task_create', Object.assign({}, card._data, { source: src }));
+  }
+  // the apps / web app: the tasks as they are now (after a load, a change, a sync)
+  window.setTasks = function (list) {
+    TSK.loaded = true; TSK.bySource = {}; TSK.byId = {};
+    (list || []).forEach(function (t) { TSK.byId[t.id] = t; if (t.source) TSK.bySource[t.source] = t; });
+    tskRefresh();
+  };
+  // ... the answer to a card's task_create: the task, or why not
+  window.taskResult = function (source, task, error) {
+    delete TSK.pending[source];
+    if (task && task.id) { TSK.byId[task.id] = task; TSK.bySource[source] = task; delete TSK.errors[source]; }
+    else TSK.errors[source] = error || 'That didn’t work. Please try again.';
+    tskRefresh();
+  };
+  window.upgradeSchedules = function (root, isNew) {
+    Array.prototype.slice.call(root.querySelectorAll('.code-block')).forEach(function (block) {
+      var label = block.querySelector('.code-block-label'); if (!label || label.textContent.trim().toLowerCase() !== 'schedule') return;
+      var code = block.querySelector('code'), d;
+      try { d = tskData(JSON.parse(code ? code.textContent : '')); } catch (e) { d = null; }
+      if (!d) return;
+      var card = document.createElement('div'); card.setAttribute('role', 'group');
+      card.setAttribute('data-src', 'blk_' + tskHash(JSON.stringify(d)));
+      card._data = d; card.className = 'tskcard';
+      block.parentNode.replaceChild(card, block);
+      var src = card.getAttribute('data-src');
+      if (isNew && !TSK.bySource[src]) tskCreate(card);
+      else { tskDraw(card); if (!TSK.loaded && !TSK.asked) { TSK.asked = true; ginkEmit('tasks_load', null); } }
+    });
   };
 
   // ======================= voice conversation =======================
@@ -6512,11 +6906,11 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
                     "with no lists, headings, code, links or emojis." : "") +
            (W.prefs.instructions ? "\n\nThe person's own instructions for you (follow them unless they're unsafe): " +
                                   String(W.prefs.instructions).slice(0, 2000) : "") + profileNote() + memoryNote() +
-           (voice ? "" : " " + MAP_PROMPT) +
+           (voice ? "" : " " + MAP_PROMPT + " " + ARTIFACT_PROMPT + " " + SCHEDULE_PROMPT) +
            (voice ? "" : " " + "When you genuinely need the person's preferences or details before you can help well (planning a trip, recommending something, a workout plan...), you may ask 1 to 3 short questions as tappable choices: write one short sentence, then a fenced code block with the language ask containing JSON like {\"questions\": [{\"q\": \"Your question?\", \"options\": [\"Choice 1\", \"Choice 2\", \"Choice 3\"]}]} (2 to 4 short options each). The person can also type their own answer. Their reply starts with \"My answers:\" and lists each question with what they chose: those are answers about them and their situation, so carry on with what they asked for. Don't use it for simple questions, facts, or when they already said what they want.");
   }
   // What Gink knows about itself: the same words as services/about_gink.py (a test keeps them equal)
-  var ABOUT_GINK = "About you: you are Gink, an AI assistant made by Gink AI (developer: Amgib00), with apps for Mac, Windows, Linux and Android, a web app and Gink Genie for building apps and websites. Your website is https://amgib00.github.io/GinkAssistant/ (downloads at https://amgib00.github.io/GinkAssistant/download.html), your source code is on GitHub at https://github.com/Amgib00/GinkAssistant, the developer platform (API keys, docs) is https://gink-server.onrender.com/developers and support is gink@ginkaisupport.com. When asked about Gink, its website, repository, download or support, give these exact links -- never a placeholder.";
+  var ABOUT_GINK = "About you: you are Gink, an AI assistant made by Gink AI (developer: Amgib00), with apps for Mac, Windows, Linux and Android, a web app and Gink Genie for building apps and websites. Your website is https://amgib00.github.io/GinkAssistant/ (downloads at https://amgib00.github.io/GinkAssistant/download.html), your source code is on GitHub at https://github.com/Amgib00/GinkAssistant, the developer platform (API keys, docs) is https://gink-server.onrender.com/developers and support is gink@ginkaisupport.com. When asked about Gink, its website, repository, download or support, give these exact links -- never a placeholder. What you can do now (0.1.161): scheduled tasks -- Gink's server does a task later or on a repeat by itself and the result arrives in its own chat (made from a chat or Settings > Scheduled tasks; Free has 3, Gink Pro 25 and hourly ones); artifacts -- pages, small apps, SVGs, diagrams, documents and code files open beside the chat with their versions; you read the pages people link and search the web when an answer needs it; you read GitHub repositories, and on a computer you can work on code projects and run their tests.";
   // Which device the person is on, from their browser -- "which device am I using?" gets an answer, not a question
   function deviceNote() {
     var ua = navigator.userAgent || "", touch = (navigator.maxTouchPoints || 0) > 1;
@@ -6529,7 +6923,10 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
                 "device or system they're using, tell them -- never ask which operating system they have. If they ask you to " +
                 "check their device, say the Gink app does a full check by itself (" + "https://amgib00.github.io/GinkAssistant/download.html" + ")." : "";
   }
+  // automatic artifacts (0.1.161): the same words as the server's and the apps' ARTIFACT_PROMPT
+  var ARTIFACT_PROMPT = "When you make something complete the person will keep or use -- a web page or small app (one HTML file with its CSS and JavaScript inside), an SVG image or logo, a diagram (Mermaid), a document written to keep (a letter, report, plan, essay, CV) or a code file longer than about 20 lines -- put it in ONE fenced block whose first line has its language and a short title, like ```html title=\"Pomodoro timer\", ```svg title=\"Logo\", ```mermaid title=\"Sign-up flow\", ```document title=\"Cover letter\" (Markdown inside) or ```python title=\"invoice.py\". Gink shows it as an artifact the person can open, preview, copy and download: write it complete (no \"...\" or placeholders), introduce it in a sentence and don't repeat it in your text. When they ask for changes, write the whole new version in a block with the same title. Short snippets and commands stay normal code blocks, with no title.";
   // maps in answers (the page draws them by itself): the same words as the server's and the apps' MAP_PROMPT
+  var SCHEDULE_PROMPT = "When the person asks you to do something at a later time or on a repeat -- \"every morning at 8, give me the top news\", \"remind me on Friday at 5pm to call Sam\", \"each Monday, plan my week\" -- Gink can schedule it: say in one short sentence what will happen and when, then add a fenced code block with the language schedule containing JSON like {\"title\": \"Morning news\", \"task\": \"Give me the three biggest news stories of the day, with sources.\", \"every\": \"daily\", \"at\": \"08:00\"} (every is once, daily, weekdays, weekly, monthly or hourly; at is their local time, 24-hour; add \"day\" -- monday to sunday -- for weekly, \"day\" -- 1 to 31 -- for monthly, \"date\" -- YYYY-MM-DD -- for once). Write task as the complete instruction to carry out each time: it runs by itself later, with web search, and the result arrives in its own chat. The app shows the schedule by itself: don't mention the block. Only for things to do later or regularly -- never for a question to answer now.";
   var MAP_PROMPT = "When your answer is about real places someone could find on a map -- where something is, places to visit, eat or stay, an address, a route between towns, a list of locations -- add a map after your text: a fenced code block with the language map containing JSON like {\"title\": \"Short title\", \"places\": [{\"name\": \"Place name\", \"query\": \"Place name, street, city, country\", \"lat\": 0.0, \"lon\": 0.0, \"category\": \"museum\", \"note\": \"a few words\"}]} (1 to 10 places; category is one of food, cafe, bar, shop, museum, sight, park, beach, hotel, transport, health, school, worship, other; give lat and lon only when you know them precisely, and always a query precise enough to find the place). The map appears by itself: don't mention the block. Don't add a map for general knowledge with no particular place, and never for a private person's home.";
   // questions that need the internet search the web on their own, whatever model is picked
   var WEB_RE = /\b(search|look up|google|find out|latest|news|headlines|today'?s|this week|right now|currently|price of|cost of|how much (is|are|does)|exchange rate|who won|score|results? of|release date|weather|recherche|cherche|actualit\u00e9s?|derni\u00e8res? nouvelles|prix d|aujourd'hui|cette semaine)\b/i;
@@ -6967,10 +7364,14 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
       takeProfile((j.changes || {}).profile);
       var changedCurrent = false;
       takeMemories((j.changes || {}).memories);
+      var news = [];
       ((j.changes || {}).chats || []).forEach(function (d) {
         var mine = W.sessions[d.id];
         if (mine && mine.updated >= d.updated) return;                          // newest copy wins
         var p = d.payload || {};
+        var pm = p.messages || [];                                              // a scheduled task's new result (0.1.161)
+        if (/^task-/.test(d.id) && !d.deleted && W.since && pm.length > Math.max((mine && mine.messages || []).length, 1) &&
+            (pm[pm.length - 1] || {}).role === "assistant") news.push({ id: d.id, title: p.title || "Scheduled task", text: pm[pm.length - 1].content || "" });
         W.sessions[d.id] = { id: d.id, updated: d.updated, deleted: !!d.deleted, messages: p.messages || [],
                              title: p.title || "", pinned: !!p.pinned, archived: !!p.archived };
         if (d.id === W.current) changedCurrent = true;
@@ -6978,7 +7379,29 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
       W.since = j.now || W.since; LS.setItem("gink_since", String(W.since)); persist();
       refreshSidebar();
       if (changedCurrent && !W.busy) openSession(W.current);
+      news.forEach(taskNews);
+      if (W.openAfterSync) {                                                   // "Open its chat": here now
+        var want = W.openAfterSync; W.openAfterSync = "";
+        if (W.sessions[want] && !W.sessions[want].deleted) openSession(want);
+        else ginkNotify({ id: "task-action", icon: "\u23f0", title: "Scheduled task", body: "Its chat isn\u2019t here yet \u2014 try again in a moment.", timeout: 4000 });
+      }
+      if (news.length) loadTasks();
     }).catch(function () {}).then(function () { W.syncing = false; });
+  }
+
+  // A scheduled task's new result: a notification in the page, and the browser's own when Gink isn't in front
+  function taskNews(n) {
+    if (n.id === W.current && !document.hidden) return;                     // on screen already
+    var body = String(n.text || "").replace(/^\*\*\u23f0[^\n]*\n+/, "").replace(/[*#>`_]+/g, " ").replace(/\s+/g, " ").trim();
+    body = body.length > 140 ? body.slice(0, 140) + "\u2026" : body;
+    ginkNotify({ id: "task-" + n.id, icon: "\u23f0", title: n.title, body: body, timeout: 12000,
+                 actions: [{ label: "Open", emit: "select_session", value: n.id, primary: true }] });
+    try {
+      if (document.hidden && window.Notification && Notification.permission === "granted") {
+        var note = new Notification(n.title, { body: body || "A new result is ready.", tag: "gink-" + n.id });
+        note.onclick = function () { window.focus(); openSession(n.id); note.close(); };
+      }
+    } catch (e) {}
   }
 
   // ---------------------------------------------------------------- settings (web subset)
@@ -7063,11 +7486,47 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
       if (j.policies_updated > seen && typeof policyNotice === "function") policyNotice(j.policies_updated, j.privacy_url, j.terms_url);
     }).catch(function () {});
   }
-  // Settings > Scheduled tasks (server: /dev/schedules)
+  // Settings > Scheduled tasks (0.1.161, server: /tasks: results in each task's own chat) and the scheduled agents
+  // (/dev/schedules: files in a Genie project)
   function loadSchedules() {
-    api("/dev/schedules").then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-      .then(function (j) { pushSettings({}, { schedules: j.data || [] }); })
-      .catch(function () { pushSettings({}, { schedules_error: "Scheduled tasks aren\u2019t available right now." }); });
+    if (!W.token) return pushSettings({}, { tasks_error: "Sign in to Gink to schedule tasks." });
+    var json = function (r) { return r.ok ? r.json() : Promise.reject(); };
+    Promise.all([api("/tasks").then(json).catch(function () { return null; }),
+                 api("/dev/schedules").then(json).catch(function () { return { data: [] }; })]).then(function (res) {
+      if (!res[0]) return pushSettings({}, { tasks_error: "Scheduled tasks aren\u2019t available right now." });
+      if (typeof setTasks === "function") setTasks(res[0].data || []);
+      pushSettings({}, { tasks: res[0].data || [], tasks_limits: res[0].limits || {}, schedules: res[1].data || [] });
+    });
+  }
+  function loadTasks() {                         // the chat's task cards: the tasks as they are now
+    if (!W.token) { if (typeof setTasks === "function") setTasks([]); return Promise.resolve([]); }
+    return api("/tasks").then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (j) { if (typeof setTasks === "function") setTasks(j.data || []); return j.data || []; })
+      .catch(function () { return null; });
+  }
+  function taskCall(method, path, body) {
+    return fetch(path, { method: method, headers: placeHeaders({ Authorization: "Bearer " + W.token, "Content-Type": "application/json" }),
+                         body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error(typeof j.detail === "string" ? j.detail : "That didn\u2019t work. Please try again.");
+        return j; }); });
+  }
+  function taskSoon() {                          // "Run now": its result in a minute or so -- look a few times
+    [25000, 50000, 90000, 150000].forEach(function (ms) { setTimeout(sync, ms); });
+  }
+  function offerTaskNotifications() {            // once: the browser's own notification when a result arrives
+    try {
+      if (!window.Notification || Notification.permission !== "default" || LS.getItem("gink_task_notify_asked")) return;
+      LS.setItem("gink_task_notify_asked", "1");
+    } catch (e) { return; }
+    ginkNotify({ id: "task-notify", icon: "\u23f0", title: "Get notified when results arrive?", timeout: 0,
+                 body: "Your browser can tell you when a scheduled task has a new result, even when Gink is in another tab.",
+                 actions: [{ label: "Turn on", primary: true, run: function () { try { Notification.requestPermission(); } catch (e) {} } },
+                           { label: "Not now" }] });
+  }
+  function openTaskChat(chatId) {                // its chat is made by the server: sync, then open it
+    if (W.sessions[chatId] && !W.sessions[chatId].deleted) return openSession(chatId);
+    W.openAfterSync = chatId; sync();
   }
   function schCall(method, path, body, done) {
     return fetch(path, { method: method, headers: placeHeaders({ Authorization: "Bearer " + W.token, "Content-Type": "application/json" }),
@@ -7237,6 +7696,43 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
     new_chat: newChat,
     temporary: function (on) { W.tempMode = !!on; setTemporary(!!on); },
     select_session: function (id) { openSession(id); },
+    tasks_load: function () { loadTasks(); },                          // scheduled tasks (0.1.161): the cards
+    task_create: function (v) {
+      var src = String((v && v.source) || "");
+      if (!W.token) return taskResult(src, null, "Sign in to Gink to schedule tasks.");
+      var body = {}; ["title", "task", "every", "at", "day", "date", "source", "notify_email"].forEach(function (k) { if (v[k] !== undefined) body[k] = v[k]; });
+      taskCall("POST", "/tasks", body).then(function (t) { taskResult(src, t); sync(); if (!t.existing) offerTaskNotifications(); })
+        .catch(function (err) { taskResult(src, null, err.message); });
+    },
+    task_action: function (v) {
+      if (!v || !v.id || !W.token) return;
+      var id = encodeURIComponent(v.id), a = v.action;
+      var call = a === "delete" ? taskCall("DELETE", "/tasks/" + id) : a === "run" ? taskCall("POST", "/tasks/" + id + "/run", {}) :
+                 taskCall("PATCH", "/tasks/" + id, { enabled: a === "resume" });
+      call.then(function () {
+        if (a === "run") taskSoon();
+        ginkNotify({ id: "task-action", icon: "\u23f0", title: "Scheduled task", timeout: 3500,
+                     body: a === "delete" ? "Deleted. Its results stay in its chat." : a === "run" ? "Running now \u2014 the result will be in its chat in a minute." :
+                           a === "pause" ? "Paused." : "Resumed." });
+      }).catch(function (err) { ginkNotify({ id: "task-action", icon: "\u23f0", title: "Scheduled task", body: err.message, timeout: 5000 }); })
+        .then(loadTasks);
+    },
+    task_open: function (v) { if (v && v.chat_id) openTaskChat(String(v.chat_id)); },
+    artifact_tab: function (v) {                    // an artifact on its own: the sealed page (/artifact/frame) gets its HTML
+      if (!v || typeof v.html !== "string") return;
+      var w = window.open("/artifact/frame", "_blank");
+      if (!w) return;
+      var html = v.html, tries = 0, timer = setInterval(function () {
+        if (++tries > 40) { clearInterval(timer); return; }
+        try { w.postMessage({ type: "gink-artifact", html: html }, "*"); } catch (e) {}
+      }, 150);
+      window.addEventListener("message", function ready(e) {
+        if (e.source === w && e.data && e.data.type === "gink-artifact-ready") {
+          try { w.postMessage({ type: "gink-artifact", html: html }, "*"); } catch (x) {}
+          clearInterval(timer); window.removeEventListener("message", ready);
+        }
+      });
+    },
     delete_session: function (id) {
       var s = W.sessions[id]; if (!s) return;
       s.deleted = true; s.messages = []; touch(id); if (W.current === id) newChat(); refreshSidebar(); sync();
@@ -7341,6 +7837,26 @@ window.GINK_VOICES = [{"key": "Female (Jenny)", "name": "Jenny", "desc": "Warm a
           });
         }).catch(function (err) { settingsToast(err.message); });
       }
+      if (name === "tsk_add") {                         // Scheduled tasks (0.1.161)
+        var tv = {}; try { tv = JSON.parse(v.value || "{}"); } catch (e) { return; }
+        if (!String(tv.task || "").trim()) return settingsToast("Write the task first.");
+        return taskCall("POST", "/tasks", tv).then(function () { settingsToast("Scheduled. Its results will be in its own chat."); loadSchedules(); sync(); offerTaskNotifications(); })
+          .catch(function (err) { settingsToast(err.message); });
+      }
+      if (name === "tsk_pause" || name === "tsk_resume") {
+        return taskCall("PATCH", "/tasks/" + encodeURIComponent(v.value), { enabled: name === "tsk_resume" })
+          .then(function () { settingsToast(name === "tsk_pause" ? "Paused." : "Resumed."); loadSchedules(); }).catch(function (err) { settingsToast(err.message); });
+      }
+      if (name === "tsk_run") {
+        return taskCall("POST", "/tasks/" + encodeURIComponent(v.value) + "/run", {})
+          .then(function () { settingsToast("Running now \u2014 the result will be in its chat in a minute."); loadSchedules(); taskSoon(); })
+          .catch(function (err) { settingsToast(err.message); });
+      }
+      if (name === "tsk_delete") {
+        return taskCall("DELETE", "/tasks/" + encodeURIComponent(v.value)).then(function () { settingsToast("Deleted. Its results stay in its chat."); loadSchedules(); })
+          .catch(function (err) { settingsToast(err.message); });
+      }
+      if (name === "tsk_open") { if (typeof closeSettings === "function") closeSettings(); return openTaskChat(String(v.value || "")); }
       if (name === "sch_add") {
         var sv = {}; try { sv = JSON.parse(v.value || "{}"); } catch (e) { return; }
         if (!String(sv.input || "").trim()) return settingsToast("Write the task first.");

@@ -245,11 +245,89 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
   /* phones: 16px text in the boxes, or iPhone zooms the page in when you tap one */
   @media (hover: none) and (pointer: coarse) { .field input { font-size: 16px; } }
   @media (prefers-reduced-motion: reduce) { .bubble, .glow { animation: none; } }
+
+  /* ---- 0.1.161: the premium look, the same as Gink's sign-in on the web -- crisp, flat surfaces on the app's light
+     ground; on a wide window, the icon's night beside the form with what Gink does now (and Gink Pro) */
+  :root { --night: #151D23; --night-2: #1D2830; --night-line: rgba(230,236,232,.13); --lime: #A8F03C; --mist: #E6ECE8;
+          --slate: #9DAEA6; --ground: #F6F7F3; --edge: #DCE0D6; }
+  body { background: var(--ground); font-family: -apple-system, "SF Pro Text", "Segoe UI Variable", "Segoe UI", Roboto, sans-serif; }
+  .bubble, .glow { display: none; }
+  .card { background: #FFFFFF; border: 1px solid var(--edge); border-radius: 22px; width: 404px;
+          box-shadow: 0 1px 2px rgba(21,29,35,.06), 0 18px 40px -18px rgba(21,29,35,.22); }
+  .badge { width: 54px; height: 54px; border-radius: 15px; background: var(--night); box-shadow: inset 0 0 0 1px var(--night-line); }
+  .badge img { width: 34px; height: 34px; }
+  h1 { font-weight: 650; letter-spacing: -0.02em; }
+  .field input { background: #FFFFFF; border: 1px solid var(--edge); box-shadow: none; border-radius: 12px; }
+  .field input:focus { box-shadow: 0 0 0 3px rgba(63,130,18,.18); border-color: var(--accent); }
+  .check .box { background: #FFFFFF; border: 1px solid var(--edge); box-shadow: none; border-radius: 5px; }
+  .check input:checked + .box { border-color: var(--accent); }
+  .btn { background: var(--accent); box-shadow: none; border-radius: 12px; }
+  .btn:hover { filter: none; background: #346C0E; }
+  .btn.ghost { background: transparent; color: var(--text-main); box-shadow: inset 0 0 0 1px var(--edge); }
+  .btn.ghost:hover { background: rgba(21,29,35,.04); }
+  .divider::before, .divider::after { background: var(--edge); }
+  .soc { background: #FFFFFF; border: 1px solid var(--edge); box-shadow: none; border-radius: 13px; width: 48px; height: 48px; }
+  .soc:hover { transform: none; border-color: #B9C0B3; }
+  .soc:active { box-shadow: none; background: rgba(21,29,35,.04); }
+  .plus { background: #FFFFFF; border: 1px solid var(--edge); box-shadow: none; }
+  .codes input { background: #FFFFFF; border: 1px solid var(--edge); box-shadow: none; }
+  .codes input:focus { box-shadow: 0 0 0 3px rgba(63,130,18,.18); border-color: var(--accent); }
+  .meter { background: var(--edge); }
+  .side { display: none; }
+  @media (min-width: 980px) and (min-height: 560px) {
+    body { display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); align-items: stretch; padding: 0; }
+    .card { align-self: center; justify-self: center; margin: 32px 24px; }
+    .side { display: flex; flex-direction: column; gap: 30px; background: var(--night); color: var(--mist);
+            padding: 40px clamp(28px, 4vw, 56px) 30px; min-height: 100vh; overflow: hidden; }
+    .side .logo { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 19px; }
+    .side .logo img { width: 34px; height: 34px; padding: 5px; border-radius: 10px; background: #0B1013; }
+    .side h2 { font-size: clamp(28px, 3vw, 38px); line-height: 1.12; font-weight: 650; letter-spacing: -0.025em; margin: 0 0 12px; max-width: 15ch; }
+    .side .lede { color: var(--slate); margin: 0; max-width: 40ch; font-size: 14.5px; line-height: 1.55; }
+    .story { display: grid; gap: 11px; max-width: 420px; font-size: 14px; }
+    .b-you { justify-self: end; max-width: 86%; background: var(--night-2); border: 1px solid var(--night-line); padding: 9px 14px;
+             border-radius: 17px 17px 6px 17px; }
+    .t-card { display: grid; grid-template-columns: auto 1fr auto; gap: 11px; align-items: center; padding: 11px 13px;
+              border-radius: 14px; background: var(--night-2); border: 1px solid var(--night-line); }
+    .t-ic { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: #0B1013; color: var(--lime); }
+    .t-card b { display: block; font-weight: 600; } .t-card small { color: var(--slate); font-size: 12px; }
+    .t-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 3px 9px;
+              border-radius: 999px; color: var(--lime); background: rgba(168,240,60,.10); }
+    .t-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); }
+    .pro { margin-top: auto; display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; padding-top: 14px;
+           border-top: 1px solid var(--night-line); font-size: 13.5px; color: #C9D3CD; max-width: 460px; line-height: 1.5; }
+    .pro svg { grid-row: span 2; color: var(--lime); margin-top: 2px; }
+    .pro strong { color: var(--mist); font-weight: 600; }
+    .pro a { color: var(--lime); font-weight: 600; text-decoration: none; cursor: pointer; }
+  }
+  @media (min-width: 980px) and (max-height: 700px) { .story { display: none !important; } }
 </style></head>
 <body>
   <div class="glow"></div>
   <div class="bubble b1"></div><div class="bubble b2"></div><div class="bubble b3"></div>
   <div class="bubble b4"></div><div class="bubble b5"></div>
+
+  <aside class="side" aria-label="What Gink does">
+    <div class="logo"><img src="__LOGO__" alt=""> Gink</div>
+    <div>
+      <h2>Ask once. Gink keeps working.</h2>
+      <p class="lede">Tasks that run on their own, pages and documents ready to use, answers from the web as it is today &mdash; on your computer, your phone and the web, with one account.</p>
+    </div>
+    <div class="story" aria-hidden="true">
+      <div class="b-you">Every morning at 8, give me the three biggest stories.</div>
+      <div>Done. I&rsquo;ll do it every day at 08:00, even when Gink is closed.</div>
+      <div class="t-card">
+        <span class="t-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg></span>
+        <span><b>Morning news</b><small>Every day at 08:00</small></span>
+        <span class="t-pill"><i></i>Scheduled</span>
+      </div>
+    </div>
+    <div class="pro">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.6 6.1 6.6.6-5 4.4 1.5 6.5L12 16.8l-5.7 3.3 1.5-6.5-5-4.4 6.6-.6z"/></svg>
+      <strong>Gink Pro</strong>
+      <span>500 messages a day, 25 scheduled tasks that can run every hour, the most capable models, and Gink looking at your photos and screen.
+        <a data-url="https://amgib00.github.io/GinkAssistant/pricing.html">See plans</a></span>
+    </div>
+  </aside>
 
   <div class="card" id="card">
     <div class="badge" id="badge" title="Gink"><img src="__LOGO__" alt="Gink"></div>
@@ -578,6 +656,8 @@ _LOGIN_HTML = r"""<!DOCTYPE html>
     document.querySelectorAll('[data-primary]').forEach(function (b) { b.addEventListener('click', submit); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
     document.addEventListener('click', function (e) {
+      var out = e.target.closest('[data-url]');            // "See plans": in the browser, never inside this window
+      if (out) { e.preventDefault(); ginkEmit('open_url', out.getAttribute('data-url')); return; }
       var go = e.target.closest('[data-go]');
       if (go) {
         e.preventDefault(); var to = go.getAttribute('data-go');
@@ -797,6 +877,8 @@ class LoginController:
                 session = await self.api.verify_2fa(self.pending["ticket"], str(v.get("code", "")))
                 self.pending.pop("ticket", None)
                 self.finish(session, self.pending.get("twofa_remember", True))
+            elif kind == "open_url" and str(event.get("value") or "").startswith("https://amgib00.github.io/"):
+                _open_in_browser(self.app, str(event.get("value")))         # Gink's own pages only (See plans)
             elif kind == "oauth":
                 await self.start_oauth(str(event.get("value")))
             elif kind == "oauth_again" and self.oauth["state"]:

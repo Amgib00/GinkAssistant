@@ -373,11 +373,11 @@
                     "with no lists, headings, code, links or emojis." : "") +
            (W.prefs.instructions ? "\n\nThe person's own instructions for you (follow them unless they're unsafe): " +
                                   String(W.prefs.instructions).slice(0, 2000) : "") + profileNote() + memoryNote() +
-           (voice ? "" : " " + MAP_PROMPT) +
+           (voice ? "" : " " + MAP_PROMPT + " " + ARTIFACT_PROMPT + " " + SCHEDULE_PROMPT) +
            (voice ? "" : " " + "When you genuinely need the person's preferences or details before you can help well (planning a trip, recommending something, a workout plan...), you may ask 1 to 3 short questions as tappable choices: write one short sentence, then a fenced code block with the language ask containing JSON like {\"questions\": [{\"q\": \"Your question?\", \"options\": [\"Choice 1\", \"Choice 2\", \"Choice 3\"]}]} (2 to 4 short options each). The person can also type their own answer. Their reply starts with \"My answers:\" and lists each question with what they chose: those are answers about them and their situation, so carry on with what they asked for. Don't use it for simple questions, facts, or when they already said what they want.");
   }
   // What Gink knows about itself: the same words as services/about_gink.py (a test keeps them equal)
-  var ABOUT_GINK = "About you: you are Gink, an AI assistant made by Gink AI (developer: Amgib00), with apps for Mac, Windows, Linux and Android, a web app and Gink Genie for building apps and websites. Your website is https://amgib00.github.io/GinkAssistant/ (downloads at https://amgib00.github.io/GinkAssistant/download.html), your source code is on GitHub at https://github.com/Amgib00/GinkAssistant, the developer platform (API keys, docs) is https://gink-server.onrender.com/developers and support is gink@ginkaisupport.com. When asked about Gink, its website, repository, download or support, give these exact links -- never a placeholder.";
+  var ABOUT_GINK = "About you: you are Gink, an AI assistant made by Gink AI (developer: Amgib00), with apps for Mac, Windows, Linux and Android, a web app and Gink Genie for building apps and websites. Your website is https://amgib00.github.io/GinkAssistant/ (downloads at https://amgib00.github.io/GinkAssistant/download.html), your source code is on GitHub at https://github.com/Amgib00/GinkAssistant, the developer platform (API keys, docs) is https://gink-server.onrender.com/developers and support is gink@ginkaisupport.com. When asked about Gink, its website, repository, download or support, give these exact links -- never a placeholder. What you can do now (0.1.161): scheduled tasks -- Gink's server does a task later or on a repeat by itself and the result arrives in its own chat (made from a chat or Settings > Scheduled tasks; Free has 3, Gink Pro 25 and hourly ones); artifacts -- pages, small apps, SVGs, diagrams, documents and code files open beside the chat with their versions; you read the pages people link and search the web when an answer needs it; you read GitHub repositories, and on a computer you can work on code projects and run their tests.";
   // Which device the person is on, from their browser -- "which device am I using?" gets an answer, not a question
   function deviceNote() {
     var ua = navigator.userAgent || "", touch = (navigator.maxTouchPoints || 0) > 1;
@@ -390,7 +390,10 @@
                 "device or system they're using, tell them -- never ask which operating system they have. If they ask you to " +
                 "check their device, say the Gink app does a full check by itself (" + "https://amgib00.github.io/GinkAssistant/download.html" + ")." : "";
   }
+  // automatic artifacts (0.1.161): the same words as the server's and the apps' ARTIFACT_PROMPT
+  var ARTIFACT_PROMPT = "When you make something complete the person will keep or use -- a web page or small app (one HTML file with its CSS and JavaScript inside), an SVG image or logo, a diagram (Mermaid), a document written to keep (a letter, report, plan, essay, CV) or a code file longer than about 20 lines -- put it in ONE fenced block whose first line has its language and a short title, like ```html title=\"Pomodoro timer\", ```svg title=\"Logo\", ```mermaid title=\"Sign-up flow\", ```document title=\"Cover letter\" (Markdown inside) or ```python title=\"invoice.py\". Gink shows it as an artifact the person can open, preview, copy and download: write it complete (no \"...\" or placeholders), introduce it in a sentence and don't repeat it in your text. When they ask for changes, write the whole new version in a block with the same title. Short snippets and commands stay normal code blocks, with no title.";
   // maps in answers (the page draws them by itself): the same words as the server's and the apps' MAP_PROMPT
+  var SCHEDULE_PROMPT = "When the person asks you to do something at a later time or on a repeat -- \"every morning at 8, give me the top news\", \"remind me on Friday at 5pm to call Sam\", \"each Monday, plan my week\" -- Gink can schedule it: say in one short sentence what will happen and when, then add a fenced code block with the language schedule containing JSON like {\"title\": \"Morning news\", \"task\": \"Give me the three biggest news stories of the day, with sources.\", \"every\": \"daily\", \"at\": \"08:00\"} (every is once, daily, weekdays, weekly, monthly or hourly; at is their local time, 24-hour; add \"day\" -- monday to sunday -- for weekly, \"day\" -- 1 to 31 -- for monthly, \"date\" -- YYYY-MM-DD -- for once). Write task as the complete instruction to carry out each time: it runs by itself later, with web search, and the result arrives in its own chat. The app shows the schedule by itself: don't mention the block. Only for things to do later or regularly -- never for a question to answer now.";
   var MAP_PROMPT = "When your answer is about real places someone could find on a map -- where something is, places to visit, eat or stay, an address, a route between towns, a list of locations -- add a map after your text: a fenced code block with the language map containing JSON like {\"title\": \"Short title\", \"places\": [{\"name\": \"Place name\", \"query\": \"Place name, street, city, country\", \"lat\": 0.0, \"lon\": 0.0, \"category\": \"museum\", \"note\": \"a few words\"}]} (1 to 10 places; category is one of food, cafe, bar, shop, museum, sight, park, beach, hotel, transport, health, school, worship, other; give lat and lon only when you know them precisely, and always a query precise enough to find the place). The map appears by itself: don't mention the block. Don't add a map for general knowledge with no particular place, and never for a private person's home.";
   // questions that need the internet search the web on their own, whatever model is picked
   var WEB_RE = /\b(search|look up|google|find out|latest|news|headlines|today'?s|this week|right now|currently|price of|cost of|how much (is|are|does)|exchange rate|who won|score|results? of|release date|weather|recherche|cherche|actualit\u00e9s?|derni\u00e8res? nouvelles|prix d|aujourd'hui|cette semaine)\b/i;
@@ -828,10 +831,14 @@
       takeProfile((j.changes || {}).profile);
       var changedCurrent = false;
       takeMemories((j.changes || {}).memories);
+      var news = [];
       ((j.changes || {}).chats || []).forEach(function (d) {
         var mine = W.sessions[d.id];
         if (mine && mine.updated >= d.updated) return;                          // newest copy wins
         var p = d.payload || {};
+        var pm = p.messages || [];                                              // a scheduled task's new result (0.1.161)
+        if (/^task-/.test(d.id) && !d.deleted && W.since && pm.length > Math.max((mine && mine.messages || []).length, 1) &&
+            (pm[pm.length - 1] || {}).role === "assistant") news.push({ id: d.id, title: p.title || "Scheduled task", text: pm[pm.length - 1].content || "" });
         W.sessions[d.id] = { id: d.id, updated: d.updated, deleted: !!d.deleted, messages: p.messages || [],
                              title: p.title || "", pinned: !!p.pinned, archived: !!p.archived };
         if (d.id === W.current) changedCurrent = true;
@@ -839,7 +846,29 @@
       W.since = j.now || W.since; LS.setItem("gink_since", String(W.since)); persist();
       refreshSidebar();
       if (changedCurrent && !W.busy) openSession(W.current);
+      news.forEach(taskNews);
+      if (W.openAfterSync) {                                                   // "Open its chat": here now
+        var want = W.openAfterSync; W.openAfterSync = "";
+        if (W.sessions[want] && !W.sessions[want].deleted) openSession(want);
+        else ginkNotify({ id: "task-action", icon: "\u23f0", title: "Scheduled task", body: "Its chat isn\u2019t here yet \u2014 try again in a moment.", timeout: 4000 });
+      }
+      if (news.length) loadTasks();
     }).catch(function () {}).then(function () { W.syncing = false; });
+  }
+
+  // A scheduled task's new result: a notification in the page, and the browser's own when Gink isn't in front
+  function taskNews(n) {
+    if (n.id === W.current && !document.hidden) return;                     // on screen already
+    var body = String(n.text || "").replace(/^\*\*\u23f0[^\n]*\n+/, "").replace(/[*#>`_]+/g, " ").replace(/\s+/g, " ").trim();
+    body = body.length > 140 ? body.slice(0, 140) + "\u2026" : body;
+    ginkNotify({ id: "task-" + n.id, icon: "\u23f0", title: n.title, body: body, timeout: 12000,
+                 actions: [{ label: "Open", emit: "select_session", value: n.id, primary: true }] });
+    try {
+      if (document.hidden && window.Notification && Notification.permission === "granted") {
+        var note = new Notification(n.title, { body: body || "A new result is ready.", tag: "gink-" + n.id });
+        note.onclick = function () { window.focus(); openSession(n.id); note.close(); };
+      }
+    } catch (e) {}
   }
 
   // ---------------------------------------------------------------- settings (web subset)
@@ -924,11 +953,47 @@
       if (j.policies_updated > seen && typeof policyNotice === "function") policyNotice(j.policies_updated, j.privacy_url, j.terms_url);
     }).catch(function () {});
   }
-  // Settings > Scheduled tasks (server: /dev/schedules)
+  // Settings > Scheduled tasks (0.1.161, server: /tasks: results in each task's own chat) and the scheduled agents
+  // (/dev/schedules: files in a Genie project)
   function loadSchedules() {
-    api("/dev/schedules").then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-      .then(function (j) { pushSettings({}, { schedules: j.data || [] }); })
-      .catch(function () { pushSettings({}, { schedules_error: "Scheduled tasks aren\u2019t available right now." }); });
+    if (!W.token) return pushSettings({}, { tasks_error: "Sign in to Gink to schedule tasks." });
+    var json = function (r) { return r.ok ? r.json() : Promise.reject(); };
+    Promise.all([api("/tasks").then(json).catch(function () { return null; }),
+                 api("/dev/schedules").then(json).catch(function () { return { data: [] }; })]).then(function (res) {
+      if (!res[0]) return pushSettings({}, { tasks_error: "Scheduled tasks aren\u2019t available right now." });
+      if (typeof setTasks === "function") setTasks(res[0].data || []);
+      pushSettings({}, { tasks: res[0].data || [], tasks_limits: res[0].limits || {}, schedules: res[1].data || [] });
+    });
+  }
+  function loadTasks() {                         // the chat's task cards: the tasks as they are now
+    if (!W.token) { if (typeof setTasks === "function") setTasks([]); return Promise.resolve([]); }
+    return api("/tasks").then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (j) { if (typeof setTasks === "function") setTasks(j.data || []); return j.data || []; })
+      .catch(function () { return null; });
+  }
+  function taskCall(method, path, body) {
+    return fetch(path, { method: method, headers: placeHeaders({ Authorization: "Bearer " + W.token, "Content-Type": "application/json" }),
+                         body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error(typeof j.detail === "string" ? j.detail : "That didn\u2019t work. Please try again.");
+        return j; }); });
+  }
+  function taskSoon() {                          // "Run now": its result in a minute or so -- look a few times
+    [25000, 50000, 90000, 150000].forEach(function (ms) { setTimeout(sync, ms); });
+  }
+  function offerTaskNotifications() {            // once: the browser's own notification when a result arrives
+    try {
+      if (!window.Notification || Notification.permission !== "default" || LS.getItem("gink_task_notify_asked")) return;
+      LS.setItem("gink_task_notify_asked", "1");
+    } catch (e) { return; }
+    ginkNotify({ id: "task-notify", icon: "\u23f0", title: "Get notified when results arrive?", timeout: 0,
+                 body: "Your browser can tell you when a scheduled task has a new result, even when Gink is in another tab.",
+                 actions: [{ label: "Turn on", primary: true, run: function () { try { Notification.requestPermission(); } catch (e) {} } },
+                           { label: "Not now" }] });
+  }
+  function openTaskChat(chatId) {                // its chat is made by the server: sync, then open it
+    if (W.sessions[chatId] && !W.sessions[chatId].deleted) return openSession(chatId);
+    W.openAfterSync = chatId; sync();
   }
   function schCall(method, path, body, done) {
     return fetch(path, { method: method, headers: placeHeaders({ Authorization: "Bearer " + W.token, "Content-Type": "application/json" }),
@@ -1098,6 +1163,43 @@
     new_chat: newChat,
     temporary: function (on) { W.tempMode = !!on; setTemporary(!!on); },
     select_session: function (id) { openSession(id); },
+    tasks_load: function () { loadTasks(); },                          // scheduled tasks (0.1.161): the cards
+    task_create: function (v) {
+      var src = String((v && v.source) || "");
+      if (!W.token) return taskResult(src, null, "Sign in to Gink to schedule tasks.");
+      var body = {}; ["title", "task", "every", "at", "day", "date", "source", "notify_email"].forEach(function (k) { if (v[k] !== undefined) body[k] = v[k]; });
+      taskCall("POST", "/tasks", body).then(function (t) { taskResult(src, t); sync(); if (!t.existing) offerTaskNotifications(); })
+        .catch(function (err) { taskResult(src, null, err.message); });
+    },
+    task_action: function (v) {
+      if (!v || !v.id || !W.token) return;
+      var id = encodeURIComponent(v.id), a = v.action;
+      var call = a === "delete" ? taskCall("DELETE", "/tasks/" + id) : a === "run" ? taskCall("POST", "/tasks/" + id + "/run", {}) :
+                 taskCall("PATCH", "/tasks/" + id, { enabled: a === "resume" });
+      call.then(function () {
+        if (a === "run") taskSoon();
+        ginkNotify({ id: "task-action", icon: "\u23f0", title: "Scheduled task", timeout: 3500,
+                     body: a === "delete" ? "Deleted. Its results stay in its chat." : a === "run" ? "Running now \u2014 the result will be in its chat in a minute." :
+                           a === "pause" ? "Paused." : "Resumed." });
+      }).catch(function (err) { ginkNotify({ id: "task-action", icon: "\u23f0", title: "Scheduled task", body: err.message, timeout: 5000 }); })
+        .then(loadTasks);
+    },
+    task_open: function (v) { if (v && v.chat_id) openTaskChat(String(v.chat_id)); },
+    artifact_tab: function (v) {                    // an artifact on its own: the sealed page (/artifact/frame) gets its HTML
+      if (!v || typeof v.html !== "string") return;
+      var w = window.open("/artifact/frame", "_blank");
+      if (!w) return;
+      var html = v.html, tries = 0, timer = setInterval(function () {
+        if (++tries > 40) { clearInterval(timer); return; }
+        try { w.postMessage({ type: "gink-artifact", html: html }, "*"); } catch (e) {}
+      }, 150);
+      window.addEventListener("message", function ready(e) {
+        if (e.source === w && e.data && e.data.type === "gink-artifact-ready") {
+          try { w.postMessage({ type: "gink-artifact", html: html }, "*"); } catch (x) {}
+          clearInterval(timer); window.removeEventListener("message", ready);
+        }
+      });
+    },
     delete_session: function (id) {
       var s = W.sessions[id]; if (!s) return;
       s.deleted = true; s.messages = []; touch(id); if (W.current === id) newChat(); refreshSidebar(); sync();
@@ -1202,6 +1304,26 @@
           });
         }).catch(function (err) { settingsToast(err.message); });
       }
+      if (name === "tsk_add") {                         // Scheduled tasks (0.1.161)
+        var tv = {}; try { tv = JSON.parse(v.value || "{}"); } catch (e) { return; }
+        if (!String(tv.task || "").trim()) return settingsToast("Write the task first.");
+        return taskCall("POST", "/tasks", tv).then(function () { settingsToast("Scheduled. Its results will be in its own chat."); loadSchedules(); sync(); offerTaskNotifications(); })
+          .catch(function (err) { settingsToast(err.message); });
+      }
+      if (name === "tsk_pause" || name === "tsk_resume") {
+        return taskCall("PATCH", "/tasks/" + encodeURIComponent(v.value), { enabled: name === "tsk_resume" })
+          .then(function () { settingsToast(name === "tsk_pause" ? "Paused." : "Resumed."); loadSchedules(); }).catch(function (err) { settingsToast(err.message); });
+      }
+      if (name === "tsk_run") {
+        return taskCall("POST", "/tasks/" + encodeURIComponent(v.value) + "/run", {})
+          .then(function () { settingsToast("Running now \u2014 the result will be in its chat in a minute."); loadSchedules(); taskSoon(); })
+          .catch(function (err) { settingsToast(err.message); });
+      }
+      if (name === "tsk_delete") {
+        return taskCall("DELETE", "/tasks/" + encodeURIComponent(v.value)).then(function () { settingsToast("Deleted. Its results stay in its chat."); loadSchedules(); })
+          .catch(function (err) { settingsToast(err.message); });
+      }
+      if (name === "tsk_open") { if (typeof closeSettings === "function") closeSettings(); return openTaskChat(String(v.value || "")); }
       if (name === "sch_add") {
         var sv = {}; try { sv = JSON.parse(v.value || "{}"); } catch (e) { return; }
         if (!String(sv.input || "").trim()) return settingsToast("Write the task first.");

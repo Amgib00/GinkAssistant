@@ -912,6 +912,7 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
       <button type="button" class="srow" data-nav="new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h8"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span class="lbl">New chat</span><span class="nk" id="nk-new"></span></button>
       <label class="srow" id="side-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><input id="side-q" placeholder="Search chats" autocomplete="off" aria-label="Search chats"><span class="nk" id="nk-search"></span></label>
       <button type="button" class="srow" data-nav="tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg><span class="lbl">Workspace</span></button>
+      <button type="button" class="srow" data-nav="scheduled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg><span class="lbl">Scheduled</span></button>
       <button type="button" class="srow" data-nav="media"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8 8.5"/></svg><span class="lbl">Media Studio</span></button>
       <button type="button" class="srow" data-nav="genie"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><g transform="matrix(-1 0 0 1 24 0)"><path d="M2 10.2c1.9.1 3.4 1.2 4.7 2.2 1 .8 2.2 1.4 3.7 1.4h4c2 0 3.7-1.2 4.2-3"/><path d="M7.2 13.4c.7 2 2.6 3.2 4.8 3.2h1.6c2.1 0 3.9-1.3 4.5-3.2"/><path d="M10.6 10.9c0-1.5 1.1-2.6 2.6-2.6s2.6 1.1 2.6 2.6"/><path d="M13.2 8.3V6.9"/><circle cx="13.2" cy="5.9" r="1.1" fill="currentColor" stroke="none"/><path d="M18.6 11.2c1.3-.4 2.7.2 3 1.4.3 1.2-.6 2.4-2 2.6-.5.1-1 0-1.4-.2"/><path d="M11.4 16.6l-.6 2.2h5l-.6-2.2"/><path d="M9.6 18.8h6.6"/></g></svg><span class="lbl">Gink Genie</span></button>
     </div>
@@ -1298,7 +1299,9 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     side.addEventListener('click', function (e) {                       // New chat and the places
       var b = e.target.closest('[data-nav]'); if (!b) return;
       var what = b.getAttribute('data-nav');
-      if (what === 'new') ginkEmit('new_chat'); else ginkEmit('open', what);
+      if (what === 'new') ginkEmit('new_chat');
+      else if (what === 'scheduled') { if (window.openSettings) openSettings('schedules'); }   // scheduled tasks (0.1.161)
+      else ginkEmit('open', what);
       if (window.innerWidth < 760) setPinned(false);
     });
     document.getElementById('side-scrim').addEventListener('click', function () { setPinned(false); hoverBlocked = true; });
@@ -2542,8 +2545,12 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
   // While an answer streams in, its map and question blocks (JSON) stay out of sight: they become the map and the
   // question card when the answer is done (finalizeMessage).
   function streamView(text) {
-    return String(text == null ? '' : text).replace(/(^|\\n)```(?:map|ask)[^\\n]*(?:\\n[\\s\\S]*?(?:\\n```[ \\t]*(?=\\n|$)|$)|$)/g,
-                                                    function (m, pre) { return pre; }).replace(/\\s+$/, '');
+    return String(text == null ? '' : text).replace(/(^|\\n)```(?:map|ask|schedule)[^\\n]*(?:\\n[\\s\\S]*?(?:\\n```[ \\t]*(?=\\n|$)|$)|$)/g,
+                                                    function (m, pre) { return pre; })
+      // an artifact being written: its name, not its code ("Making \u201cPomodoro timer\u201d\u2026")
+      .replace(/(^|\\n)```[\\w+#.\\-]*[ \\t]+title=["']([^"'\\n]{1,120})["'][^\\n]*(?:\\n[\\s\\S]*?(\\n```[ \\t]*(?=\\n|$))|[\\s\\S]*$)/g,
+               function (m, pre, title, end) { return pre + (end ? '\\u2713 \\u201c' + title + '\\u201d is ready' : '\\u270e Making \\u201c' + title + '\\u201d\\u2026'); })
+      .replace(/\\s+$/, '');
   }
   window.streamView = streamView;
   function setPlainText(id, text) {
@@ -2571,7 +2578,9 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     upgradeVideoLinks(el);
     upgradeFileLinks(el);
     if (window.upgradeQuestionCards) upgradeQuestionCards(el);     // before code blocks: ```ask``` becomes a card
+    if (window.upgradeSchedules) upgradeSchedules(el, !LOADING_CHAT);  // ```schedule``` becomes a task card (0.1.161)
     if (window.upgradeMaps) upgradeMaps(el);                       // ```map``` becomes a live map, by itself
+    if (window.upgradeArtifacts) upgradeArtifacts(el);             // finished things become artifact cards (0.1.161)
     enhanceCodeBlocks(el);
     if (!LOADING_CHAT && window.autoOpenCode) autoOpenCode(el);        // long code in a new answer: the viewer
     addGinkActions(el, id);
@@ -2705,11 +2714,22 @@ class WebChatFeed:
     async def open_settings(self, panel: str = "general"):
         await self._js(f"openSettings({json.dumps(panel)})")
 
+    async def close_settings(self):
+        await self._js("window.closeSettings && closeSettings()")
+
     async def show_whats_new(self, version: str, sections: list):
         await self._js(f"showWhatsNew({json.dumps(version)}, {json.dumps(sections)})")
 
     async def cv_published(self, url: str = "", error: str = ""):
         await self._js(f"cvPublished({json.dumps(url or None)}, {json.dumps(error)})")
+
+    async def set_tasks(self, tasks: list):
+        """Scheduled tasks as they are now: the chat's task cards show them (ui/chat_extras.py)."""
+        await self._js(f"if (window.setTasks) setTasks({json.dumps(tasks or [])})")
+
+    async def task_result(self, source: str, task: dict = None, error: str = ""):
+        """The answer to a card's task_create: the task made, or why not."""
+        await self._js(f"if (window.taskResult) taskResult({json.dumps(source)}, {json.dumps(task)}, {json.dumps(error)})")
 
     async def set_effort(self, effort: str):
         await self._js(f"setEffort({json.dumps(effort or 'medium')})")

@@ -1490,6 +1490,8 @@ def build_main_screen(app: toga.App, email: str):
             prefs.save(app, policy_seen=str(value)[:20])
         elif kind == "open_url" and value:
             await open_link(str(value))
+        elif kind == "artifact_tab" and isinstance(value, dict) and isinstance(value.get("html"), str):
+            await open_artifact_outside(value["html"])                    # an artifact page in the browser (0.1.161)
         elif kind == "agent_answer" and isinstance(value, dict):          # Allow / Don't allow
             fut = agent_answers.get(str(value.get("id")))
             if fut is not None and not fut.done():
@@ -1523,6 +1525,8 @@ def build_main_screen(app: toga.App, email: str):
                         brain.preferred_model, int(value.get("chars") or 0))
                 except Exception:
                     pass                         # feedback must never get in the way
+        elif kind in ("task_create", "task_action", "task_open", "tasks_load"):   # scheduled tasks (0.1.161)
+            await task_event(kind, value)
         elif kind == "rename_session" and isinstance(value, dict) and value.get("id"):
             brain.history.set_title(value["id"], value.get("title", ""))
             refresh_sidebar()
@@ -1582,6 +1586,78 @@ def build_main_screen(app: toga.App, email: str):
                 await pick_files()
             elif value == "briefing":
                 await send_query("Morning briefing")
+
+    # -- Scheduled tasks (0.1.161): the chat's task cards and Settings > Scheduled tasks talk to Gink's server
+    # (/tasks); each task's results come into its own chat with the usual sync.
+    async def push_tasks():
+        token = getattr(app, "session_token", None)
+        if not token:
+            await web_chat.set_tasks([])
+            return None
+        try:
+            data = await ApiClient(app.state.base_url).tasks(token)
+        except Exception:
+            return None
+        await web_chat.set_tasks(data.get("data") or [])
+        return data
+
+    async def sync_soon():
+        """A task running now: its result in a minute or so -- sync a few times to show it soon."""
+        for wait in (25, 25, 40, 60):
+            await asyncio.sleep(wait)
+            svc = getattr(app, "_sync_service", None)
+            if svc is not None:
+                await svc.sync_once()
+
+    async def task_event(kind, value):
+        token = getattr(app, "session_token", None)
+        api = ApiClient(app.state.base_url)
+        if kind == "tasks_load":
+            await push_tasks()
+        elif kind == "task_create" and isinstance(value, dict):
+            source = str(value.get("source") or "")
+            if not token:
+                await web_chat.task_result(source, None, "Sign in to Gink to schedule tasks.")
+                return
+            try:
+                made = await api.task_create(token, {k: value[k] for k in ("title", "task", "every", "at", "day", "date",
+                                                                         "source", "notify_email") if k in value})
+            except Exception as exc:
+                await web_chat.task_result(source, None, str(exc) or "That didn\u2019t work. Please try again.")
+                return
+            await web_chat.task_result(source, made)
+            svc = getattr(app, "_sync_service", None)
+            if svc is not None:
+                svc.changed()                          # its chat comes with the next sync
+        elif kind == "task_action" and isinstance(value, dict) and token:
+            tid, action = str(value.get("id") or ""), value.get("action")
+            try:
+                if action == "delete":
+                    await api.task_delete(token, tid)
+                    msg = "Deleted. Its results stay in its chat."
+                elif action == "run":
+                    await api.task_run(token, tid)
+                    asyncio.create_task(sync_soon())
+                    msg = "Running now \u2014 the result will be in its chat in a minute."
+                elif action in ("pause", "resume"):
+                    await api.task_update(token, tid, {"enabled": action == "resume"})
+                    msg = "Paused." if action == "pause" else "Resumed."
+                else:
+                    return
+            except Exception as exc:
+                msg = str(exc) or "That didn\u2019t work. Please try again."
+            await web_chat.notify("Scheduled task", msg, icon="\u23f0", timeout=3500, nid="task-action")
+            await push_tasks()
+        elif kind == "task_open" and isinstance(value, dict):
+            chat = str(value.get("chat_id") or "")
+            svc = getattr(app, "_sync_service", None)
+            if chat and chat not in brain.history.get_meta() and svc is not None:
+                await svc.sync_once()                  # its chat (made by the server) comes with a sync
+            if chat in brain.history.get_meta():
+                on_select_session(chat)
+            else:
+                await web_chat.notify("Scheduled task", "Its chat isn\u2019t on this device yet \u2014 it appears with the next sync.",
+                                      icon="\u23f0", timeout=4000, nid="task-action")
 
     async def add_attachment(loader):
         """Runs a file loader off the UI thread, then shows its chip."""
@@ -1704,6 +1780,19 @@ def build_main_screen(app: toga.App, email: str):
         refresh_home()
         if counts.get("chats") and not _sending["value"]:
             asyncio.create_task(load_session(current_session["id"]))
+        for news in brain.history.pop_task_news():          # a scheduled task's new result (0.1.161)
+            asyncio.create_task(task_news(news))
+
+    async def task_news(news: dict):
+        body = re.sub(r"^\*\*\u23f0[^\n]*\n+", "", news.get("text") or "")      # without its "Morning news . time" line
+        preview = " ".join(re.sub(r"[*#>`_]+", " ", body).split())
+        preview = preview[:140] + ("\u2026" if len(preview) > 140 else "")
+        if news.get("id") == current_session["id"]:
+            return                                          # it's the chat on screen: the result is already showing
+        await web_chat.notify(news.get("title") or "Scheduled task", preview, icon="\u23f0", timeout=12000,
+                              actions=[{"label": "Open", "emit": "select_session", "value": news["id"], "primary": True}],
+                              nid="task-" + news["id"])
+        system_notification(news.get("title") or "Scheduled task", preview or "A new result is ready.")
 
     sync_service = SyncService(
         data_dir(app) / "sync_state.json", base_url_fn=lambda: app.state.base_url,
@@ -1887,6 +1976,12 @@ def build_main_screen(app: toga.App, email: str):
         sync_fn=lambda: sync_service.sync_once(), open_url=lambda u: open_external(u),
     )
     settings.on_profile_change = push_user
+    settings.on_tasks = web_chat.set_tasks                      # Settings > Scheduled tasks -> the chat's task cards
+
+    async def open_task_chat(chat_id: str):
+        await task_event("task_open", {"chat_id": chat_id})
+    settings.on_open_chat = open_task_chat
+    settings.on_task_ran = lambda: asyncio.create_task(sync_soon())
     settings.lock_check = check_lock_setting               # Lock Gink: the device proves it works first
 
     async def people_change(on: bool):
@@ -2355,6 +2450,24 @@ def build_main_screen(app: toga.App, email: str):
                 text = " ".join((msg.get("content") or "").split())
                 return (text[:60] + "\u2026") if len(text) > 60 else (text or "New conversation")
         return "New conversation"
+
+    async def open_artifact_outside(html: str):
+        """An artifact page in the computer's own browser: saved in Gink's folder (never your files), then opened."""
+        import hashlib
+        import tempfile
+        folder = os.path.join(tempfile.gettempdir(), "gink-artifacts")
+        try:
+            os.makedirs(folder, exist_ok=True)
+            path = os.path.join(folder, hashlib.sha1(html.encode("utf-8")).hexdigest()[:12] + ".html")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(html)
+            done = app.task_runner.device.open_file(path)
+            ok, why = done.ok, done.message
+        except Exception as exc:
+            ok, why = False, str(exc)
+        if not ok:
+            await web_chat.notify("Couldn\u2019t open it", "Download it instead and open the file. " + (why or ""),
+                                  icon="\u26a0\ufe0f", timeout=5000, nid="artifact-tab")
 
     async def open_link(url: str):
         low = url.lower()

@@ -181,6 +181,11 @@ SETTINGS_CSS = r"""
   .s-item:last-child { border-bottom: none; }
   .s-item .t { flex: 1; min-width: 0; }
   .s-item .m { color: var(--text-muted); font-size: 12.5px; margin-left: 10px; white-space: nowrap; }
+  .s-item.tall { flex-wrap: wrap; gap: 8px 12px; align-items: flex-start; padding: 12px 0; }
+  .s-item.tall .tm { flex: 1 1 260px; min-width: 0; }
+  .s-item.tall .t { font-weight: 600; }
+  .s-item.tall .m { margin: 3px 0 0; white-space: normal; line-height: 1.45; }
+  .s-item-acts { display: flex; flex-wrap: wrap; gap: 6px; }
   .meter2 { width: 100%; height: 10px; border-radius: 999px; background: var(--elevated); overflow: hidden; margin: 6px 0 4px; }
   .meter2 i { display: block; height: 100%; border-radius: 999px; background: var(--accent); transition: width 0.4s; }
   .meter2.high i { background: #E0812A; } .meter2.full i { background: var(--danger); }
@@ -375,7 +380,7 @@ SETTINGS_JS = r"""
           {type: 'button', label: 'Delete your account', desc: 'Permanently deletes your account and everything synced to it. Payment records are kept for accounting, without your name or email. This can\u2019t be undone.', action: 'delete_account', text: 'Delete account', style: 'danger-ghost'}]}]},
       {id: 'family', group: 'Settings', title: 'Parental controls', sections: familySections(info.family, info.family_error)},
       {id: 'workspace', group: 'Settings', title: 'Workspace', sections: workspaceSections(info.org, info.org_error)},
-      {id: 'schedules', group: 'Settings', title: 'Scheduled tasks', sections: scheduleSections(info.schedules, info.schedules_error)},
+      {id: 'schedules', group: 'Settings', title: 'Scheduled tasks', sections: scheduleSections(info.tasks, info.tasks_error, info.schedules, info.tasks_limits)},
       {id: 'privacy', group: 'Settings', title: 'Privacy', sections: [
         {title: info.web ? 'Lock Gink in this browser' : 'Lock Gink', rows: info.web ? [
           {type: 'toggle', key: 'app_lock', label: 'Lock with a passkey', desc: 'Gink covers itself when it opens and after you\u2019ve been away, until you unlock with Face ID, Touch ID, Windows Hello or your phone \u2014 a passkey (Account > Passkeys). Gink Genie and the developer console in this browser lock too.'},
@@ -617,20 +622,60 @@ SETTINGS_JS = r"""
     return out;
   }
 
-  // Settings > Scheduled tasks (server: /dev/schedules -- the same scheduled agents as the API, console and Genie)
-  function scheduleSections(list, err) {
-    if (!list) return [{title: 'Scheduled tasks', rows: [{type: 'list', items: [], empty: err || 'Loading\u2026'}]}];
-    return [{title: 'New scheduled task', rows: [
-      {type: 'note', text: 'Gink\u2019s agent does a task on its own, every hour, day or week at your time \u2014 for example \u201cevery morning, write today\u2019s top news in news.md\u201d. The results are saved in a Gink Genie project.'},
-      {type: 'input', key: 'sch_task', label: 'Task', placeholder: 'e.g. Write the three biggest news stories of the day in news.md', wide: true},
-      {type: 'html', label: 'When', html: '<select class="s-input" data-input="sch_every" style="width:auto"><option value="daily">Every day</option><option value="hourly">Every hour</option><option value="weekly">Every week</option></select> ' +
-        '<input class="s-input" type="time" data-input="sch_at" value="08:00" style="width:auto"> ' +
-        '<label style="font-size:13px"><input type="checkbox" data-sch-email checked> Email me the result</label> <button class="s-btn primary" data-act="sch_add">Schedule</button>'}]},
-      {title: 'Your scheduled tasks', rows: [{type: 'list', items: list.map(function (x) {
-        return {t: x.input.slice(0, 80), m: (x.every === 'hourly' ? 'Every hour at :' + x.at.slice(3) : (x.every === 'weekly' ? 'Every week at ' : 'Every day at ') + x.at) +
-                   ' \u00b7 ' + x.timezone + (x.notify_email ? ' \u00b7 emails you' : '') + (x.enabled ? '' : ' \u00b7 paused') + (x.last_run ? ' \u00b7 last ran ' + new Date(x.last_run * 1000).toLocaleString() : ''),
+  // Settings > Scheduled tasks (0.1.161, server: /tasks): Gink does a task by itself at its time and puts the result in
+  // the task's own chat. Below them: the scheduled agents (/dev/schedules, files in a Genie project) if there are any.
+  var TSK_EVERY = [['daily', 'Every day'], ['weekdays', 'Weekdays'], ['weekly', 'Every week'], ['monthly', 'Every month'],
+                   ['once', 'Once'], ['hourly', 'Every hour']];
+  function tskNextText(ts) {
+    if (!ts) return '';
+    var d = new Date(ts * 1000);
+    return 'next: ' + d.toLocaleDateString([], {weekday: 'short', day: 'numeric', month: 'short'}) + ', ' +
+           d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+  }
+  function scheduleSections(list, err, agents, limits) {
+    if (!list) return [{title: 'Scheduled tasks', rows: [{type: 'list', items: [], empty: err || 'Loading…'}]}];
+    var lim = limits || {}, pro = !!lim.hourly, full = lim.max && lim.used >= lim.max;
+    var days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    var today = new Date(), iso = today.getFullYear() + '-' + ('0' + (today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2);
+    var out = [{title: 'New scheduled task', rows: [
+      {type: 'note', text: 'Gink does a task by itself at the time you choose — the day’s news at 8, a reminder on Friday, a summary every month — and puts the result in its own chat on all your devices, even when your apps are closed. You can also ask in any chat: “every morning at 8, give me the top news”.'},
+      {type: 'input', key: 'tsk_task', label: 'Task', placeholder: 'e.g. Give me the three biggest news stories of the day, with sources', wide: true},
+      {type: 'html', label: 'When', html:
+        '<select class="s-input" data-input="tsk_every" aria-label="How often" style="width:auto">' + TSK_EVERY.map(function (e) {
+          return '<option value="' + e[0] + '"' + (e[0] === 'hourly' && !pro ? ' disabled' : '') + '>' + e[1] + (e[0] === 'hourly' && !pro ? ' (Pro)' : '') + '</option>'; }).join('') + '</select> ' +
+        '<select class="s-input" data-input="tsk_day" data-tsk-for="weekly" aria-label="Day of the week" style="width:auto" hidden>' +
+          days.map(function (d, i) { return '<option value="' + i + '"' + (i === (today.getDay() + 6) % 7 ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select>' +
+        '<input class="s-input" type="number" min="1" max="31" value="' + today.getDate() + '" data-input="tsk_mday" data-tsk-for="monthly" aria-label="Day of the month" style="width:72px" hidden>' +
+        '<input class="s-input" type="date" min="' + iso + '" value="' + iso + '" data-input="tsk_date" data-tsk-for="once" aria-label="Date" style="width:auto" hidden> ' +
+        '<input class="s-input" type="time" data-input="tsk_at" value="08:00" aria-label="Time" style="width:auto">'},
+      {type: 'html', label: '', html: '<label style="font-size:13px"><input type="checkbox" data-tsk-email> Email me the result</label> ' +
+        '<button class="s-btn primary" data-act="tsk_add"' + (full ? ' disabled' : '') + '>Schedule</button>'}]}];
+    var meta = function (x) {
+      var bits = [x.when + (x.timezone ? ' (' + x.timezone + ')' : '')];
+      if (x.enabled && x.next_run) bits.push(tskNextText(x.next_run));
+      if (!x.enabled) bits.push(x.every === 'once' && x.runs ? 'done' : 'paused');
+      if (x.notify_email) bits.push('emails you');
+      if (x.last_status === 'ok' && x.last_run) bits.push('last ran ' + new Date(x.last_run * 1000).toLocaleString([], {weekday: 'short', hour: '2-digit', minute: '2-digit'}));
+      else if (x.last_status && x.last_status !== 'ok' && x.last_note) bits.push('last run: ' + x.last_note);
+      return bits.join(' · ');
+    };
+    out.push({title: 'Your scheduled tasks', rows: [
+      lim.max ? {type: 'note', text: (lim.used || 0) + ' of ' + lim.max + ' tasks' + (pro ? '.' : ' on the Free plan. Gink Pro has ' + 25 + ', and hourly tasks.')} : null,
+      {type: 'list', items: list.map(function (x) {
+        return {t: x.title, m: meta(x), buttons: [
+          {text: 'Open its chat', action: 'tsk_open', value: x.chat_id, style: 'plain'},
+          x.enabled ? {text: 'Run now', action: 'tsk_run', value: x.id, style: 'plain'} : null,
+          (x.every === 'once' && x.runs && !x.enabled) ? null : {text: x.enabled ? 'Pause' : 'Resume', action: x.enabled ? 'tsk_pause' : 'tsk_resume', value: x.id, style: 'plain'},
+          {text: 'Delete', action: 'tsk_delete', value: x.id, style: 'danger'}].filter(Boolean)}; }),
+        empty: 'Nothing scheduled yet.'}].filter(Boolean)});
+    if (agents && agents.length) out.push({title: 'Scheduled agents', rows: [
+      {type: 'note', text: 'Agents that work on files in a Gink Genie project at their time (made in Genie, the console or the API).'},
+      {type: 'list', items: agents.map(function (x) {
+        return {t: x.input.slice(0, 80), m: (x.every === 'hourly' ? 'Every hour at :' + x.at.slice(3) : (x.every === 'weekly' ? 'Every week at ' : x.every === 'weekdays' ? 'Weekdays at ' : 'Every day at ') + x.at) +
+                   ' · ' + x.timezone + (x.notify_email ? ' · emails you' : '') + (x.enabled ? '' : ' · paused') + (x.last_run ? ' · last ran ' + new Date(x.last_run * 1000).toLocaleString() : ''),
                 button: {text: x.enabled ? 'Pause' : 'Resume', action: x.enabled ? 'sch_pause' : 'sch_resume', value: x.id, style: 'plain'},
-                button2: {text: 'Delete', action: 'sch_delete', value: x.id}}; }), empty: 'Nothing scheduled yet.'}]}];
+                button2: {text: 'Delete', action: 'sch_delete', value: x.id}}; }), empty: ''}]});
+    return out;
   }
 
   // The device's time zone names a nearby city ("Europe/Paris" -> "Paris"): local examples, not one country's
@@ -770,6 +815,10 @@ SETTINGS_JS = r"""
     } else if (r.type === 'select') {
       ctl = '<select class="s-select" data-key="' + r.key + '">' + r.options.map(function (o) {
         return '<option value="' + esc(o[0]) + '"' + (String(v[r.key]) === String(o[0]) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>';
+    } else if (r.type === 'input' && r.wide) {      // a long entry (a scheduled task): the label above, the box full width
+      return '<div class="s-row stack" data-search="' + esc((r.label || '').toLowerCase()) + '"><div class="lab"><span>' + esc(r.label) + '</span></div>' +
+             '<div class="ctl" style="display:block"><input class="s-input" style="width:100%;max-width:none" data-input="' + r.key + '" value="' + esc(v[r.key] || '') +
+             '" placeholder="' + esc(r.placeholder || '') + '" aria-label="' + esc(r.label) + '" maxlength="4000"></div></div>';
     } else if (r.type === 'input') {
       ctl = '<input class="s-input" data-input="' + r.key + '" value="' + esc(v[r.key] || '') + '" placeholder="' + esc(r.placeholder || '') + '"' + (r.narrow ? ' style="width:90px"' : '') + '>' +
             (r.action ? '<button class="s-btn" data-act="' + r.action + '" data-from="' + r.key + '">' + esc(r.text) + '</button>' : '');
@@ -809,6 +858,12 @@ SETTINGS_JS = r"""
       }
       if (!r.items.length) return '<div class="s-empty">' + esc(r.empty || '') + '</div>';
       return '<div class="s-list">' + r.items.map(function (it) {
+        if (it.buttons && it.buttons.length) {      // a row with its own actions: title and details, buttons beside or below
+          return '<div class="s-item tall"><div class="tm"><div class="t">' + esc(it.t) + '</div>' + (it.m ? '<div class="m">' + esc(it.m) + '</div>' : '') +
+                 '</div><div class="s-item-acts">' + it.buttons.map(function (b) {
+                   return '<button class="s-btn ' + (b.style === 'danger' ? 'danger-ghost' : b.style === 'primary' ? 'primary' : '') + '" data-act="' + b.action +
+                          '" data-value="' + esc(b.value) + '">' + esc(b.text) + '</button>'; }).join('') + '</div></div>';
+        }
         return '<div class="s-item"><div class="t">' + esc(it.t) + '</div>' + (it.m ? '<div class="m">' + esc(it.m) + '</div>' : '') +
                (it.button ? '<button class="s-btn ' + (it.button.style === 'plain' ? '' : 'danger-ghost') + '" data-act="' + it.button.action + '" data-value="' + esc(it.button.value) + '">' + esc(it.button.text) + '</button>' : '') +
                (it.button2 ? ' <button class="s-btn danger-ghost" data-act="' + it.button2.action + '" data-value="' + esc(it.button2.value) + '">' + esc(it.button2.text) + '</button>' : '') + '</div>'; }).join('') + '</div>';
@@ -945,6 +1000,10 @@ SETTINGS_JS = r"""
     var body = document.getElementById('s-body');
     body.addEventListener('change', function (e) {
       var t = e.target, fk = t.getAttribute('data-fam') || t.getAttribute('data-famtime') || t.getAttribute('data-famnum');
+      if (t.getAttribute('data-input') === 'tsk_every') {   // Scheduled tasks: the day or date field that fits
+        Array.prototype.forEach.call(document.querySelectorAll('[data-tsk-for]'), function (x) { x.hidden = x.getAttribute('data-tsk-for') !== t.value; });
+        return;
+      }
       if (t.getAttribute('data-org')) {          // Workspace: healthcare mode, and what happens to patient details
         ginkEmit('settings_action', {name: 'org_set', value: JSON.stringify({key: t.getAttribute('data-org'),
                                                                             value: t.type === 'checkbox' ? t.checked : t.value})});
@@ -982,6 +1041,17 @@ SETTINGS_JS = r"""
         return;
       }
       if (name === 'people_open') { closeSettings(); if (window.openPeople) openPeople(); return; }   // People lives in the page
+      if (name === 'tsk_add') {                       // Scheduled tasks (0.1.161): the task, how often and when, together
+        var g = function (k) { var x = document.querySelector('[data-input="' + k + '"]'); return x ? x.value : ''; };
+        var ev = g('tsk_every'), te = document.querySelector('[data-tsk-email]');
+        if (!g('tsk_task').trim()) { settingsToast('Write the task first.', 'err'); return; }
+        var t = {task: g('tsk_task').trim(), every: ev, at: g('tsk_at') || '08:00', notify_email: !!(te && te.checked)};
+        if (ev === 'weekly') t.day = parseInt(g('tsk_day'), 10) || 0;
+        if (ev === 'monthly') t.day = parseInt(g('tsk_mday'), 10) || 1;
+        if (ev === 'once') t.date = g('tsk_date');
+        ginkEmit('settings_action', {name: 'tsk_add', value: JSON.stringify(t)});
+        return;
+      }
       if (name === 'sch_add') {                       // Scheduled tasks: the task, how often and when, together
         var q = function (k) { var x = document.querySelector('[data-input="' + k + '"]'); return x ? x.value : ''; };
         var em = document.querySelector('[data-sch-email]');

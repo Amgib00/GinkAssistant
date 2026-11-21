@@ -35,6 +35,12 @@ deploy/IOS_AND_WEB.md
 deploy/README.md
 deploy/requirements-server.txt
 deploy/start.py
+deploy/vendor/LEXEND-LICENSE.txt
+deploy/vendor/MERMAID-LICENSE.txt
+deploy/vendor/README.md
+deploy/vendor/lexend-latin-ext-wght-normal.woff2
+deploy/vendor/lexend-latin-wght-normal.woff2
+deploy/vendor/mermaid.min.js
 icons/genie-source/genie-cutout.png
 icons/genie-source/genie.png
 icons/genie-source/lamp.png
@@ -183,10 +189,19 @@ openspec/changes/archive/2026-11-20-update-genie-review/tasks.md
 openspec/changes/archive/2026-11-20-update-wake-media-models/proposal.md
 openspec/changes/archive/2026-11-20-update-wake-media-models/specs/languages-voice/spec.md
 openspec/changes/archive/2026-11-20-update-wake-media-models/tasks.md
+openspec/changes/archive/2026-11-21-add-scheduled-tasks-artifacts/proposal.md
+openspec/changes/archive/2026-11-21-add-scheduled-tasks-artifacts/specs/accounts-security/spec.md
+openspec/changes/archive/2026-11-21-add-scheduled-tasks-artifacts/specs/agent-mode/spec.md
+openspec/changes/archive/2026-11-21-add-scheduled-tasks-artifacts/specs/artifacts/spec.md
+openspec/changes/archive/2026-11-21-add-scheduled-tasks-artifacts/specs/developer-api/spec.md
+openspec/changes/archive/2026-11-21-add-scheduled-tasks-artifacts/specs/scheduled-tasks/spec.md
+openspec/changes/archive/2026-11-21-add-scheduled-tasks-artifacts/specs/web-search/spec.md
+openspec/changes/archive/2026-11-21-add-scheduled-tasks-artifacts/tasks.md
 openspec/config.yaml
 openspec/specs/accounts-security/spec.md
 openspec/specs/agent-mode/spec.md
 openspec/specs/app-updates/spec.md
+openspec/specs/artifacts/spec.md
 openspec/specs/chats-storage-limits/spec.md
 openspec/specs/developer-api/spec.md
 openspec/specs/email-delivery/spec.md
@@ -196,6 +211,7 @@ openspec/specs/location/spec.md
 openspec/specs/maps/spec.md
 openspec/specs/personalization/spec.md
 openspec/specs/releases/spec.md
+openspec/specs/scheduled-tasks/spec.md
 openspec/specs/web-search/spec.md
 openspec/specs/websites/spec.md
 pyproject.toml
@@ -216,6 +232,7 @@ src/ginkassistant/services/about_gink.py
 src/ginkassistant/services/actions/__init__.py
 src/ginkassistant/services/actions/_shell.py
 src/ginkassistant/services/actions/agent.py
+src/ginkassistant/services/actions/codebase.py
 src/ginkassistant/services/actions/computer.py
 src/ginkassistant/services/actions/device.py
 src/ginkassistant/services/actions/health.py
@@ -237,6 +254,7 @@ src/ginkassistant/services/billing_catalog.py
 src/ginkassistant/services/biometric.py
 src/ginkassistant/services/blob_store.py
 src/ginkassistant/services/briefing.py
+src/ginkassistant/services/code_reader.py
 src/ginkassistant/services/data_export.py
 src/ginkassistant/services/device_info.py
 src/ginkassistant/services/device_region.py
@@ -298,6 +316,7 @@ src/ginkassistant/services/web_app/vendor/MAPLIBRE-LICENSE.txt
 src/ginkassistant/services/web_app/vendor/README.md
 src/ginkassistant/services/web_app/vendor/maplibre-gl.css
 src/ginkassistant/services/web_app/vendor/maplibre-gl.js
+src/ginkassistant/services/web_reader.py
 src/ginkassistant/services/whats_new.py
 src/ginkassistant/ui/__init__.py
 src/ginkassistant/ui/agent_ui.py
@@ -348,6 +367,7 @@ tests/test_android_voice.py
 tests/test_app_icons.py
 tests/test_app_lock.py
 tests/test_archive_storage_limits.py
+tests/test_artifacts.py
 tests/test_auto_search_sources.py
 tests/test_billing.py
 tests/test_blob_store.py
@@ -360,6 +380,7 @@ tests/test_check_project.py
 tests/test_claude.py
 tests/test_claude_native.py
 tests/test_cli.py
+tests/test_codebase_and_web.py
 tests/test_computer_actions.py
 tests/test_connected_apps.py
 tests/test_dark_theme.py
@@ -433,6 +454,7 @@ tests/test_real_maps.py
 tests/test_release_tooling.py
 tests/test_requirements_match.py
 tests/test_scheduled_agents.py
+tests/test_scheduled_tasks.py
 tests/test_screens_and_server.py
 tests/test_security_lockdown_style.py
 tests/test_security_workflows.py

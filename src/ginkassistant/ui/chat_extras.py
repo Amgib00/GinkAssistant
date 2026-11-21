@@ -290,6 +290,55 @@ CSS = r"""
   #codeview .cvbody .code-block-body { border: 0; border-radius: 0; max-height: none !important; }
   body.viewer-open #shell { right: min(50vw, 780px); }
   @media (max-width: 899px) { #codeview { width: 100vw; } body.viewer-open #shell { right: 0; } }
+  /* Artifacts (0.1.161): the finished things Gink makes -- a card in the chat, opened in the viewer */
+  .artcard { display: flex; align-items: center; gap: 12px; margin: 10px 0; padding: 10px 12px 10px 10px; max-width: 520px;
+             border: 1px solid var(--border); border-radius: 14px; background: var(--surface); cursor: pointer; color: var(--text-main);
+             transition: border-color .15s ease, box-shadow .15s ease; }
+  .artcard:hover { border-color: var(--text-muted); box-shadow: 0 2px 12px rgba(0,0,0,.07); }
+  .artcard:focus-visible { outline: 2px solid var(--accent, #3F8212); outline-offset: 2px; }
+  .artcard.on { border-color: var(--accent, #3F8212); box-shadow: 0 0 0 1px var(--accent, #3F8212); }
+  .artcard .arti { flex: none; width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center;
+                   background: var(--elevated); color: var(--accent, #3F8212); }
+  .artcard .artm { min-width: 0; flex: 1; }
+  .artcard .artt { font-weight: 650; font-size: 14.5px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .artcard .artk { display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 12.5px; color: var(--text-muted); }
+  .artcard .artv { font-size: 11px; font-weight: 700; padding: 0 6px; border-radius: 6px; background: var(--elevated); color: var(--text-main); }
+  .artcard .arto { flex: none; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 9px; border: 1px solid var(--border); }
+  /* Scheduled tasks (0.1.161): the AI's ```schedule block becomes this card; the server runs the task at its time */
+  .tskcard { margin: 10px 0; padding: 12px 14px; max-width: 520px; border: 1px solid var(--border); border-radius: 14px;
+             background: var(--surface); color: var(--text-main); }
+  .tskcard .tsk-top { display: flex; align-items: flex-start; gap: 12px; }
+  .tskcard .tsk-ic { flex: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                     background: var(--elevated); color: var(--accent, #3F8212); }
+  .tskcard .tsk-m { min-width: 0; flex: 1; }
+  .tskcard .tsk-t { font-weight: 650; font-size: 14.5px; line-height: 1.3; overflow-wrap: anywhere; }
+  .tskcard .tsk-w { margin-top: 2px; font-size: 12.5px; color: var(--text-muted); }
+  .tskcard .tsk-s { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600;
+                    padding: 3px 9px; border-radius: 999px; background: var(--elevated); color: var(--text-muted); white-space: nowrap; }
+  .tskcard .tsk-s i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .tskcard.on .tsk-s { color: var(--accent, #3F8212); background: var(--accent-soft, #EEF8E1); }
+  .tskcard.err .tsk-s { color: var(--danger, #C93B32); }
+  .tskcard .tsk-q { margin: 10px 0 0 52px; font-size: 13.5px; line-height: 1.45; color: var(--text-main);
+                    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .tskcard .tsk-n { margin: 8px 0 0 52px; font-size: 12.5px; color: var(--text-muted); }
+  .tskcard.err .tsk-n { color: var(--danger, #C93B32); }
+  .tskcard .tsk-a { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0 52px; }
+  .tskcard .tsk-a button { font: inherit; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 9px; cursor: pointer;
+                           border: 1px solid var(--border); background: transparent; color: var(--text-main); }
+  .tskcard .tsk-a button.primary { background: var(--accent, #3F8212); border-color: var(--accent, #3F8212); color: var(--on-accent, #fff); }
+  .tskcard .tsk-a button:hover { border-color: var(--text-muted); }
+  .tskcard .tsk-a button:focus-visible { outline: 2px solid var(--accent, #3F8212); outline-offset: 2px; }
+  .tskcard .tsk-a button[disabled] { opacity: .5; cursor: default; }
+  @media (max-width: 480px) { .tskcard .tsk-q, .tskcard .tsk-n, .tskcard .tsk-a { margin-left: 0; } }
+  #codeview .cvver { display: inline-flex; align-items: center; gap: 2px; font-size: 12.5px; color: var(--text-muted); white-space: nowrap; }
+  #codeview .cvver button { border: 0 !important; background: transparent !important; padding: 2px 6px !important; font-size: 16px !important; }
+  #codeview .cvver button:disabled { opacity: .35; cursor: default; }
+  #codeview .cvdoc { flex: 1; overflow: auto; padding: 28px clamp(18px, 5vw, 56px) 56px; }
+  #codeview .cvdoc-in { max-width: 720px; margin: 0 auto; font-size: 15.5px; line-height: 1.65; }
+  #codeview .cvdoc-in h1 { font-size: 1.7em; line-height: 1.2; margin: 0 0 .6em; } #codeview .cvdoc-in h2 { font-size: 1.3em; margin: 1.4em 0 .5em; }
+  #codeview .cvimg { flex: 1; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 24px;
+                     background: repeating-conic-gradient(var(--elevated) 0 25%, transparent 0 50%) 0 0 / 20px 20px; }
+  #codeview .cvimg img { max-width: 100%; max-height: 100%; }
   /* Sources: a button in the answer's action row, opening the list (official ones first, with a badge) */
   .ga.gsrc { width: auto; display: inline-flex; align-items: center; gap: 7px; padding: 0 10px 0 6px; border-radius: 999px;
              font-size: 13px; font-weight: 600; color: var(--text-main); }
@@ -892,12 +941,19 @@ JS = r"""
     row.onclick = function () { row.classList.toggle('open'); };
     feed.appendChild(row);
   };
-  // ---- The code viewer (like Claude's): a panel with the file's name, Copy / Download, Expand, Close
-  var CV = { text: '', name: '' };
+  // ---- The viewer (like Claude's): long code -- and artifacts, the finished things Gink makes (0.1.161): a web page or
+  // app, an SVG, a Mermaid diagram, a document, a long code file. A card in the chat; the viewer shows a preview (a
+  // sealed sandbox: its scripts run, but it can't reach Gink), the code or the document, its versions, Copy, Download,
+  // Publish (pages, images), Expand and Close.
+  var CV = { text: '', name: '', art: null };
   var CV_LANGS = {python: ['Python', 'py'], javascript: ['JavaScript', 'js'], typescript: ['TypeScript', 'ts'], html: ['HTML', 'html'],
                   css: ['CSS', 'css'], java: ['Java', 'java'], kotlin: ['Kotlin', 'kt'], swift: ['Swift', 'swift'], go: ['Go', 'go'],
                   rust: ['Rust', 'rs'], bash: ['Shell', 'sh'], shell: ['Shell', 'sh'], sql: ['SQL', 'sql'], json: ['JSON', 'json'],
-                  c: ['C', 'c'], cpp: ['C++', 'cpp'], csharp: ['C#', 'cs'], php: ['PHP', 'php'], ruby: ['Ruby', 'rb'], dart: ['Dart', 'dart']};
+                  c: ['C', 'c'], cpp: ['C++', 'cpp'], csharp: ['C#', 'cs'], php: ['PHP', 'php'], ruby: ['Ruby', 'rb'], dart: ['Dart', 'dart'],
+                  svg: ['SVG', 'svg'], mermaid: ['Diagram', 'mmd'], markdown: ['Markdown', 'md'], yaml: ['YAML', 'yml'],
+                  jsx: ['React', 'jsx'], tsx: ['React', 'tsx'], vue: ['Vue', 'vue'], xml: ['XML', 'xml'], r: ['R', 'r']};
+  var MERMAID_VERSION = '11.17.2';
+  var GINK_WEBAPP = /^https?:$/.test(location.protocol) && location.hostname !== 'gink.local';
   function cvName(block, lang) {
     if (lang.indexOf('.') > 0) return lang;                              // the label is already a file name
     var prev = block.previousElementSibling, re = /([A-Za-z0-9_-]+\.(py|js|ts|jsx|tsx|html|css|json|java|kt|swift|go|rs|sh|sql|c|cpp|cs|php|rb|dart|yml|yaml|toml|md))\b/;
@@ -910,53 +966,80 @@ JS = r"""
     var ext = file ? file.split('.').pop() : info[1];
     var title = file ? file.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').replace(/^./, function (c) { return c.toUpperCase(); })
                      : info[0] + ' code';
-    CV.text = codeText(block).replace(/\n$/, ''); CV.name = file || ('gink-code.' + ext);
+    var text = codeText(block).replace(/\n$/, ''), body = block.querySelector('.code-block-body');
+    var design = /^(html?|svg|xml)$/.test(ext) && /<(html|body|div|svg|style|section|main|h1|p)\b/i.test(text);
+    cvOpen({ title: title, badge: ext.toUpperCase().slice(0, 4), text: text, name: file || ('gink-code.' + ext),
+             codeHTML: body ? body.outerHTML : '', kind: design ? (/^\s*<svg\b/i.test(text) ? 'image' : 'page') : 'code' });
+  };
+  function cvPanel() {
     var v = document.getElementById('codeview');
-    if (!v) {
-      v = document.createElement('aside'); v.id = 'codeview'; v.setAttribute('aria-label', 'Code viewer');
-      v.innerHTML = '<div class="cvh"><span class="cvt"></span><span class="cvb"></span>' +
-        '<span class="cvtabs" hidden><button data-tab="preview">Preview</button><button data-tab="code">Code</button></span><span class="cvg"></span>' +
-        '<button class="cvpub" hidden>Publish</button>' +
-        '<button class="cvcopy">Copy</button><button class="cvmore" aria-label="More">\u2304</button>' +
-        '<button class="cvicon cvwide" title="Expand" aria-label="Expand">\u2922</button>' +
-        '<button class="cvicon cvclose" title="Close" aria-label="Close">\u00d7</button></div><div class="cvbody"></div>';
-      document.body.appendChild(v);
-      v.querySelector('.cvcopy').onclick = function () { var b = this; copyText(CV.text, function () { b.textContent = 'Copied';
-        setTimeout(function () { b.textContent = 'Copy'; }, 1500); }); };
-      v.querySelector('.cvmore').onclick = function (e) {
-        e.stopPropagation(); var old = v.querySelector('.cvmenu'); if (old) { old.remove(); return; }
-        var m = document.createElement('div'); m.className = 'cvmenu';
-        m.innerHTML = '<button data-cv="copy">Copy</button><button data-cv="download">Download</button>';
-        m.onclick = function (ev) { var a = ev.target.getAttribute('data-cv'); m.remove();
-          if (a === 'copy') v.querySelector('.cvcopy').click(); else ginkEmit('save_code', {name: CV.name, code: CV.text}); };
-        v.appendChild(m);
-      };
-      v.querySelector('.cvpub').onclick = function () {
-        this.disabled = true; this.textContent = 'Publishing\u2026';
-        ginkEmit('publish_design', {html: cvFullPage(CV.text, v.querySelector('.cvt').textContent), title: v.querySelector('.cvt').textContent});
-      };
-      v.querySelector('.cvtabs').onclick = function (e) { var t = e.target.getAttribute && e.target.getAttribute('data-tab'); if (t) cvShow(t); };
-      v.querySelector('.cvwide').onclick = function () { var w = v.classList.toggle('wide'); this.title = w ? 'Make smaller' : 'Expand'; };
-      v.querySelector('.cvclose').onclick = function () { v.remove(); document.body.classList.remove('viewer-open'); };
-      document.addEventListener('click', function () { var m = v.querySelector('.cvmenu'); if (m) m.remove(); });
+    if (v) return v;
+    v = document.createElement('aside'); v.id = 'codeview'; v.setAttribute('aria-label', 'Code viewer');
+    v.innerHTML = '<div class="cvh"><span class="cvt"></span><span class="cvb"></span>' +
+      '<span class="cvver" hidden><button class="cvprev" aria-label="Older version">‹</button><span class="cvvn"></span>' +
+      '<button class="cvnext" aria-label="Newer version">›</button></span>' +
+      '<span class="cvtabs" hidden><button data-tab="preview">Preview</button><button data-tab="code">Code</button></span><span class="cvg"></span>' +
+      '<button class="cvpub" hidden>Publish</button>' +
+      '<button class="cvcopy">Copy</button><button class="cvmore" aria-label="More">⌄</button>' +
+      '<button class="cvicon cvwide" title="Expand" aria-label="Expand">⤢</button>' +
+      '<button class="cvicon cvclose" title="Close" aria-label="Close">×</button></div><div class="cvbody"></div>' +
+      '<div class="cvdoc" hidden></div><div class="cvimg" hidden></div>';
+    document.body.appendChild(v);
+    v.querySelector('.cvcopy').onclick = function () { var b = this; copyText(CV.text, function () { b.textContent = 'Copied';
+      setTimeout(function () { b.textContent = 'Copy'; }, 1500); }); };
+    v.querySelector('.cvmore').onclick = function (e) {
+      e.stopPropagation(); var old = v.querySelector('.cvmenu'); if (old) { old.remove(); return; }
+      var m = document.createElement('div'); m.className = 'cvmenu';
+      m.innerHTML = '<button data-cv="copy">Copy</button><button data-cv="download">Download</button>' +
+        (CV.art && CV.art.kind === 'page' && (GINK_WEBAPP || !(window.matchMedia && matchMedia('(hover: none)').matches)) ?   // computers: the app opens the browser
+          '<button data-cv="tab">' + (GINK_WEBAPP ? 'Open in a new tab' : 'Open in your browser') + '</button>' : '');
+      m.onclick = function (ev) { var a = ev.target.getAttribute('data-cv'); m.remove();
+        if (a === 'copy') v.querySelector('.cvcopy').click();
+        else if (a === 'tab') cvNewTab(cvFullPage(CV.text, CV.art ? CV.art.title : ''));
+        else ginkEmit('save_code', {name: CV.name, code: CV.text}); };
+      v.appendChild(m);
+    };
+    v.querySelector('.cvpub').onclick = function () {
+      this.disabled = true; this.textContent = 'Publishing…';
+      ginkEmit('publish_design', {html: cvFullPage(CV.text, v.querySelector('.cvt').textContent), title: v.querySelector('.cvt').textContent});
+    };
+    v.querySelector('.cvtabs').onclick = function (e) { var t = e.target.getAttribute && e.target.getAttribute('data-tab'); if (t) cvShow(t); };
+    v.querySelector('.cvwide').onclick = function () { var w = v.classList.toggle('wide'); this.title = w ? 'Make smaller' : 'Expand'; };
+    v.querySelector('.cvclose').onclick = function () { v.remove(); document.body.classList.remove('viewer-open'); artMark(null); };
+    v.querySelector('.cvprev').onclick = function () { artStep(-1); };
+    v.querySelector('.cvnext').onclick = function () { artStep(1); };
+    document.addEventListener('click', function () { var m = v.querySelector('.cvmenu'); if (m) m.remove(); });
+    v.addEventListener('keydown', function (e) { if (e.key === 'Escape') v.querySelector('.cvclose').click(); });
+    return v;
+  }
+  function cvOpen(o) {
+    var v = cvPanel();
+    CV.text = o.text || ''; CV.name = o.name || 'gink-file.txt'; CV.art = o;
+    v.querySelector('.cvt').textContent = o.title; v.querySelector('.cvb').textContent = o.badge || '';
+    var ver = v.querySelector('.cvver'), many = o.versions && o.versions.length > 1;
+    ver.hidden = !many;
+    if (many) {
+      var at = o.versions.indexOf(o.id);
+      v.querySelector('.cvvn').textContent = 'v' + (at + 1) + ' of ' + o.versions.length;
+      v.querySelector('.cvprev').disabled = at <= 0; v.querySelector('.cvnext').disabled = at >= o.versions.length - 1;
     }
-    v.querySelector('.cvt').textContent = title; v.querySelector('.cvb').textContent = ext.toUpperCase().slice(0, 4);
-    var body = block.querySelector('.code-block-body');
-    // inside a .code-block wrapper so the numbers and the code share the same styling (they drifted apart otherwise)
-    v.querySelector('.cvbody').innerHTML = body ? '<div class="code-block cv-inner" data-enh="1">' + body.outerHTML + '</div>' : '';
+    // the code, with line numbers (the chat's blocks have none); a document: its reading view
+    v.querySelector('.cvbody').innerHTML = o.codeHTML ? '<div class="code-block cv-inner" data-enh="1">' + o.codeHTML + '</div>' : '';
     var cvb = v.querySelector('.cvbody .code-block-body'), cvn = CV.text ? CV.text.split('\n').length : 0;
-    if (cvb && cvn > 1 && !cvb.querySelector('.lns')) {           // line numbers in the viewer (the chat's blocks have none)
+    if (cvb && cvn > 1 && !cvb.querySelector('.lns')) {
       var lns = document.createElement('div'); lns.className = 'lns';
       var nums = []; for (var li = 1; li <= cvn; li++) nums.push(li);
       lns.textContent = nums.join('\n'); cvb.insertBefore(lns, cvb.firstChild);
     }
-    var design = /^(html?|svg|xml)$/.test(ext) && /<(html|body|div|svg|style|section|main|h1|p)\b/i.test(CV.text);
+    v.querySelector('.cvdoc').innerHTML = o.kind === 'document' ? '<div class="cvdoc-in">' + (o.docHTML || '') + '</div>' : '';
+    var design = o.kind === 'page' || o.kind === 'image' || o.kind === 'diagram';
     v.querySelector('.cvtabs').hidden = !design;
-    var pub = v.querySelector('.cvpub'); pub.hidden = !design; pub.disabled = false; pub.textContent = 'Publish';
+    var pub = v.querySelector('.cvpub'); pub.hidden = !(o.kind === 'page' || o.kind === 'image'); pub.disabled = false; pub.textContent = 'Publish';
     var bar = v.querySelector('.cvpubbar'); if (bar) bar.remove();
-    cvShow(design ? 'preview' : 'code');
+    cvShow(o.kind === 'document' ? 'doc' : design ? 'preview' : 'code');
     document.body.classList.add('viewer-open');
-  };
+  }
+  window.cvOpen = cvOpen;
   // A fragment or an SVG becomes a whole page (to preview and to publish)
   function cvFullPage(text, title) {
     if (/<!doctype html|<html[\s>]/i.test(text)) return text;
@@ -964,6 +1047,41 @@ JS = r"""
     return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
       '<title>' + t.innerHTML + '</title></head><body' + (svg ? ' style="margin:0;display:grid;place-items:center;min-height:100vh"' : '') +
       '>' + text + '</body></html>';
+  }
+  // A diagram: Mermaid draws it inside the sealed preview (the library comes from Gink's server only when needed)
+  function cvDiagramPage(code) {
+    var t = document.createElement('div'); t.textContent = code;
+    var dark = document.body.classList.contains('theme-dark');
+    var src = (typeof window.GINK_ICONS === 'string' && window.GINK_ICONS ? window.GINK_ICONS : location.origin) +
+              '/vendor/mermaid.min.js?v=' + MERMAID_VERSION;
+    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
+      '<style>html,body{margin:0;min-height:100%;background:' + (dark ? '#1d2023' : '#ffffff') + '}body{display:flex;justify-content:center;' +
+      'padding:28px 16px;box-sizing:border-box;font-family:system-ui,sans-serif}.mermaid{width:100%;text-align:center}' +
+      '.mermaid svg{min-width:min(100%,620px);max-width:100%;height:auto}#e{color:#b3261e;white-space:pre-wrap}</style>' +
+      '</head><body><pre class="mermaid">' + t.innerHTML + '</pre><div id="e"></div><script src="' + src + '"><\/script><script>' +
+      'try{mermaid.initialize({startOnLoad:false,securityLevel:"strict",theme:"' + (dark ? 'dark' : 'default') + '"});' +
+      'mermaid.run().catch(function(x){document.getElementById("e").textContent="This diagram has a mistake: "+(x&&x.message||x);});}' +
+      'catch(x){document.getElementById("e").textContent="The diagram couldn\\u2019t be drawn (are you online?).";}<\/script></body></html>';
+  }
+  // The sealed preview: in the apps, a sandboxed srcdoc frame; on the web, Gink's /artifact/frame (its own sandbox CSP,
+  // so the page's libraries from the web load, and it never inherits the web app's rights)
+  function cvFrame(v, html) {
+    var old = v.querySelector('.cvframe'); if (old) old.remove();
+    old = document.createElement('iframe'); old.className = 'cvframe';
+    old.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-popups');   // never the page's own origin
+    old.setAttribute('title', 'Preview'); v.appendChild(old);
+    if (GINK_WEBAPP) {
+      var sent = false;
+      old.addEventListener('load', function () {
+        if (sent) return; sent = true;
+        try { old.contentWindow.postMessage({ type: 'gink-artifact', html: html }, '*'); } catch (e) {}
+      });
+      old.src = '/artifact/frame';
+    } else old.srcdoc = html;
+    return old;
+  }
+  function cvNewTab(html) {                       // the web app opens it: the same sealed page, in a tab of its own
+    ginkEmit('artifact_tab', { html: html });
   }
   // Publishing finished: the link (Copy link, Open), or why it failed
   window.cvPublished = function (url, error) {
@@ -977,30 +1095,122 @@ JS = r"""
       var cp = document.createElement('button'); cp.textContent = 'Copy link';
       cp.onclick = function () { copyText(url, function () { cp.textContent = 'Copied'; setTimeout(function () { cp.textContent = 'Copy link'; }, 1500); }); };
       var op = document.createElement('button'); op.textContent = 'Open'; op.onclick = function () { ginkEmit('open_url', url); };
-      bar.appendChild(document.createTextNode('Published \u00b7 ')); bar.appendChild(a); bar.appendChild(cp); bar.appendChild(op);
-    } else bar.textContent = error || 'Publishing didn\u2019t work. Please try again.';
+      bar.appendChild(document.createTextNode('Published · ')); bar.appendChild(a); bar.appendChild(cp); bar.appendChild(op);
+    } else bar.textContent = error || 'Publishing didn’t work. Please try again.';
     v.querySelector('.cvh').insertAdjacentElement('afterend', bar);
   };
-  // Designs (HTML, SVG): Preview | Code. The preview is a sealed sandbox: its scripts run, but it can't reach Gink.
+  // Preview | Code for designs; the reading view for documents
   function cvShow(tab) {
     var v = document.getElementById('codeview'); if (!v) return;
-    var body = v.querySelector('.cvbody'), old = v.querySelector('.cvframe');
+    var body = v.querySelector('.cvbody'), doc = v.querySelector('.cvdoc'), img = v.querySelector('.cvimg'), old = v.querySelector('.cvframe');
+    var o = CV.art || {};
     v.querySelectorAll('.cvtabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-tab') === tab); });
-    if (tab === 'preview') {
-      body.hidden = true;
-      if (!old) {
-        old = document.createElement('iframe'); old.className = 'cvframe'; old.setAttribute('sandbox', 'allow-scripts allow-modals');
-        old.setAttribute('title', 'Preview'); v.appendChild(old);
-      }
-      old.srcdoc = cvFullPage(CV.text, ''); old.hidden = false;
-    } else {
-      body.hidden = false; if (old) old.hidden = true;
+    body.hidden = tab !== 'code'; doc.hidden = tab !== 'doc'; img.hidden = true;
+    if (old) old.hidden = true;
+    if (tab !== 'preview') return;
+    if (o.kind === 'image' && /^\s*<svg\b/i.test(CV.text)) {         // an SVG: shown as a picture (no scripts at all)
+      img.hidden = false; img.innerHTML = '';
+      var pic = new Image(); pic.alt = o.title || 'Image';
+      pic.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(CV.text.indexOf('xmlns') > 0 ? CV.text : CV.text.replace(/<svg\b/i, '<svg xmlns="http://www.w3.org/2000/svg"'));
+      img.appendChild(pic);
+      return;
     }
+    if (old && old.getAttribute('data-for') === String(o.id || CV.text.length)) { old.hidden = false; return; }
+    old = cvFrame(v, o.kind === 'diagram' ? cvDiagramPage(CV.text) : cvFullPage(CV.text, o.title || ''));
+    old.setAttribute('data-for', String(o.id || CV.text.length));
   }
-  // A new answer with long code opens it by itself on larger screens (never for chats opened from history)
+
+  // ---- Artifacts in the chat: which blocks are artifacts, their cards, versions (same title = a new version)
+  var ARTS = [];                                   // {id, key, title, kind, ...} in the order they appeared
+  var ART_ICONS = {
+    page: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/></svg>',
+    image: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>',
+    diagram: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="5" rx="1.2"/><rect x="14" y="16" width="7" height="5" rx="1.2"/><rect x="14" y="3" width="7" height="5" rx="1.2"/><path d="M6.5 8v5.5a2 2 0 0 0 2 2H14M10 5.5h4"/></svg>',
+    document: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6M9 9h2"/></svg>',
+    code: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 4l-3 16"/></svg>'
+  };
+  var ART_KIND = { page: ['Web page', '#2F6FB3'], image: ['Image', '#A3274F'], diagram: ['Diagram', '#0F7C74'],
+                   document: ['Document', '#B4530F'], code: ['Code', '#7A3FB3'] };
+  function artKey(t) { return String(t || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+  function artWhat(block) {                       // a code block -> its artifact kind ('' = stays in the chat)
+    var lang = (block.getAttribute('data-lang') || '').toLowerCase(), title = block.getAttribute('data-title') || '';
+    if (lang === 'map' || lang === 'ask' || lang === 'schedule') return '';
+    var text = codeText(block), lines = text.split('\n').length;
+    if (lang === 'mermaid') return 'diagram';
+    if ((lang === 'svg' || lang === 'xml' || lang === 'html') && /^\s*(<\?xml[^>]*>\s*)?<svg\b[\s\S]*<\/svg>\s*$/i.test(text)) return 'image';
+    if ((lang === 'html' || lang === 'htm') && (/<!doctype html|<html[\s>]/i.test(text) || (title && /<(body|div|main|section|style|script)\b/i.test(text)))) return 'page';
+    if ((lang === 'markdown' || lang === 'md') && title) return 'document';
+    if (title && lines >= 3) return 'code';
+    return lines >= 40 && lang !== 'text' && lang !== 'bash' ? 'code' : '';
+  }
+  function artTitle(kind, block, text) {
+    var t = block.getAttribute('data-title') || '';
+    if (t) return t;
+    if (kind === 'page') { var m = /<title[^>]*>([^<]{1,80})<\/title>/i.exec(text); if (m) return m[1].trim(); }
+    if (kind === 'document') { var h = block.querySelector('h1, h2, h3'); if (h && h.textContent.trim()) return h.textContent.trim().slice(0, 80); }
+    var label = (block.querySelector('.code-block-label') || {}).textContent || '';
+    if (label.indexOf('.') > 0) return label.trim();
+    return { page: 'Web page', image: 'Image', diagram: 'Diagram', document: 'Document' }[kind] ||
+           ((CV_LANGS[label.trim().toLowerCase()] || [''])[0] || 'Code') + (kind === 'code' ? ' code' : '');
+  }
+  function artMark(id) { Array.prototype.forEach.call(document.querySelectorAll('.artcard'), function (c) { c.classList.toggle('on', c.getAttribute('data-art') === id); }); }
+  function artEntry(id) { for (var i = 0; i < ARTS.length; i++) if (ARTS[i].id === id) return ARTS[i]; return null; }
+  function artOpen(entry) {
+    var same = ARTS.filter(function (a) { return a.key === entry.key; }).map(function (a) { return a.id; });
+    entry.versions = same;
+    cvOpen(entry); artMark(entry.id);
+  }
+  function artStep(d) {
+    var o = CV.art; if (!o || !o.versions) return;
+    var at = o.versions.indexOf(o.id) + d, next = artEntry(o.versions[at]);
+    if (next) artOpen(next);
+  }
+  window.openArtifact = function (id) { var e = artEntry(id); if (e) artOpen(e); };
+  window.upgradeArtifacts = function (root) {     // after an answer is drawn: its artifacts become cards
+    ARTS = ARTS.filter(function (a) { return a.card && a.card.isConnected; });
+    var found = [];
+    Array.prototype.slice.call((root || document).querySelectorAll('.code-block, .doc-block')).forEach(function (block) {
+      if (block.closest('.artcard, #codeview, .qcard, .gmap')) return;
+      var isDoc = block.classList.contains('doc-block'), kind = isDoc ? 'document' : artWhat(block);
+      if (!kind) return;
+      var text = isDoc ? (block.getAttribute('data-md') || (block.querySelector('.doc-block-body') || block).innerText || '') : codeText(block).replace(/\n$/, '');
+      var title = artTitle(kind, block, text), key = artKey(title);
+      var lang = isDoc ? 'markdown' : (block.getAttribute('data-lang') || 'text').toLowerCase();
+      var info = CV_LANGS[lang] || [lang.toUpperCase(), lang || 'txt'];
+      var label = (block.querySelector('.code-block-label') || {}).textContent || '';
+      var ext = kind === 'page' ? 'html' : kind === 'image' ? 'svg' : kind === 'diagram' ? 'mmd' : kind === 'document' ? 'md' : info[1];
+      var name = label.indexOf('.') > 0 ? label.trim() : (title.replace(/[\\/:*?"<>|]+/g, '').trim().slice(0, 60) || 'gink-file') +
+                 (/\.[a-z0-9]{1,6}$/i.test(title) ? '' : '.' + ext);
+      var body = block.querySelector('.code-block-body');
+      var entry = { id: 'art' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), key: key, title: title, kind: kind,
+                    text: text, name: name, codeHTML: body ? body.outerHTML : '',
+                    docHTML: isDoc ? ((block.querySelector('.doc-block-body') || {}).innerHTML || '') : '',
+                    badge: kind === 'code' ? (ext || 'txt').toUpperCase().slice(0, 4) : ART_KIND[kind][0].toUpperCase() };
+      entry.version = ARTS.filter(function (a) { return a.key === key; }).length + 1;
+      var card = document.createElement('div');
+      card.className = 'artcard'; card.tabIndex = 0; card.setAttribute('role', 'button'); card.setAttribute('data-art', entry.id);
+      card.style.setProperty('--ac', ART_KIND[kind][1]);
+      card.innerHTML = '<div class="arti">' + ART_ICONS[kind] + '</div><div class="artm"><div class="artt"></div><div class="artk"><span></span></div></div>' +
+                       '<span class="arto">Open</span>';
+      card.querySelector('.artt').textContent = title;
+      var nLines = text ? text.split('\n').length : 0;
+      card.querySelector('.artk span').textContent = kind === 'code' ? info[0] + ', ' + nLines + ' lines' : ART_KIND[kind][0];
+      if (entry.version > 1) { var vb = document.createElement('span'); vb.className = 'artv'; vb.textContent = 'v' + entry.version; card.querySelector('.artk').appendChild(vb); }
+      card.setAttribute('aria-label', 'Open ' + title + ', ' + card.querySelector('.artk span').textContent + (entry.version > 1 ? ', version ' + entry.version : ''));
+      card.addEventListener('click', function () { artOpen(entry); });
+      card.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); artOpen(entry); } });
+      block.parentNode.replaceChild(card, block);
+      entry.card = card; ARTS.push(entry); found.push(entry);
+    });
+    return found.length;
+  };
+  // A new answer opens its artifact by itself (the last one), or its longest code, on larger screens -- never for
+  // chats opened from history
   window.__sentAt = 0;
   window.autoOpenCode = function (el) {
     if (!window.__sentAt || Date.now() - window.__sentAt > 10 * 60 * 1000 || window.innerWidth < 900) return;
+    var cards = el.querySelectorAll('.artcard');
+    if (cards.length) { window.openArtifact(cards[cards.length - 1].getAttribute('data-art')); return; }
     var best = null, most = 0;
     Array.prototype.forEach.call(el.querySelectorAll('.code-block'), function (b) {
       var n = codeText(b).split('\n').length; if (n > most) { most = n; best = b; } });
@@ -1076,6 +1286,111 @@ JS = r"""
     btn.onclick = function (e) { e.stopPropagation(); panel.hidden = !panel.hidden; btn.setAttribute('aria-expanded', String(!panel.hidden)); };
     bar.insertBefore(btn, bar.firstChild);
     bar.parentNode.insertBefore(panel, bar.nextSibling);
+  };
+
+  // ---- Scheduled tasks (0.1.161): a ```schedule block ({title, task, every, at, day, date}) becomes a card. In a new
+  // answer the task is made at once (the apps / web app ask Gink's server: POST /tasks); in a chat opened again the
+  // card shows the task as it is now. The server runs it at its time and puts the result in the task's own chat.
+  var TSK = { loaded: false, asked: false, bySource: {}, byId: {}, pending: {}, errors: {} };
+  var TSK_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  var TSK_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>';
+  function tskHash(t) { var h = 2166136261; for (var i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(36); }
+  function tskData(raw) {
+    var d = raw && typeof raw === 'object' ? raw : null; if (!d) return null;
+    var task = String(d.task || d.prompt || '').trim(); if (!task) return null;
+    var every = String(d.every || 'daily').toLowerCase().replace(/^every\s+/, '').replace(/^(day)$/, 'daily').replace(/^(week)$/, 'weekly')
+      .replace(/^(month)$/, 'monthly').replace(/^(hour)$/, 'hourly').replace(/^weekday$/, 'weekdays');
+    var out = { title: String(d.title || '').trim().slice(0, 80), task: task.slice(0, 4000), every: every, at: String(d.at || '08:00').trim() };
+    if (d.day !== undefined && d.day !== null && d.day !== '') out.day = d.day;
+    if (d.date) out.date = String(d.date).slice(0, 10);
+    return out;
+  }
+  function tskWhen(d) {
+    var at = d.at || '08:00';
+    if (d.when) return d.when;
+    if (d.every === 'hourly') return 'Every hour at :' + String(at).slice(-2);
+    if (d.every === 'weekdays') return 'Weekdays at ' + at;
+    if (d.every === 'weekly') { var n = typeof d.day === 'number' ? TSK_DAYS[d.day % 7] : String(d.day || ''); return 'Every ' + (n ? n.charAt(0).toUpperCase() + n.slice(1) : 'week') + ' at ' + at; }
+    if (d.every === 'monthly') return 'Every month on day ' + (d.day || 1) + ' at ' + at;
+    if (d.every === 'once') return 'Once' + (d.date ? ', ' + d.date : '') + ' at ' + at;
+    return 'Every day at ' + at;
+  }
+  function tskNext(ts) {
+    if (!ts) return '';
+    var d = new Date(ts * 1000), now = new Date(), tm = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    var day = new Date(now.getFullYear(), now.getMonth(), now.getDate()), diff = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - day) / 86400000);
+    return 'next: ' + (diff === 0 ? 'today' : diff === 1 ? 'tomorrow' : d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' })) + ', ' + tm;
+  }
+  function tskDraw(card) {
+    var src = card.getAttribute('data-src'), d = card._data, t = TSK.bySource[src] || null, err = TSK.errors[src];
+    if (t && TSK.byId[t.id]) t = TSK.byId[t.id];
+    var gone = card._made && !t && TSK.loaded && !TSK.pending[src];
+    var state = TSK.pending[src] ? 'busy' : err ? 'err' : t ? (t.enabled ? 'on' : (t.runs && t.every === 'once' ? 'done' : 'paused')) : (gone ? 'gone' : (TSK.loaded ? 'none' : 'wait'));
+    card.className = 'tskcard' + (state === 'on' ? ' on' : state === 'err' ? ' err' : '');
+    var label = { busy: 'Scheduling…', err: 'Not scheduled', on: 'Scheduled', paused: 'Paused', done: 'Done', gone: 'Deleted', none: 'Not scheduled', wait: '…' }[state];
+    var shown = t || d, el = function (tag, cls, txt) { var x = document.createElement(tag); if (cls) x.className = cls; if (txt != null) x.textContent = txt; return x; };
+    card.innerHTML = '';
+    var top = el('div', 'tsk-top'), ic = el('div', 'tsk-ic'); ic.innerHTML = TSK_ICON;
+    var m = el('div', 'tsk-m'); m.appendChild(el('div', 'tsk-t', shown.title || 'Scheduled task'));
+    var w = tskWhen(shown) + (t && t.enabled && t.next_run ? ' · ' + tskNext(t.next_run) : '');
+    m.appendChild(el('div', 'tsk-w', w));
+    var pill = el('span', 'tsk-s'); pill.appendChild(el('i')); pill.appendChild(document.createTextNode(label));
+    top.appendChild(ic); top.appendChild(m); top.appendChild(pill); card.appendChild(top);
+    card.appendChild(el('div', 'tsk-q', shown.task || ''));
+    var note = err || (state === 'on' ? 'Gink does this by itself at that time and puts the result in its own chat — even when your apps are closed.' :
+                       state === 'none' ? 'This task isn’t scheduled.' : state === 'gone' ? 'This task was deleted. Its results stay in its chat.' : '');
+    if (t && t.last_status && t.last_status !== 'ok' && t.last_note && state !== 'err') note = 'Last run: ' + t.last_note;
+    if (note) card.appendChild(el('div', 'tsk-n', note));
+    var acts = el('div', 'tsk-a');
+    function btn(text, fn, primary) { var b = el('button', primary ? 'primary' : '', text); b.type = 'button'; b.onclick = function (e) { e.stopPropagation(); fn(b); }; acts.appendChild(b); return b; }
+    if (t) {
+      btn('Open its chat', function () { ginkEmit('task_open', { id: t.id, chat_id: t.chat_id }); }, true);
+      if (t.enabled) btn('Run now', function (b) { b.disabled = true; ginkEmit('task_action', { action: 'run', id: t.id }); });
+      if (state !== 'done') btn(t.enabled ? 'Pause' : 'Resume', function (b) { b.disabled = true; ginkEmit('task_action', { action: t.enabled ? 'pause' : 'resume', id: t.id }); });
+      btn('Delete', function (b) { b.disabled = true; ginkEmit('task_action', { action: 'delete', id: t.id }); });
+    } else if (state === 'err' || state === 'none' || state === 'gone') {
+      btn(state === 'gone' ? 'Schedule again' : (state === 'err' ? 'Try again' : 'Schedule it'), function () { tskCreate(card); }, true);
+    }
+    if (acts.children.length) card.appendChild(acts);
+    card.setAttribute('aria-label', 'Scheduled task: ' + (shown.title || '') + ' — ' + label);
+  }
+  function tskCards() { return Array.prototype.slice.call(document.querySelectorAll('.tskcard[data-src]')); }
+  function tskRefresh() { tskCards().forEach(tskDraw); }
+  function tskCreate(card) {
+    var src = card.getAttribute('data-src');
+    if (TSK.pending[src]) return;
+    TSK.pending[src] = true; delete TSK.errors[src]; card._made = true;
+    tskRefresh();
+    ginkEmit('task_create', Object.assign({}, card._data, { source: src }));
+  }
+  // the apps / web app: the tasks as they are now (after a load, a change, a sync)
+  window.setTasks = function (list) {
+    TSK.loaded = true; TSK.bySource = {}; TSK.byId = {};
+    (list || []).forEach(function (t) { TSK.byId[t.id] = t; if (t.source) TSK.bySource[t.source] = t; });
+    tskRefresh();
+  };
+  // ... the answer to a card's task_create: the task, or why not
+  window.taskResult = function (source, task, error) {
+    delete TSK.pending[source];
+    if (task && task.id) { TSK.byId[task.id] = task; TSK.bySource[source] = task; delete TSK.errors[source]; }
+    else TSK.errors[source] = error || 'That didn’t work. Please try again.';
+    tskRefresh();
+  };
+  window.upgradeSchedules = function (root, isNew) {
+    Array.prototype.slice.call(root.querySelectorAll('.code-block')).forEach(function (block) {
+      var label = block.querySelector('.code-block-label'); if (!label || label.textContent.trim().toLowerCase() !== 'schedule') return;
+      var code = block.querySelector('code'), d;
+      try { d = tskData(JSON.parse(code ? code.textContent : '')); } catch (e) { d = null; }
+      if (!d) return;
+      var card = document.createElement('div'); card.setAttribute('role', 'group');
+      card.setAttribute('data-src', 'blk_' + tskHash(JSON.stringify(d)));
+      card._data = d; card.className = 'tskcard';
+      block.parentNode.replaceChild(card, block);
+      var src = card.getAttribute('data-src');
+      if (isNew && !TSK.bySource[src]) tskCreate(card);
+      else { tskDraw(card); if (!TSK.loaded && !TSK.asked) { TSK.asked = true; ginkEmit('tasks_load', null); } }
+    });
   };
 """
 

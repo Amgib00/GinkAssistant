@@ -17,7 +17,8 @@ USER_FACING = ["src/ginkassistant/ui/settings_page.py", "src/ginkassistant/ui/me
 def test_no_single_country_examples():
     for f in USER_FACING:
         text = open(os.path.join(ROOT, f), encoding="utf-8").read()
-        assert not re.search(r"Senegal|Dakar|\+221|H\u00f4pital Principal", text), f
+        # (?<!U): a font's unicode-range ("U+2212", the minus sign) isn't Senegal's phone code
+        assert not re.search(r"Senegal|Dakar|(?<!U)\+221|H\u00f4pital Principal", text), f
 
 
 def test_the_server_reads_the_device_place():

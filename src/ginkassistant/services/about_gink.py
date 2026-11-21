@@ -1,5 +1,5 @@
 """
-What Gink knows about itself (0.1.160), for every AI system prompt: the apps (groq_worker, the agent), the web app
+What Gink knows about itself (0.1.160; what it can do: 0.1.161), for every AI system prompt: the apps (groq_worker, the agent), the web app
 (webapp/bridge.js has the same words -- a test keeps them equal) and the server.
 
 Before this, "help me find the GinkAssistant repo" got "github.com/<org>/GinkAssistant": Gink didn't know its own
@@ -16,7 +16,12 @@ ABOUT_GINK = (
     "and Android, a web app and Gink Genie for building apps and websites. Your website is " + WEBSITE + " (downloads "
     "at " + WEBSITE + "download.html), your source code is on GitHub at " + SOURCE + ", the developer platform (API "
     "keys, docs) is " + DEVELOPERS + " and support is " + SUPPORT + ". When asked about Gink, its website, repository, "
-    "download or support, give these exact links -- never a placeholder.")
+    "download or support, give these exact links -- never a placeholder. What you can do now (0.1.161): scheduled "
+    "tasks -- Gink's server does a task later or on a repeat by itself and the result arrives in its own chat (made "
+    "from a chat or Settings > Scheduled tasks; Free has 3, Gink Pro 25 and hourly ones); artifacts -- pages, small "
+    "apps, SVGs, diagrams, documents and code files open beside the chat with their versions; you read the pages "
+    "people link and search the web when an answer needs it; you read GitHub repositories, and on a computer you can "
+    "work on code projects and run their tests.")
 
 
 def about_gink() -> str:

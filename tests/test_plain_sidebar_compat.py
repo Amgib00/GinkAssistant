@@ -36,8 +36,8 @@ def test_sidebar_is_plain():
     h = _page()
     side = h[h.index('<aside id="side"'):h.index("</aside>")]
     assert '<div class="brand"><span class="gmark" aria-hidden="true"></span><span>Gink</span></div>' in side
-    assert re.findall(r'class="srow" data-nav="(\w+)"', side) == ["new", "tasks", "media", "genie"]
-    assert re.findall(r'<span class="lbl">([^<]+)</span>', side) == ["New chat", "Workspace", "Media Studio", "Gink Genie"]
+    assert re.findall(r'class="srow" data-nav="(\w+)"', side) == ["new", "tasks", "scheduled", "media", "genie"]
+    assert re.findall(r'<span class="lbl">([^<]+)</span>', side) == ["New chat", "Workspace", "Scheduled", "Media Studio", "Gink Genie"]
     assert '<label class="srow" id="side-search">' in side and 'placeholder="Search chats"' in side
     for gone in ("brand-tile", 'class="side-sep"', 'class="new-chat"', ".new-chat {", 'class="nav"', ".nav button"):   # the 0.1.156 pieces
         assert gone not in h, gone
@@ -204,7 +204,7 @@ def test_rail_logo_toggle_and_gap_fix_in_a_browser(tmp_path):
                 gaps = page.evaluate("""() => [...document.querySelectorAll('.srow')].map(r => {
                     const s = r.querySelector('svg').getBoundingClientRect(), t = (r.querySelector('.lbl') || r.querySelector('input')).getBoundingClientRect();
                     return Math.round(t.left - s.right); })""")
-                assert gaps == [10] * 5
+                assert gaps == [10] * 6                         # New chat, Search, Workspace, Scheduled, Media Studio, Genie
                 crow = page.evaluate("""() => { const c = document.querySelector('.crow'); return [getComputedStyle(c).columnGap,
                     [...c.children].filter(x => getComputedStyle(x).display !== 'none' && getComputedStyle(x).position !== 'absolute').length]; }""")
                 assert crow[0] == "0px" and crow[1] >= 2

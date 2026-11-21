@@ -81,7 +81,7 @@ def test_code_viewer_wiring():
 def test_design_preview_is_sandboxed():
     root = os.path.join(os.path.dirname(__file__), "..")
     extras = open(os.path.join(root, "src", "ginkassistant", "ui", "chat_extras.py"), encoding="utf-8").read()
-    assert "old.setAttribute('sandbox', 'allow-scripts allow-modals');" in extras        # never allow-same-origin
+    assert "old.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-popups');" in extras   # never allow-same-origin
     assert "allow-same-origin" not in extras and "function cvShow(tab)" in extras
 
 

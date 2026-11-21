@@ -103,6 +103,53 @@ def maps(text: str) -> list:
     return out
 
 
+ARTIFACT_KINDS = {"html": "page", "htm": "page", "svg": "image", "mermaid": "diagram", "document": "document",
+                  "markdown": "document", "md": "document"}
+_EXT = {"python": "py", "javascript": "js", "typescript": "ts", "html": "html", "svg": "svg", "mermaid": "mmd",
+        "document": "md", "markdown": "md", "md": "md", "css": "css", "json": "json", "bash": "sh", "shell": "sh",
+        "sql": "sql", "java": "java", "kotlin": "kt", "swift": "swift", "go": "go", "rust": "rs", "ruby": "rb",
+        "php": "php", "csharp": "cs", "cpp": "cpp", "c": "c", "yaml": "yaml", "toml": "toml", "dart": "dart"}
+
+
+def artifacts(text: str) -> list:
+    """The finished things in an answer (ask with gink_artifacts=True): each fenced block with a title, like
+    ```html title="Pomodoro timer". [{"title", "language", "kind", "content", "filename", "version"}] -- kind is page,
+    image (SVG), diagram (Mermaid), document (Markdown) or code; a later block with the same title is a new version
+    of it (version 2, 3...)."""
+    import re
+    out, seen = [], {}
+    for m in re.finditer(r"^([ \t]*)(```|~~~)[ \t]*([\w+#.\-]*)([^\n`]*)\n(.*?)\n?[ \t]*\2[ \t]*$", text or "", re.M | re.S):
+        lang, info, body = m.group(3).lower(), m.group(4), m.group(5)
+        t = re.search(r"""\btitle[ \t]*=[ \t]*(?:"([^"\n]{1,120})"|'([^'\n]{1,120})')""", info)
+        if not t:
+            continue
+        title = (t.group(1) or t.group(2)).strip()
+        key = re.sub(r"\s+", " ", title.lower())
+        seen[key] = seen.get(key, 0) + 1
+        ext = _EXT.get(lang, lang or "txt")
+        base = title if re.search(r"\.[A-Za-z0-9]{1,6}$", title) else re.sub(r"[^\w.-]+", "-", title).strip("-").lower() + "." + ext
+        out.append({"title": title, "language": lang, "kind": ARTIFACT_KINDS.get(lang, "code"), "content": body,
+                    "filename": base or ("artifact." + ext), "version": seen[key]})
+    return out
+
+
+def schedules_in(text: str) -> list:
+    """The schedules an answer offers (ask with gink_tasks=True): each ```schedule block, ready for
+    client.tasks.create(**s) -- [{"title", "task", "every", "at", "day"?, "date"?}]."""
+    import json as _json
+    import re
+    out = []
+    for block in re.findall(r"```schedule[^\n]*\n(.*?)```", text or "", re.S):
+        try:
+            d = _json.loads(block)
+        except ValueError:
+            continue
+        if not isinstance(d, dict) or not str(d.get("task") or "").strip():
+            continue
+        out.append({k: d[k] for k in ("title", "task", "every", "at", "day", "date") if d.get(k) not in (None, "")})
+    return out
+
+
 def screen_image() -> bytes:
     """A picture of this computer's screen (PNG bytes) for see(): macOS screencapture, Windows/Linux Pillow's
     ImageGrab, or a Linux screenshot tool. Nothing is kept."""
@@ -181,6 +228,7 @@ class Client:
         self.interactions = _Interactions(self)
         self.environments = _Environments(self)
         self.schedules = _Schedules(self)
+        self.tasks = _Tasks(self)
         self.memories = _Memories(self)
         self.workspace = _Workspace(self)
         self.webhooks = _Webhooks(self)
@@ -213,7 +261,11 @@ class Client:
         return self.request("POST", "/chat/completions", json=body).json()
 
     def chat(self, message, model: str = "", system: str = "", **extra) -> str:
-        """One answer. `message` is text or a full messages list. Live info (date, weather, rates...) is added by Gink."""
+        """One answer. `message` is text or a full messages list. Live info (date, weather, rates...) is added by Gink.
+        Gink's options, as keyword arguments: gink_web="auto" (read the pages linked in the question and search the
+        web when the answer needs it -- like Gink's apps), gink_code=True (GitHub repositories in the question are
+        read), gink_artifacts=True (finished things in titled blocks: artifacts()), gink_tasks=True ("every morning..."
+        gets a ```schedule block: schedules_in()), gink_maps=True (```map blocks: maps())."""
         data = self._chat_data(message, model=model, system=system, **extra)
         return ((data.get("choices") or [{}])[0].get("message") or {}).get("content") or ""
 
@@ -238,6 +290,14 @@ class Client:
     def maps(self, text: str) -> list:
         """The maps in an answer (ask with gink_maps=True): see gink.maps."""
         return maps(text)
+
+    def artifacts(self, text: str) -> list:
+        """The finished things in an answer (ask with gink_artifacts=True): see gink.artifacts."""
+        return artifacts(text)
+
+    def schedules_in(self, text: str) -> list:
+        """The schedules an answer offers (ask with gink_tasks=True): see gink.schedules_in."""
+        return schedules_in(text)
 
     def geo(self, query: str, limit: int = 5) -> list:
         """Places by name or address (OpenStreetMap): [{"name", "display", "lat", "lon", "type", "map_url"}]."""
@@ -432,6 +492,54 @@ class _Schedules:
 
     def delete(self, schedule_id: str) -> None:
         self.c.request("DELETE", f"/schedules/{schedule_id}")
+
+
+class _Tasks:
+    """Scheduled tasks for your account: at its time Gink does the task by itself (searching the web as it needs) and
+    the result lands in the task's own chat in your Gink apps -- and by email with notify_email=True.
+
+        task = client.tasks.create("Give me the three biggest news stories, with sources", every="daily", at="08:00")
+        client.tasks.run(task.id).text            # now, and wait for the result
+        client.tasks.get(task.id).results         # [{"text", "created"}], newest last
+
+    every: once (date="YYYY-MM-DD"), hourly (Gink Pro), daily, weekdays, weekly (day="monday"), monthly (day=1..31).
+    The time is your computer's time zone unless you pass timezone="Europe/Paris"."""
+
+    def __init__(self, client: Client):
+        self.c = client
+
+    def create(self, task: str, every: str = "daily", at: str = "08:00", title: str = "", day=None, date: str = "",
+               timezone: str = "", notify_email: bool = False) -> _Obj:
+        body = {"task": task, "every": every, "at": at}
+        for k, v in (("title", title), ("day", day), ("date", date), ("timezone", timezone)):
+            if v not in (None, ""):
+                body[k] = v
+        if notify_email:
+            body["notify_email"] = True
+        return _Obj(self.c.request("POST", "/tasks", json=body).json())
+
+    def list(self) -> list:
+        return [_Obj(t) for t in self.c.request("GET", "/tasks").json().get("data", [])]
+
+    def get(self, task_id: str, results: int = 5) -> _Obj:
+        return _Obj(self.c.request("GET", f"/tasks/{task_id}", params={"results": int(results)}).json())
+
+    def update(self, task_id: str, **fields) -> _Obj:
+        """Change a task: title, task, every, at, day, date, timezone, notify_email, enabled."""
+        return _Obj(self.c.request("PATCH", f"/tasks/{task_id}", json=fields).json())
+
+    def pause(self, task_id: str) -> _Obj:
+        return self.update(task_id, enabled=False)
+
+    def resume(self, task_id: str) -> _Obj:
+        return self.update(task_id, enabled=True)
+
+    def run(self, task_id: str, wait: bool = True) -> _Obj:
+        """Run it now. wait=True: {"status", "text", "task"} once it's done (a minute or so)."""
+        return _Obj(self.c.request("POST", f"/tasks/{task_id}/run", json={"wait": bool(wait)}).json())
+
+    def delete(self, task_id: str) -> None:
+        self.c.request("DELETE", f"/tasks/{task_id}")
 
 
 class _Webhooks:
