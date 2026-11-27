@@ -192,6 +192,9 @@ for await (const event of gink.interactions.stream({ input: "Add this year's num
       <tr><td><code>"stream": true</code></td><td>Live: the response is a stream of server-sent events &mdash; <code>step</code>
         (each step the moment it&rsquo;s done), <code>status</code>, then <code>done</code> with the whole interaction.
         Try <code>curl -N</code>.</td></tr>
+      <tr><td><code>"web_search"</code></td><td>The agent can search the web and open links (<code>read_page</code>): a page&rsquo;s
+        words, a PDF&rsquo;s text, a post or reel (who posted it, its caption, what its picture shows). A link&rsquo;s
+        words reach the agent as data between markers, never as instructions.</td></tr>
       <tr><td><code>GET /v1/interactions/{id}</code></td><td>The interaction now (for background ones).</td></tr>
       <tr><td><code>POST /v1/interactions/{id}/cancel</code></td><td>Stops before its next step.</td></tr>
       <tr><td><code>POST /v1/schedules</code></td><td>Scheduled agents: <code>{"input", "every": "hourly" | "daily" | "weekly",

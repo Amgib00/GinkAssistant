@@ -16,6 +16,8 @@ The Gink Python SDK (pip install gink-ai), for the Gink Developer API.
 
     answer = client.chat("What's the weather where I am?")                  # chat, with live information
     print(client.watch("clip.mp4", "Why does my camera look like this?"))   # a video: its frames (ffmpeg), Gink Pro
+    reel = client.read_link("https://www.facebook.com/reel/2322629778521786")  # a link: its caption, what it shows
+    print(reel.kind, reel.get("author"), reel.get("text"), reel.get("seen"))
     task = client.tasks.create("Give me the top three news stories", every="daily", at="08:00")   # Gink does it daily
     env = client.environments.create(name="notes")
     env.upload("data.csv", open("data.csv", "rb").read())
@@ -26,4 +28,4 @@ from .client import (Client, GinkAPIError, Interaction, Environment, Event, arti
 
 __all__ = ["Client", "GinkAPIError", "Interaction", "Environment", "Event", "artifacts", "maps", "schedules_in", "screen_image",
            "sources", "verify_webhook", "video_frames", "video_parts"]
-__version__ = "0.3.17"
+__version__ = "0.3.19"

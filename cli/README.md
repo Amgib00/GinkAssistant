@@ -36,6 +36,18 @@ Like the Live camera in the apps: careful with anything about health (general te
 dose, and "get help now" when it could be urgent). In a workspace in healthcare mode, nothing that identifies a
 patient is read out.
 
+## Links
+
+```bash
+gink read https://www.facebook.com/reel/2322629778521786      # what it is: who posted it, its caption, what it shows
+gink read https://www.youtube.com/watch?v=dQw4w9WgXcQ "summarise it in French"
+gink "what does this say about rainy season roads? https://www.bbc.com/news/..."   # links in a question: opened too
+```
+
+Pages, PDFs, pictures, audio files, and social media posts and reels (Facebook, Instagram, TikTok, YouTube, X,
+Threads, Bluesky...). For a reel, Gink sees what a messaging app's preview shows -- the caption, the cover picture,
+who posted it -- and says so; `gink watch` a saved video to have it watched whole.
+
 ## Workspaces
 
 ```bash
@@ -81,6 +93,11 @@ for s in found["sources"]:                                           # official 
 png = client.image("my dog", idea="figurine", photo="dog.jpg")         # Media Studio's looks
 print(client.see("receipt.jpg", "add these up"))                       # about a photo (Gink Pro)
 print(client.watch("clip.mp4", "what happens here?"))                  # about a video: its frames (ffmpeg; Gink Pro)
+reel = client.read_link("https://www.facebook.com/reel/2322629778521786")   # a link: page, PDF, post, reel...
+print(reel.kind, reel.get("author"), reel.get("text"), reel.get("seen"))    # "reel", who posted it, caption, picture
+answer = client.chat("Make a habit tracker in React", gink_artifacts=True, gink_fit=True)
+for a in client.artifacts(answer):                                     # page, react, chart, table, slides, image, ...
+    open(a["filename"], "w").write(a["content"])
 env = client.environments.get(it.environment)
 print(env.download("report.md").decode())
 ```

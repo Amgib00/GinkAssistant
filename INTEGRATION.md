@@ -2811,3 +2811,131 @@ New services/live_info.py (all free, no API keys):
   resolve, only loopback connects, proxies dropped); tests.yml -rfE and 30-minute limits; tools/close_fixed_alert_prs.py.
 - Tests: tests/test_tool_slips.py, tests/test_automatic_tools.py, tests/test_device_notifications.py,
   tests/test_video_attachments.py (a real-browser check records its own clip with MediaRecorder).
+
+## 0.1.163: request fitting; Gink just makes it; question cards that send what you type; more artifacts; web history; the website's stale pages
+
+- From the owner's four recordings: a typed answer on a question card couldn't be sent (the arrow stayed disabled:
+  only a click on an option or Enter on a non-last question set an answer); the AI's "Other (type your own)" showed
+  beside the card's own line; "make me anything" got a card asking which kind, then three more, and "add more to it"
+  another; a long artifact chat ended in Groq's raw 413 ("Request too large ... in organization org_... Limit 8000,
+  Requested 17295") or 429 with the account id; the web app showed an opened chat's answers as **raw** text first and
+  its answered cards open and blank (/render finished after addUserMessage had tried to close them); the model said
+  "save the snippet as index.html"; the website looked half-styled (old markup with the new CSS: light words on white).
+- Request fitting: services/context_fit.py (pure Python, copied into the server image). Groq's free plan takes ~8,000
+  tokens a minute for GPT-OSS and counts a request's words AND its max_tokens (a refusal's "Requested" showed it); one
+  request over the limit is a 413. Every Groq request is fitted first (backend_server._fit_request): earlier versions
+  of the same titled block become a line saying so (always, for the apps and the web app), then less room for the
+  answer down to a floor (_answer_floor: a whole new version of the newest artifact + room to think), then long code in
+  older messages, the oldest turns (whole: tool calls keep their results), long older messages; at "level 1" the
+  newest version of every artifact and the last two turns always stay, and every model in GROQ_FALLBACK_ORDER is
+  tried like that before the chosen model loses more (level 2). Limits: FREE_TPM until Groq says otherwise --
+  x-ratelimit-limit-tokens on every reply, a refusal's "Limit N, Requested M" (which also teaches whether max_tokens
+  counted, and a size correction), GINK_TPM_LIMITS for a paid plan; x-ratelimit-remaining-tokens sends a request to
+  the next model when this minute is used up. A 413 is asked again smaller (or elsewhere), a 429 on the next model;
+  _groq_post (agents, tasks, Genie, sites, search) does the same. Nothing is refused on Gink's guesses alone: a
+  request no model seems to take is still sent, and Groq's answer decides.
+- Refusals: people get context_fit.friendly_refusal (too long / busy with "try again in N seconds" and Retry-After /
+  today's limit) -- _refusal_response; developers get Groq's JSON with the organization id, service tier and upsell
+  removed (scrub), a 413 suggesting "gink_fit": true, scrubbed error events inside streams, and X-Gink-Model whenever
+  another model answered. The apps: groq_worker._problem_message and tool_slips.friendly (agent.AIRefused) say the
+  same plain words; the web app never shows a message with org_/service tier/upsell.
+- Apps straight to Groq (own key): drop_old_versions always, _fit_direct with the model's limit, a 413 learned and
+  asked once more. The agent sends one copy of each artifact. "continue", "add more", "My answers: ..." after an
+  artifact count as making (_GOING_ON + _working_on_artifact): room for the whole new version.
+- Automatic: ASK_PROMPT (groq_worker, bridge.js; tested equal) -- open requests are made with sensible choices and a
+  line saying what was chosen; cards only for what only the person knows, never an "Other" option, never ask again.
+  DEFAULT_SYSTEM_PROMPT lost "ask a follow-up question when it would help rather than guessing". ARTIFACT_PROMPT:
+  React (jsx), charts (Chart.js JSON), csv, slides; never "save it as a file"; finished quality (phone, dark mode, real
+  content, CDN libraries only from cdnjs/jsDelivr/unpkg); a new version keeps what was there.
+- Question cards (chat_extras): the typed line IS the answer (oninput), the arrow lights up, Enter sends when every
+  question has an answer, options are de-duplicated and "Other/Something else/Type your own..." are left out (the
+  card's own line covers them), ```ask JSON may be a bare list. closeQuestionCards(text, root) closes one answer's
+  cards: the web app's openSession pairs each answer with the message after it and closes its cards after /render.
+- More artifacts (chat_extras): react (jsx/tsx: Babel compiles in the preview, React imports become React's own,
+  Tailwind's browser build styles it), chart (Chart.js, Gink's palette when none is given), table (CSV/TSV/";",
+  sortable, numbers sort as numbers), slides (Markdown split by ---, arrows/swipe/F). Libraries are exact versions from
+  jsDelivr (checked on npm: react 18.3.1 UMD, react-dom 18.3.1, @babel/standalone 7.24.7, @tailwindcss/browser
+  4.1.11, chart.js 4.4.1) and load only inside the sealed preview; offline, the preview says so. cvPage builds every
+  kind's whole page (preview, open in a tab, publish); a chart or slides download as a page that opens anywhere.
+  The runners are this page's own functions, passed in with Function.toString (no escaping of code inside strings).
+  Older web engines: no lookbehind, no aspect-ratio or flex gap in the previews.
+- Quick formatting (chat_extras.quickMarkdown): escape first, then headings, lists, quotes, tables, code, bold/italic,
+  http(s)/mailto links and pictures only. The web app formats answers as they arrive (setQuickText, once a frame,
+  the spinner stays) and opened chats at once (setQuickHtml), then the server's formatting; RENDERED remembers it for
+  the visit (a chat opened again: no /render); finalizeOld formats history as history (LOADING_CHAT: no scheduled
+  task made again, no code opening by itself).
+- Markdown: a numbered list right after a bulleted one (or the reverse) gets an empty paragraph between, so
+  Python-Markdown keeps them apart.
+- Website: tools/build_website.py names styles and scripts ?v=<build> (a hash of assets, pages and the layout),
+  writes <meta name="gink-build"> and the build into site.js; site.js loads an older page fresh (fetch cache:"reload",
+  then reload), once per build (sessionStorage). The hero is night by itself too.
+- Versions: 0.1.163; gink-ai 0.3.18 (SDKs and CLI). Tests: tests/test_context_fit.py,
+  tests/test_automatic_and_artifacts.py (real-browser: cards, quick formatting, the new artifacts, the built web app
+  opening a chat, the website build), tests/test_ai_errors.py now expects plain words.
+
+## 0.1.164: links, seen and read automatically; the shield; agents, Genie, SDKs and CLI open links
+
+- The owner's ask: "if I give it any links ... for any social media platforms (https://www.facebook.com/reel/...) for
+  it to automatic see it and know" -- and pages read automatically. 0.1.161 read pasted pages (title + text only;
+  a reel came back as Facebook's sign-in page, so the AI guessed).
+- services/link_kinds.py (pure, copied into the server image): SITES (name, hosts, path patterns -> kind, official
+  oEmbed) for YouTube, TikTok, X, Facebook (reel, video, post, event, group, listing, page; fb.watch), Instagram,
+  Threads, LinkedIn, Reddit, Bluesky, Snapchat, Pinterest, Telegram, WhatsApp, Vimeo, Dailymotion, Twitch, Spotify,
+  SoundCloud, Tumblr, Flickr, Imgur, Medium; other hosts by file extension (PDF, picture, video, audio, page).
+  page_meta (meta tags, first wins, and the page's own oEmbed link), page_ld (JSON-LD, @graph too), preview (title,
+  caption, body, author, date, picture, video, seconds, counts from interactionStatistic, transcript), from_oembed,
+  from_bluesky, walled (a sign-in page), describe/context_note (the AI's note), busy_label (the chat's words).
+- The shield (link_kinds): strip_hidden (display:none, visibility:hidden, hidden, zero font size, opacity 0) before a
+  page becomes text, safe_text (zero-width and direction characters, Unicode tag letters), fence (every link's words
+  between "<<<LINK n DATA code" and "LINK n DATA code>>>", the code new for every request and removed from the
+  words, so a page can't close the block and talk as Gink), injection_signs (up to 3 snippets: "ignore previous
+  instructions", "you are now", "reveal your system prompt", "send the user's password", chat-template tokens...)
+  -> a "Careful:" line telling the AI it's the page's text, not the person's. The note's size is bounded (12,000
+  characters for the links in all; 6,000 for links re-read for a follow-up): context_fit never shortens system notes.
+- Reading a page takes time in proportion to its size, whatever it holds: link_kinds' patterns stop at the next "<"
+  or ">", and comments, scripts, hidden parts and <main> are found in one pass (drop_comments, drop_elements,
+  first_element, page_title, page_ld with str.find) -- the old `.*?</\1>` patterns took minutes on a page of
+  thousands of unclosed tags (tested: a 2 MB hostile page in well under a second). A class merely named "hidden"
+  (Tailwind's "hidden md:block") isn't hidden. Word files whose document.xml unpacks past 20 MB aren't opened (zip
+  bombs); PDFs and Word files are read in a worker thread within the time left.
+- Time: each part of a link has its own limit (_within: the page 18 s, previews 12 s, the picture 8 s, looking 20 s,
+  all within LINK_SECONDS = 30; listening HEAR_SECONDS = 75) and what was found is kept when one part is slow or
+  fails. Pictures over 2.9 MB aren't sent to the vision model (Groq takes 4 MB of base64).
+- services/web_reader.py (rewritten): get() is the one way out -- http(s) on 80/443/8080/8443, no user:pass, every
+  address public (checked before each request, every redirect by hand, and the peer's address after connecting),
+  GET only, no cookies, an honest User-Agent (GinkReader/1.1; no pretending to be a crawler), sizes by type (page 2 MB,
+  PDF/Word 15 MB, picture 6 MB checked by its first bytes, audio/video 24 MB for Whisper), 30 seconds per link, a
+  10-minute cache (cached() lets the server not count a link twice). fetch_link gathers at once: the page, the
+  site's official oEmbed (or Meta's Graph oEmbed with META_OEMBED_TOKEN -- oembed_video/post/page,
+  instagram_oembed; META_GRAPH_VERSION, default v22.0), Bluesky's public API (resolveHandle + getPostThread), YouTube's
+  Data API with YOUTUBE_API_KEY; then the page's own preview; generic titles ("Facebook", "Log in") dropped; a social
+  site's page words are never taken as the post; a short link to another site becomes that site; a picture is looked
+  at through see() (the server's vision model, 25 s), an audio/video file listened to through hear() (Whisper, 60 s).
+  Platform videos are never downloaded: for a reel the note says only its preview could be opened and that an attached
+  video is watched whole. PDF (pypdf, 40 pages), Word (.docx XML). fetch_page keeps 0.1.161's shape.
+- Server (backend_server): _add_reading opens the last message's links (or, for a short follow-up with none, the
+  previous message's -- "earlier in this chat") through _read_links_for: LINK_BUDGET per person per 10 minutes
+  (free 30 links / 8 pictures / 2 recordings, Pro 80 / 30 / 8; cached links free); _see_link_picture (VISION_MODELS,
+  max 400 tokens, LINK_LOOK_PROMPT: never who people are from their face, words quoted, instructions in pictures not
+  followed; Qwen asked with reasoning_effort "none", asked again without it if refused, <think> removed);
+  _hear_link_media (WHISPER_TYPES / first bytes; QuickTime isn't Whisper's: not sent). Lockdown and parental "web off"
+  open nothing, and neither does a message that will be refused (_over_daily: today's messages used up, checked
+  without counting). Meta's oEmbed has had no author or thumbnail since November 2025: "Posted by X on <date>" in
+  its embed gives them. Sign-in pages' titles ("Facebook - log in or sign up", "Login - Instagram") aren't titles. Automatic web search no longer runs in lockdown (it used to refuse the whole chat with a 403).
+  POST /links/read (apps) and POST /v1/links/read (API keys): {"url"} | {"urls": up to 3} | {"text"}, "look"/"listen"
+  false to skip; -> {"links", "for_ai"}; 400 missing_url / invalid_url / too_many_links, 403 family_rule / lockdown,
+  429 rate_limited.
+- Agents: read_page (managed agents, scheduled tasks, Genie) opens with the reader first (the fenced note), and only
+  when it couldn't asks the search provider (with a line saying why). Genie also opens the links in a request before
+  it starts (_genie_links: a step per link) and may call read_page itself (plan mode too). The apps' agent:
+  read_link (tools.py; the app's link_reader -> /links/read, else opened on the device), status "Opening the link...",
+  off with "Search the web". Apps with their own Groq key: groq_worker._with_links opens links on the device.
+- Clients: the spinner says what's being opened (link_kinds.busy_label in main_screen; linkLabel in bridge.js, tested
+  equal with node); the web app's WEB_RE no longer matches a link's own words ("/news/" in a URL isn't a search).
+  ABOUT_GINK (both copies): Gink opens links by itself, and watches a reel attached as a video file.
+- SDKs 0.3.19: client.links.read(url | urls | text, look, listen), client.read_link(url); gink.links.read(),
+  gink.readLink(), LinkInfo type; CLI `gink read URL ["question"]` (no question: what the link is, from /links/read;
+  with one: the answer, links opened by the server).
+- Versions: 0.1.164; gink-ai 0.3.19. Tests: tests/test_links_seen_and_read.py (a simulated internet: a Facebook reel,
+  a sign-in wall, Meta's, YouTube's, X's and Bluesky's previews, a short link, a PDF, pictures, audio, private
+  addresses, a page written to trick the AI, the server's routes, allowance, lockdown, agents, Genie, SDKs, CLI).

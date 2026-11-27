@@ -182,7 +182,8 @@ def test_busy_ai_retries_once_and_daily_limit_skips(srv, monkeypatch):
     b._task_db(lambda con: con.execute("UPDATE chat_tasks SET next_run=? WHERE id=?", (time.time() - 1, t["id"])))
     assert run_due(b) == 1
     x = c.get(f"/tasks/{t['id']}", headers=h).json()
-    assert x["last_status"] == "failed" and x["next_run"] - time.time() > 86400               # then its normal time
+    # then its normal time -- the same as when it was made (before 08:00 that's later today, so no "> a day")
+    assert x["last_status"] == "failed" and x["next_run"] - time.time() > 700 and abs(x["next_run"] - t["next_run"]) < 5
     monkeypatch.setattr(b, "_count_call", lambda *a, **k: b._ai_error(429, "You've used today's 30 free messages.", "daily_limit"))
     b._task_db(lambda con: con.execute("UPDATE chat_tasks SET next_run=? WHERE id=?", (time.time() - 1, t["id"])))
     assert run_due(b) == 1

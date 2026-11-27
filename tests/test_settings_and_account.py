@@ -100,7 +100,7 @@ def test_settings_change_real_behaviour(tmp_path, monkeypatch):
     run(ctl.on_setting("use_memory", False))
     assert brain.memory_provider() == "" and app.task_runner.use_memory is False
     run(ctl.on_setting("web_search", False)); run(ctl.on_setting("video_suggestions", False))
-    assert app.task_runner.disabled_tools == {"web_search", "find_video"}
+    assert app.task_runner.disabled_tools == {"web_search", "read_link", "find_video"}   # links: with the web (0.1.164)
     run(ctl.on_setting("reply_language", "fr"))
     assert "Always reply in French" in brain.reply_language_note()
     run(ctl.on_setting("reply_language", "klingon"))                     # ignored

@@ -304,9 +304,21 @@ def _nest_lists(lines: list) -> list:
 
 
 def _block_breaks(text: str) -> str:
-    lines, out, in_table = _nest_lists(text.split("\n")), [], False
+    lines, out, in_table, kind = _nest_lists(text.split("\n")), [], False, ""
     for i, line in enumerate(lines):
         prev = out[-1] if out else ""
+        # a numbered list right after a bulleted one (or the other way round) is a list of its own -- Python-Markdown
+        # joined them into one, so "1. 2." showed as bullets (0.1.163). An empty paragraph between keeps them apart.
+        if _LIST_ITEM.match(line) and not line[:1].isspace():
+            now = "ol" if re.match(r"^ {0,3}\d", line) else "ul"
+            if kind and now != kind:
+                while out and not out[-1].strip():
+                    out.pop()
+                out.extend(["", "​", ""])
+                prev = ""
+            kind = now
+        elif line.strip() and not line[:1].isspace():
+            kind = ""
         if in_table:
             if line.strip() and "|" in line:
                 out.append(line)

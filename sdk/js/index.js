@@ -107,6 +107,25 @@ export class Gink {
       speech: async (text, { voice, speed } = {}) =>
         (await this.request("POST", "/audio/speech", { json: { input: String(text), ...(voice ? { voice } : {}), ...(speed ? { speed } : {}) }, raw: true })).arrayBuffer(),
     };
+    this.links = {                                     // links, opened by Gink (0.1.164): pages, PDFs, posts, reels
+      // { url } | { urls } (up to 3) | { text } (every link in a message), look/listen: false to skip pictures / audio
+      // -> { links: [{ url, site, kind, title, author, date, seconds, stats, text, body, seen, heard, note, error }], for_ai }
+      read: async (url, { urls, text, look = true, listen = true } = {}) => {
+        const json = { look: !!look, listen: !!listen };
+        if (Array.isArray(url)) json.urls = url.map(String);
+        else if (url) json.url = String(url);
+        if (urls) json.urls = urls.map(String);
+        if (text) json.text = String(text);
+        const data = await this.request("POST", "/links/read", { json });
+        return { links: data.links || [], for_ai: data.for_ai || "" };
+      },
+    };
+  }
+
+  // What one link is and says: its site, kind ("reel", "video", "post", "PDF", "page"...), caption (text), what its
+  // picture shows (seen)... -- e.g. await gink.readLink("https://www.facebook.com/reel/2322629778521786")
+  async readLink(url, { look = true, listen = true } = {}) {
+    return (await this.links.read(url, { look, listen })).links[0];
   }
 
   // Places by name or address (OpenStreetMap): [{ name, display, lat, lon, type, map_url }]
@@ -245,11 +264,14 @@ export function maps(text) {
 
 // The finished things in an answer (ask with { gink_artifacts: true }): each fenced block with a title, like
 // ```html title="Pomodoro timer" -> [{ title, language, kind, content, filename, version }]; kind is page, image (SVG),
-// diagram (Mermaid), document (Markdown) or code; a later block with the same title is its next version.
-const ARTIFACT_KINDS = { html: "page", htm: "page", svg: "image", mermaid: "diagram", document: "document", markdown: "document", md: "document" };
+// diagram (Mermaid), document (Markdown), react (jsx/tsx), chart (Chart.js JSON), table (CSV), slides (Markdown split
+// by ---) or code; a later block with the same title is its next version.
+const ARTIFACT_KINDS = { html: "page", htm: "page", svg: "image", mermaid: "diagram", document: "document", markdown: "document", md: "document",
+  jsx: "react", tsx: "react", chart: "chart", csv: "table", tsv: "table", slides: "slides" };
 const ARTIFACT_EXT = { python: "py", javascript: "js", typescript: "ts", html: "html", svg: "svg", mermaid: "mmd", document: "md",
   markdown: "md", md: "md", css: "css", json: "json", bash: "sh", shell: "sh", sql: "sql", java: "java", kotlin: "kt",
-  swift: "swift", go: "go", rust: "rs", ruby: "rb", php: "php", csharp: "cs", cpp: "cpp", c: "c", yaml: "yaml", toml: "toml", dart: "dart" };
+  swift: "swift", go: "go", rust: "rs", ruby: "rb", php: "php", csharp: "cs", cpp: "cpp", c: "c", yaml: "yaml", toml: "toml", dart: "dart",
+  jsx: "jsx", tsx: "tsx", chart: "json", csv: "csv", tsv: "tsv", slides: "md" };
 export function artifacts(text) {
   const out = [], seen = {};
   const re = /^([ \t]*)(```|~~~)[ \t]*([\w+#.\-]*)([^\n`]*)\n([\s\S]*?)\n?[ \t]*\2[ \t]*$/gm;

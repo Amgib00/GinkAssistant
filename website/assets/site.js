@@ -1,3 +1,15 @@
+// An older copy of this page (a tab brought back, the back button) with this newer script and styles: the page looked
+// half-styled. Load it fresh, once per build (0.1.163). tools/build_website.py writes the build in place of the marker.
+(function () {
+  var build = "__GINK_BUILD__", mark = document.querySelector('meta[name="gink-build"]');
+  if (build.indexOf("__") === 0 || (mark && mark.getAttribute("content") === build)) return;
+  var key = "gink-fresh-" + build;
+  try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, "1"); } catch (e) { return; }
+  var again = function () { location.reload(); };
+  if (window.fetch) fetch(location.href, { cache: "reload", credentials: "same-origin" }).then(again, again);
+  else again();
+})();
+
 // Phone menu: open/close, Escape and link clicks close it.
 (function () {
   var btn = document.querySelector(".menu-toggle"), nav = document.getElementById("site-nav");

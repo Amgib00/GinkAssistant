@@ -123,8 +123,14 @@
         return String(e.message || "").replace(/at midnight \(UTC\)|midnight \(UTC\)/, "at " + localReset(e.resets_at));
       }
       var msg = (j.error && (j.error.message || j.error)) || j.detail || ("Something went wrong (" + r.status + ").");
-      if (r.status === 429 && e.code !== "daily_limit" && e.code !== "turn_limit")      // the AI provider's own limit
-        return "The AI service has reached its limit for now (too many requests). Please try again in a little while.\n\nDetails: " + msg;
+      // the server says it in plain words (0.1.163); an older one passed the AI provider's own message on -- never
+      // shown ("... in organization org_... Upgrade to Dev Tier")
+      if (/\borg_[A-Za-z0-9]{6,}|Need more tokens|service tier/.test(String(msg)))
+        return r.status === 413 ? "This chat has grown too long for Gink’s AI to read in one go. Start a new chat for the next step, or ask for a smaller change."
+          : r.status === 429 ? "Gink’s AI is busy right now. Please try again in a little while."
+          : "The AI service had a problem. Please try again in a moment.";
+      if (r.status === 429 && e.code !== "daily_limit" && e.code !== "turn_limit" && e.code !== "busy")
+        return "Gink’s AI is busy right now. Please try again in a little while.";
       return msg;
     }).catch(function () { return "Something went wrong (" + r.status + ")."; });
   }
@@ -291,30 +297,54 @@
     setComposerText(load("gink_draft_new", "") || "");
     refreshSidebar();
   }
+  // An answer's text -> the server's formatting, for this visit: a chat opened again shows formatted at once (0.1.163)
+  var RENDERED = typeof Map === "function" ? new Map() : null;
+  function remember(text, html) {
+    if (!RENDERED || typeof html !== "string") return;
+    RENDERED.delete(text); RENDERED.set(text, html);
+    if (RENDERED.size > 400) RENDERED.delete(RENDERED.keys().next().value);
+  }
   function openSession(id) {
     window.__sentAt = 0;                                     // an old chat: its code never opens by itself
     if (id !== W.current) leaveTemporary();
     var s = W.sessions[id]; if (!s || s.deleted) return newChat();
     W.current = id; clearFeed(); hideWelcome();
-    var msgs = s.messages || [], answers = [];
+    var msgs = s.messages || [], answers = [], after = {}, waiting = [];
     msgs.forEach(function (m, i) {
-      if (m.role === "user") addUserMessage(m.content);
-      else { var aid = "w" + i + "-" + uid().slice(0, 8); addAssistantMessage(aid); answers.push([aid, m.content]); }
+      if (m.role === "user") {
+        addUserMessage(m.content);
+        waiting.forEach(function (aid) { after[aid] = m.content; }); waiting = [];       // the reply to those answers
+      } else { var aid = "w" + i + "-" + uid().slice(0, 8); addAssistantMessage(aid); answers.push([aid, m.content]); waiting.push(aid); }
     });
-    if (answers.length) {
-      // Saved answers show at once as text (never "Thinking..."), then get the server's formatting
-      // when it arrives -- on Render's free plan /render can take a long time or not answer at all.
-      answers.forEach(function (a) { setPlainText(a[0], a[1] || ""); });
-      if (window.glideToEnd) glideToEnd();                  // glide to the end of the opened chat
+    // An answer formatted: as history (no task made again), and its question cards closed with what came next -- the
+    // web app formats after the chat is drawn, so they stayed open and blank before (0.1.163)
+    function show(aid, html) {
+      (window.finalizeOld || finalizeMessage)(aid, html);
+      if (after[aid] != null && window.closeQuestionCards) closeQuestionCards(after[aid], document.getElementById(aid));
+    }
+    var todo = [];
+    answers.forEach(function (a) {
+      var known = RENDERED && RENDERED.get(a[1] || "");
+      if (typeof known === "string") show(a[0], known);
+      else {
+        // Saved answers show at once, already readable (never "Thinking...", never **raw** Markdown or an artifact's
+        // code), then get the server's formatting when it arrives -- /render can be slow or not answer at all.
+        (window.setQuickHtml || setPlainText)(a[0], a[1] || ""); todo.push(a);
+      }
+    });
+    if (answers.length) { if (window.glideToEnd) glideToEnd(); }     // glide to the end of the opened chat
+    if (todo.length) {
       var opened = id;
       var slow = new Promise(function (_, reject) { setTimeout(function () { reject(new Error("slow")); }, 10000); });
-      Promise.race([api("/render", { items: answers.map(function (a) { return a[1] || ""; }) }), slow])
+      Promise.race([api("/render", { items: todo.map(function (a) { return a[1] || ""; }) }), slow])
         .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("render " + r.status)); })
         .then(function (j) {
-          if (W.current !== opened || !j || !Array.isArray(j.html)) return;      // another chat is open now
-          answers.forEach(function (a, i) { if (typeof j.html[i] === "string") finalizeMessage(a[0], j.html[i]); });
+          if (!j || !Array.isArray(j.html)) return;
+          todo.forEach(function (a, i) { remember(a[1] || "", j.html[i]); });
+          if (W.current !== opened) return;                    // another chat is open now
+          todo.forEach(function (a, i) { if (typeof j.html[i] === "string") show(a[0], j.html[i]); });
           if (window.ginkScrollEnd) ginkScrollEnd(true);   // formatted answers can be taller
-        }).catch(function () { /* the plain text stays: still readable */ });
+        }).catch(function () { /* the quick formatting stays: still readable */ });
     }
     setComposerText((load("gink_drafts", {}))[id] || "");
     refreshSidebar();
@@ -374,10 +404,10 @@
            (W.prefs.instructions ? "\n\nThe person's own instructions for you (follow them unless they're unsafe): " +
                                   String(W.prefs.instructions).slice(0, 2000) : "") + profileNote() + memoryNote() +
            (voice ? "" : " " + MAP_PROMPT + " " + ARTIFACT_PROMPT + " " + SCHEDULE_PROMPT) +
-           (voice ? "" : " " + "When you genuinely need the person's preferences or details before you can help well (planning a trip, recommending something, a workout plan...), you may ask 1 to 3 short questions as tappable choices: write one short sentence, then a fenced code block with the language ask containing JSON like {\"questions\": [{\"q\": \"Your question?\", \"options\": [\"Choice 1\", \"Choice 2\", \"Choice 3\"]}]} (2 to 4 short options each). The person can also type their own answer. Their reply starts with \"My answers:\" and lists each question with what they chose: those are answers about them and their situation, so carry on with what they asked for. Don't use it for simple questions, facts, or when they already said what they want.");
+           (voice ? "" : " " + ASK_PROMPT);
   }
   // What Gink knows about itself: the same words as services/about_gink.py (a test keeps them equal)
-  var ABOUT_GINK = "About you: you are Gink, an AI assistant made by Gink AI (developer: Amgib00), with apps for Mac, Windows, Linux and Android, a web app and Gink Genie for building apps and websites. Your website is https://amgib00.github.io/GinkAssistant/ (downloads at https://amgib00.github.io/GinkAssistant/download.html), your source code is on GitHub at https://github.com/Amgib00/GinkAssistant, the developer platform (API keys, docs) is https://gink-server.onrender.com/developers and support is gink@ginkaisupport.com. When asked about Gink, its website, repository, download or support, give these exact links -- never a placeholder. What you can do now (0.1.162): scheduled tasks -- Gink's server does a task later or on a repeat by itself and the result arrives in its own chat (made from a chat or Settings > Scheduled tasks; Free has 3, Gink Pro 25 and hourly ones); artifacts -- pages, small apps, SVGs, diagrams, documents and code files open beside the chat with their versions; you read the pages people link and search the web when an answer needs it; you read GitHub repositories, and on a computer you can work on code projects and run their tests; you watch videos people attach (a few frames, in order); in the Gink apps, something to do on the device -- a check of the camera, microphone or the whole device, an alarm, an app to open -- goes to Gink's own tools by itself, and Gink's notifications also show in the device's notifications. Your logo: a lime-green snowflake with six rounded arms on a dark navy rounded square -- the same snowflake turns while you work and marks the end of your answers. A picture of it is Gink's logo (you), not Snowflake Inc.'s (theirs is a light-blue snowflake).";
+  var ABOUT_GINK = "About you: you are Gink, an AI assistant made by Gink AI (developer: Amgib00), with apps for Mac, Windows, Linux and Android, a web app and Gink Genie for building apps and websites. Your website is https://amgib00.github.io/GinkAssistant/ (downloads at https://amgib00.github.io/GinkAssistant/download.html), your source code is on GitHub at https://github.com/Amgib00/GinkAssistant, the developer platform (API keys, docs) is https://gink-server.onrender.com/developers and support is gink@ginkaisupport.com. When asked about Gink, its website, repository, download or support, give these exact links -- never a placeholder. What you can do now (0.1.164): scheduled tasks -- Gink's server does a task later or on a repeat by itself and the result arrives in its own chat (made from a chat or Settings > Scheduled tasks; Free has 3, Gink Pro 25 and hourly ones); artifacts -- pages, small apps, React apps, charts, tables (CSV), slides, SVGs, diagrams, documents and code files open beside the chat with their versions, a preview, Copy and Download; long chats keep working (older versions are left out to fit the AI's limits); you open the links people share, by yourself -- pages, PDFs, pictures, and social media posts and reels (Facebook, Instagram, TikTok, YouTube, X...): who posted it, its caption, what its picture shows; a reel attached as a video file you watch whole -- and search the web when an answer needs it; you read GitHub repositories, and on a computer you can work on code projects and run their tests; you watch videos people attach (a few frames, in order); in the Gink apps, something to do on the device -- a check of the camera, microphone or the whole device, an alarm, an app to open -- goes to Gink's own tools by itself, and Gink's notifications also show in the device's notifications. Your logo: a lime-green snowflake with six rounded arms on a dark navy rounded square -- the same snowflake turns while you work and marks the end of your answers. A picture of it is Gink's logo (you), not Snowflake Inc.'s (theirs is a light-blue snowflake).";
   // Which device the person is on, from their browser -- "which device am I using?" gets an answer, not a question
   function deviceNote() {
     var ua = navigator.userAgent || "", touch = (navigator.maxTouchPoints || 0) > 1;
@@ -390,14 +420,68 @@
                 "device or system they're using, tell them -- never ask which operating system they have. If they ask you to " +
                 "check their device, say the Gink app does a full check by itself (" + "https://amgib00.github.io/GinkAssistant/download.html" + ")." : "";
   }
+  // automatic (0.1.163): open requests are made, not questioned; question cards only for what only the person knows.
+  // The same words as the apps' ASK_PROMPT (services/groq_worker.py; a test keeps them equal)
+  var ASK_PROMPT = "Be automatic: when a request is open or leaves details to you -- \"make me anything\", \"surprise me\", \"add more to it\", \"continue\", \"improve it\", \"make it better\" -- don't ask what they want: choose something good yourself and make it, complete, then say in one short line what you chose and offer an idea or two for next. Only when you truly can't do a good job without something only they know (their own situation, their details, a date) ask 1 to 3 short questions as tappable choices: write one short sentence, then a fenced code block with the language ask containing JSON like {\"questions\": [{\"q\": \"Your question?\", \"options\": [\"Choice 1\", \"Choice 2\", \"Choice 3\"]}]} (2 to 4 short options each, never an \"Other\" option: the person can always type their own answer). Their reply starts with \"My answers:\" and lists each question with what they chose: those are answers about them and their situation, so carry on with what they asked for, without asking again. Never ask about style, colours or features you can choose well yourself, and don't ask for simple questions, facts, or when they already said what they want.";
   // automatic artifacts (0.1.161): the same words as the server's and the apps' ARTIFACT_PROMPT
-  var ARTIFACT_PROMPT = "When you make something complete the person will keep or use -- a web page or small app (one HTML file with its CSS and JavaScript inside), an SVG image or logo, a diagram (Mermaid), a document written to keep (a letter, report, plan, essay, CV) or a code file longer than about 20 lines -- put it in ONE fenced block whose first line has its language and a short title, like ```html title=\"Pomodoro timer\", ```svg title=\"Logo\", ```mermaid title=\"Sign-up flow\", ```document title=\"Cover letter\" (Markdown inside) or ```python title=\"invoice.py\". Gink shows it as an artifact the person can open, preview, copy and download: write it complete (no \"...\" or placeholders), introduce it in a sentence and don't repeat it in your text. When they ask for changes, write the whole new version in a block with the same title. Short snippets and commands stay normal code blocks, with no title.";
+  var ARTIFACT_PROMPT = "When you make something complete the person will keep or use -- a web page or small app (one HTML file with its CSS and JavaScript inside), a React component (jsx), an SVG image or logo, a diagram (Mermaid), a chart (chart: Chart.js JSON), a table of data (csv), slides (Markdown, one slide per part, parts split by a line with ---), a document written to keep (a letter, report, plan, essay, CV) or a code file longer than about 20 lines -- put it in ONE fenced block whose first line has its language and a short title, like ```html title=\"Pomodoro timer\", ```jsx title=\"Habit tracker\", ```svg title=\"Logo\", ```mermaid title=\"Sign-up flow\", ```chart title=\"Sales by month\", ```csv title=\"Budget\", ```slides title=\"Pitch\", ```document title=\"Cover letter\" (Markdown inside) or ```python title=\"invoice.py\". Gink shows it as an artifact the person can open, preview, copy and download -- never tell them to save, copy or paste it into a file. Make it excellent and finished: real content (no lorem ipsum, no \"...\" or placeholders), a clean modern design that works on a phone and in dark mode with readable colours, and everything working inside that one block (libraries only from cdnjs.cloudflare.com, cdn.jsdelivr.net or unpkg.com). Introduce it in a sentence and don't repeat it in your text. When they ask for changes or more, write the whole new version in a block with the same title, keeping everything that was there unless they asked to remove it. Short snippets and commands stay normal code blocks, with no title.";
   // maps in answers (the page draws them by itself): the same words as the server's and the apps' MAP_PROMPT
   var SCHEDULE_PROMPT = "When the person asks you to do something at a later time or on a repeat -- \"every morning at 8, give me the top news\", \"remind me on Friday at 5pm to call Sam\", \"each Monday, plan my week\" -- Gink can schedule it: say in one short sentence what will happen and when, then add a fenced code block with the language schedule containing JSON like {\"title\": \"Morning news\", \"task\": \"Give me the three biggest news stories of the day, with sources.\", \"every\": \"daily\", \"at\": \"08:00\"} (every is once, daily, weekdays, weekly, monthly or hourly; at is their local time, 24-hour; add \"day\" -- monday to sunday -- for weekly, \"day\" -- 1 to 31 -- for monthly, \"date\" -- YYYY-MM-DD -- for once). Write task as the complete instruction to carry out each time: it runs by itself later, with web search, and the result arrives in its own chat. The app shows the schedule by itself: don't mention the block. Only for things to do later or regularly -- never for a question to answer now.";
   var MAP_PROMPT = "When your answer is about real places someone could find on a map -- where something is, places to visit, eat or stay, an address, a route between towns, a list of locations -- add a map after your text: a fenced code block with the language map containing JSON like {\"title\": \"Short title\", \"places\": [{\"name\": \"Place name\", \"query\": \"Place name, street, city, country\", \"lat\": 0.0, \"lon\": 0.0, \"category\": \"museum\", \"note\": \"a few words\"}]} (1 to 10 places; category is one of food, cafe, bar, shop, museum, sight, park, beach, hotel, transport, health, school, worship, other; give lat and lon only when you know them precisely, and always a query precise enough to find the place). The map appears by itself: don't mention the block. Don't add a map for general knowledge with no particular place, and never for a private person's home.";
   // questions that need the internet search the web on their own, whatever model is picked
   var WEB_RE = /\b(search|look up|google|find out|latest|news|headlines|today'?s|this week|right now|currently|price of|cost of|how much (is|are|does)|exchange rate|who won|score|results? of|release date|weather|recherche|cherche|actualit\u00e9s?|derni\u00e8res? nouvelles|prix d|aujourd'hui|cette semaine)\b/i;
   var IMAGE_RE = /^\s*(please\s+)?(create|make|draw|generate|paint|design)\s+(me\s+)?(an?\s+)?(image|picture|photo|drawing|illustration|logo|poster)\b/i;
+  var LINK_RE = /https?:\/\/[^\s<>()\[\]{}"'`]+/gi;
+
+  // ---- links (0.1.164): the server opens every link in a message -- a reel, a post, a video, a PDF, a page -- and
+  // the chat says so while it does ("Looking at the reel..."). Same words as services/link_kinds.busy_label.
+  var LINK_SITES = [
+    [/(^|\.)fb\.watch$/, [], "video"],
+    [/(^|\.)(facebook\.com|fb\.com|fb\.me)$/, [[/^\/reels?\/|^\/share\/r\//, "reel"], [/\/videos?\/|^\/watch\b|^\/share\/v\//, "video"],
+      [/\/posts\/|\/permalink|story\.php|^\/share\/p\/|\/photos?\/|photo\.php/, "post"], [/^\/events\//, "event"], [/^\/groups\//, "group"]], "page"],
+    [/(^|\.)(instagram\.com|instagr\.am)$/, [[/^\/reels?\//, "reel"], [/^\/p\//, "post"], [/^\/tv\//, "video"], [/^\/stories\//, "story"]], "profile"],
+    [/(^|\.)(youtube\.com|youtu\.be|youtube-nocookie\.com)$/, [[/^\/shorts\//, "short video"], [/^\/playlist/, "playlist"],
+      [/^\/(@|c\/|channel\/|user\/)/, "channel"]], "video"],
+    [/(^|\.)tiktok\.com$/, [[/\/video\/\d+/, "video"], [/\/photo\/\d+/, "photo post"], [/^\/@[^\/]+\/?$/, "profile"]], "video"],
+    [/(^|\.)(x\.com|twitter\.com)$/, [[/\/status(es)?\/\d+/, "post"]], "profile"],
+    [/(^|\.)(threads\.net|threads\.com|bsky\.app)$/, [[/\/post\//, "post"]], "profile"],
+    [/(^|\.)(linkedin\.com|lnkd\.in)$/, [[/^\/posts\/|\/feed\/update\/|^\/pulse\//, "post"], [/^\/in\//, "profile"], [/^\/jobs\//, "job"]], "page"],
+    [/(^|\.)(reddit\.com|redd\.it)$/, [[/\/comments\//, "post"]], "page"],
+    [/(^|\.)(vimeo\.com|dailymotion\.com|dai\.ly)$/, [], "video"],
+    [/(^|\.)twitch\.tv$/, [[/clip/, "clip"], [/\/videos\//, "video"]], "channel"],
+    [/(^|\.)(open\.spotify\.com|spotify\.link)$/, [[/\/track\//, "song"], [/\/album\//, "album"], [/\/playlist\//, "playlist"],
+      [/\/episode\//, "podcast episode"], [/\/show\//, "podcast"], [/\/artist\//, "artist"]], "music"],
+    [/(^|\.)soundcloud\.com$/, [], "track"],
+    [/(^|\.)(pinterest\.com|pin\.it)$/, [[/\/pin\//, "pin"]], "page"],
+    [/(^|\.)medium\.com$/, [], "article"]
+  ];
+  function linkKind(url) {
+    var parts = url.split("/"), host = (parts[2] || "").toLowerCase().replace(/:\d+$/, "").replace(/\.$/, ""),
+        path = "/" + parts.slice(3).join("/").split(/[?#]/)[0], i, j;
+    for (i = 0; i < LINK_SITES.length; i++) {
+      if (!LINK_SITES[i][0].test(host)) continue;
+      for (j = 0; j < LINK_SITES[i][1].length; j++) if (LINK_SITES[i][1][j][0].test(path)) return LINK_SITES[i][1][j][1];
+      return LINK_SITES[i][2];
+    }
+    var last = path.split("/").pop(), ext = last.indexOf(".") >= 0 ? last.split(".").pop().toLowerCase() : "";
+    return ext === "pdf" ? "PDF" : /^(jpe?g|png|gif|webp|avif|heic)$/.test(ext) ? "picture" :
+           /^(mp4|mov|webm|m4v)$/.test(ext) ? "video" : /^(mp3|m4a|wav|ogg|flac|aac)$/.test(ext) ? "audio" : "page";
+  }
+  function linkLabel(text) {
+    var urls = [], found = String(text || "").match(LINK_RE) || [], i, u, host;
+    for (i = 0; i < found.length; i++) {
+      u = found[i].replace(/[.,;:!?)"']+$/, "");
+      host = (u.split("/")[2] || "").toLowerCase();
+      if (host !== "github.com" && host !== "www.github.com" && urls.indexOf(u) < 0) urls.push(u);
+    }
+    if (!urls.length) return "";
+    if (urls.length > 1) return "Opening the links\u2026";
+    var kind = linkKind(urls[0]);
+    if (/^(reel|video|short video|clip|story|picture)$/.test(kind)) return "Looking at the " + kind + "\u2026";
+    if (/^(PDF|page|article)$/.test(kind)) return "Reading the " + kind + "\u2026";
+    if (kind === "audio") return "Listening to the audio\u2026";
+    return "Opening the " + kind + "\u2026";
+  }
 
   // ---- attachments: photos stay in the browser; documents are read by the server
   W.atts = [];
@@ -467,8 +551,10 @@
     var aid = "a" + uid().slice(0, 12);
     addAssistantMessage(aid, "Thinking\u2026");
     setComposerBusy(true);
-    var web = !atts.length && (W.model === "gink-search" || WEB_RE.test(text));
-    if (web) setSpinLabel(aid, "Searching the web\u2026");
+    var web = !atts.length && (W.model === "gink-search" || WEB_RE.test(text.replace(LINK_RE, " ")));   // a link's own words aren't a search
+    var opening = !atts.length ? linkLabel(text) : "";
+    if (opening) setSpinLabel(aid, opening);                 // the server opens the link first (0.1.164)
+    else if (web) setSpinLabel(aid, "Searching the web\u2026");
     var job = !atts.length && siteFollowUp(s, text) ? makeSite(text, aid, true, s.site, s)
             : SITE_EDIT_RE.test(text) && !atts.length ? makeSite(text, aid, true, null, s)
             : SITE_RE.test(text) && !atts.length ? makeSite(text, aid, false, null, s)
@@ -565,7 +651,7 @@
               }
               if (d.gink_status === "searching") setSpinLabel(aid, "Searching the web\u2026");   // automatic searches too
               var piece = d.choices && d.choices[0] && d.choices[0].delta && d.choices[0].delta.content;
-              if (piece) { text += piece; setPlainText(aid, narrow(text)); }
+              if (piece) { text += piece; (window.setQuickText || setPlainText)(aid, narrow(text)); }   // formatted as it arrives
             } catch (e) {}
           });
           return pump();
@@ -582,6 +668,7 @@
   function finish(aid, text) {
     if (!text) { setPlainText(aid, "No answer came back. Please try again."); return ""; }
     return api("/render", { markdown: text }).then(function (r) { return r.json(); }).then(function (j) {
+      remember(text, j.html);
       finalizeMessage(aid, j.html);
       if (W.prefs.read_aloud || W.voiceReply) readAloud(text);       // a voice message gets a spoken answer, by itself
       W.voiceReply = false;

@@ -26,6 +26,10 @@ const png = await gink.image("my dog", { idea: "statue", photo: dogPhotoBytes })
 console.log(await gink.see(photoBytes, { question: "what's wrong with this?" }));  // about a photo (Gink Pro)
 const { frames, duration } = await videoFrames(fileInput.files[0]);                // in a browser: a video's frames
 console.log(await gink.watch(frames, { duration, question: "what happens here?" })); // about a video (Gink Pro)
+const reel = await gink.readLink("https://www.facebook.com/reel/2322629778521786");  // a link, opened by Gink
+console.log(reel.kind, reel.author, reel.text, reel.seen);                           // "reel", who, caption, its picture
+const made = await gink.chat("Chart my sales by month", { gink_artifacts: true, gink_fit: true });
+for (const a of gink.artifacts(made)) console.log(a.kind, a.filename);   // page, react, chart, table, slides, ...
 ```
 
 Workspaces: `await gink.workspace.get()`; admins of one in healthcare mode: `await gink.workspace.safety({ days: 30 })`

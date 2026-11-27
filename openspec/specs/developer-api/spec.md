@@ -132,3 +132,25 @@ The SDKs SHALL send a video the way the apps do: up to five frames in order, aft
 #### Scenario: A clip from the command line
 - **WHEN** someone runs `gink watch clip.mp4 "what happens?"` with ffmpeg installed
 - **THEN** a few frames go to Gink in order and the answer is streamed
+
+### Requirement: Fitting to the model's limits
+A chat completion SHALL fit the model's limit by shrinking only the room for the answer, or go to another model that takes it (saying which in X-Gink-Model); with "gink_fit": true, older messages and earlier versions of an artifact MAY be left out like in Gink's apps. When the AI service refuses, the developer SHALL get its error with its status but without Gink's own account details, and a 413 SHALL mention "gink_fit". The SDKs SHALL know the artifact kinds react, chart, table and slides.
+
+#### Scenario: A long conversation
+- **WHEN** a developer sends a conversation larger than the model's limit with "gink_fit": true
+- **THEN** the answer comes, with the oldest turns left out
+
+#### Scenario: A refusal
+- **WHEN** the AI service refuses a request as too large
+- **THEN** the error says so with the limit, and has no organization id or upgrade link
+
+### Requirement: Links in the API
+`POST /v1/links/read` ({"url"}, {"urls"} up to three, or {"text"}; "look" and "listen" false to skip pictures or audio) SHALL return each link's site, kind, title, author, date, length, counts, caption, words, what its picture shows, what's said in it and why not, with "for_ai", the note Gink's chat gives the AI. The Python and JavaScript SDKs and the CLI (`gink read URL`) SHALL use it, and "gink_web": "auto" SHALL open links in chat the same way.
+
+#### Scenario: A reel through the API
+- **WHEN** a developer reads https://www.facebook.com/reel/2322629778521786 with client.read_link
+- **THEN** they get kind "reel", the site "Facebook" and what could be seen of it
+
+#### Scenario: Too many links
+- **WHEN** a developer sends four links at once
+- **THEN** the answer is a 400 "too_many_links"

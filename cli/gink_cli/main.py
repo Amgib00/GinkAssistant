@@ -10,6 +10,8 @@ gink -- Gink in your terminal (the Gink Developer API, OpenAI-compatible).
                                     (links in a question are read and the web searched when needed: --no-auto turns it off)
     gink see PHOTO ["question"]     about a photo: Gink reads it, finds what's wrong, solves it... (Gink Pro)
     gink watch VIDEO ["question"]   about a video: a few frames, in order, taken with ffmpeg (Gink Pro)
+    gink read URL ["question"]      a link, opened: a page, a PDF, a post or a reel -- who posted it, its caption,
+                                    what its picture shows (with a question: the answer, from the link)
     gink --image "prompt" -o x.png  make an image
     gink agent "task"               a managed agent does it in a workspace that persists (--env ID, --continue)
     gink env list | new NAME | files ID | check ID [--fix] | pull ID [DIR] | push ID DIR | rm ID
@@ -146,7 +148,7 @@ def list_models(key: str, base: str) -> list:
 
 def stream_answer(key: str, base: str, messages: list, model: str = "", out=None, extra: dict = None) -> str:
     """Send the chat; print the answer as it arrives; return the full text. extra: Gink's own options
-    (gink_web, gink_code, gink_artifacts, gink_tasks)."""
+    (gink_web, gink_code, gink_artifacts, gink_tasks, gink_fit)."""
     need_key(key)
     import httpx
     out = out or sys.stdout
@@ -181,6 +183,29 @@ def stream_answer(key: str, base: str, messages: list, model: str = "", out=None
     out.write("\n")
     out.flush()
     return "".join(text)
+
+
+def link_summary(info: dict) -> str:
+    """A link Gink opened, for the terminal: what it is, who posted it, its caption, what its picture shows."""
+    site, kind = str(info.get("site") or ""), str(info.get("kind") or "link")
+    what = f"{site} {kind}" if site and "." not in site and kind != "page" else (
+        f"{kind} on {site}" if site and "." in site else f"{site} page" if site else kind)
+    out = [f"{what[:1].upper() + what[1:]}: {info.get('url', '')}"]
+    facts = [f"by {info['author']}"] if info.get("author") else []
+    if info.get("date"):
+        facts.append(f"posted {str(info['date'])[:10]}")
+    if info.get("seconds"):
+        secs = int(info["seconds"])
+        facts.append(f"{secs // 60}:{secs % 60:02d} long")
+    facts += [f"{v:,} {k}" for k, v in (info.get("stats") or {}).items() if isinstance(v, int)]
+    if facts:
+        out.append(", ".join(facts))
+    for label, k in (("Title", "title"), ("Caption", "text"), ("What its picture shows", "seen"),
+                     ("What's said in it", "heard"), ("Its words", "body"), ("Note", "note"), ("Couldn't be opened", "error")):
+        if info.get(k):
+            val = " ".join(str(info[k]).split()) if k != "body" else str(info[k]).strip()
+            out.append(f"{label}: " + (val[:1500] + "..." if len(val) > 1500 else val))
+    return "\n".join(out)
 
 
 def make_image(key: str, base: str, prompt: str, path: str, idea: str = "", style: str = "", aspect: str = "",
@@ -525,7 +550,9 @@ def chat(key: str, base: str, model: str, system: str = "") -> int:
             continue
         history.append({"role": "user", "content": line})
         try:
-            answer = stream_answer(key, base, history[-30:], model)
+            # a long chat: Gink may leave out older messages (and earlier versions of what it made) to fit the
+            # AI's limits, instead of refusing it (0.1.163)
+            answer = stream_answer(key, base, history[-30:], model, extra={"gink_fit": True})
             history.append({"role": "assistant", "content": answer})
         except KeyboardInterrupt:
             print("\n(stopped)")
@@ -676,6 +703,16 @@ def main(argv=None) -> int:
             except _SdkError as exc:
                 raise GinkError(str(exc))
             stream_answer(key, base, [{"role": "user", "content": content}])
+            return 0
+        if argv[:1] == ["read"]:                      # a link: a page, a PDF, a post, a reel -- opened by Gink (0.1.164)
+            if len(argv) < 2 or not argv[1].lower().startswith(("http://", "https://")):
+                raise GinkError('gink read URL ["question"]   e.g. gink read https://www.facebook.com/reel/2322629778521786')
+            question = " ".join(argv[2:]).strip()
+            if question:                              # the server opens the link for the answer
+                stream_answer(key, base, [{"role": "user", "content": f"{question}\n\n{argv[1]}"}], extra={"gink_web": "auto"})
+                return 0
+            r = _env_call(key, base, "POST", "/links/read", json={"url": argv[1]}).json()
+            print(link_summary((r.get("links") or [{"url": argv[1], "error": "nothing came back"}])[0]))
             return 0
         if argv[:1] in (["batch"], ["batches"]):      # many requests at once, answered in the background
             sub = argv[1] if len(argv) > 1 else ("list" if argv[0] == "batches" else "")

@@ -209,7 +209,10 @@ def test_chat_page_draws_real_maps_and_falls_back():
                  "'gink-places'", "function streamView(text)", "el.innerText = streamView(text)"):
         assert text in html, text
     assert "maplibregl" not in live_media.JS.split("function gmLib()")[0].split("var MAPLIBRE_VERSION")[1] or True
-    assert "unpkg.com" not in html and "cdn.jsdelivr" not in html                           # only from Gink's own server
+    # the map library only from Gink's own server (the page's only CDN addresses are the artifact previews' own
+    # libraries, loaded inside the sealed preview -- 0.1.163)
+    cdn = re.findall(r"https://(?:unpkg\.com|cdn\.jsdelivr\.net|cdnjs\.cloudflare\.com)[^'\"\s)]*", html)
+    assert not [u for u in cdn if "maplibre" in u.lower() or "leaflet" in u.lower()], cdn
 
 
 def _serve_map(page, seen):

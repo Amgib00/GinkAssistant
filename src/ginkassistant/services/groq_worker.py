@@ -82,14 +82,20 @@ MAP_PROMPT = (
 # (ui/chat_extras.py). The same words as backend_server.ARTIFACT_PROMPT and webapp/bridge.js (a test keeps them equal).
 ARTIFACT_PROMPT = (
     "When you make something complete the person will keep or use -- a web page or small app (one HTML file with "
-    "its CSS and JavaScript inside), an SVG image or logo, a diagram (Mermaid), a document written to keep (a "
-    "letter, report, plan, essay, CV) or a code file longer than about 20 lines -- put it in ONE fenced block "
-    "whose first line has its language and a short title, like ```html title=\"Pomodoro timer\", ```svg "
-    "title=\"Logo\", ```mermaid title=\"Sign-up flow\", ```document title=\"Cover letter\" (Markdown inside) or "
-    "```python title=\"invoice.py\". Gink shows it as an artifact the person can open, preview, copy and download: "
-    "write it complete (no \"...\" or placeholders), introduce it in a sentence and don't repeat it in your text. "
-    "When they ask for changes, write the whole new version in a block with the same title. Short snippets and "
-    "commands stay normal code blocks, with no title.")
+    "its CSS and JavaScript inside), a React component (jsx), an SVG image or logo, a diagram (Mermaid), a chart "
+    "(chart: Chart.js JSON), a table of data (csv), slides (Markdown, one slide per part, parts split by a line "
+    "with ---), a document written to keep (a letter, report, plan, essay, CV) or a code file longer than about 20 "
+    "lines -- put it in ONE fenced block whose first line has its language and a short title, like ```html "
+    "title=\"Pomodoro timer\", ```jsx title=\"Habit tracker\", ```svg title=\"Logo\", ```mermaid title=\"Sign-up "
+    "flow\", ```chart title=\"Sales by month\", ```csv title=\"Budget\", ```slides title=\"Pitch\", ```document "
+    "title=\"Cover letter\" (Markdown inside) or ```python title=\"invoice.py\". Gink shows it as an artifact the "
+    "person can open, preview, copy and download -- never tell them to save, copy or paste it into a file. Make it "
+    "excellent and finished: real content (no lorem ipsum, no \"...\" or placeholders), a clean modern design that "
+    "works on a phone and in dark mode with readable colours, and everything working inside that one block "
+    "(libraries only from cdnjs.cloudflare.com, cdn.jsdelivr.net or unpkg.com). Introduce it in a sentence and don't "
+    "repeat it in your text. When they ask for changes or more, write the whole new version in a block with the same "
+    "title, keeping everything that was there unless they asked to remove it. Short snippets and commands stay normal "
+    "code blocks, with no title.")
 
 # Scheduled tasks (0.1.161): a ```schedule block becomes a task card in the chat page (ui/chat_extras.py) and a task on
 # the server (backend_server /tasks). The same words as backend_server.SCHEDULE_PROMPT and webapp/bridge.js.
@@ -106,13 +112,31 @@ SCHEDULE_PROMPT = (
     "or regularly -- never for a question to answer now.")
 
 
+# Automatic (0.1.163): an open request is made, not questioned -- "make me anything" got a card asking which kind of
+# thing, then three more questions, and "add more to it" another card. Question cards only for what only the person
+# knows. The same words as webapp/bridge.js's ASK_PROMPT (a test keeps them equal).
+ASK_PROMPT = (
+    "Be automatic: when a request is open or leaves details to you -- \"make me anything\", \"surprise me\", \"add "
+    "more to it\", \"continue\", \"improve it\", \"make it better\" -- don't ask what they want: choose something good "
+    "yourself and make it, complete, then say in one short line what you chose and offer an idea or two for next. "
+    "Only when you truly can't do a good job without something only they know (their own situation, their details, "
+    "a date) ask 1 to 3 short questions as tappable choices: write one short sentence, then a fenced code block with "
+    "the language ask containing JSON like {\"questions\": [{\"q\": \"Your question?\", \"options\": [\"Choice 1\", "
+    "\"Choice 2\", \"Choice 3\"]}]} (2 to 4 short options each, never an \"Other\" option: the person can always type "
+    "their own answer). Their reply starts with \"My answers:\" and lists each question with what they chose: those "
+    "are answers about them and their situation, so carry on with what they asked for, without asking again. Never "
+    "ask about style, colours or features you can choose well yourself, and don't ask for simple questions, facts, "
+    "or when they already said what they want.")
+
+
 DEFAULT_SYSTEM_PROMPT = (
     "You are Gink, a capable, warm AI assistant having a real conversation "
     "with someone, not filling out a form. Talk like a sharp, genuinely "
-    "interested person would: react to what they actually said, ask a "
-    "follow-up question when it would help rather than guessing, and let "
+    "interested person would: react to what they actually said and let "
     "your tone shift with theirs -- relaxed when they're casual, focused "
-    "when they're not. Keep replies as short as the moment calls for; "
+    "when they're not. When they ask you to make or do something and leave "
+    "details open, choose sensibly yourself and get on with it rather than "
+    "stopping to ask. Keep replies as short as the moment calls for; "
     "match their energy rather than always expanding. Skip stock opener "
     "phrases like 'Great question!' or 'I'd be happy to help' -- just help. "
     "Wrap code in properly formatted Markdown blocks. When asked to write "
@@ -124,8 +148,7 @@ DEFAULT_SYSTEM_PROMPT = (
     "copyable, downloadable block instead of plain chat text. Still talk "
     "normally around it -- a short line introducing it is fine, just "
     "don't put ordinary conversational replies in a document block."
-    ' When you genuinely need the person\'s preferences or details before you can help well (planning a trip, recommending something, a workout plan...), you may ask 1 to 3 short questions as tappable choices: write one short sentence, then a fenced code block with the language ask containing JSON like {"questions": [{"q": "Your question?", "options": ["Choice 1", "Choice 2", "Choice 3"]}]} (2 to 4 short options each). The person can also type their own answer. Their reply starts with "My answers:" and lists each question with what they chose: those are answers about them and their situation, so carry on with what they asked for. Don\'t use it for simple questions, facts, or when they already said what they want.'
-    " " + MAP_PROMPT + " " + ARTIFACT_PROMPT + " " + SCHEDULE_PROMPT
+    " " + ASK_PROMPT + " " + MAP_PROMPT + " " + ARTIFACT_PROMPT + " " + SCHEDULE_PROMPT
 )
 
 SPOKEN_REPLY_PROMPT = (
@@ -156,21 +179,26 @@ def local_reset_time(info: dict) -> str:
 
 
 def _problem_message(err) -> str:
-    """The real reason, in plain words (instead of hiding it behind "The AI service had a problem")."""
+    """What went wrong, in plain words (0.1.163: never the AI provider's raw message -- "Request too large for model ...
+    in organization org_... service tier on_demand ... Upgrade to Dev Tier" reached people)."""
+    from . import context_fit
     status = getattr(err, "status_code", 0) or 0
     try:
         body = err.body if isinstance(err.body, dict) else {}
         info = body.get("error", body) if isinstance(body, dict) else {}
-        msg = " ".join(str((info or {}).get("message") or "").split())[:200]
+        msg = " ".join(str((info or {}).get("message") or "").split())
+        code = str((info or {}).get("code") or "")
     except Exception:
-        msg = ""
-    if status == 429:
-        return ("The AI service has reached its limit for now (too many requests). Please try again in a little while."
-                + (f"\n\n_Details: {msg}_" if msg else ""))
+        msg, code = "", ""
+    if code in ("too_large", "busy") and msg and "org_" not in msg:      # Gink's server says it plainly already
+        return msg
+    if status in (413, 429) or context_fit.read_refusal(msg):
+        return context_fit.friendly_refusal(status, msg)[0]
     if status in (500, 502, 503, 504):
-        return (f"The AI service is having trouble right now (error {status}). Please try again in a moment."
-                + (f"\n\n_Details: {msg}_" if msg else ""))
-    return f"The AI service couldn't answer (error {status or '?'}{': ' + msg if msg else ''})."
+        return f"The AI service is having trouble right now (error {status}). Please try again in a moment."
+    if status == 400 and context_fit.friendly_refusal(400, msg)[1] == "too_large":
+        return context_fit.TOO_LONG
+    return f"The AI service couldn't answer (error {status or '?'}). Please try again in a moment."
 
 
 def _limit_message(err) -> str:
@@ -183,7 +211,7 @@ def _limit_message(err) -> str:
         return ""
     if code in ("daily_limit", "pro_required"):
         return f"{local_reset_time(info)}\n\n[\u2728 Upgrade to Gink Pro](gink://pro)"
-    if code in ("turn_limit", "not_configured", "too_large"):
+    if code in ("turn_limit", "not_configured", "too_large", "busy"):
         return info.get("message", "")
     if getattr(err, "status_code", 0) == 401:
         return "Please sign out and sign in again."
@@ -317,6 +345,37 @@ class GroqBrain:
             extra["max_tokens"] = 32000
         return {"extra_body": extra}
 
+    _limits: Dict[str, int] = {}              # straight to Groq: each model's tokens a minute, once Groq has said
+
+    def _fit_direct(self, model: str, messages: list, extra: dict):
+        """Talking to Groq with your own key (no Gink server to fit the request): the chat fitted to the model's
+        limit here (services/context_fit.py) -- the newest artifact and the last turns kept first."""
+        from . import context_fit
+        body = dict(extra.get("extra_body") or {})
+        asked = int(body.pop("max_tokens", 0) or 0)
+        want = asked or 4096
+        limit = self._limits.get(model) or context_fit.FREE_TPM.get(model) or context_fit.DEFAULT_TPM
+        got = (context_fit.fit(messages, limit, want, level=1) or context_fit.fit(messages, limit, want, level=2))
+        if got is None:
+            return messages, extra
+        out = dict(extra)
+        if asked or got[1] < want:
+            out["max_tokens"] = got[1]
+        if body:
+            out["extra_body"] = body
+        else:
+            out.pop("extra_body", None)
+        return got[0], out
+
+    def _learn_limit(self, model: str, err) -> bool:
+        """A 413 from Groq: its "Limit N" for this model (True when it was new)."""
+        from . import context_fit
+        info = context_fit.read_refusal(tool_slips.error_text(err))
+        if not info or info.get("kind") != "TPM" or self._limits.get(model) == info["limit"]:
+            return False
+        self._limits[model] = info["limit"]
+        return True
+
     @staticmethod
     def _short_answer_args(model: str, max_tokens: int) -> dict:
         """GPT-OSS reasons first and that counts toward max_tokens: ask for low effort and
@@ -422,6 +481,21 @@ class GroqBrain:
                 on_token,
             )
 
+    async def _with_links(self, messages: list, query: str) -> list:
+        """Straight to Groq with your own key: the links in the message opened on this device -- pages, PDFs, posts'
+        and reels' previews -- and given to the AI as data, just before the message, as Gink's server does (0.1.164)."""
+        try:
+            from . import web_reader
+            if not web_reader.find_links(query):
+                return messages
+            import time as _time
+            pages = await web_reader.read_links(query)
+            note = web_reader.context_note(pages, _time.strftime("%d %B %Y"), budget=8000) if pages else ""
+        except Exception as exc:
+            logger.warning(f"links not opened ({type(exc).__name__})")
+            return messages
+        return messages[:-1] + [{"role": "system", "content": note}, messages[-1]] if note else messages
+
     async def _emit(self, text: str, on_token: Optional[Callable[[str], Awaitable[None]]]) -> str:
         if on_token:
             await on_token(text)
@@ -445,6 +519,10 @@ class GroqBrain:
         history = self.get_history()
         if not save_user and history and history[-1].get("role") == "user":
             history = history[:-1]           # the caller already saved this message -- don't send it twice
+        from . import context_fit
+        # earlier versions of the same artifact never go along (0.1.163): three copies of a page made the request too
+        # large for the AI ("Request too large ... Limit 8000, Requested 17295"); the newest version stays
+        history = context_fit.drop_old_versions(history)[0]
         messages = [{"role": "system", "content": system_prompt}]
         messages.extend(history)
         if images:
@@ -452,6 +530,8 @@ class GroqBrain:
             messages.append({"role": "user", "content": picture_parts(prompt_text, attachments)})
         else:
             messages.append({"role": "user", "content": prompt_text})
+            if not getattr(self, "cloud", False):    # your own key: no Gink server to open the links, so here
+                messages = await self._with_links(messages, query)
 
         if images:
             active_model = await self.vision_model()
@@ -470,11 +550,19 @@ class GroqBrain:
         plain = {"used": False}                     # asked again without tools after a slip (once)
 
         async def open_stream(model, msgs):
+            extra = self._effort_args(model)
+            if not getattr(self, "cloud", False):    # straight to Groq with your own key: fitted to its limits here
+                msgs, extra = self._fit_direct(model, msgs, extra)
             return await self.client.chat.completions.create(
-                model=model, messages=msgs, temperature=0.8, stream=True, extra_headers=turn, **self._effort_args(model))
+                model=model, messages=msgs, temperature=0.8, stream=True, extra_headers=turn, **extra)
 
         try:
-            stream = await open_stream(active_model, messages)
+            try:
+                stream = await open_stream(active_model, messages)
+            except APIStatusError as err:            # straight to Groq: too large for its limit -> learned, asked smaller
+                if getattr(self, "cloud", False) or getattr(err, "status_code", 0) != 413 or not self._learn_limit(active_model, err):
+                    raise
+                stream = await open_stream(active_model, messages)
         except APIStatusError as err:
             if tool_slips.is_slip(err):              # it called a tool it wasn't given (Groq directly, an older server)
                 plain["used"] = True

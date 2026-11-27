@@ -19,7 +19,13 @@ No trackers or third-party requests: the one font (Lexend, SIL Open Font License
 is self-hosted in website/assets/fonts, so the site loads nothing from anyone else
 (privacy.html says so).
 GitHub Pages: .github/workflows/website.yml runs this and publishes website/_site.
+
+Every page names this build's styles and scripts with a version (assets/styles.css?v=<build>, from their contents)
+and says which build it is (<meta name="gink-build">). A browser that kept an older page (a tab brought back, the
+back button) but fetched the new styles showed the old page half-styled -- light grey words on white, a crowded
+menu (0.1.163). Now the new site.js sees the page is older than itself and loads the page fresh, once.
 """
+import hashlib
 import html
 import os
 import re
@@ -72,8 +78,9 @@ LAYOUT = """<!doctype html>
 <link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
 <link rel="apple-touch-icon" href="assets/icon-180.png">
 <link rel="manifest" href="assets/site.webmanifest">
+<meta name="gink-build" content="{build}">
 <link rel="preload" href="assets/fonts/lexend-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/styles.css?v={build}">
 </head>
 <body class="page-{slug}">
 <a class="skip" href="#content">Skip to content</a>
@@ -108,7 +115,7 @@ LAYOUT = """<!doctype html>
     <p><a href="{repo}">Gink on GitHub</a></p>
   </div>
 </footer>
-<script src="assets/site.js"></script>{extra_scripts}
+<script src="assets/site.js?v={build}"></script>{extra_scripts}
 </body>
 </html>
 """
@@ -126,11 +133,33 @@ def parse_page(text):
     return meta, text
 
 
+def build_id() -> str:
+    """This build's version: from the contents of the assets and the pages (the same files, the same id)."""
+    h = hashlib.sha256()
+    for folder in ("assets", "pages"):
+        base = os.path.join(SRC, folder)
+        for root, dirs, files in sorted(os.walk(base)):
+            dirs.sort()
+            for name in sorted(files):
+                path = os.path.join(root, name)
+                h.update(os.path.relpath(path, SRC).encode())
+                with open(path, "rb") as f:
+                    h.update(f.read())
+    h.update(LAYOUT.encode())
+    return h.hexdigest()[:10]
+
+
 def build():
     if os.path.isdir(OUT):
         shutil.rmtree(OUT)
     os.makedirs(OUT)
     shutil.copytree(os.path.join(SRC, "assets"), os.path.join(OUT, "assets"))
+    version = build_id()
+    site_js = os.path.join(OUT, "assets", "site.js")             # the script knows its build (an older page: fresh)
+    with open(site_js, encoding="utf-8") as f:
+        js = f.read()
+    with open(site_js, "w", encoding="utf-8") as f:
+        f.write(js.replace("__GINK_BUILD__", version))
     snowflake = logo_svg(320, cls="hero-flake")
     flake = logo_svg(30, cls="brand-flake")
     small = logo_svg(22, cls="avatar-flake")
@@ -146,14 +175,14 @@ def build():
         footer = "\n".join(
             f'    <div class="footer-col"><h2>{head}</h2><ul>'
             + "".join(f'<li><a href="{h}">{l}</a></li>' for h, l in links) + "</ul></div>" for head, links in FOOTER)
-        extra = "".join(f'\n<script src="assets/{s.strip()}"></script>' for s in meta.get("scripts", "").split(",") if s.strip())
+        extra = "".join(f'\n<script src="assets/{s.strip()}?v={version}"></script>' for s in meta.get("scripts", "").split(",") if s.strip())
         body = (body.replace("{{SNOWFLAKE}}", snowflake).replace("{{FLAKE}}", small).replace("{{REPO}}", REPO)
                 .replace("{{API}}", API).replace("{{YEAR}}", YEAR))
         page = LAYOUT.format(title=html.escape(full_title), description=html.escape(meta.get("description", "")),
                              slug=slug, nav=nav, body=body, flake=flake, site_url=SITE_URL,
                              url=SITE_URL + ("" if name == "index.html" else name),
                              download_current=current if name == "download.html" else "",
-                             footer=footer, year=YEAR, repo=REPO, extra_scripts=extra)
+                             footer=footer, year=YEAR, repo=REPO, extra_scripts=extra, build=version)
         with open(os.path.join(OUT, name), "w", encoding="utf-8") as f:
             f.write(page)
     print(f"built {len(pages)} pages -> {os.path.relpath(OUT, ROOT)}/")

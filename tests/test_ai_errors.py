@@ -12,13 +12,21 @@ def _err(status, body):
     return groq.APIStatusError("refused", response=resp, body=body)
 
 
-def test_the_app_says_the_real_reason():
+def test_the_app_says_the_real_reason_in_plain_words():
+    # 0.1.163: plain words only -- the provider's own message ("... in organization org_... Upgrade to Dev Tier")
+    # reached people before
     from ginkassistant.services.groq_worker import _problem_message, _limit_message
+    from ginkassistant.services import context_fit
     limit = _err(429, {"error": {"message": "Rate limit reached for model openai/gpt-oss-120b: tokens per day (TPD)", "code": "rate_limit_exceeded"}})
-    assert _limit_message(limit) == "" and _problem_message(limit).startswith("The AI service has reached its limit for now")
-    assert "tokens per day" in _problem_message(limit)
+    assert _limit_message(limit) == "" and _problem_message(limit) == context_fit.DAILY
+    big = _err(413, {"error": {"message": "Request too large for model `openai/gpt-oss-120b` in organization `org_01abcdef99` "
+                               "service tier `on_demand` on tokens per minute (TPM): Limit 8000, Requested 17295, please reduce "
+                               "your message size and try again. Need more tokens? Upgrade to Dev Tier today", "code": "rate_limit_exceeded"}})
+    assert _problem_message(big) == context_fit.TOO_LONG and "org_" not in _problem_message(big)
+    said = _err(413, {"error": {"message": context_fit.TOO_LONG, "code": "too_large"}})   # Gink's server, already plain
+    assert _limit_message(said) == context_fit.TOO_LONG
     bad = _err(400, {"error": {"message": "The model `x` does not exist"}})
-    assert _problem_message(bad) == "The AI service couldn't answer (error 400: The model `x` does not exist)."
+    assert _problem_message(bad) == "The AI service couldn't answer (error 400). Please try again in a moment."
     assert "error 503" in _problem_message(_err(503, {}))
     assert "The AI service had a problem" not in _problem_message(bad)
 
@@ -43,7 +51,7 @@ def test_the_server_logs_refusals_without_the_messages(tmp_path, monkeypatch, ca
     h = {"Authorization": "Bearer " + b._token_response("ib@example.com", "I")["token"]}
     r = c.post("/ai/openai/v1/chat/completions", headers=h,
                json={"model": "openai/gpt-oss-120b", "stream": True, "messages": [{"role": "user", "content": "MY SECRET QUESTION"}]})
-    assert r.status_code == 429 and r.headers.get("retry-after") == "120" and "tokens per day" in r.json()["error"]["message"]
+    assert r.status_code == 429 and r.headers.get("retry-after") == "120" and "for today" in r.json()["error"]["message"]
     out = capsys.readouterr().out
     assert "[gink] AI provider refused: HTTP 429 model=openai/gpt-oss-120b" in out and "tokens per day" in out
     assert "MY SECRET QUESTION" not in out                                                  # never the person's messages
@@ -87,7 +95,7 @@ def test_another_model_answers_when_one_is_at_its_limit(tmp_path, monkeypatch, c
     b, ask, sent = _server(monkeypatch, tmp_path, {"openai/gpt-oss-20b": 200})
     r = ask()
     assert r.status_code == 200 and "hi from openai/gpt-oss-20b" in r.text and r.headers["x-gink-model"] == "openai/gpt-oss-20b"
-    assert "-> trying openai/gpt-oss-20b" in capsys.readouterr().out
+    assert "-> asking openai/gpt-oss-20b" in capsys.readouterr().out
     b._groq_models.update(ids=set(), at=0.0)
 
 
@@ -102,7 +110,8 @@ def test_non_gpt_oss_models_dont_get_reasoning_settings(tmp_path, monkeypatch):
 def test_at_most_four_tries_then_the_real_reason(tmp_path, monkeypatch):
     b, ask, sent = _server(monkeypatch, tmp_path, {})
     r = ask()
-    assert r.status_code == 429 and len(sent) == 4 and "refused 429" in r.json()["error"]["message"]
+    assert r.status_code == 429 and len(sent) == 4 and r.json()["error"]["code"] == "busy"          # plain words (0.1.163)
+    assert "refused 429" not in r.text and "try again" in r.json()["error"]["message"]
     b._groq_models.update(ids=set(), at=0.0)
 
 

@@ -2368,6 +2368,12 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
     scroller().scrollTop = 0;
     requestAnimationFrame(function () { ginkScrollEnd(true); });
   };
+  // An answer from an opened chat, formatted after the chat was drawn (the web app): as history -- its scheduled task
+  // isn't made again, its code doesn't open by itself, the page doesn't jump (0.1.163)
+  window.finalizeOld = function (id, html) {
+    LOADING_CHAT = true;
+    try { finalizeMessage(id, html); } finally { LOADING_CHAT = false; }
+  };
   // The whole chat in one go: no "Thinking..." placeholders flickering while it loads
   window.loadChat = function (items) {
     LOADING_CHAT = true;

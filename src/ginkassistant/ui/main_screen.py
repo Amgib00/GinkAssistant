@@ -103,6 +103,7 @@ from ..services.voice_bridge import VOICES
 from ..services.audio_engine import GinkAudioEngine
 from ..services.groq_worker import SPOKEN_REPLY_PROMPT, GroqBrain, UseTools
 from ..services import tool_slips
+from ..services import link_kinds
 from ..services.tool_slips import friendly as friendly_problem
 from ..services import system_notify
 from ..services import attachments as att_svc, biometric, briefing, prefs
@@ -190,7 +191,7 @@ def build_main_screen(app: toga.App, email: str):
             return ""
 
     def greet_name() -> str:
-        """The person's name -- never made from their email ("kargboi131ik667957")."""
+        """The person's name -- never made from their email address (an address like "ama.k.1990@..." is not a name)."""
         import re as _re
         p = app.profile.get() if getattr(app, "profile", None) is not None else {}
         looks_made = lambda n: not n or bool(_re.search(r"\d{3,}", n)) or n.lower() == (email or "").split("@")[0].lower()
@@ -583,7 +584,8 @@ def build_main_screen(app: toga.App, email: str):
         images = any(a.kind in ("image", "video") for a in attachments)
         label = ("Watching your video\u2026" if any(a.kind == "video" for a in attachments) else
                  "Looking at your photo\u2026" if images else
-                 "Reading your file\u2026" if attachments else "Thinking\u2026")
+                 "Reading your file\u2026" if attachments else
+                 link_kinds.busy_label(message) or "Thinking\u2026")     # a link: the server opens it (0.1.164)
         if started:
             await web_chat.set_spin_label(msg_id, label)
         else:
@@ -1924,6 +1926,26 @@ def build_main_screen(app: toga.App, email: str):
                 return None
         return None
     app.task_runner.web_researcher = research
+
+    async def open_link(url):
+        """read_link through the Gink server: it opens the link (a page, a PDF, a post, a reel) and looks at its picture.
+        None -> opened on this device instead."""
+        token = getattr(app, "session_token", None)
+        if not token:
+            return None
+        import httpx
+        async with httpx.AsyncClient(timeout=httpx.Timeout(70, connect=15)) as client:
+            r = await client.post(app.state.base_url.rstrip("/") + "/links/read", json={"url": url},
+                                  headers={"Authorization": f"Bearer {token}"})
+        if r.status_code == 200:
+            return {"ok": True, "link": r.json().get("for_ai", "")}
+        if r.status_code in (403, 429):                            # turned off, or many links just now: say so
+            try:
+                return {"ok": False, "message": r.json()["error"]["message"]}
+            except Exception:
+                return None
+        return None
+    app.task_runner.link_reader = open_link
 
     async def site_builder(action, prompt="", instruction="", site_id=None):
         """Websites through the Gink server ("make me a website for...")."""

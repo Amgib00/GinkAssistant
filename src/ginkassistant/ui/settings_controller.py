@@ -84,7 +84,7 @@ class SettingsController:
         voice_bridge.set_speed(p.get("voice_speed", "normal"))
         runner = self.app.task_runner
         from ..services.actions.codebase import MOBILE as _phone
-        runner.disabled_tools = ({"web_search"} if not p.get("web_search", True) else set()) | \
+        runner.disabled_tools = ({"web_search", "read_link"} if not p.get("web_search", True) else set()) | \
                                 ({"find_video"} if not p.get("video_suggestions", True) else set()) | \
                                 ({"project_overview", "search_code", "run_project_check"} if _phone else set())   # computers only
         runner.use_memory = bool(p.get("use_memory", True))

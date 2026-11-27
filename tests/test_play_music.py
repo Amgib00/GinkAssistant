@@ -69,7 +69,7 @@ def test_model_menu_effort_greeting_and_attachments():
 def test_code_viewer_wiring():
     root = os.path.join(os.path.dirname(__file__), "..")
     extras = open(os.path.join(root, "src", "ginkassistant", "ui", "chat_extras.py"), encoding="utf-8").read()
-    for part in ("window.openCodeViewer", "window.autoOpenCode", "codeButton('open', 'Open in the code viewer'", "ginkEmit('save_code', {name: CV.name",
+    for part in ("window.openCodeViewer", "window.autoOpenCode", "codeButton('open', 'Open in the code viewer'", "ginkEmit('save_code', cvDownload(CV.art))", "return { name: CV.name, code: CV.text };",
                  "#codeview .cvbody code { font-size: inherit; line-height: inherit; }",
                  "body.viewer-open #shell { right: min(50vw, 780px); }"):     # the chat makes room for the viewer
         assert part in extras, part

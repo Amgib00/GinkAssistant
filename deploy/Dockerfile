@@ -29,6 +29,10 @@ COPY src/ginkassistant/services/about_gink.py ./about_gink.py
 # reading for answers (0.1.161): pasted pages, GitHub code
 COPY src/ginkassistant/services/web_reader.py ./web_reader.py
 COPY src/ginkassistant/services/code_reader.py ./code_reader.py
+# any link, seen and read (0.1.164): which site and kind, official previews, the shield (web_reader.py imports it)
+COPY src/ginkassistant/services/link_kinds.py ./link_kinds.py
+# every request fitted into the AI model's limits (0.1.163): long chats, artifacts, plain-words refusals
+COPY src/ginkassistant/services/context_fit.py ./context_fit.py
 COPY src/ginkassistant/services/web_app ./web_app
 # server-only libraries (0.1.161: Mermaid for diagram artifacts) -- not in the apps' packages
 COPY deploy/vendor ./vendor

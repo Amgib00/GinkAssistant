@@ -69,6 +69,8 @@ assert c.get("/app").status_code == 200, "web app"
 marker = b._genie_store_content("x = 1\n" * 3000)                  # the blob store, flat
 assert marker.startswith(b.GENIE_BLOB) and b._genie_resolve(marker).startswith("x = 1"), "blob store"
 assert c.post("/errors", json={"kind": "E", "stack": "x"}).json()["ok"] is True, "errors"
+web = b._reader("web")                                              # the link reader and what it imports, flat (0.1.164)
+assert web.lk.site_of("https://www.facebook.com/reel/1")["kind"] == "reel", "link reader"
 print("OK")
 '''
     env = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH",)}

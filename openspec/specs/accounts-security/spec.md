@@ -99,11 +99,15 @@ The server SHALL record, with time and device, sign-ins, wrong passwords on an e
 - **THEN** "Wrong password entered" appears in Settings > Account > Security history with the device
 
 ### Requirement: Lockdown mode
-When the person turns on Lockdown mode, the server SHALL refuse web search, connected apps and images from web addresses for that account on every device and API path, with a message saying how to turn it off, while normal chat keeps working.
+When the person turns on Lockdown mode, the server SHALL refuse web search they ask for, connected apps and images from web addresses for that account on every device and API path, with a message saying how to turn it off, while normal chat keeps working: Gink SHALL not search by itself and SHALL not open links.
 
 #### Scenario: Web search in Lockdown mode
-- **WHEN** a question would search the web while Lockdown mode is on
+- **WHEN** someone asks for a web search while Lockdown mode is on
 - **THEN** it is refused with "Lockdown mode is on, so Gink doesn't use web search"
+
+#### Scenario: A question Gink would search for by itself
+- **WHEN** a question that would need today's facts is asked while Lockdown mode is on
+- **THEN** Gink answers without searching, and opens no links in it
 
 ### Requirement: Passkeys
 People SHALL be able to add passkeys in a browser (Settings > Account > Passkeys), see and remove them in the apps and the web, and sign in with one on the sign-in page without typing anything; registration and sign-in SHALL require user verification (fingerprint, face or PIN), be bound to the site's own address, use one-time challenges, and check the signature counter. A passkey sign-in SHALL count as two factors and not ask for the authenticator code.

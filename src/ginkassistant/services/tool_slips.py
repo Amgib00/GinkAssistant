@@ -84,13 +84,21 @@ def friendly(err) -> str:
     """What the chat says when an answer fails for an unexpected reason: plain words, never the raw error."""
     if is_slip(err):
         return NO_ANSWER
-    low = error_text(err).lower()
+    raw = error_text(err)
+    low = raw.lower()
     m = re.search(r"\b(?:groq|error|http)\s*(\d{3})\b", low)
     code = int(m.group(1)) if m else int(getattr(err, "status_code", 0) or 0)
     if code == 401:
         return "Please sign out and sign in again."
-    if code == 429:
-        return "The AI service has reached its limit for now. Please try again in a little while."
+    if code in (413, 429):                    # too large for the AI's limit, or busy: plain words (0.1.163)
+        from . import context_fit
+        try:
+            info = (json.loads(getattr(err, "text", "") or "{}") or {}).get("error") or {}
+        except (ValueError, AttributeError):
+            info = {}
+        if isinstance(info, dict) and info.get("code") in ("too_large", "busy") and "org_" not in str(info.get("message")):
+            return str(info.get("message") or "")                    # Gink's server said it plainly already
+        return context_fit.friendly_refusal(code, raw)[0]
     if code >= 500:
         return "The AI service is having trouble right now. Please try again in a moment."
     if any(w in low for w in ("connect", "timed out", "timeout", "network", "name or service", "nodename",

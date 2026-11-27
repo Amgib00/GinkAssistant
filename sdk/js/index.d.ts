@@ -8,7 +8,8 @@ export interface PlacePhoto { image: string; title: string; page: string; credit
 /** The maps in an answer (```map blocks; ask with { gink_maps: true }). */
 export declare function maps(text: string): Array<{ title: string; places: MapPlace[] }>;
 /** A finished thing in an answer (a titled block; ask with { gink_artifacts: true }). */
-export interface Artifact { title: string; language: string; kind: "page" | "image" | "diagram" | "document" | "code";
+export interface Artifact { title: string; language: string;
+  kind: "page" | "image" | "diagram" | "document" | "react" | "chart" | "table" | "slides" | "code";
   content: string; filename: string; version: number }
 /** The finished things in an answer: each fenced block with a title (a later one with the same title is its next version). */
 export declare function artifacts(text: string): Artifact[];
@@ -67,6 +68,12 @@ export declare function videoFrames(video: Blob | string, options?: { count?: nu
 /** A source of a web answer: official = a government, an international body or the organisation's own site;
  *  icon = the site's real logo, served by Gink (<server>/icon/<host>). */
 export interface Source { title: string; url: string; host: string; official: boolean; icon: string }
+/** A link Gink opened: what it is ("reel", "video", "short video", "post", "song", "PDF", "picture", "page"...) and says.
+ *  text: its caption or description; body: a page's or a PDF's words; seen: what its picture shows (Gink looked);
+ *  heard: what's said in an audio or video file; note: what couldn't be opened, and why. */
+export interface LinkInfo { url: string; site?: string; kind?: string; title?: string; author?: string; date?: string;
+  seconds?: number; stats?: Record<string, number>; text?: string; body?: string; image?: string; seen?: string;
+  heard?: string; transcript?: string; pages?: number; note?: string; official?: boolean; error?: string }
 export declare function sources(text: string, baseURL?: string): Source[];
 export declare function verifyWebhook(body: string, signature: string, secret: string,
   options?: { tolerance?: number }): Promise<{ type: string; data: Interaction }>;
@@ -173,6 +180,13 @@ export declare class Gink {
     /** Gink's natural voice: WAV audio. */
     speech(text: string, options?: { voice?: string; speed?: "slow" | "fast" }): Promise<ArrayBuffer>;
   };
+  /** Links, opened by Gink: pages, PDFs, pictures, social media posts and reels (their caption, what their picture shows). */
+  links: {
+    read(url: string | string[] | null, options?: { urls?: string[]; text?: string; look?: boolean; listen?: boolean }):
+      Promise<{ links: LinkInfo[]; for_ai: string }>;
+  };
+  /** What one link is and says. */
+  readLink(url: string, options?: { look?: boolean; listen?: boolean }): Promise<LinkInfo>;
   /** Places by name or address (OpenStreetMap). */
   geo(query: string, options?: { limit?: number }): Promise<Array<{ name: string; display: string; lat: number; lon: number;
     type: string; map_url: string }>>;
@@ -201,10 +215,13 @@ export declare class Gink {
   };
   /** gink_maps: true -- answers about places end with a ```map block (read it with maps()); gink_artifacts: finished
    *  things in titled blocks (artifacts()); gink_tasks: "every morning..." gets a ```schedule block (schedulesIn());
-   *  gink_web: "auto" reads linked pages and searches when needed; gink_code: GitHub repositories are read. */
+   *  gink_web: "auto" opens the links in the question (pages, PDFs, posts, reels) and searches when needed;
+   *  gink_code: GitHub repositories are read;
+   *  gink_fit: a long conversation is fitted to the AI's limits (earlier versions of an artifact and older turns
+   *  left out) instead of a 413 "too large". */
   chat(message: string | Array<{ role: string; content: string | Array<Record<string, unknown>> }>,
        options?: { model?: string; system?: string; gink_maps?: boolean; gink_artifacts?: boolean; gink_tasks?: boolean;
-                   gink_web?: boolean | "auto"; gink_code?: boolean }): Promise<string>;
+                   gink_web?: boolean | "auto"; gink_code?: boolean; gink_fit?: boolean }): Promise<string>;
   /** An answer from the web, its sources listed (official ones first); { withSources: true } adds them as data. */
   search(question: string): Promise<string>;
   search(question: string, options: { withSources: true }): Promise<{ answer: string; sources: Source[] }>;

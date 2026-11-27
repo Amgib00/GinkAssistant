@@ -166,7 +166,8 @@ section { padding: 96px 0; }
 
 /* ---------- the hero: Gink at work, in its own window ---------- */
 /* The window sits low and crosses into the next section by --overlap, whatever the copy's height. */
-.hero { padding: 76px 0 0; position: relative; }
+/* the hero is night by itself too: its light words never land on white (an older page with these styles did) */
+.hero { padding: 76px 0 0; position: relative; background: var(--night); color: var(--mist); }
 .hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 520px); gap: 56px; }
 .hero-copy { align-self: start; padding: 36px 0 88px; }
 .hero .window { align-self: end; margin-bottom: calc(-1 * var(--overlap)); }

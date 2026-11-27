@@ -1,4 +1,4 @@
-"""Gink Developer API client: managed agents (interactions), environments, chat, photos (see), images."""
+"""Gink Developer API client: managed agents (interactions), environments, chat, photos (see), links, images."""
 import json
 import os
 import time
@@ -104,18 +104,20 @@ def maps(text: str) -> list:
 
 
 ARTIFACT_KINDS = {"html": "page", "htm": "page", "svg": "image", "mermaid": "diagram", "document": "document",
-                  "markdown": "document", "md": "document"}
+                  "markdown": "document", "md": "document", "jsx": "react", "tsx": "react", "chart": "chart",
+                  "csv": "table", "tsv": "table", "slides": "slides"}          # 0.1.163: React, charts, tables, slides
 _EXT = {"python": "py", "javascript": "js", "typescript": "ts", "html": "html", "svg": "svg", "mermaid": "mmd",
         "document": "md", "markdown": "md", "md": "md", "css": "css", "json": "json", "bash": "sh", "shell": "sh",
         "sql": "sql", "java": "java", "kotlin": "kt", "swift": "swift", "go": "go", "rust": "rs", "ruby": "rb",
-        "php": "php", "csharp": "cs", "cpp": "cpp", "c": "c", "yaml": "yaml", "toml": "toml", "dart": "dart"}
+        "php": "php", "csharp": "cs", "cpp": "cpp", "c": "c", "yaml": "yaml", "toml": "toml", "dart": "dart",
+        "jsx": "jsx", "tsx": "tsx", "chart": "json", "csv": "csv", "tsv": "tsv", "slides": "md"}
 
 
 def artifacts(text: str) -> list:
     """The finished things in an answer (ask with gink_artifacts=True): each fenced block with a title, like
     ```html title="Pomodoro timer". [{"title", "language", "kind", "content", "filename", "version"}] -- kind is page,
-    image (SVG), diagram (Mermaid), document (Markdown) or code; a later block with the same title is a new version
-    of it (version 2, 3...)."""
+    image (SVG), diagram (Mermaid), document (Markdown), react (a jsx/tsx component), chart (Chart.js JSON), table
+    (CSV), slides (Markdown split by ---) or code; a later block with the same title is a new version of it."""
     import re
     out, seen = [], {}
     for m in re.finditer(r"^([ \t]*)(```|~~~)[ \t]*([\w+#.\-]*)([^\n`]*)\n(.*?)\n?[ \t]*\2[ \t]*$", text or "", re.M | re.S):
@@ -295,6 +297,7 @@ class Client:
         self.webhooks = _Webhooks(self)
         self.audio = _Audio(self)
         self.batches = _Batches(self)
+        self.links = _Links(self)
 
     # ---- plumbing
     def _headers(self) -> dict:
@@ -323,10 +326,13 @@ class Client:
 
     def chat(self, message, model: str = "", system: str = "", **extra) -> str:
         """One answer. `message` is text or a full messages list. Live info (date, weather, rates...) is added by Gink.
-        Gink's options, as keyword arguments: gink_web="auto" (read the pages linked in the question and search the
-        web when the answer needs it -- like Gink's apps), gink_code=True (GitHub repositories in the question are
+        Gink's options, as keyword arguments: gink_web="auto" (open the links in the question -- pages, PDFs, posts
+        and reels: their caption, what their picture shows -- and search the web when the answer needs it, like
+        Gink's apps), gink_code=True (GitHub repositories in the question are
         read), gink_artifacts=True (finished things in titled blocks: artifacts()), gink_tasks=True ("every morning..."
-        gets a ```schedule block: schedules_in()), gink_maps=True (```map blocks: maps())."""
+        gets a ```schedule block: schedules_in()), gink_maps=True (```map blocks: maps()), gink_fit=True (a long
+        conversation is fitted to the AI's limits -- earlier versions of an artifact and older turns left out --
+        instead of a 413 "too large")."""
         data = self._chat_data(message, model=model, system=system, **extra)
         return ((data.get("choices") or [{}])[0].get("message") or {}).get("content") or ""
 
@@ -433,6 +439,11 @@ class Client:
 
     def models(self) -> list:
         return [m["id"] for m in self.request("GET", "/models").json().get("data", [])]
+
+    def read_link(self, url: str, look: bool = True, listen: bool = True) -> _Obj:
+        """What one link is and says (see client.links.read): its site, kind ("reel", "video", "post", "PDF",
+        "page"...), title, author, date, text (its caption), body (a page's words), seen (what its picture shows)..."""
+        return _Obj(self.links.read(url, look=look, listen=listen)["links"][0])
 
 
 class _Interactions:
@@ -754,6 +765,32 @@ class _Audio:
         if speed:
             body["speed"] = speed
         return self.c.request("POST", "/audio/speech", json=body).content
+
+
+class _Links:
+    """Links, opened by Gink (0.1.164): client.links.read("https://www.facebook.com/reel/2322629778521786")."""
+
+    def __init__(self, client: Client):
+        self.c = client
+
+    def read(self, url=None, urls=None, text: str = "", look: bool = True, listen: bool = True) -> _Obj:
+        """One link (url), a few (urls, up to 3) or every link in a message (text) -> {"links": [...], "for_ai": "..."}.
+        Each link: url, site, kind ("reel", "video", "short video", "post", "song", "PDF", "picture", "page"...), title,
+        author, date, seconds, stats ({"views", "likes", ...}), text (its caption or description), body (a page's or a
+        PDF's words), seen (what its picture shows -- Gink looked), heard (what's said in an audio or video file),
+        note (what couldn't be opened, and why) -- or error. for_ai: the same links as the note Gink's chat gives the
+        AI (data between markers). look=False: pictures aren't looked at; listen=False: audio and video aren't heard."""
+        body = {"look": bool(look), "listen": bool(listen)}
+        if isinstance(url, (list, tuple)):
+            urls, url = list(url), None
+        if url:
+            body["url"] = str(url)
+        if urls:
+            body["urls"] = [str(u) for u in urls]
+        if text:
+            body["text"] = str(text)
+        data = self.c.request("POST", "/links/read", json=body).json()
+        return _Obj(links=[_Obj(x) for x in data.get("links", [])], for_ai=data.get("for_ai", ""))
 
 
 class _Workspace:

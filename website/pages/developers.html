@@ -22,6 +22,7 @@ description: Build with Gink: the Developer API, Python and JavaScript SDKs and 
         <li><a href="#agents">Agents</a></li>
         <li><a href="#tasks">Scheduled tasks</a></li>
         <li><a href="#artifacts">Artifacts, the web and code</a></li>
+        <li><a href="#links">Links</a></li>
         <li><a href="#maps">Maps and places</a></li>
         <li><a href="#voice">Voice messages</a></li>
         <li><a href="#memory">Memory</a></li>
@@ -72,7 +73,7 @@ client.tasks.pause(task.id)</code></pre>
       <p>Let people schedule in their own words: chat with <code>gink_tasks</code> and an answer to &ldquo;every Monday at 9, plan my week&rdquo; ends with a schedule block that <code>schedules_in()</code> reads, ready for <code>tasks.create</code>. In JavaScript, <code>gink.tasks.create({ task, every, at })</code> and <code>schedulesIn(text)</code>; in a terminal, <code>gink tasks add "..." --every weekly --day monday --at 09:00</code>.</p>
 
       <h2 id="artifacts">Artifacts, the web and code</h2>
-      <p>Three options make chat work like Gink&rsquo;s apps. <code>gink_artifacts</code>: finished things (a page, an SVG, a diagram, a document, a long code file) come in one block with a title, and <code>artifacts()</code> gives each one with its kind, file name and version. <code>gink_web="auto"</code>: the pages linked in a question are read by Gink&rsquo;s server, and the web is searched when the answer needs it. <code>gink_code</code>: GitHub repositories in the question are read, with the files that match it.</p>
+      <p>Three options make chat work like Gink&rsquo;s apps. <code>gink_artifacts</code>: finished things (a page, a React component, a chart, a CSV table, slides, an SVG, a diagram, a document, a long code file) come in one block with a title, and <code>artifacts()</code> gives each one with its kind, file name and version. <code>gink_fit</code>: a long conversation is fitted to the AI&rsquo;s limits (earlier versions of an artifact and older turns left out) instead of a 413 &ldquo;too large&rdquo;. <code>gink_web="auto"</code>: the links in a question are opened by Gink&rsquo;s server (pages, PDFs, posts and reels: see <a href="#links">Links</a>), and the web is searched when the answer needs it. <code>gink_code</code>: GitHub repositories in the question are read, with the files that match it.</p>
 <pre><code>answer = client.chat("Make a pomodoro timer page", gink_artifacts=True)
 for a in client.artifacts(answer):
     open(a["filename"], "w").write(a["content"])     # pomodoro-timer.html
@@ -80,6 +81,16 @@ for a in client.artifacts(answer):
 client.chat("What changed on https://example.org/changelog this month?", gink_web="auto")
 client.chat("Where is sign-in handled in github.com/owner/app?", gink_code=True)</code></pre>
       <p>The <code>gink</code> command does all three by itself: <code>gink --save-artifacts site "make a landing page for a bakery"</code> saves the files, and links and repositories in a question are read unless you add <code>--no-auto</code>.</p>
+
+      <h2 id="links">Links</h2>
+      <p>Gink opens a link the way its apps do and says what it is and says: its site and kind (a reel, a video, a post, a song, a PDF, a picture, a page), title, author, date, length, counts, caption, a page&rsquo;s or a PDF&rsquo;s words, what its picture shows (Gink looks at it) and what&rsquo;s said in an audio or video file. Official previews are used where a site has them (YouTube, TikTok, X, Vimeo, Spotify, Bluesky, and Facebook and Instagram on servers with a Meta token), and only public addresses are opened. <code>for_ai</code> is the same note Gink&rsquo;s chat gives the AI: each link&rsquo;s words between markers no page can fake, with a warning when a page tries to instruct the AI.</p>
+<pre><code>reel = client.read_link("https://www.facebook.com/reel/2322629778521786")
+print(reel.kind, reel.get("author"), reel.get("text"), reel.get("seen"))
+
+found = client.links.read(text="Compare https://example.org/plan-a and https://example.org/plan-b")
+for link in found.links:
+    print(link.get("title"), link.get("error") or "")</code></pre>
+      <p>Over HTTP: <code>POST /v1/links/read</code> with <code>{"url"}</code>, <code>{"urls"}</code> (up to 3) or <code>{"text"}</code>; <code>"look": false</code> skips pictures, <code>"listen": false</code> audio and video. In JavaScript, <code>await gink.readLink(url)</code> and <code>gink.links.read()</code>; in a terminal, <code>gink read URL ["question"]</code>. Chat with <code>gink_web="auto"</code> opens the links in a question the same way.</p>
 
       <h2 id="maps">Maps and places</h2>
       <p>Ask with <code>gink_maps</code> and answers about places end with a map block: a title, and each place&rsquo;s name, coordinates and kind (museum, cafe, park and so on), ready to draw on your own map. Places by name or address come from OpenStreetMap, and a picture of a place comes from its Wikipedia article, like the photos on Gink&rsquo;s map cards.</p>

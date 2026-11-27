@@ -1,5 +1,63 @@
 # Changelog
 
+## 0.1.164 (November 2026)
+
+- Links, seen and read by themselves: paste any link -- a Facebook or Instagram reel, a TikTok, a YouTube video or
+  short, an X, Threads or Bluesky post, a Spotify song, a news page, a PDF, a picture, a voice note on the web -- and
+  Gink opens it before it answers. It knows what it is ("a Facebook reel"), who posted it and when, its caption, how
+  long it is and how many views it has, and it looks at its picture and says what it shows; a page's words, a PDF's
+  pages and what's said in an audio file are read too. While it opens, the chat says so ("Looking at the reel..."),
+  and a question about it later in the chat ("who posted it?") still has the link to go on
+- Honest about what it can't see: most social sites don't let other apps play their videos, so for a reel Gink sees
+  what a messaging app's preview shows -- the caption, the cover picture, who posted it -- and says so; a site that
+  only shows its sign-in page is said to be one, never guessed at. Save the video and attach it, and Gink watches the
+  whole thing (Gink Pro)
+- Safer with the web: what a link says is data for the AI, never instructions. Words hidden from people (often meant
+  for AI assistants) and invisible letters are taken out, every link's words sit between markers no page can fake,
+  and a page that tries to give the AI instructions is flagged and not followed. Only public web addresses are
+  opened -- every redirect and every picture is checked -- and each person has a fair number of links, pictures and
+  recordings every 10 minutes
+- Agents and Gink Genie open links too: "make my bakery's site look like https://..." -- Genie opens the page first;
+  agents and scheduled tasks open pages, PDFs, posts and reels (and still search the web when a site turns visitors
+  away), and the agent in the apps has its own way to open a link. Using Gink with your own Groq key, links are
+  opened on your device
+- Fixed: with Lockdown mode on, a question Gink would have searched the web for by itself was refused ("Lockdown mode
+  is on, so Gink doesn't use web search"). Now Gink answers it without searching
+- Developers: `POST /v1/links/read` ({"url"}, {"urls"} or {"text"}) says what each link is and says -- its site,
+  kind, title, author, date, length, counts, caption, words, what its picture shows and what's said in it -- with the
+  note Gink's chat gives the AI; `client.links.read()` / `client.read_link()` and `gink.links.read()` /
+  `gink.readLink()` (gink-ai 0.3.19), and `gink read URL ["question"]` in the CLI. `"gink_web": "auto"` opens links
+  the same way. A server can add `META_OEMBED_TOKEN` (Facebook's and Instagram's official previews) and
+  `YOUTUBE_API_KEY` (a video's whole description and counts)
+
+## 0.1.163 (November 2026)
+
+- Fixed: on a question card, typing your own answer ("Any you choose") left the send arrow greyed out, so it couldn't
+  be sent. Now what you type is your answer: the arrow lights up as you type, and the arrow or Enter sends it. The
+  AI's own "Other (type your own)" choices no longer show twice -- every card has its own line for your words
+- Gink just makes it: "make me anything", "surprise me", "add more to it", "continue" -- Gink chooses something good,
+  makes it and says in one line what it chose, instead of asking which kind of thing, then three more questions.
+  Question cards are kept for what only you know. And Gink no longer tells you to save a page "as index.html": the
+  artifact has Open, Copy and Download
+- Fixed: a long chat could stop with "The AI service couldn't answer (error 413: Request too large for model ... in
+  organization org_... Limit 8000, Requested 17295)". A chat that made a page three times sent all three copies;
+  now only the newest version of each artifact goes along, a request too big for one model goes to one that takes
+  more (or leaves out the oldest turns), Gink learns each model's real limits, and busy or too-long answers are said
+  in plain words -- never the AI service's raw message or its account details
+- More artifacts: React apps you can click through (with Tailwind styles), charts drawn from their numbers, tables
+  you can sort by any column (and download as CSV for Excel or Sheets), and slides you can present -- arrows, swipes
+  or full screen -- and download as a page that opens anywhere. Pages and apps are made to work on a phone and in
+  dark mode, with real content, and a new version keeps everything that was there
+- Gink on the web: opening a chat shows it formatted at once -- never **raw** text or an artifact's code while it
+  loads -- with your answers to its questions in place (the cards came back open and blank), a chat opened again is
+  instant, and answers are formatted as they arrive. An opened chat no longer makes its scheduled task again
+- Numbered lists right after bulleted ones show as numbered lists (they were joined into one bulleted list)
+- The website: a page your browser kept from before is loaded fresh, so the site never shows half-styled (light grey
+  words on white, a crowded menu), and every build's styles and scripts have their own version
+- Developers: `"gink_fit": true` fits a long conversation to the AI's limits instead of a 413; a refusal comes back
+  without Gink's account details, and `X-Gink-Model` says when another model answered. The SDKs know the new
+  artifact kinds (react, chart, table, slides; gink-ai 0.3.18), and `gink chat` keeps long chats going
+
 ## 0.1.162 (November 2026)
 
 - Fixed: sending a photo or a video, or asking Gink to run a check, could end in "[error] Tool choice is none, but model

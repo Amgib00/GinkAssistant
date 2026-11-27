@@ -125,7 +125,7 @@ def test_old_chats_show_answers_without_waiting_for_the_server():
     bridge = open(os.path.join(ROOT, "webapp", "bridge.js"), encoding="utf-8").read()
     i = bridge.index("function openSession(")
     body = bridge[i:bridge.index("\n  }\n", i)]
-    assert body.index("setPlainText(a[0]") < body.index('api("/render"')          # text first, then formatting
+    assert body.index("(window.setQuickHtml || setPlainText)(a[0]") < body.index('api("/render"')   # readable first, then formatting
     assert "Promise.race" in body and "10000" in body                             # never waits forever
     assert "Array.isArray(j.html)" in body and "W.current !== opened" in body     # no "undefined", no wrong chat
 

@@ -860,38 +860,82 @@ JS = r"""
     document.body.appendChild(d); ok.focus();
   };
   // ---- Question cards: an answer's ```ask {"questions":[{"q":..., "options":[...]}]}``` becomes tappable choices
+  // Every card has its own "Something else" line, so the AI's own "Other (type your own)" options are left out (0.1.163:
+  // they showed twice). Typing there IS the answer: the send arrow lights up as you type, Enter or the arrow sends it
+  // (before, a typed answer left the arrow greyed out and nothing could be sent).
+  var OTHER_OPTION = /^\s*(other|others|something else|anything else|custom|your own|type (in )?(your|my) own|write (your|my) own|enter (your|my) own|specify|not listed)\b/i;
+  function cardOptions(q) {
+    var seen = {};
+    return (q.options || []).map(function (o) { return String(o == null ? '' : (typeof o === 'object' ? (o.label || o.text || '') : o)).trim(); })
+      .filter(function (o) {
+        var k = o.toLowerCase(); if (!o || seen[k] || OTHER_OPTION.test(o)) return false;
+        seen[k] = 1; return true;
+      }).slice(0, 5);
+  }
+  window.cardOptions = cardOptions;
   window.upgradeQuestionCards = function (root) {
     Array.prototype.slice.call(root.querySelectorAll('.code-block')).forEach(function (block) {
       var label = block.querySelector('.code-block-label'); if (!label || label.textContent.trim().toLowerCase() !== 'ask') return;
       var data; try { data = JSON.parse(block.querySelector('code').textContent); } catch (e) { return; }
-      var qs = (data.questions || []).filter(function (q) { return q && q.q && (q.options || []).length; }).slice(0, 3);
+      var qs = (Array.isArray(data) ? data : (data.questions || [])).filter(function (q) { return q && q.q; })
+        .map(function (q) { return { q: String(q.q), options: cardOptions(q) }; }).slice(0, 3);
       if (!qs.length) return;
       var card = document.createElement('div'); card.className = 'qcard'; card.setAttribute('role', 'group');
-      var st = { i: 0, answers: qs.map(function () { return null; }) };
+      card.setAttribute('aria-label', qs.length === 1 ? qs[0].q : 'Questions from Gink');
+      var st = { i: 0, answers: qs.map(function () { return null; }), typed: qs.map(function () { return ''; }) };
       function el(t, c, txt) { var x = document.createElement(t); if (c) x.className = c; if (txt != null) x.textContent = txt; return x; }
-      function draw() {
+      function ready() { return st.answers.every(function (a) { return !!a; }); }
+      function draw(focusInput) {
         card.innerHTML = ''; var q = qs[st.i];
         card.appendChild(el('div', 'qq', q.q));
-        q.options.slice(0, 4).forEach(function (o) {
-          var b = el('button', 'qo' + (st.answers[st.i] === String(o) ? ' on' : ''), String(o));
-          b.onclick = function () { st.answers[st.i] = String(o); next(); }; card.appendChild(b);
+        q.options.forEach(function (o) {
+          var b = el('button', 'qo' + (st.answers[st.i] === o ? ' on' : ''), o);
+          b.type = 'button';
+          b.onclick = function () { st.answers[st.i] = o; st.typed[st.i] = ''; next(); }; card.appendChild(b);
         });
         var row = el('div', 'qe'); row.appendChild(el('span', '', '\u270e'));
-        var inp = el('input'); inp.placeholder = 'Something else'; inp.setAttribute('aria-label', 'Something else');
-        var own = st.answers[st.i]; if (own && q.options.map(String).indexOf(own) < 0) inp.value = own;
-        inp.onkeydown = function (e) { if (e.key === 'Enter' && inp.value.trim()) { e.preventDefault(); st.answers[st.i] = inp.value.trim(); next(); } };
-        row.appendChild(inp); card.appendChild(row);
+        var inp = el('input'); inp.type = 'text'; inp.placeholder = q.options.length ? 'Something else' : 'Type your answer';
+        inp.setAttribute('aria-label', inp.placeholder); inp.setAttribute('enterkeyhint', 'send');
+        inp.value = st.typed[st.i] || '';
         var f = el('div', 'qf');
-        var prev = el('button', '', '\u2039'); prev.disabled = st.i === 0; prev.onclick = function () { st.i--; draw(); };
-        var nx = el('button', '', '\u203a'); nx.disabled = st.i === qs.length - 1; nx.onclick = function () { st.i++; draw(); };
+        var prev = el('button', '', '\u2039'); prev.type = 'button'; prev.setAttribute('aria-label', 'Previous question');
+        prev.disabled = st.i === 0; prev.onclick = function () { st.i--; draw(); };
+        var nx = el('button', '', '\u203a'); nx.type = 'button'; nx.setAttribute('aria-label', 'Next question');
+        nx.disabled = st.i === qs.length - 1; nx.onclick = function () { st.i++; draw(); };
         f.appendChild(prev); f.appendChild(el('span', '', (st.i + 1) + ' of ' + qs.length)); f.appendChild(nx);
         var gap = el('span'); gap.style.flex = '1'; f.appendChild(gap);
-        var skip = el('button', 'qskip', 'Skip'); skip.onclick = function () { st.answers[st.i] = st.answers[st.i] || '(skipped)'; next(); };
-        var send = el('button', 'qsend', '\u2191'); send.setAttribute('aria-label', 'Send the answers');
-        send.disabled = st.answers.some(function (a) { return !a; }); send.onclick = submit;
+        var skip = el('button', 'qskip', 'Skip'); skip.type = 'button';
+        skip.onclick = function () { st.answers[st.i] = st.answers[st.i] || '(skipped)'; next(); };
+        var send = el('button', 'qsend', '\u2191'); send.type = 'button'; send.setAttribute('aria-label', 'Send the answers');
+        function lit() { send.disabled = !ready(); send.classList.toggle('lit', !send.disabled); }
+        // what's typed is this question's answer as you type (and a chosen option is let go)
+        function typed() {
+          var v = inp.value.replace(/\s+/g, ' ').trim();
+          if (v) { st.typed[st.i] = inp.value; st.answers[st.i] = v; }
+          else if (st.typed[st.i]) { st.typed[st.i] = ''; st.answers[st.i] = null; }
+          Array.prototype.forEach.call(card.querySelectorAll('.qo.on'), function (b) { if (v) b.classList.remove('on'); });
+          lit();
+        }
+        inp.oninput = typed; inp.onchange = typed;
+        inp.onkeydown = function (e) {
+          if ((e.key === 'Enter' || e.keyCode === 13) && !e.isComposing && inp.value.trim()) {
+            e.preventDefault(); e.stopPropagation(); typed();
+            if (ready()) submit(); else next();
+          }
+        };
+        row.appendChild(inp); card.appendChild(row);
+        send.onclick = function () { typed(); if (ready()) submit(); };
+        lit();
         f.appendChild(skip); f.appendChild(send); card.appendChild(f);
+        if (focusInput) try { inp.focus(); } catch (e) {}
       }
-      function next() { if (st.i < qs.length - 1) st.i++; draw(); }
+      function next() {
+        var open = -1;                              // the next question still without an answer, else stay
+        for (var k = 1; k <= qs.length; k++) { var j = (st.i + k) % qs.length; if (!st.answers[j]) { open = j; break; } }
+        if (open >= 0) st.i = open;
+        draw();
+        if (ready()) { var s = card.querySelector('.qsend'); if (s) try { s.focus(); } catch (e) {} }
+      }
       function finish(answers) {                     // the card as answered: the questions and what was chosen
         card.classList.add('done'); card.innerHTML = '';
         card.appendChild(el('div', 'qq', 'Your answers'));
@@ -899,12 +943,14 @@ JS = r"""
       }
       card._finish = function (text) { finish(parseAnswers(qs, text)); };
       function submit() {
+        if (!ready() || card.classList.contains('done')) return;
         // "My answers:" so the AI reads them as answers to its questions (not as the person asking it the question:
         // before 0.1.160, "What OS does your laptop use? macOS" got "I don't run on a laptop myself")
         var text = 'My answers:\n' + qs.map(function (q, i) { return '\u2022 ' + q.q + ' \u2192 ' + st.answers[i]; }).join('\n');
         finish(st.answers);
         ginkEmit('send', text);
       }
+      card._submit = submit;
       draw(); block.parentNode.replaceChild(card, block);
     });
   };
@@ -924,8 +970,10 @@ JS = r"""
   }
   // A question card stays answerable only until the person's next message. Opening a chat again redraws its cards,
   // so the message after a card closes it, with the answers it held -- an answered card never comes back blank.
-  window.closeQuestionCards = function (text) {
-    Array.prototype.forEach.call(document.querySelectorAll('.qcard:not(.done)'), function (card) {
+  // root: only the cards in that answer (the web app formats an opened chat's answers after its messages are drawn,
+  // so it closes each answer's cards itself, with the message that came after it -- 0.1.163).
+  window.closeQuestionCards = function (text, root) {
+    Array.prototype.forEach.call((root || document).querySelectorAll('.qcard:not(.done)'), function (card) {
       if (card._finish) card._finish(text);
     });
   };
@@ -991,17 +1039,18 @@ JS = r"""
       e.stopPropagation(); var old = v.querySelector('.cvmenu'); if (old) { old.remove(); return; }
       var m = document.createElement('div'); m.className = 'cvmenu';
       m.innerHTML = '<button data-cv="copy">Copy</button><button data-cv="download">Download</button>' +
-        (CV.art && CV.art.kind === 'page' && (GINK_WEBAPP || !(window.matchMedia && matchMedia('(hover: none)').matches)) ?   // computers: the app opens the browser
+        (CV.art && ART_PAGES.test(CV.art.kind) && (GINK_WEBAPP || !(window.matchMedia && matchMedia('(hover: none)').matches)) ?   // computers: the app opens the browser
           '<button data-cv="tab">' + (GINK_WEBAPP ? 'Open in a new tab' : 'Open in your browser') + '</button>' : '');
       m.onclick = function (ev) { var a = ev.target.getAttribute('data-cv'); m.remove();
         if (a === 'copy') v.querySelector('.cvcopy').click();
-        else if (a === 'tab') cvNewTab(cvFullPage(CV.text, CV.art ? CV.art.title : ''));
-        else ginkEmit('save_code', {name: CV.name, code: CV.text}); };
+        else if (a === 'tab') cvNewTab(cvPage(CV.art));
+        else ginkEmit('save_code', cvDownload(CV.art)); };
       v.appendChild(m);
     };
     v.querySelector('.cvpub').onclick = function () {
       this.disabled = true; this.textContent = 'Publishing…';
-      ginkEmit('publish_design', {html: cvFullPage(CV.text, v.querySelector('.cvt').textContent), title: v.querySelector('.cvt').textContent});
+      ginkEmit('publish_design', {html: CV.art && CV.art.kind !== 'image' && CV.art.kind !== 'page' ? cvPage(CV.art) :
+               cvFullPage(CV.text, v.querySelector('.cvt').textContent), title: v.querySelector('.cvt').textContent});
     };
     v.querySelector('.cvtabs').onclick = function (e) { var t = e.target.getAttribute && e.target.getAttribute('data-tab'); if (t) cvShow(t); };
     v.querySelector('.cvwide').onclick = function () { var w = v.classList.toggle('wide'); this.title = w ? 'Make smaller' : 'Expand'; };
@@ -1032,9 +1081,9 @@ JS = r"""
       lns.textContent = nums.join('\n'); cvb.insertBefore(lns, cvb.firstChild);
     }
     v.querySelector('.cvdoc').innerHTML = o.kind === 'document' ? '<div class="cvdoc-in">' + (o.docHTML || '') + '</div>' : '';
-    var design = o.kind === 'page' || o.kind === 'image' || o.kind === 'diagram';
+    var design = o.kind === 'diagram' || o.kind === 'image' || ART_PAGES.test(o.kind || '');
     v.querySelector('.cvtabs').hidden = !design;
-    var pub = v.querySelector('.cvpub'); pub.hidden = !(o.kind === 'page' || o.kind === 'image'); pub.disabled = false; pub.textContent = 'Publish';
+    var pub = v.querySelector('.cvpub'); pub.hidden = !(o.kind === 'image' || ART_PAGES.test(o.kind || '')); pub.disabled = false; pub.textContent = 'Publish';
     var bar = v.querySelector('.cvpubbar'); if (bar) bar.remove();
     cvShow(o.kind === 'document' ? 'doc' : design ? 'preview' : 'code');
     document.body.classList.add('viewer-open');
@@ -1063,6 +1112,283 @@ JS = r"""
       'mermaid.run().catch(function(x){document.getElementById("e").textContent="This diagram has a mistake: "+(x&&x.message||x);});}' +
       'catch(x){document.getElementById("e").textContent="The diagram couldn\\u2019t be drawn (are you online?).";}<\/script></body></html>';
   }
+  // ---- More kinds of artifacts (0.1.163): React components, charts, tables (CSV) and slides. Each is previewed in the
+  // same sealed frame; the libraries (exact versions, from jsDelivr) load only inside it, only when one is opened.
+  var ART_LIBS = {
+    react: 'https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js',
+    reactDom: 'https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js',
+    babel: 'https://cdn.jsdelivr.net/npm/@babel/standalone@7.24.7/babel.min.js',
+    tailwind: 'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11/dist/index.global.js',
+    chart: 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js'
+  };
+  window.ART_LIBS = ART_LIBS;
+  function artDark() { return document.body.classList.contains('theme-dark'); }
+  function artShell(title, css, body, dark) {     // a whole page around a preview, in the app's light or dark
+    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
+      '<title>' + mdEsc(title || 'Gink') + '</title><style>:root{color-scheme:' + (dark ? 'dark' : 'light') + '}' +
+      'html,body{margin:0;min-height:100%;background:' + (dark ? '#16191c' : '#ffffff') + ';color:' + (dark ? '#e8eaed' : '#1f2328') +
+      ';font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}#gink-e{color:#d93025;white-space:pre-wrap;padding:16px}' +
+      (css || '') + '</style></head><body>' + body + '</body></html>';
+  }
+  function artScript(fn, args) {                  // a function of this page, run inside the preview with its data
+    return '<script>(' + fn.toString() + ').apply(null, ' + JSON.stringify(args).replace(/</g, '\\u003c') + ');<\/script>';
+  }
+  // React: the component is compiled in the preview (Babel), its React imports become React's own; Tailwind classes work
+  function reactRunner(code, ts) {
+    var E = document.getElementById('gink-e');
+    function fail(x) { E.textContent = 'This component couldn’t run: ' + ((x && x.message) || x); }
+    if (!window.React || !window.ReactDOM || !window.Babel) { E.textContent = 'The preview needs the internet: React comes from jsDelivr.'; return; }
+    var hooks = [], name = null;
+    code = code.replace(/^\s*import\s+([\s\S]*?)\s+from\s+['"]([^'"]+)['"];?[ \t]*$/gm, function (m, what, from) {
+      if (/^react(-dom)?(\/client)?$/.test(from)) {
+        var named = /\{([^}]*)\}/.exec(what);
+        if (named) named[1].split(',').forEach(function (n) { n = n.trim(); if (n) hooks.push(n); });
+        return '';
+      }
+      return '// (' + from + ' isn’t available in the preview)';
+    }).replace(/^\s*import\s+['"][^'"]+['"];?[ \t]*$/gm, '');
+    code = code.replace(/export\s+default\s+(async\s+)?function\s+([A-Za-z_$][\w$]*)/, function (m, a, n) { name = n; return (a || '') + 'function ' + n; })
+      .replace(/export\s+default\s+class\s+([A-Za-z_$][\w$]*)/, function (m, n) { name = n; return 'class ' + n; })
+      .replace(/export\s+default\s+([A-Za-z_$][\w$]*)\s*;?\s*$/m, function (m, n) { name = n; return ''; })
+      .replace(/export\s+default\s+/, function () { name = '__GinkDefault'; return 'var __GinkDefault = '; })
+      .replace(/^\s*export\s+(?=(const|let|var|function|class|async)\b)/gm, '');
+    if (!name) { var f = /(?:function|const|let|var|class)\s+(App|[A-Z][\w$]*)\b/.exec(code); name = f ? f[1] : null; }
+    var head = 'var React = window.React;' + hooks.map(function (h) {
+      var p = h.split(/\s+as\s+/); return 'var ' + (p[1] || p[0]).trim() + ' = React.' + p[0].trim() + ';';
+    }).join('') + '\n';
+    try {
+      var presets = ts ? [['typescript', { isTSX: true, allExtensions: true }], 'react'] : ['react'];
+      var out = window.Babel.transform(head + code + '\n;window.__GinkApp = ' + (name || 'null') + ';', { presets: presets, filename: ts ? 'App.tsx' : 'App.jsx' }).code;
+      (new Function(out))();
+      if (!window.__GinkApp) throw new Error('no component was found (write "export default function App() {...}")');
+      window.ReactDOM.createRoot(document.getElementById('root')).render(window.React.createElement(window.__GinkApp));
+    } catch (x) { fail(x); }
+    window.addEventListener('error', function (e) { fail(e.error || e.message); });
+  }
+  function cvReactPage(code, title, dark, ts) {
+    return artShell(title, '#root{min-height:100vh}', '<div id="root"></div><div id="gink-e"></div>' +
+      '<script src="' + ART_LIBS.tailwind + '"><\/script><script src="' + ART_LIBS.react + '"><\/script>' +
+      '<script src="' + ART_LIBS.reactDom + '"><\/script><script src="' + ART_LIBS.babel + '"><\/script>' +
+      artScript(reactRunner, [String(code), !!ts]), dark);
+  }
+  // Charts: Chart.js settings (JSON), drawn with Gink's colours when none are given
+  function chartRunner(text, dark) {
+    var E = document.getElementById('gink-e'), cfg;
+    if (!window.Chart) { E.textContent = 'The preview needs the internet: charts come from jsDelivr.'; return; }
+    try { cfg = JSON.parse(text); } catch (x) { E.textContent = 'This chart has a mistake: ' + x.message; return; }
+    if (cfg && !cfg.data && (cfg.labels || cfg.datasets)) cfg = { type: cfg.type || 'bar', data: { labels: cfg.labels, datasets: cfg.datasets }, options: cfg.options };
+    if (!cfg || !cfg.data) { E.textContent = 'This chart has no data.'; return; }
+    cfg.type = cfg.type || 'bar';
+    cfg.options = cfg.options || {}; cfg.options.responsive = true; cfg.options.maintainAspectRatio = false;
+    var C = window.Chart, palette = ['#2F6FB3', '#3F7D12', '#B4530F', '#7A3FB3', '#0F7C74', '#A3274F', '#8C6D1F', '#4A5568'];
+    C.defaults.color = dark ? '#e8eaed' : '#1f2328'; C.defaults.borderColor = dark ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.08)';
+    C.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+    var round = /^(pie|doughnut|polarArea)$/.test(cfg.type);
+    (cfg.data.datasets || []).forEach(function (d, i) {
+      var c = palette[i % palette.length];
+      if (!d.backgroundColor) d.backgroundColor = round ? palette.slice(0, (d.data || []).length) : (cfg.type === 'line' ? c + '33' : c + 'cc');
+      if (!d.borderColor) d.borderColor = round ? (dark ? '#16191c' : '#ffffff') : c;
+    });
+    try { new C(document.getElementById('c'), cfg); } catch (x) { E.textContent = 'This chart couldn’t be drawn: ' + x.message; }
+  }
+  function cvChartPage(text, title, dark) {
+    return artShell(title, '.wrap{max-width:920px;margin:0 auto;padding:24px 16px}h1{font-size:20px;margin:0 0 16px}' +
+      '.box{position:relative;height:min(70vh,520px)}', '<div class="wrap"><h1>' + mdEsc(title || 'Chart') + '</h1><div class="box">' +
+      '<canvas id="c" role="img" aria-label="' + mdEsc(title || 'Chart') + '"></canvas></div></div><div id="gink-e"></div>' +
+      '<script src="' + ART_LIBS.chart + '"><\/script>' + artScript(chartRunner, [String(text), !!dark]), dark);
+  }
+  // Tables: CSV (or TSV, or ";" separated) read here, shown as a table that sorts by any column
+  function csvRows(text) {
+    text = String(text || '').replace(/^﻿/, '');
+    var first = text.split('\n')[0] || '', sep = ',', most = (first.match(/,/g) || []).length;
+    [['\t', /\t/g], [';', /;/g], ['|', /\|/g]].forEach(function (s) { var n = (first.match(s[1]) || []).length; if (n > most) { most = n; sep = s[0]; } });
+    var rows = [], row = [], cell = '', q = false;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text.charAt(i);
+      if (q) { if (ch === '"') { if (text.charAt(i + 1) === '"') { cell += '"'; i++; } else q = false; } else cell += ch; }
+      else if (ch === '"' && cell === '') q = true;
+      else if (ch === sep) { row.push(cell); cell = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text.charAt(i + 1) === '\n') i++; row.push(cell); cell = ''; if (row.join('').trim()) rows.push(row); row = []; }
+      else cell += ch;
+    }
+    row.push(cell); if (row.join('').trim()) rows.push(row);
+    return rows.slice(0, 5000);
+  }
+  window.csvRows = csvRows;
+  function tableRunner() {
+    var t = document.querySelector('table'), body = t.tBodies[0];
+    Array.prototype.forEach.call(t.tHead.rows[0].cells, function (th, col) {
+      th.tabIndex = 0;
+      function sort() {
+        var down = th.getAttribute('aria-sort') !== 'ascending';
+        Array.prototype.forEach.call(t.tHead.rows[0].cells, function (h) { h.removeAttribute('aria-sort'); });
+        th.setAttribute('aria-sort', down ? 'ascending' : 'descending');
+        var rows = Array.prototype.slice.call(body.rows);
+        rows.sort(function (a, b) {
+          var x = a.cells[col] ? a.cells[col].textContent : '', y = b.cells[col] ? b.cells[col].textContent : '';
+          var nx = parseFloat(x.replace(/[^\d.\-]/g, '')), ny = parseFloat(y.replace(/[^\d.\-]/g, ''));
+          var r = (!isNaN(nx) && !isNaN(ny) && /\d/.test(x) && /\d/.test(y)) ? nx - ny : x.localeCompare(y);
+          return down ? r : -r;
+        });
+        rows.forEach(function (r) { body.appendChild(r); });
+      }
+      th.onclick = sort; th.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sort(); } };
+    });
+  }
+  function cvTablePage(text, title, dark) {
+    var rows = csvRows(text), head = rows.shift() || [], width = head.length;
+    rows.forEach(function (r) { width = Math.max(width, r.length); });
+    function num(v) { return /^\s*[-+]?[\d\s.,]*\d[\d\s.,]*\s*%?\s*$/.test(v) || /^\s*[-+]?[$€£₦₵]\s?[\d.,]+\s*$/.test(v); }
+    var html = '<table><thead><tr>';
+    for (var c = 0; c < width; c++) html += '<th scope="col">' + mdEsc(head[c] || '') + '</th>';
+    html += '</tr></thead><tbody>' + rows.map(function (r) {
+      var s = '<tr>'; for (var k = 0; k < width; k++) { var v = r[k] == null ? '' : r[k]; s += '<td' + (num(v) ? ' class="n"' : '') + '>' + mdEsc(v) + '</td>'; }
+      return s + '</tr>';
+    }).join('') + '</tbody></table>';
+    var line = dark ? '#2c3136' : '#e3e6e8', zebra = dark ? '#1c2024' : '#f7f8f9';
+    return artShell(title, '.wrap{padding:20px 16px}h1{font-size:20px;margin:0 0 4px}.meta{color:' + (dark ? '#9aa0a6' : '#5f6368') + ';margin:0 0 14px}' +
+      '.scroll{overflow:auto;border:1px solid ' + line + ';border-radius:10px;max-height:calc(100vh - 110px)}table{border-collapse:collapse;width:100%;font-size:14px}' +
+      'th,td{padding:8px 12px;border-bottom:1px solid ' + line + ';text-align:left;white-space:nowrap}td.n{text-align:right;font-variant-numeric:tabular-nums}' +
+      'th{position:sticky;top:0;background:' + (dark ? '#22272b' : '#f1f3f4') + ';cursor:pointer;user-select:none}th[aria-sort=ascending]:after{content:" \\25B2"}' +
+      'th[aria-sort=descending]:after{content:" \\25BC"}tbody tr:nth-child(even){background:' + zebra + '}',
+      '<div class="wrap"><h1>' + mdEsc(title || 'Table') + '</h1><p class="meta">' + rows.length + ' rows · ' + width + ' columns · tap a heading to sort</p>' +
+      '<div class="scroll">' + html + '</div></div>' + artScript(tableRunner, []), dark);
+  }
+  // Slides: Markdown, one slide per part (split by a line with ---); arrows, a tap, or a swipe to move; F for full screen
+  function slidesRunner() {
+    var s = document.querySelectorAll('.slide'), at = 0, n = document.getElementById('n');
+    function go(i) { at = Math.max(0, Math.min(s.length - 1, i)); for (var k = 0; k < s.length; k++) s[k].hidden = k !== at; n.textContent = (at + 1) + ' / ' + s.length; }
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); go(at + 1); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(at - 1); }
+      else if (e.key === 'Home') go(0); else if (e.key === 'End') go(s.length - 1);
+      else if ((e.key === 'f' || e.key === 'F') && document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen().catch(function () {}); }
+    });
+    document.getElementById('prev').onclick = function () { go(at - 1); };
+    document.getElementById('next').onclick = function () { go(at + 1); };
+    var x0 = null;
+    document.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', function (e) { if (x0 === null) return; var d = e.changedTouches[0].clientX - x0; if (Math.abs(d) > 40) go(at + (d < 0 ? 1 : -1)); x0 = null; });
+    go(0);
+  }
+  function slideParts(md) {
+    return String(md || '').replace(/\r\n?/g, '\n').split(/\n[ \t]*(?:---+|\*\*\*+)[ \t]*\n/).map(function (p) { return p.trim(); }).filter(Boolean).slice(0, 80);
+  }
+  function cvSlidesPage(md, title, dark) {
+    var parts = slideParts(md);
+    var ink = dark ? '#e8eaed' : '#1f2328', paper = dark ? '#1d2125' : '#ffffff', accent = '#3F7D12';
+    return artShell(title, 'body{background:' + (dark ? '#0f1214' : '#e9ecee') + ';display:flex;flex-direction:column;align-items:center;min-height:100vh}' +
+      '.deck{width:min(96vw,calc((100vh - 70px) * 16 / 9));height:min(54vw,calc(100vh - 70px));margin-top:14px;position:relative}' +
+      '.slide{position:absolute;top:0;right:0;bottom:0;left:0;background:' + paper + ';color:' + ink + ';border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.18);' +
+      'padding:5% 7%;box-sizing:border-box;overflow:auto;font-size:14px;font-size:clamp(14px,2.6vw,32px);line-height:1.45}' +
+      '.slide h1{font-size:2.2em;line-height:1.1;margin:0 0 .4em;color:' + ink + '}.slide h2{font-size:1.6em;margin:0 0 .5em;color:' + accent + '}' +
+      '.slide h3{font-size:1.2em;margin:.6em 0 .3em}.slide ul,.slide ol{padding-left:1.2em}.slide li{margin:.25em 0}.slide img{max-width:100%;max-height:60%}' +
+      '.slide code{font-size:.85em}.slide pre{background:' + (dark ? '#111416' : '#f4f6f7') + ';padding:.6em .8em;border-radius:8px;overflow:auto}' +
+      '.slide table{border-collapse:collapse}.slide td,.slide th{border:1px solid ' + (dark ? '#33393e' : '#d6dadd') + ';padding:.25em .6em}' +
+      '.bar{display:flex;align-items:center;margin:10px 0}.bar button{margin:0 6px;font:inherit;border:0;border-radius:999px;padding:6px 14px;cursor:pointer;' +
+      'background:' + (dark ? '#2a2f34' : '#ffffff') + ';color:' + ink + '}#n{min-width:64px;text-align:center;color:' + (dark ? '#9aa0a6' : '#5f6368') + '}',
+      '<div class="deck">' + parts.map(function (p, i) {
+        return '<section class="slide" aria-label="Slide ' + (i + 1) + '"' + (i ? ' hidden' : '') + '>' + quickMarkdown(p) + '</section>';
+      }).join('') + '</div><div class="bar"><button id="prev" aria-label="Previous slide">←</button><span id="n"></span>' +
+      '<button id="next" aria-label="Next slide">→</button></div>' + artScript(slidesRunner, []), dark);
+  }
+  // The whole page each kind shows -- to preview, open in a tab, publish; and what Download saves
+  function cvPage(o) {
+    var t = (o && o.text) || CV.text, title = (o && o.title) || '', dark = artDark(), kind = o && o.kind;
+    if (kind === 'diagram') return cvDiagramPage(t);
+    if (kind === 'react') return cvReactPage(t, title, dark, /^tsx|typescript$/.test(o.lang || ''));
+    if (kind === 'chart') return cvChartPage(t, title, dark);
+    if (kind === 'table') return cvTablePage(t, title, dark);
+    if (kind === 'slides') return cvSlidesPage(t, title, dark);
+    return cvFullPage(t, title);
+  }
+  window.cvPage = cvPage;
+  function cvDownload(o) {
+    o = o || {};
+    if (o.kind === 'chart' || o.kind === 'slides') {          // a chart, a presentation: a page that opens anywhere
+      var base = String(o.name || o.title || 'gink').replace(/\.[a-z0-9]{1,6}$/i, '');
+      return { name: base + '.html', code: (o.kind === 'slides' ? cvSlidesPage(o.text, o.title, false) : cvChartPage(o.text, o.title, false)) };
+    }
+    return { name: CV.name, code: CV.text };
+  }
+
+  // ---- A small, safe Markdown formatter (0.1.163): slides -- and the web app's answers while they arrive and until the
+  // server's formatting comes (an opened chat showed **raw** text first). Everything is escaped first; only http(s)
+  // links and pictures.
+  function mdEsc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+  function mdUrl(u) { u = String(u || '').replace(/&amp;/g, '&').trim(); return /^(https?:\/\/|mailto:)/i.test(u) ? mdEsc(u) : ''; }
+  function mdInline(t) {                               // t is escaped already
+    var keep = [];
+    function hold(html) { keep.push(html); return '\u0001' + (keep.length - 1) + '\u0002'; }
+    t = t.replace(/`([^`\n]+)`/g, function (m, c) { return hold('<code>' + c + '</code>'); });
+    t = t.replace(/!\[([^\]\n]*)\]\(([^)\s]+)\)/g, function (m, alt, u) { u = mdUrl(u); return u ? hold('<img alt="' + alt + '" src="' + u + '">') : alt; });
+    t = t.replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, function (m, label, u) { u = mdUrl(u); return u ? hold('<a href="' + u + '" target="_blank" rel="noopener noreferrer">') + label + hold('</a>') : label; });
+    t = t.replace(/(^|[\s(])(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"])/g, function (m, pre, u) { var v = mdUrl(u); return v ? pre + hold('<a href="' + v + '" target="_blank" rel="noopener noreferrer">') + u + hold('</a>') : m; });
+    t = t.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>').replace(/__([^_\n]+)__/g, '<strong>$1</strong>')
+      .replace(/(^|[^*\w])\*([^*\s][^*\n]*?)\*(?=[^*\w]|$)/g, '$1<em>$2</em>').replace(/(^|[^_\w])_([^_\s][^_\n]*?)_(?=[^_\w]|$)/g, '$1<em>$2</em>')
+      .replace(/~~([^~\n]+)~~/g, '<del>$1</del>');
+    return t.replace(/\u0001(\d+)\u0002/g, function (m, i) { return keep[+i]; });
+  }
+  function mdCells(row) { return row.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(function (c) { return c.trim(); }); }
+  function quickMarkdown(md) {
+    var lines = String(md == null ? '' : md).replace(/\r\n?/g, '\n').split('\n'), out = [], para = [], i = 0, m;
+    function flush() { if (para.length) { out.push('<p>' + para.map(function (l) { return mdInline(mdEsc(l)); }).join('<br>') + '</p>'); para = []; } }
+    while (i < lines.length) {
+      var ln = lines[i];
+      if ((m = /^\s{0,3}(`{3,}|~{3,})\s*([\w+#.-]*)/.exec(ln))) {
+        flush(); var fence = m[1], lang = m[2], code = []; i++;
+        while (i < lines.length && lines[i].trim().indexOf(fence) !== 0) { code.push(lines[i]); i++; }
+        i++;
+        out.push('<pre><code' + (lang ? ' class="language-' + mdEsc(lang) + '"' : '') + '>' + mdEsc(code.join('\n')) + '</code></pre>');
+        continue;
+      }
+      if (!ln.trim()) { flush(); i++; continue; }
+      if ((m = /^\s{0,3}(#{1,6})\s+(.*)$/.exec(ln))) { flush(); out.push('<h' + m[1].length + '>' + mdInline(mdEsc(m[2].replace(/\s+#+\s*$/, ''))) + '</h' + m[1].length + '>'); i++; continue; }
+      if (/^\s{0,3}([-*_])(\s*\1){2,}\s*$/.test(ln)) { flush(); out.push('<hr>'); i++; continue; }
+      if (/^\s{0,3}>/.test(ln)) {
+        flush(); var q = [];
+        while (i < lines.length && /^\s{0,3}>/.test(lines[i])) { q.push(lines[i].replace(/^\s{0,3}>\s?/, '')); i++; }
+        out.push('<blockquote>' + quickMarkdown(q.join('\n')) + '</blockquote>'); continue;
+      }
+      if (/^\s*([-*+]|\d{1,3}[.)])\s+/.test(ln)) {
+        flush(); var ordered = /^\s*\d/.test(ln), items = [];
+        while (i < lines.length && (m = /^\s*([-*+]|\d{1,3}[.)])\s+(.*)$/.exec(lines[i])) && /^\s*\d/.test(lines[i]) === ordered) {
+          var item = m[2]; i++;
+          while (i < lines.length && /^\s{2,}\S/.test(lines[i]) && !/^\s*([-*+]|\d{1,3}[.)])\s+/.test(lines[i])) { item += ' ' + lines[i].trim(); i++; }
+          items.push('<li>' + mdInline(mdEsc(item.replace(/^\[( |x|X)\]\s+/, function (c, x) { return x === ' ' ? '☐ ' : '☑ '; }))) + '</li>');
+        }
+        out.push(ordered ? '<ol>' + items.join('') + '</ol>' : '<ul>' + items.join('') + '</ul>'); continue;
+      }
+      if (/^\s*\|.*\|\s*$/.test(ln) && i + 1 < lines.length && /^\s*\|?\s*:?-{2,}/.test(lines[i + 1])) {
+        flush(); var head = mdCells(ln), rows = []; i += 2;
+        while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) { rows.push(mdCells(lines[i])); i++; }
+        out.push('<table><thead><tr>' + head.map(function (c) { return '<th>' + mdInline(mdEsc(c)) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+          rows.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + mdInline(mdEsc(c)) + '</td>'; }).join('') + '</tr>'; }).join('') +
+          '</tbody></table>');
+        continue;
+      }
+      para.push(ln); i++;
+    }
+    flush();
+    return out.join('\n');
+  }
+  window.quickMarkdown = quickMarkdown;
+  // The web app: an answer as it arrives (the spinner stays after the newest words) and, from history, at once
+  var quickDue = {};                                 // at most once a frame, however fast the words come
+  window.setQuickText = function (id, text) {
+    var waiting = Object.prototype.hasOwnProperty.call(quickDue, id);
+    quickDue[id] = text;
+    if (waiting) return;
+    (window.requestAnimationFrame || function (f) { return setTimeout(f, 16); })(function () {
+      var t = quickDue[id]; delete quickDue[id];
+      if (typeof renderStream === 'function') renderStream(id, quickMarkdown(streamView(t)));
+    });
+  };
+  window.setQuickHtml = function (id, text) {
+    var el = document.getElementById(id); if (!el) return;
+    if (typeof stopSpinClock === 'function') stopSpinClock(id);
+    el.classList.add('rendered'); el.innerHTML = quickMarkdown(streamView(text));
+  };
   // The sealed preview: in the apps, a sandboxed srcdoc frame; on the web, Gink's /artifact/frame (its own sandbox CSP,
   // so the page's libraries from the web load, and it never inherits the web app's rights)
   function cvFrame(v, html) {
@@ -1116,7 +1442,7 @@ JS = r"""
       return;
     }
     if (old && old.getAttribute('data-for') === String(o.id || CV.text.length)) { old.hidden = false; return; }
-    old = cvFrame(v, o.kind === 'diagram' ? cvDiagramPage(CV.text) : cvFullPage(CV.text, o.title || ''));
+    old = cvFrame(v, cvPage(o));
     old.setAttribute('data-for', String(o.id || CV.text.length));
   }
 
@@ -1127,16 +1453,29 @@ JS = r"""
     image: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>',
     diagram: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="5" rx="1.2"/><rect x="14" y="16" width="7" height="5" rx="1.2"/><rect x="14" y="3" width="7" height="5" rx="1.2"/><path d="M6.5 8v5.5a2 2 0 0 0 2 2H14M10 5.5h4"/></svg>',
     document: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6M9 9h2"/></svg>',
-    code: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 4l-3 16"/></svg>'
+    code: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 4l-3 16"/></svg>',
+    react: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="1.8"/><ellipse cx="12" cy="12" rx="9.5" ry="3.8"/><ellipse cx="12" cy="12" rx="9.5" ry="3.8" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="9.5" ry="3.8" transform="rotate(120 12 12)"/></svg>',
+    chart: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4M4 20h16"/><path d="M8 16v-5M12 16V8M16 16v-8M20 16v-3"/></svg>',
+    table: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M3 14.8h18M9.5 4v16"/></svg>',
+    slides: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8.5 20h7M7 8h6M7 11.5h9"/></svg>'
   };
   var ART_KIND = { page: ['Web page', '#2F6FB3'], image: ['Image', '#A3274F'], diagram: ['Diagram', '#0F7C74'],
-                   document: ['Document', '#B4530F'], code: ['Code', '#7A3FB3'] };
+                   document: ['Document', '#B4530F'], code: ['Code', '#7A3FB3'], react: ['React app', '#1F7A99'],
+                   chart: ['Chart', '#8C6D1F'], table: ['Table', '#3F7D12'], slides: ['Slides', '#B4373F'] };
+  var ART_EXT = { page: 'html', image: 'svg', diagram: 'mmd', document: 'md', chart: 'json', table: 'csv', slides: 'md' };
+  var ART_PAGES = /^(page|react|chart|table|slides)$/;      // shown as a whole page: preview, open in a tab, publish
   function artKey(t) { return String(t || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
   function artWhat(block) {                       // a code block -> its artifact kind ('' = stays in the chat)
     var lang = (block.getAttribute('data-lang') || '').toLowerCase(), title = block.getAttribute('data-title') || '';
     if (lang === 'map' || lang === 'ask' || lang === 'schedule') return '';
     var text = codeText(block), lines = text.split('\n').length;
     if (lang === 'mermaid') return 'diagram';
+    // 0.1.163: React components, charts (Chart.js JSON), tables (CSV) and slides (Markdown split by ---)
+    if ((lang === 'jsx' || lang === 'tsx') && (title || /export\s+default|ReactDOM|function\s+App\b/.test(text))) return 'react';
+    if (lang === 'chart' && /^\s*\{[\s\S]*\}\s*$/.test(text)) return 'chart';
+    if ((lang === 'csv' || lang === 'tsv') && (title || lines >= 4)) return 'table';
+    if (lang === 'slides' || ((lang === 'markdown' || lang === 'md') && title && /^slides?\b|\bslides?$|deck|presentation/i.test(title) &&
+                              /\n[ \t]*---+[ \t]*\n/.test(text))) return 'slides';
     if ((lang === 'svg' || lang === 'xml' || lang === 'html') && /^\s*(<\?xml[^>]*>\s*)?<svg\b[\s\S]*<\/svg>\s*$/i.test(text)) return 'image';
     if ((lang === 'html' || lang === 'htm') && (/<!doctype html|<html[\s>]/i.test(text) || (title && /<(body|div|main|section|style|script)\b/i.test(text)))) return 'page';
     if ((lang === 'markdown' || lang === 'md') && title) return 'document';
@@ -1178,12 +1517,12 @@ JS = r"""
       var lang = isDoc ? 'markdown' : (block.getAttribute('data-lang') || 'text').toLowerCase();
       var info = CV_LANGS[lang] || [lang.toUpperCase(), lang || 'txt'];
       var label = (block.querySelector('.code-block-label') || {}).textContent || '';
-      var ext = kind === 'page' ? 'html' : kind === 'image' ? 'svg' : kind === 'diagram' ? 'mmd' : kind === 'document' ? 'md' : info[1];
+      var ext = kind === 'react' ? (lang === 'tsx' ? 'tsx' : 'jsx') : ART_EXT[kind] || info[1];
       var name = label.indexOf('.') > 0 ? label.trim() : (title.replace(/[\\/:*?"<>|]+/g, '').trim().slice(0, 60) || 'gink-file') +
                  (/\.[a-z0-9]{1,6}$/i.test(title) ? '' : '.' + ext);
       var body = block.querySelector('.code-block-body');
       var entry = { id: 'art' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), key: key, title: title, kind: kind,
-                    text: text, name: name, codeHTML: body ? body.outerHTML : '',
+                    text: text, name: name, lang: lang, codeHTML: body ? body.outerHTML : '',
                     docHTML: isDoc ? ((block.querySelector('.doc-block-body') || {}).innerHTML || '') : '',
                     badge: kind === 'code' ? (ext || 'txt').toUpperCase().slice(0, 4) : ART_KIND[kind][0].toUpperCase() };
       entry.version = ARTS.filter(function (a) { return a.key === key; }).length + 1;
@@ -1194,7 +1533,9 @@ JS = r"""
                        '<span class="arto">Open</span>';
       card.querySelector('.artt').textContent = title;
       var nLines = text ? text.split('\n').length : 0;
-      card.querySelector('.artk span').textContent = kind === 'code' ? info[0] + ', ' + nLines + ' lines' : ART_KIND[kind][0];
+      card.querySelector('.artk span').textContent = kind === 'code' ? info[0] + ', ' + nLines + ' lines' :
+        kind === 'slides' ? 'Slides, ' + slideParts(text).length : kind === 'table' ? 'Table, ' + Math.max(0, csvRows(text).length - 1) + ' rows' :
+        ART_KIND[kind][0];
       if (entry.version > 1) { var vb = document.createElement('span'); vb.className = 'artv'; vb.textContent = 'v' + entry.version; card.querySelector('.artk').appendChild(vb); }
       card.setAttribute('aria-label', 'Open ' + title + ', ' + card.querySelector('.artk span').textContent + (entry.version > 1 ? ', version ' + entry.version : ''));
       card.addEventListener('click', function () { artOpen(entry); });

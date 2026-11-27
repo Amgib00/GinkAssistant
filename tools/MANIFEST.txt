@@ -204,6 +204,20 @@ openspec/changes/archive/2026-11-21-fix-tool-slips-add-device-notifications/spec
 openspec/changes/archive/2026-11-21-fix-tool-slips-add-device-notifications/specs/developer-api/spec.md
 openspec/changes/archive/2026-11-21-fix-tool-slips-add-device-notifications/specs/device-notifications/spec.md
 openspec/changes/archive/2026-11-21-fix-tool-slips-add-device-notifications/tasks.md
+openspec/changes/archive/2026-11-27-add-link-reading/proposal.md
+openspec/changes/archive/2026-11-27-add-link-reading/specs/accounts-security/spec.md
+openspec/changes/archive/2026-11-27-add-link-reading/specs/agent-mode/spec.md
+openspec/changes/archive/2026-11-27-add-link-reading/specs/developer-api/spec.md
+openspec/changes/archive/2026-11-27-add-link-reading/specs/gink-genie/spec.md
+openspec/changes/archive/2026-11-27-add-link-reading/specs/web-search/spec.md
+openspec/changes/archive/2026-11-27-add-link-reading/tasks.md
+openspec/changes/archive/2026-11-27-fit-requests-automatic-artifacts/proposal.md
+openspec/changes/archive/2026-11-27-fit-requests-automatic-artifacts/specs/artifacts/spec.md
+openspec/changes/archive/2026-11-27-fit-requests-automatic-artifacts/specs/chats-storage-limits/spec.md
+openspec/changes/archive/2026-11-27-fit-requests-automatic-artifacts/specs/developer-api/spec.md
+openspec/changes/archive/2026-11-27-fit-requests-automatic-artifacts/specs/personalization/spec.md
+openspec/changes/archive/2026-11-27-fit-requests-automatic-artifacts/specs/releases/spec.md
+openspec/changes/archive/2026-11-27-fit-requests-automatic-artifacts/tasks.md
 openspec/config.yaml
 openspec/specs/accounts-security/spec.md
 openspec/specs/agent-mode/spec.md
@@ -263,6 +277,7 @@ src/ginkassistant/services/biometric.py
 src/ginkassistant/services/blob_store.py
 src/ginkassistant/services/briefing.py
 src/ginkassistant/services/code_reader.py
+src/ginkassistant/services/context_fit.py
 src/ginkassistant/services/data_export.py
 src/ginkassistant/services/device_info.py
 src/ginkassistant/services/device_region.py
@@ -275,6 +290,7 @@ src/ginkassistant/services/image_ideas.py
 src/ginkassistant/services/image_service.py
 src/ginkassistant/services/languages.py
 src/ginkassistant/services/launch_at_login.py
+src/ginkassistant/services/link_kinds.py
 src/ginkassistant/services/live_info.py
 src/ginkassistant/services/local_llm.py
 src/ginkassistant/services/map_style.py
@@ -379,6 +395,7 @@ tests/test_app_lock.py
 tests/test_archive_storage_limits.py
 tests/test_artifacts.py
 tests/test_auto_search_sources.py
+tests/test_automatic_and_artifacts.py
 tests/test_automatic_tools.py
 tests/test_billing.py
 tests/test_blob_store.py
@@ -394,6 +411,7 @@ tests/test_cli.py
 tests/test_codebase_and_web.py
 tests/test_computer_actions.py
 tests/test_connected_apps.py
+tests/test_context_fit.py
 tests/test_dark_theme.py
 tests/test_db_lock.py
 tests/test_dev_platform.py
@@ -423,6 +441,7 @@ tests/test_international.py
 tests/test_ios_startup.py
 tests/test_js_sdk.py
 tests/test_languages_auto.py
+tests/test_links_seen_and_read.py
 tests/test_live_answers.py
 tests/test_live_info.py
 tests/test_live_xray_check.py
