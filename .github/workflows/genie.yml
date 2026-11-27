@@ -2,6 +2,9 @@
 # or native libraries, so every build is quick. Used by release.yml; can also be run on its own.
 name: Gink Genie build
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
   workflow_call:          # used by release.yml
